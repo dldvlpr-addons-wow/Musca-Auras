@@ -1810,7 +1810,6 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
       local loadFunc = loadFuncs[id];
       local loadOpt = loadFuncsForOptions[id];
       if Private.hasSpecializations then
-        -- Classic Era with the class_and_spec load option, see Private.load_prototype
         shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, specId, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
         couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, specId, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
       elseif WeakAuras.IsClassicEra() then
@@ -3709,6 +3708,9 @@ function Private.HandleChatAction(message_type, message, message_dest, message_d
   if (message:find('%%')) then
     message = Private.ReplacePlaceHolders(message, region, customCache, useHiddenStates, formatters);
   end
+  if Private.IsSecret(message) and message_type ~= "PRINT" and message_type ~= "COMBAT" then
+    return
+  end
   if(message_type == "PRINT") then
     DEFAULT_CHAT_FRAME:AddMessage(message, r or 1, g or 1, b or 1);
   elseif message_type == "TTS" then
@@ -5010,6 +5012,78 @@ local function startStopTimers(states, id, cloneId, triggernum)
   end
 end
 
+do
+  local refreshers = setmetatable({}, {__mode = "k"})
+  local frame = CreateFrame("Frame")
+  local elapsed = 0
+  frame:Hide()
+  frame:SetScript("OnUpdate", function(self, delta)
+    elapsed = elapsed + delta
+    if elapsed < 0.1 then
+      return
+    end
+    elapsed = 0
+    if not next(refreshers) then
+      self:Hide()
+      return
+    end
+    for region, funcs in pairs(refreshers) do
+      if region:IsVisible() then
+        for _, func in pairs(funcs) do
+          func(region)
+        end
+      end
+    end
+  end)
+
+  function Private.SetNativeRefresh(region, key, func)
+    local funcs = refreshers[region]
+    if func then
+      if not funcs then
+        funcs = {}
+        refreshers[region] = funcs
+      end
+      funcs[key] = func
+      frame:Show()
+    elseif funcs then
+      funcs[key] = nil
+      if not next(funcs) then
+        refreshers[region] = nil
+      end
+    end
+  end
+end
+
+local function DesaturationWanted(region)
+  if region.desaturateWanted ~= nil then
+    return region.desaturateWanted
+  end
+  return region.desaturateIcon or false
+end
+
+function Private.ApplyCooldownDesaturation(region)
+  local spellId = region.cooldownDesaturationSpell
+  if not spellId or region.secretDesaturation or DesaturationWanted(region) or not C_CurveUtil.EvaluateColorValueFromBoolean then
+    return
+  end
+  local duration = Private.ExecEnv.GetSpellCooldownDurationWithoutGCD(spellId)
+  if duration then
+    region.icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(duration:IsZero(), 0, 1))
+  end
+end
+
+local function SetCooldownDesaturation(region, spellId)
+  if spellId and C_CurveUtil and region.icon and region.icon.SetDesaturation then
+    region.cooldownDesaturationSpell = spellId
+    Private.SetNativeRefresh(region, "desaturation", Private.ApplyCooldownDesaturation)
+    Private.ApplyCooldownDesaturation(region)
+  elseif region.cooldownDesaturationSpell then
+    region.cooldownDesaturationSpell = nil
+    Private.SetNativeRefresh(region, "desaturation", nil)
+    region.icon:SetDesaturated(DesaturationWanted(region))
+  end
+end
+
 local function ApplyStateToRegion(id, cloneId, region, parent)
   -- Force custom text function to be run again
   region.values.customTextUpdated = false
@@ -5043,6 +5117,17 @@ local function ApplyStateToRegion(id, cloneId, region, parent)
       region:SetAlpha(region.animAlpha or 1)
     end
   end
+
+  local desaturateSpell
+  if not WeakAuras.IsOptionsOpen() then
+    for _, triggerState in pairs(region.states) do
+      if type(triggerState.desaturateSpell) == "number" then
+        desaturateSpell = triggerState.desaturateSpell
+        break
+      end
+    end
+  end
+  SetCooldownDesaturation(region, desaturateSpell)
 
   region.subRegionEvents:Notify("Update", region.state, region.states)
 
@@ -5188,16 +5273,15 @@ local function ScrubSecretState(state)
     last = {}
     lastReadableState[state] = last
   end
-  -- A secret progress stays drawable by native widgets, see state.secretValue
   if issecretvalue(state.value) or issecretvalue(state.total) then
     state.secretValue, state.secretTotal = state.value, state.total
   else
     state.secretValue, state.secretTotal = nil, nil
   end
   for key, value in pairs(state) do
-    -- Kept secret for native widgets: progress, and the stack text and icon of BuffTrigger2
     if key ~= "secretValue" and key ~= "secretTotal" and key ~= "secretPercent" and key ~= "secretPercentText"
-       and key ~= "secretStacks" and key ~= "secretIcon" and key ~= "thresholdAlpha"
+       and key ~= "secretStacks" and key ~= "secretIcon" and key ~= "secretName" and key ~= "thresholdAlpha"
+       and not (type(key) == "string" and key:find("^secretFlag"))
     then
       if issecretvalue(value) then
         state[key] = last[key]
@@ -5526,7 +5610,9 @@ local function ValueForSymbol(symbol, region, customCache, regionState, regionSt
   if triggerNum and sym then
     if regionStates[triggerNum] then
       if useHiddenStates or regionStates[triggerNum].show ~= false then
-        if regionStates[triggerNum][sym] then
+        if sym == "n" and type(regionStates[triggerNum].secretName) == "string" then
+          return regionStates[triggerNum].secretName
+        elseif regionStates[triggerNum][sym] then
           local value = regionStates[triggerNum][sym]
           if formatters[symbol] then
             return tostring(formatters[symbol](value, regionStates[triggerNum], triggerNum) or "") or ""
@@ -5538,6 +5624,11 @@ local function ValueForSymbol(symbol, region, customCache, regionState, regionSt
           return value or ""
         end
       end
+    end
+    return ""
+  elseif symbol == "n" and type(regionState.secretName) == "string" then
+    if useHiddenStates or regionState.show ~= false then
+      return regionState.secretName
     end
     return ""
   elseif regionState[symbol] then
@@ -5580,6 +5671,9 @@ function Private.ReplacePlaceHolders(textStr, region, customCache, useHiddenStat
       if (value) then
         textStr = tostring(value);
       end
+    end
+    if Private.IsSecret(textStr) then
+      return textStr
     end
     textStr = textStr:gsub("\\n", "\n");
     return textStr;
@@ -5637,6 +5731,9 @@ function Private.ReplacePlaceHolders(textStr, region, customCache, useHiddenStat
     result = result .. "%"
   end
 
+  if Private.IsSecret(result) then
+    return result
+  end
   textStr = result:gsub("\\n", "\n");
   return textStr;
 end
@@ -6488,6 +6585,9 @@ local textSymbols = {
 ---@param txt string
 ---@return string result
 function WeakAuras.ReplaceRaidMarkerSymbols(txt)
+  if Private.IsSecret(txt) then
+    return txt
+  end
   local start = 1
 
   while true do

@@ -2499,8 +2499,6 @@ function Private.Modernize(data, oldSnapshot)
     end
   end
 
-  -- WoW Forever: the Swing Timer Target In Range option went from yes/no to In Range/Out of Range, within
-  -- version 90. A boolean value is the old option, so this runs once per aura.
   if data.triggers then
     for _, triggerData in ipairs(data.triggers) do
       local trigger = triggerData.trigger

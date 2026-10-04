@@ -38,6 +38,7 @@ local properties = {
   color = {
     display = L["Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color",
   },
   fontSize = {
@@ -211,7 +212,11 @@ local function modify(parent, region, data)
     text:SetWordWrap(true);
     text:SetNonSpaceWrap(true);
     SetText = function(textStr)
-      if Private.IsSecret(textStr) or textStr ~= text.displayText then
+      if Private.IsSecret(textStr) then
+        if text:GetFont() then
+          text:SetText(textStr)
+        end
+      elseif textStr ~= text.displayText then
         if text:GetFont() then
           text:SetText(WeakAuras.ReplaceRaidMarkerSymbols(textStr));
         end
@@ -292,7 +297,7 @@ local function modify(parent, region, data)
           return
         end
         local textStr = Private.ReplacePlaceHolders(self.displayText, self, nil, false, formatters);
-        if textStr == "" then
+        if not Private.IsSecret(textStr) and textStr == "" then
           textStr = " "
         end
 

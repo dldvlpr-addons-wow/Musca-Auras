@@ -49,7 +49,6 @@ local AddonName = ...
 ---@class Private
 local Private = select(2, ...)
 
--- Unit names and GUIDs can be secret on the 12.x engine: a secret one is replaced, never compared
 local function Readable(value, fallback)
   if value == nil or Private.IsSecret(value) then
     return fallback
@@ -269,7 +268,6 @@ local function ScanMatchData(time, triggerInfo, unit, filter)
   if matchData[unit] and matchData[unit][filter] then
     for index, match in pairs(matchData[unit][filter]) do
       if match.secret and not triggerInfo.acceptsSecretAuras then
-        -- Its data is secret, only a native filter can test it
       elseif (not triggerInfo.auranames and not triggerInfo.auraspellids)
           or (triggerInfo.auranames and tContains(triggerInfo.auranames, match.name))
           or (triggerInfo.auraspellids and tContains(triggerInfo.auraspellids, match.spellId)) then
@@ -318,7 +316,6 @@ local function CheckScanFuncs(scanFuncs, unit, filter, key)
     for triggerInfo in pairs(scanFuncs) do
       local md = matchData[unit][filter][key]
       if md.secret and not triggerInfo.acceptsSecretAuras then
-        -- Its data is secret, only a native filter can test it
       elseif triggerInfo.fetchTooltip then
         md:UpdateTooltip(GetTime())
       end
@@ -423,7 +420,6 @@ if newAPI then
   }
 
   TooltipHelper.frame:SetScript("OnEvent", function(frame, event, dataInstanceID)
-    -- Tooltips are secret too, the rescan at the end of the restriction reads them again
     if Private.IsRestricted("auras") then
       return
     end
@@ -486,8 +482,6 @@ local function ArrayCompare(t1, t2)
   return true
 end
 
--- isSecret: an aura applied during the restriction, whose data is all secret. Only its aura instance ID is known,
--- and secretIcon, durationObject and secretStacks, drawn by native widgets.
 local function UpdateMatchData(time, matchDataChanged, unit, index, auraInstanceID, filter, name, icon, stacks, debuffClass, duration, expirationTime, unitCaster, isStealable, isBossDebuff, isCastByPlayer, spellId, modRate, points, isSecret, secretIcon)
   if not matchData[unit] then
     matchData[unit] = {}
@@ -619,7 +613,6 @@ local function UpdateMatchData(time, matchDataChanged, unit, index, auraInstance
     changed = true
   end
 
-  -- Readable again: the rescan at the end of the restriction replaces the secret aura data
   if data.secret ~= isSecret then
     data.secret = isSecret
     data.secretIcon = secretIcon
@@ -667,7 +660,6 @@ local function calculateNextCheck(triggerInfoRemaining, auraDataRemaining, auraD
   return nextCheck
 end
 
--- Elapsed Time filter: time since the aura was applied, and the time it crosses the filter value
 local function CheckElapsed(triggerInfo, auraData, time, nextCheck)
   local expirationTime, duration = auraData.expirationTime, auraData.duration
   if not (expirationTime and duration) or Private.IsSecret(expirationTime, duration) or duration <= 0 then
@@ -1613,7 +1605,6 @@ local function SortMatchDataByUnitIndex(a, b)
   if a.index and b.index and a.index ~= b.index then
     return a.index < b.index
   end
-  -- A secret aura has no expiration time: it comes last, by aura instance ID
   local aExpiration, bExpiration = a.expirationTime or math.huge, b.expirationTime or math.huge
   if aExpiration ~= bExpiration then
     return aExpiration < bExpiration
@@ -1721,7 +1712,6 @@ local function UpdateTriggerState(time, id, triggernum)
 
         local cloneId
         if auraData.unit then
-          -- A secret aura has no spell ID, its aura instance ID stands in
           cloneId = auraData.unit .. "." .. (auraData.GUID or auraData.unit) .. " " .. (auraData.spellId or auraData.auraInstanceID or "")
         else
           cloneId = (auraData.GUID or "unknown") .. " " .. (auraData.spellId or auraData.auraInstanceID or "")
@@ -1904,7 +1894,6 @@ do
 end
 
 local secretRescanPending = false
--- While aura data is secret, see RefreshRestrictedAuras
 local aurasRestricted = false
 local restrictedRefreshUnits = {}
 if not Private.hasCombatLog then
@@ -2015,16 +2004,12 @@ local function RemoveMatchData(matchDataChanged, unit, filter, auraInstanceID)
   end
 end
 
--- While aura data is secret, the UNIT_AURA payload and the aura fields cannot be read. The auras matched before
--- stay matched with their last readable data, and C_UnitAuras.GetAuraDuration gives each one a duration object,
--- which regions draw natively. It returns nothing once the aura is gone, and the aura is then removed.
 local function RefreshRestrictedAuras(matchDataChanged, unit)
   if not matchData[unit] then
     return
   end
   for filter, matchDataPerFilter in pairs(matchData[unit]) do
     for auraInstanceID, data in pairs(matchDataPerFilter) do
-      -- Only the auras that a trigger uses
       local ok, durationObject
       if next(data.auras) then
         ok, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
@@ -2033,9 +2018,7 @@ local function RefreshRestrictedAuras(matchDataChanged, unit)
         if durationObject == nil then
           RemoveMatchData(matchDataChanged, unit, filter, auraInstanceID)
         else
-          -- The stack text, "" below 2 stacks: secret, it changes without the duration object changing
           local stacksOk, secretStacks = pcall(C_UnitAuras.GetAuraApplicationDisplayCount, unit, auraInstanceID)
-          -- type() is the only test allowed on a secret
           data.secretStacks = nil
           if stacksOk and type(secretStacks) == "string" then
             data.secretStacks = secretStacks
@@ -2085,7 +2068,6 @@ do
     if (not aura or not aura.name) then
       return
     end
-    -- A secret aura has no readable dispel type: sub elements read its color from the client
     local debuffClass = not aura.isSecretPlaceholder and FixDebuffClass(aura.dispelName, aura.spellId) or nil
 
     local name, spellId, auraInstanceID = aura.name, aura.spellId, aura.auraInstanceID
@@ -2141,7 +2123,6 @@ do
             end
           end
         elseif aurasRestricted or Private.IsRestricted("auras") then
-          -- A full scan would clean the matched auras before failing on secret data
           restrictedRefreshUnits[unit] = true
           secretRescanPending = true
         else
@@ -2480,7 +2461,6 @@ local function EventHandler(frame, event, arg1, arg2, ...)
   elseif event == "UNIT_AURA" and newAPI
          and (aurasRestricted or Private.IsSecret(arg1, arg2 and arg2.isFullUpdate))
   then
-    -- Refreshed once per frame in OnUpdate, every tracked unit when the unit itself is secret
     if Private.IsSecret(arg1) then
       for unit in pairs(matchData) do
         restrictedRefreshUnits[unit] = true
@@ -2613,7 +2593,6 @@ if not Private.hasCombatLog then
     end
   end
   Buff2Frame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-  -- Rescan when aura data becomes readable again, which can be after the end of combat inside instances
   Private.callbacks:RegisterCallback("RestrictionChanged", function(_, isRestricted)
     local restricted = Private.IsRestricted("auras")
     if restricted == nil then
@@ -2730,114 +2709,9 @@ local PerUnitFrames = {
   end
 }
 
--- While aura data is secret, an aura applied during the restriction is not in matchData. The client still lists the
--- aura instance IDs of a unit, and tells for each instance whether reading it gives secret values: the readable ones
--- are handled as added auras. The secret ones wait for the rescan at the end of the restriction.
-local restrictedAddedAuras = {}
-local restrictedUpdateInfo = { addedAuras = restrictedAddedAuras }
-local unitScanFuncs = {
-  scanFuncName, scanFuncSpellId, scanFuncGeneral, scanFuncNameGroup, scanFuncSpellIdGroup, scanFuncGeneralGroup
-}
--- Same test as the early return of ScanUnitWithFilter
-local function HasScanFuncs(unit, filter)
-  for _, scanFuncs in ipairs(unitScanFuncs) do
-    if scanFuncs[unit] and scanFuncs[unit][filter] and next(scanFuncs[unit][filter]) then
-      return true
-    end
-  end
-  return false
-end
--- A trigger filtered by native filter only takes the secret auras too, see acceptsSecretAuras
-local function AcceptsSecretAuras(unit, filter)
-  for _, scanFuncs in ipairs({scanFuncGeneral, scanFuncGeneralGroup}) do
-    for triggerInfo in pairs(scanFuncs[unit] and scanFuncs[unit][filter] or {}) do
-      if triggerInfo.acceptsSecretAuras then
-        return true
-      end
-    end
-  end
-  return false
-end
-
-local function ReadSecretIcon(unit, auraInstanceID)
-  -- Every value read here can be secret: only type() tests them
-  local ok, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, unit, auraInstanceID)
-  if not ok or type(aura) == "nil" then
-    return nil
-  end
-  local iconOk, icon = pcall(function() return aura.icon end)
-  if iconOk then
-    return icon
-  end
-end
-
--- A secret aura: only its instance ID is known. The name stays empty and the other fields nil.
-local function CreateSecretAura(unit, filter, auraInstanceID)
-  return {
-    name = "",
-    auraInstanceID = auraInstanceID,
-    isHelpful = filter == "HELPFUL",
-    isHarmful = filter == "HARMFUL",
-    isSecretPlaceholder = true,
-    secretIcon = ReadSecretIcon(unit, auraInstanceID),
-  }
-end
-
-local function AddReadableRestrictedAuras(unit)
-  wipe(restrictedAddedAuras)
-  local secretAuras
-  for _, filter in ipairs({"HELPFUL", "HARMFUL"}) do
-    local ok, auraInstanceIDs
-    if HasScanFuncs(unit, filter) then
-      ok, auraInstanceIDs = pcall(C_UnitAuras.GetUnitAuraInstanceIDs, unit, filter)
-    end
-    if ok and type(auraInstanceIDs) == "table" and not Private.IsSecret(auraInstanceIDs) then
-      local known = matchData[unit] and matchData[unit][filter]
-      local acceptsSecret
-      for _, auraInstanceID in ipairs(auraInstanceIDs) do
-        if type(auraInstanceID) == "number" and not Private.IsSecret(auraInstanceID)
-           and not (known and known[auraInstanceID])
-        then
-          local restricted = Private.IsRestricted("auraInstance", unit, auraInstanceID)
-          if restricted == false then
-            local readOk, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, unit, auraInstanceID)
-            if readOk and aura then
-              tinsert(restrictedAddedAuras, aura)
-            end
-          elseif restricted then
-            if acceptsSecret == nil then
-              acceptsSecret = AcceptsSecretAuras(unit, filter)
-            end
-            if acceptsSecret then
-              tinsert(restrictedAddedAuras, CreateSecretAura(unit, filter, auraInstanceID))
-              secretAuras = secretAuras or {}
-              secretAuras[auraInstanceID] = filter
-            end
-          end
-        end
-      end
-    end
-  end
-  if restrictedAddedAuras[1] and not pcall(ScanUnit, GetTime(), unit, restrictedUpdateInfo) then
-    secretRescanPending = true
-  end
-  -- Timer and stack text of the secret auras, then kept up to date by RefreshRestrictedAuras
-  for auraInstanceID, filter in pairs(secretAuras or {}) do
-    local data = matchData[unit] and matchData[unit][filter] and matchData[unit][filter][auraInstanceID]
-    if data then
-      local durationOk, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
-      data.durationObject = nil
-      if durationOk then
-        data.durationObject = durationObject
-      end
-      local stacksOk, secretStacks = pcall(C_UnitAuras.GetAuraApplicationDisplayCount, unit, auraInstanceID)
-      data.secretStacks = nil
-      if stacksOk and type(secretStacks) == "string" then
-        data.secretStacks = secretStacks
-      end
-    end
-  end
-end
+local AddReadableRestrictedAuras = Private.CreateAddReadableRestrictedAuras(matchData, ScanUnit, function()
+  secretRescanPending = true
+end, scanFuncName, scanFuncSpellId, scanFuncGeneral, scanFuncNameGroup, scanFuncSpellIdGroup, scanFuncGeneralGroup)
 
 local singleMatchDataChanged = {}
 Buff2Frame:SetScript("OnUpdate", function()
@@ -2857,15 +2731,11 @@ Buff2Frame:SetScript("OnUpdate", function()
     if Private.hasCombatLog then
       UpdateStates(matchDataChanged, time)
     else
-      -- One aura at a time, so that secret unit data (a GUID for example) only stops the aura that reads it.
-      -- It is retried by the rescan at the end of the restriction.
       for id, triggers in pairs(matchDataChanged) do
         singleMatchDataChanged[id] = triggers
         local ok, errorMessage = pcall(UpdateStates, singleMatchDataChanged, time)
         singleMatchDataChanged[id] = nil
         if not ok then
-          -- Closes the StartProfileAura of UpdateStates, otherwise the profiler stops counting this aura.
-          -- ponytail: a start nested deeper (region, conditions) stays open, unwind the profiler if it matters
           Private.StopProfileAura(id)
           secretRescanPending = true
           if not (aurasRestricted or Private.IsRestricted("auras")) then
@@ -3163,7 +3033,6 @@ function BuffTrigger.Rename(oldid, newid)
   matchDataChanged[oldid] = nil
 end
 
--- Native filter of the trigger, for C_UnitAuras.IsAuraFilteredOutByInstanceID: "CROWD_CONTROL|!PLAYER" for example
 local function NativeFilterString(trigger)
   if not (newAPI and C_UnitAuras.IsAuraFilteredOutByInstanceID and trigger.useNativeFilter)
      or trigger.unit == "multi" then
@@ -3184,8 +3053,6 @@ local function NativeFilterString(trigger)
   return tokens[1] and table.concat(tokens, "|") or nil
 end
 
--- True when the aura instance of matchData passes the native filter. The answer is never secret, so it also works
--- for auras applied during the restriction.
 local function PassesNativeFilter(matchData, nativeFilter)
   if not matchData.auraInstanceID then
     return false
@@ -3195,8 +3062,6 @@ local function PassesNativeFilter(matchData, nativeFilter)
   return ok and filteredOut == false
 end
 
---- @return function? scanFunc
---- @return boolean onlyNativeFilter the native filter is the only check
 local function createScanFunc(trigger)
   local canHaveMatchCheck = CanHaveMatchCheck(trigger)
   local nativeFilter = canHaveMatchCheck and NativeFilterString(trigger)
@@ -3224,7 +3089,6 @@ local function createScanFunc(trigger)
     return nil, false
   end
 
-  -- The generated code runs in the global environment: helpers come as chunk arguments
   local preamble = {"local PassesNativeFilter = ...\n"}
 
   local ret = {[=[
@@ -3664,8 +3528,6 @@ function BuffTrigger.Add(data)
         remainingFunc = remFunc,
         remainingCheck = trigger.unit ~= "multi" and CanHaveMatchCheck(trigger) and trigger.useRem and tonumber(trigger.rem) or 0,
         elapsedFunc = elapsedFunc,
-        -- Auras applied during the restriction, all secret, match a trigger that filters them by native filter only
-        -- The time filters need an expiration time, which a secret aura does not have
         acceptsSecretAuras = onlyNativeFilter and not names and not auraspellids and not trigger.fetchTooltip
                              and not remFunc and not elapsedFunc,
         elapsedCheck = elapsedFunc and tonumber(trigger.elapsed) or 0,
@@ -4295,7 +4157,6 @@ local function GetUnit(guid)
 end
 
 local function TrackUid(unit)
-  -- A secret GUID cannot index the tracking tables: the unit is released until it is readable
   local GUID = Readable(UnitGUID(unit))
   if GUID then
     SetUID(GUID, unit)

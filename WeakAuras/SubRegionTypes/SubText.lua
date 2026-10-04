@@ -144,6 +144,9 @@ end
 local function getRotateOffset(object, degrees, point)
   -- Any rotation at all?
   if degrees ~= 0 then
+    if Private.IsSecret(object:GetStringHeight(), object:GetStringWidth()) then
+      return 0, 0
+    end
     -- Basic offset
     local originoffset = object:GetStringHeight() / 2;
     local xo = -1 * originoffset * sin(degrees);
@@ -197,121 +200,8 @@ local function create()
   return region;
 end
 
--- WoW Forever: the client draws the text of values that addons cannot read in combat.
--- A text that is only %p follows the duration object of the region, and a text that is only %s shows the secret
--- stack text of the state. Any other text uses the last readable values.
-local canBindDurationText = C_DurationUtil ~= nil and C_DurationUtil.CreateDurationTextBinding ~= nil
-  and C_StringUtil ~= nil and C_StringUtil.CreateSecondsFormatter ~= nil
-local durationFormatters = {}
-
--- Closest client formatter to the %p time format options. The client shows at most one decimal, and has no
--- "63:42" format: the WeakAuras format uses the client's default one.
-local function ConfigureDurationFormatter(formatter, timeFormat, threshold)
-  if timeFormat == 1 or timeFormat == 2 then
-    -- Old Blizzard: one unit ("3m"), modern Blizzard: two units ("3m 7s")
-    formatter:SetDesiredUnitCount(timeFormat)
-    if Enum.SecondsFormatterAbbreviation then
-      formatter:SetDefaultAbbreviation(Enum.SecondsFormatterAbbreviation.OneLetter)
-    end
-  end
-  if tonumber(threshold) then
-    formatter:SetMillisecondsThreshold(tonumber(threshold))
-  end
-end
-
-local function GetDurationFormatter(timeFormat, threshold)
-  local key = tostring(timeFormat) .. ":" .. tostring(threshold)
-  if not durationFormatters[key] then
-    local formatter = C_StringUtil.CreateSecondsFormatter()
-    -- An option the client refuses keeps its default, instead of failing on every frame
-    if not pcall(ConfigureDurationFormatter, formatter, timeFormat, threshold) then
-      formatter = C_StringUtil.CreateSecondsFormatter()
-    end
-    durationFormatters[key] = formatter
-  end
-  return durationFormatters[key]
-end
-
-local function BindDurationText(subRegion, durationObject)
-  local binding = subRegion.durationTextBinding
-  if not binding then
-    -- Remembered before the setup, so that a client refusing it fails once instead of every frame
-    subRegion.durationTextBinding = false
-    binding = C_DurationUtil.CreateDurationTextBinding()
-    binding:SetFontString(subRegion.text)
-    subRegion.durationTextBinding = binding
-  end
-  local formatter = GetDurationFormatter(subRegion.durationTimeFormat, subRegion.durationThreshold)
-  if subRegion.boundDurationFormatter ~= formatter then
-    binding:SetFormatter(formatter)
-    subRegion.boundDurationFormatter = formatter
-  end
-  if subRegion.boundDurationObject ~= durationObject then
-    binding:SetDuration(durationObject)
-    binding:SetEnabled(true)
-    subRegion.boundDurationObject = durationObject
-  end
-end
-
-local function UnbindDurationText(subRegion)
-  if subRegion.boundDurationObject then
-    subRegion.durationTextBinding:SetEnabled(false)
-    subRegion.boundDurationObject = nil
-  end
-end
-
--- Placeholders that a secret progress can fill: the value ones and the total ones
-local secretValuePlaceholders = {
-  p = "value", value = "value", health = "value", power = "value",
-  t = "total", total = "total", maxhealth = "total", maxpower = "total",
-  percenthealth = "percent", percentpower = "percent",
-}
-
--- Returns true when the client draws the text. holder has the FontString (text) and the binding fields,
--- parent the progress (durationObject, secretValue, secretTotal, state)
-local function UpdateNativeText(holder, parent, textStr)
-  if textStr == "%p" and canBindDurationText and holder.durationTextBinding ~= false and parent.durationObject
-     and pcall(BindDurationText, holder, parent.durationObject)
-  then
-    return true
-  end
-  UnbindDurationText(holder)
-  local secretStacks = textStr == "%s" and parent.state and parent.state.secretStacks
-  -- Only set during the restriction, secret or not. type() is the only test allowed on a secret
-  if type(secretStacks) == "string" then
-    holder.text:SetText(secretStacks)
-    return true
-  end
-  if type(parent.secretValue) == "number" and textStr:find("%%[%w%.]") and not textStr:find("{", 1, true) then
-    local values, unknown = {}, false
-    local formatString = textStr:gsub("%%%%", ""):gsub("%%([%w%.]+)", function(placeholder)
-      local kind = secretValuePlaceholders[placeholder]
-      if not kind then
-        unknown = true
-        return ""
-      end
-      if kind == "percent" then
-        local percent = parent.state and parent.state.secretPercentText
-        if type(percent) ~= "number" then
-          unknown = true
-          return ""
-        end
-        values[#values + 1] = percent
-        return ""
-      end
-      values[#values + 1] = kind == "value" and parent.secretValue or parent.secretTotal
-      return ""
-    end)
-    if not unknown then
-      formatString = formatString:gsub("%%", "%%%%"):gsub("", "%%%%"):gsub("", "%%s"):gsub("", "%%.0f")
-      holder.text:SetText(string.format(formatString, unpack(values)))
-      return true
-    end
-  end
-  return false
-end
-Private.UpdateNativeText = UpdateNativeText
-Private.UnbindDurationText = UnbindDurationText
+local UpdateNativeText = Private.UpdateNativeText
+local UnbindDurationText = Private.UnbindDurationText
 
 local function onAcquire(subRegion)
   subRegion:Show()
@@ -440,7 +330,6 @@ local function modify(parent, region, parentData, data, first)
   region.subTextFormatters, region.everyFrameFormatters = Private.CreateFormatters(texts, getter, false, parentData)
 
   function region:ConfigureTextUpdate()
-    -- A text that is no longer only %p must not be overwritten by the duration text binding
     UnbindDurationText(region)
     Private.CDMAuraProgress.HideText(region)
     local nativeKind, nativeTrigger = Private.ParseCDMText(region.text_text)

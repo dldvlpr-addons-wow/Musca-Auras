@@ -1,251 +1,406 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
-local Native = {}
-Private.ProgressTextureNative = Native
-local white = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite"
 
-local function Warning(region, message)
-  if region.nativeProgressUID and Private.AuraWarnings then
-    Private.AuraWarnings.UpdateWarning(region.nativeProgressUID, "native_progress_texture", message and "warning" or nil, message)
+local NativeProgress = {}
+Private.ProgressTextureNative = NativeProgress
+
+local SOLID_WHITE = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite"
+local WARNING_ID = "native_progress_texture"
+local NO_RADIAL_TEXT = "This client does not support circular Progress Textures with restricted values."
+local NO_INVERSE_TEXT = "Inverse circular progress needs Health or Power with the full range when values are restricted."
+
+local isRing = {CLOCKWISE = true, ANTICLOCKWISE = true}
+local isUpright = {VERTICAL = true, VERTICAL_INVERSE = true}
+local isBackward = {HORIZONTAL_INVERSE = true, VERTICAL_INVERSE = true}
+local deficitSources = {value = true, health = true, power = true}
+local customRangeFields = {"adjustedMin", "adjustedMax", "adjustedMinRelPercent", "adjustedMaxRelPercent"}
+
+local function PostWarning(owner, text)
+  local warningUid = owner.nativeProgressUID
+  if warningUid and Private.AuraWarnings then
+    Private.AuraWarnings.UpdateWarning(warningUid, WARNING_ID, text and "warning" or nil, text)
   end
 end
 
-function Native.IsCircular(orientation)
-  return orientation == "CLOCKWISE" or orientation == "ANTICLOCKWISE"
+function NativeProgress.IsCircular(direction)
+  return isRing[direction] == true
 end
 
-function Native.Create(parent)
-  local bar = CreateFrame("StatusBar", nil, parent)
-  bar:SetAllPoints(parent)
-  local texture = bar:CreateTexture(nil, "ARTWORK")
-  local mask = bar:CreateMaskTexture()
-  mask:SetTexture(white, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-  bar:SetStatusBarTexture(white)
-  local result = {
-    bar = bar,
-    texture = texture,
-    mask = mask,
-    coord = Private.TextureCoords.create(texture),
-    linearTexture = bar:GetStatusBarTexture(),
+function NativeProgress.Create(host)
+  local statusBar = CreateFrame("StatusBar", nil, host)
+  statusBar:SetAllPoints(host)
+  local art = statusBar:CreateTexture(nil, "ARTWORK")
+  local clipMask = statusBar:CreateMaskTexture()
+  clipMask:SetTexture(SOLID_WHITE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+  statusBar:SetStatusBarTexture(SOLID_WHITE)
+  local widget = {
+    bar = statusBar,
+    texture = art,
+    mask = clipMask,
+    coord = Private.TextureCoords.create(art),
+    linearTexture = statusBar:GetStatusBarTexture(),
   }
-  bar:Hide()
-  return result
+  statusBar:Hide()
+  return widget
 end
 
-function Native.SupportsRadial(native)
-  return Enum.StatusBarRenderMode and native.bar.SetRenderMode and native.texture.SetRadialProgressBarPercent
+function NativeProgress.SupportsRadial(widget)
+  return Enum.StatusBarRenderMode and widget.bar.SetRenderMode and widget.texture.SetRadialProgressBarPercent
 end
 
-function Native.Style(native, settings, inverse)
-  local bar, texture = native.bar, native.texture
-  local circular = Native.IsCircular(settings.orientation)
-  if circular and not Native.SupportsRadial(native) then bar:Hide(); return false end
-  native.circular = circular
-  texture:RemoveMaskTexture(native.mask)
-  texture:ClearAllPoints()
-  texture:SetAllPoints(bar)
-  Private.SetTextureOrAtlas(texture, settings.currentTexture, settings.textureWrapMode, settings.textureWrapMode)
-  texture:SetBlendMode(settings.blendMode or "BLEND")
-  texture:SetDesaturated(settings.desaturateForeground == true)
-  texture:SetRotation(math.rad(settings.auraRotation or 0))
-  native.coord:SetFull()
-  native.coord:Transform(settings.crop_x or 1, settings.crop_y or 1, settings.effectiveTexRotation or settings.texRotation or 0,
-    not settings.mirror ~= not settings.mirror_h, settings.mirror_v, circular and 0 or settings.user_x, circular and 0 or settings.user_y)
-  native.coord:Apply()
-  texture:SetVertexColor(settings.color_anim_r or settings.color_r or 1, settings.color_anim_g or settings.color_g or 1,
-    settings.color_anim_b or settings.color_b or 1, settings.color_anim_a or settings.color_a or 1)
-  if circular then
-    bar:SetRenderMode(Enum.StatusBarRenderMode.Radial)
-    bar:SetStatusBarTexture(texture)
-    bar:SetReverseFill(false)
-    bar:SetStatusBarColor(settings.color_anim_r or settings.color_r or 1, settings.color_anim_g or settings.color_g or 1,
-      settings.color_anim_b or settings.color_b or 1, settings.color_anim_a or settings.color_a or 1)
-    native.linearTexture:Hide()
-    texture:SetRadialProgressBarStartOffset(((settings.startAngle or 0) + 180) % 360 / 360)
-    texture:SetRadialProgressBarEndOffset(((settings.endAngle or 360) + 180) % 360 / 360)
-    texture:SetRadialProgressBarReverse(settings.orientation == "ANTICLOCKWISE")
-    texture:SetRadialProgressBarFeather(0)
-  else
-    if bar.SetRenderMode and Enum.StatusBarRenderMode then bar:SetRenderMode(Enum.StatusBarRenderMode.Linear) end
-    if texture.ClearRadialProgressBar then texture:ClearRadialProgressBar() end
-    bar:SetStatusBarTexture(native.linearTexture)
-    bar:SetStatusBarColor(1, 1, 1, 0)
-    local vertical = settings.orientation == "VERTICAL" or settings.orientation == "VERTICAL_INVERSE"
-    local reverse = settings.orientation == "HORIZONTAL_INVERSE" or settings.orientation == "VERTICAL_INVERSE"
-    bar:SetOrientation(vertical and "VERTICAL" or "HORIZONTAL")
-    bar:SetReverseFill(not reverse ~= not inverse)
-    local mask, fill = native.mask, native.linearTexture
-    mask:ClearAllPoints()
-    if not inverse then
-      mask:SetPoint("TOPLEFT", fill, "TOPLEFT", -0.01, 0.01)
-      mask:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT")
-    elseif vertical then
-      mask:SetPoint("TOPLEFT", reverse and bar or fill, reverse and "TOPLEFT" or "BOTTOMLEFT", -0.01, 0.01)
-      mask:SetPoint("BOTTOMRIGHT", reverse and fill or bar, reverse and "TOPRIGHT" or "BOTTOMRIGHT")
-    else
-      mask:SetPoint("TOPLEFT", reverse and fill or bar, reverse and "TOPRIGHT" or "TOPLEFT", -0.01, 0.01)
-      mask:SetPoint("BOTTOMRIGHT", reverse and bar or fill, reverse and "BOTTOMRIGHT" or "BOTTOMLEFT")
-    end
-    if settings.compress then
-      texture:ClearAllPoints()
-      texture:SetAllPoints(mask)
-    else
-      texture:AddMaskTexture(mask)
-    end
+local function ResolveColor(look)
+  local red = look.color_anim_r or look.color_r or 1
+  local green = look.color_anim_g or look.color_g or 1
+  local blue = look.color_anim_b or look.color_b or 1
+  local alpha = look.color_anim_a or look.color_a or 1
+  return red, green, blue, alpha
+end
+
+local function PaintArt(widget, look, ring)
+  local art = widget.texture
+  art:RemoveMaskTexture(widget.mask)
+  art:ClearAllPoints()
+  art:SetAllPoints(widget.bar)
+  Private.SetTextureOrAtlas(art, look.currentTexture, look.textureWrapMode, look.textureWrapMode)
+  art:SetBlendMode(look.blendMode or "BLEND")
+  art:SetDesaturated(look.desaturateForeground == true)
+  art:SetRotation(math.rad(look.auraRotation or 0))
+
+  local texCoord = widget.coord
+  texCoord:SetFull()
+  local mirrorX = (look.mirror and true or false) ~= (look.mirror_h and true or false)
+  local shiftX, shiftY = look.user_x, look.user_y
+  if ring then
+    shiftX, shiftY = 0, 0
   end
-  texture:Show()
+  local cropX, cropY = look.crop_x or 1, look.crop_y or 1
+  local turn = look.effectiveTexRotation or look.texRotation or 0
+  texCoord:Transform(cropX, cropY, turn, mirrorX, look.mirror_v, shiftX, shiftY)
+  texCoord:Apply()
+  art:SetVertexColor(ResolveColor(look))
+end
+
+local function AngleToOffset(degrees)
+  return (degrees + 180) % 360 / 360
+end
+
+local function PrepareRing(widget, look)
+  local statusBar, art = widget.bar, widget.texture
+  statusBar:SetRenderMode(Enum.StatusBarRenderMode.Radial)
+  statusBar:SetStatusBarTexture(art)
+  statusBar:SetReverseFill(false)
+  statusBar:SetStatusBarColor(ResolveColor(look))
+  widget.linearTexture:Hide()
+  art:SetRadialProgressBarStartOffset(AngleToOffset(look.startAngle or 0))
+  art:SetRadialProgressBarEndOffset(AngleToOffset(look.endAngle or 360))
+  art:SetRadialProgressBarReverse(look.orientation == "ANTICLOCKWISE")
+  art:SetRadialProgressBarFeather(0)
+end
+
+local function PinInvertedMask(clipMask, statusBar, fillTexture, upright, backward)
+  if not upright then
+    if backward then
+      clipMask:SetPoint("TOPLEFT", fillTexture, "TOPRIGHT", -0.01, 0.01)
+      clipMask:SetPoint("BOTTOMRIGHT", statusBar, "BOTTOMRIGHT")
+    else
+      clipMask:SetPoint("TOPLEFT", statusBar, "TOPLEFT", -0.01, 0.01)
+      clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "BOTTOMLEFT")
+    end
+  elseif backward then
+    clipMask:SetPoint("TOPLEFT", statusBar, "TOPLEFT", -0.01, 0.01)
+    clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "TOPRIGHT")
+  else
+    clipMask:SetPoint("TOPLEFT", fillTexture, "BOTTOMLEFT", -0.01, 0.01)
+    clipMask:SetPoint("BOTTOMRIGHT", statusBar, "BOTTOMRIGHT")
+  end
+end
+
+local function PrepareStrip(widget, look, inverted)
+  local statusBar, art = widget.bar, widget.texture
+  local clipMask, fillTexture = widget.mask, widget.linearTexture
+  if statusBar.SetRenderMode and Enum.StatusBarRenderMode then
+    statusBar:SetRenderMode(Enum.StatusBarRenderMode.Linear)
+  end
+  if art.ClearRadialProgressBar then
+    art:ClearRadialProgressBar()
+  end
+  statusBar:SetStatusBarTexture(fillTexture)
+  statusBar:SetStatusBarColor(1, 1, 1, 0)
+
+  local direction = look.orientation
+  local upright = isUpright[direction] == true
+  local backward = isBackward[direction] == true
+  statusBar:SetOrientation(upright and "VERTICAL" or "HORIZONTAL")
+  statusBar:SetReverseFill(backward ~= (inverted and true or false))
+
+  clipMask:ClearAllPoints()
+  if not inverted then
+    clipMask:SetPoint("TOPLEFT", fillTexture, "TOPLEFT", -0.01, 0.01)
+    clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "BOTTOMRIGHT")
+  else
+    PinInvertedMask(clipMask, statusBar, fillTexture, upright, backward)
+  end
+
+  if not look.compress then
+    art:AddMaskTexture(clipMask)
+  else
+    art:ClearAllPoints()
+    art:SetAllPoints(clipMask)
+  end
+end
+
+function NativeProgress.Style(widget, look, inverted)
+  local ring = NativeProgress.IsCircular(look.orientation)
+  if ring and not NativeProgress.SupportsRadial(widget) then
+    widget.bar:Hide()
+    return false
+  end
+  widget.circular = ring
+  PaintArt(widget, look, ring)
+  if not ring then
+    PrepareStrip(widget, look, inverted)
+  else
+    PrepareRing(widget, look)
+  end
+  widget.texture:Show()
   return true
 end
 
-local function HideForeground(region)
-  region.foreground:Hide()
-  region.foregroundSpinner:Hide()
-  for _, texture in ipairs(region.extraTextures) do texture:Hide() end
-  for _, spinner in ipairs(region.extraSpinners) do spinner:Hide() end
-end
-
-function Native.Stop(region)
-  if not region.nativeProgressActive then return end
-  region.nativeProgressActive = nil
-  region.nativeProgressKind = nil
-  region.nativeProgress.bar:Hide()
-  Warning(region)
-  if region.circular then region.foregroundSpinner:Show() else region.foreground:Show() end
-end
-
-local function Start(region, kind)
-  region.nativeProgress = region.nativeProgress or Native.Create(region)
-  if not region.nativeProgressActive or region.nativeProgressKind ~= kind then
-    region.nativeProgressDirty = true
-    region.smoothProgress:ResetSmoothedValue()
+local function HideLegacyForeground(owner)
+  owner.foreground:Hide()
+  owner.foregroundSpinner:Hide()
+  for _, extra in ipairs(owner.extraTextures) do
+    extra:Hide()
   end
-  region.nativeProgressActive = true
-  region.nativeProgressKind = kind
-  if region.FrameTick then
-    region.FrameTick = nil
-    region.subRegionEvents:RemoveSubscriber("FrameTick", region)
+  for _, extraSpinner in ipairs(owner.extraSpinners) do
+    extraSpinner:Hide()
   end
-  HideForeground(region)
-  return region.nativeProgress
 end
 
-local function StyleRegion(region, native, inverse)
-  if not region.nativeProgressDirty then return native.available end
-  region.nativeProgressDirty = nil
-  native.available = Native.Style(native, region, inverse)
-  Warning(region, not native.available and "This client does not support circular Progress Textures with restricted values." or nil)
-  return native.available
+function NativeProgress.Stop(owner)
+  if not owner.nativeProgressActive then
+    return
+  end
+  owner.nativeProgressActive = nil
+  owner.nativeProgressKind = nil
+  owner.nativeProgress.bar:Hide()
+  PostWarning(owner)
+  local fallback = owner.circular and owner.foregroundSpinner or owner.foreground
+  fallback:Show()
 end
 
-local function InverseValue(region)
-  local state = region.cdmProgressState or region.state
-  local source = region.progressSource
-  local property = source and source[1] > 0 and source[3] or "value"
-  if not state or region.adjustedMin or region.adjustedMax or region.adjustedMinRelPercent or region.adjustedMaxRelPercent then return end
-  if type(state.health) ~= "number" and type(state.power) ~= "number" then return end
-  if property == "value" or property == "health" or property == "power" then return state.deficit end
-  if property == "deficit" then return state.value end
+local function Claim(owner, mode)
+  local widget = owner.nativeProgress
+  if not widget then
+    widget = NativeProgress.Create(owner)
+    owner.nativeProgress = widget
+  end
+  local switching = not owner.nativeProgressActive or owner.nativeProgressKind ~= mode
+  if switching then
+    owner.nativeProgressDirty = true
+    owner.smoothProgress:ResetSmoothedValue()
+  end
+  owner.nativeProgressActive = true
+  owner.nativeProgressKind = mode
+  if owner.FrameTick then
+    owner.FrameTick = nil
+    owner.subRegionEvents:RemoveSubscriber("FrameTick", owner)
+  end
+  HideLegacyForeground(owner)
+  return widget
 end
 
-function Native.UpdateValue(region)
-  local native = Start(region, "value")
-  local inverse = region.inverseDirection == true
-  if not StyleRegion(region, native, inverse and not region.circular) then return end
-  local value = region.value
-  if inverse and region.circular then
-    value = InverseValue(region)
-    if type(value) ~= "number" then
-      native.bar:Hide()
-      Warning(region, "Inverse circular progress needs Health or Power with the full range when values are restricted.")
+local function RestyleIfDirty(owner, widget, inverted)
+  if owner.nativeProgressDirty then
+    owner.nativeProgressDirty = nil
+    local supported = NativeProgress.Style(widget, owner, inverted)
+    widget.available = supported
+    PostWarning(owner, not supported and NO_RADIAL_TEXT or nil)
+  end
+  return widget.available
+end
+
+local function UsesCustomRange(owner)
+  for _, field in ipairs(customRangeFields) do
+    if owner[field] then
+      return true
+    end
+  end
+  return false
+end
+
+local function MissingAmount(owner)
+  local snapshot = owner.cdmProgressState or owner.state
+  local progressSource = owner.progressSource
+  local sourceKey = "value"
+  if progressSource and progressSource[1] > 0 then
+    sourceKey = progressSource[3] or "value"
+  end
+  if not snapshot or UsesCustomRange(owner) then
+    return nil
+  end
+  local hasHealth = type(snapshot.health) == "number"
+  if not hasHealth and type(snapshot.power) ~= "number" then
+    return nil
+  end
+  if deficitSources[sourceKey] then
+    return snapshot.deficit
+  elseif sourceKey == "deficit" then
+    return snapshot.value
+  end
+end
+
+function NativeProgress.UpdateValue(owner)
+  local widget = Claim(owner, "value")
+  local inverted = owner.inverseDirection == true
+  local ring = owner.circular
+  if not RestyleIfDirty(owner, widget, inverted and not ring) then
+    return
+  end
+  local amount = owner.value
+  if inverted and ring then
+    amount = MissingAmount(owner)
+    if type(amount) ~= "number" then
+      widget.bar:Hide()
+      PostWarning(owner, NO_INVERSE_TEXT)
       return
     end
   end
-  native.bar:SetMinMaxValues(region.minProgress or 0, region.maxProgress or region.total)
-  native.bar:SetValue(value, region.useSmoothProgress and Enum.StatusBarInterpolation.ExponentialEaseOut or Enum.StatusBarInterpolation.Immediate)
-  Warning(region)
-  native.bar:Show()
+  local statusBar = widget.bar
+  local interpolation = Enum.StatusBarInterpolation
+  local easing = owner.useSmoothProgress and interpolation.ExponentialEaseOut or interpolation.Immediate
+  local low = owner.minProgress or 0
+  local high = owner.maxProgress or owner.total
+  statusBar:SetMinMaxValues(low, high)
+  statusBar:SetValue(amount, easing)
+  PostWarning(owner)
+  statusBar:Show()
 end
 
-function Native.UpdateDuration(region)
-  local native = Start(region, "duration")
-  if not StyleRegion(region, native, false) then return end
-  if not Private.IsDurationObject(region.durationObject) then native.bar:Hide(); return end
-  local inverse = not region.inverse ~= not region.inverseDirection
-  native.bar:SetTimerDuration(region.durationObject, Enum.StatusBarInterpolation.Immediate,
-    inverse and Enum.StatusBarTimerDirection.ElapsedTime or Enum.StatusBarTimerDirection.RemainingTime)
-  native.bar:Show()
-end
-
-function Native.Refresh(region)
-  if not region.nativeProgressActive then return end
-  region.nativeProgressDirty = true
-  if region.nativeProgressKind == "duration" then Native.UpdateDuration(region) else Native.UpdateValue(region) end
-end
-
-function Native.StyleAura(native, data, parent)
-  if native.progressBackground then native.progressBackground:Hide() end
-  native.progressTexture = native.progressTexture or Native.Create(parent)
-  local progress = native.progressTexture
-  local settings = {
-    orientation = data.orientation,
-    currentTexture = data.foregroundTexture,
-    textureWrapMode = data.textureWrapMode,
-    blendMode = data.blendMode,
-    desaturateForeground = data.desaturateForeground,
-    auraRotation = data.auraRotation,
-    crop_x = 1 + (data.crop_x or 0),
-    crop_y = 1 + (data.crop_y or 0),
-    texRotation = data.rotation,
-    mirror = data.mirror,
-    user_x = -(data.user_x or 0),
-    user_y = data.user_y or 0,
-    compress = data.compress,
-    startAngle = data.startAngle,
-    endAngle = data.endAngle,
-    color_r = data.foregroundColor[1],
-    color_g = data.foregroundColor[2],
-    color_b = data.foregroundColor[3],
-    color_a = data.foregroundColor[4],
-  }
-  if not Native.Style(progress, settings, false) then return end
-  native.progressBackgrounds = native.progressBackgrounds or {}
-  local circular = Native.IsCircular(data.orientation)
-  local key = circular and "circular" or "linear"
-  local background = native.progressBackgrounds[key]
-  local backgroundBase = circular and Private.CircularProgressTextureBase or Private.LinearProgressTextureBase
-  if not background then
-    background = backgroundBase.create(parent, "BACKGROUND", 0)
-    native.progressBackgrounds[key] = background
+function NativeProgress.UpdateDuration(owner)
+  local widget = Claim(owner, "duration")
+  if not RestyleIfDirty(owner, widget, false) then
+    return
   end
-  native.progressBackground = background
-  backgroundBase.modify(background, {
-    crop_x = settings.crop_x,
-    crop_y = settings.crop_y,
-    mirror = data.mirror,
-    texRotation = data.rotation or 0,
-    texture = data.sameTexture and data.foregroundTexture or data.backgroundTexture,
-    blendMode = data.blendMode,
-    desaturated = data.desaturateBackground,
-    auraRotation = math.rad(data.auraRotation or 0),
-    width = data.width,
-    height = data.height,
-    offset = data.backgroundOffset or 0,
-    user_x = settings.user_x,
-    user_y = settings.user_y,
-    textureWrapMode = data.textureWrapMode,
-  })
-  local startAngle = (data.startAngle or 0) % 360
-  local endAngle = (data.endAngle or 360) % 360
-  if endAngle <= startAngle then endAngle = endAngle + 360 end
-  if circular then
-    background:SetProgress(startAngle, endAngle)
+  local statusBar = widget.bar
+  local timer = owner.durationObject
+  if not Private.IsDurationObject(timer) then
+    statusBar:Hide()
+    return
+  end
+  local timerDirection = Enum.StatusBarTimerDirection
+  local countUp = (owner.inverse and true or false) ~= (owner.inverseDirection and true or false)
+  local mode = countUp and timerDirection.ElapsedTime or timerDirection.RemainingTime
+  statusBar:SetTimerDuration(owner.durationObject, Enum.StatusBarInterpolation.Immediate, mode)
+  statusBar:Show()
+end
+
+function NativeProgress.Refresh(owner)
+  if not owner.nativeProgressActive then
+    return
+  end
+  owner.nativeProgressDirty = true
+  if owner.nativeProgressKind == "duration" then
+    NativeProgress.UpdateDuration(owner)
   else
-    background:SetOrientation(data.orientation)
-    background:SetValue(0, 1)
+    NativeProgress.UpdateValue(owner)
   end
-  background:SetColor(unpack(data.backgroundColor))
-  background:Show()
-  native.bar = progress.bar
-  native.button:SetDurationBar(progress.bar, {direction = data.inverse and Enum.StatusBarTimerDirection.ElapsedTime or Enum.StatusBarTimerDirection.RemainingTime})
-  progress.bar:Show()
+end
+
+local function MakeAuraLook(auraData)
+  local tint = auraData.foregroundColor
+  return {
+    orientation = auraData.orientation,
+    currentTexture = auraData.foregroundTexture,
+    textureWrapMode = auraData.textureWrapMode,
+    blendMode = auraData.blendMode,
+    desaturateForeground = auraData.desaturateForeground,
+    auraRotation = auraData.auraRotation,
+    crop_x = 1 + (auraData.crop_x or 0),
+    crop_y = 1 + (auraData.crop_y or 0),
+    texRotation = auraData.rotation,
+    mirror = auraData.mirror,
+    user_x = -(auraData.user_x or 0),
+    user_y = auraData.user_y or 0,
+    compress = auraData.compress,
+    startAngle = auraData.startAngle,
+    endAngle = auraData.endAngle,
+    color_r = tint[1],
+    color_g = tint[2],
+    color_b = tint[3],
+    color_a = tint[4],
+  }
+end
+
+local function BackdropFor(widget, host, ring)
+  local cache = widget.progressBackgrounds
+  if not cache then
+    cache = {}
+    widget.progressBackgrounds = cache
+  end
+  local backdropType = ring and Private.CircularProgressTextureBase or Private.LinearProgressTextureBase
+  local cacheKey = ring and "circular" or "linear"
+  local backdrop = cache[cacheKey]
+  if not backdrop then
+    backdrop = backdropType.create(host, "BACKGROUND", 0)
+    cache[cacheKey] = backdrop
+  end
+  return backdrop, backdropType
+end
+
+function NativeProgress.StyleAura(widget, auraData, host)
+  if widget.progressBackground then
+    widget.progressBackground:Hide()
+  end
+  local foregroundWidget = widget.progressTexture
+  if not foregroundWidget then
+    foregroundWidget = NativeProgress.Create(host)
+    widget.progressTexture = foregroundWidget
+  end
+  local look = MakeAuraLook(auraData)
+  if not NativeProgress.Style(foregroundWidget, look, false) then
+    return
+  end
+
+  local ring = NativeProgress.IsCircular(auraData.orientation)
+  local backdrop, backdropType = BackdropFor(widget, host, ring)
+  widget.progressBackground = backdrop
+  local backdropTexture = auraData.sameTexture and auraData.foregroundTexture or auraData.backgroundTexture
+  backdropType.modify(backdrop, {
+    crop_x = look.crop_x,
+    crop_y = look.crop_y,
+    mirror = auraData.mirror,
+    texRotation = auraData.rotation or 0,
+    texture = backdropTexture,
+    blendMode = auraData.blendMode,
+    desaturated = auraData.desaturateBackground,
+    auraRotation = math.rad(auraData.auraRotation or 0),
+    width = auraData.width,
+    height = auraData.height,
+    offset = auraData.backgroundOffset or 0,
+    user_x = look.user_x,
+    user_y = look.user_y,
+    textureWrapMode = auraData.textureWrapMode,
+  })
+
+  if not ring then
+    backdrop:SetOrientation(auraData.orientation)
+    backdrop:SetValue(0, 1)
+  else
+    local fromAngle = (auraData.startAngle or 0) % 360
+    local toAngle = (auraData.endAngle or 360) % 360
+    if toAngle <= fromAngle then
+      toAngle = toAngle + 360
+    end
+    backdrop:SetProgress(fromAngle, toAngle)
+  end
+  backdrop:SetColor(unpack(auraData.backgroundColor))
+  backdrop:Show()
+
+  local fgBar = foregroundWidget.bar
+  widget.bar = fgBar
+  local timerDirection = Enum.StatusBarTimerDirection
+  local barDirection = auraData.inverse and timerDirection.ElapsedTime or timerDirection.RemainingTime
+  widget.button:SetDurationBar(fgBar, {direction = barDirection})
+  fgBar:Show()
 end

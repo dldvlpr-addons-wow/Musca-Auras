@@ -221,10 +221,6 @@ function Private.ExecEnv.CallCustomConditionTest(uid, testFunctionNumber, ...)
   end
 end
 
-function Private.ExecEnv.SetSecretAuraConditionProperty(region, property, ...)
-  Private.BlizzardAuraDisplay.SetConditionProperty(region, property, ...)
-end
-
 local function CreateTestForCondition(data, input, allConditionsTemplate, usedStates)
   if Private.BlizzardAuraDisplay.ContainsNativeCondition(data, input) then return "false" end
   local uid = data.uid
@@ -843,6 +839,9 @@ local function ConstructConditionFunction(data)
     end
     if (debug) then table.insert(ret, "    print('Calling "  .. properties[property].setter ..  " with', " .. arg1 ..  formatValueForCall(properties[property].type, property) .. ")\n") end
     table.insert(ret, "  end\n")
+  end
+  if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean and not Private.BlizzardAuraDisplay.Enabled(data) then
+    Private.CreateSecretConditionCode(ret, data, properties, allConditionsTemplate, CreateTestForCondition, ParseProperty, GetBaseProperty)
   end
   table.insert(ret, "end\n")
 

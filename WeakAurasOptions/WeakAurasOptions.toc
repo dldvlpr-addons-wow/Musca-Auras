@@ -30,6 +30,7 @@ RegionOptions\AuraBar.lua
 RegionOptions\Texture.lua
 RegionOptions\Icon.lua
 RegionOptions\Text.lua
+RegionOptions\GroupModernFlow.lua
 RegionOptions\Group.lua
 RegionOptions\DynamicGroup.lua
 RegionOptions\StopMotion.lua

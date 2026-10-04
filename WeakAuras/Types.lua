@@ -2841,7 +2841,6 @@ Private.swing_range_types = {
   outOfRange = L["Out of Range"],
 }
 
--- Aura categories of the client (AuraUtil.AuraFilters), tested with C_UnitAuras.IsAuraFilteredOutByInstanceID
 Private.aura_native_filter_types = {
   PLAYER = L["Cast by Me or my Pet"],
   RAID = L["Can Apply or Dispel"],
@@ -3197,7 +3196,6 @@ if GetDifficultyInfo then
         end
       else
         Private.instance_difficulty_types[i] = name
-        -- WoW Forever has its own difficulty IDs: name them, without the outdated version warning
         if not WeakAuras.IsClassicEra() then WeakAuras.prettyPrint(string.format("Unknown difficulty id found. You are probably running an outdated version. Debug Information: %s %s %s", i, name, type)) end
       end
     end
@@ -4525,7 +4523,6 @@ if WeakAuras.IsClassicEra() then
   wipe(Private.multiUnitUnits.arena)
   Private.unit_types_bufftrigger_2.boss = nil
   Private.unit_types_bufftrigger_2.arena = nil
-  -- Multi-target follows other units' auras through the combat log, closed on the 12.x engine
   if not Private.hasCombatLog then
     Private.unit_types_bufftrigger_2.multi = nil
   end

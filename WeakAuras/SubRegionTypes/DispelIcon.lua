@@ -6,9 +6,6 @@ local Private = select(2, ...)
 
 local L = WeakAuras.L
 
--- Dispel type icon of the aura shown. A readable dispel type shows the icon of the default UI. During the
--- restriction the dispel type is secret: a white circle tinted with the dispel type color by the game shows instead.
-
 local dispelAtlases = {
   magic = "RaidFrame-Icon-DebuffMagic",
   curse = "RaidFrame-Icon-DebuffCurse",
@@ -61,7 +58,6 @@ local funcs = {
         texture:SetVertexColor(1, 1, 1, 1)
         texture:Show()
       elseif color then
-        -- SetAtlas keeps its texture coordinates, the circle needs the full texture
         texture:SetTexCoord(0, 1, 0, 1)
         texture:SetTexture(genericTexture)
         texture:SetVertexColor(color[1], color[2], color[3], 1)
@@ -72,7 +68,6 @@ local funcs = {
       return
     end
     if state and state.unit and state.auraInstanceID and self.dispelCurve then
-      -- No dispel type gives an alpha of 0, so the values stay secret from start to end
       local ok, r, g, b, a = pcall(Private.ReadDispelColor, state.unit, state.auraInstanceID, self.dispelCurve)
       if ok then
         texture:SetTexCoord(0, 1, 0, 1)

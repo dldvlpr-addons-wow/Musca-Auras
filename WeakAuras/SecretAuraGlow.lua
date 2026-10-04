@@ -2,226 +2,312 @@ if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Display = Private.BlizzardAuraDisplay
 
-local WHITE = "Interface\\Buttons\\WHITE8X8"
-local ANTS = "Interface\\SpellActivationOverlay\\IconAlertAnts"
-local ALERT = "Interface\\SpellActivationOverlay\\IconAlert"
-local ALERT_TC = {0.00781250, 0.50781250, 0.27734375, 0.52734375}
-local SPARKLE = "Interface\\ItemSocketingFrame\\UI-ItemSockets"
-local SPARKLE_TC = {0.3984375, 0.4453125, 0.40234375, 0.44921875}
-local PIXEL_COLOR = {0.95, 0.95, 0.32, 1}
+local TEXTURE_SOLID = "Interface\\Buttons\\WHITE8X8"
+local TEXTURE_ANTS = "Interface\\SpellActivationOverlay\\IconAlertAnts"
+local TEXTURE_ALERT = "Interface\\SpellActivationOverlay\\IconAlert"
+local COORDS_ALERT = {0.00781250, 0.50781250, 0.27734375, 0.52734375}
+local TEXTURE_SOCKET = "Interface\\ItemSocketingFrame\\UI-ItemSockets"
+local COORDS_SOCKET = {0.3984375, 0.4453125, 0.40234375, 0.44921875}
+local COLOR_PIXEL = {0.95, 0.95, 0.32, 1}
+local SETTING_NAMES = {
+  "glowType", "glowLines", "glowFrequency", "glowLength", "glowThickness", "glowXOffset",
+  "glowYOffset", "glowScale", "glowBorder", "glowDuration", "useGlowColor",
+}
 
-local function Number(value, fallback, low, high)
-  value = tonumber(value)
-  if not value or value ~= value then return fallback end
-  return math.max(low, math.min(high, value))
+local function Clamp(raw, default, minimum, maximum)
+  local value = tonumber(raw)
+  if not value or value ~= value then
+    return default
+  end
+  return math.max(minimum, math.min(maximum, value))
 end
 
 function Display.ClearElementGlow(entry)
-  local glow = entry and entry.nativeGlow
-  if not glow then return end
-  for _, group in ipairs(glow.groups) do
-    if glow.button and glow.button.RemoveAuraShownAnimation then pcall(glow.button.RemoveAuraShownAnimation, glow.button, group) end
-    group:Stop()
+  local current = entry and entry.nativeGlow
+  if not current then
+    return
   end
-  for _, texture in ipairs(glow.textures) do texture:Hide() end
-  for _, frame in ipairs(glow.frames) do frame:Hide() end
-  if glow.holder then glow.holder:Hide() end
+  local owner = current.button
+  for _, animationGroup in ipairs(current.groups) do
+    if owner and owner.RemoveAuraShownAnimation then
+      pcall(owner.RemoveAuraShownAnimation, owner, animationGroup)
+    end
+    animationGroup:Stop()
+  end
+  for _, texture in ipairs(current.textures) do
+    texture:Hide()
+  end
+  for _, frame in ipairs(current.frames) do
+    frame:Hide()
+  end
+  if current.holder then
+    current.holder:Hide()
+  end
   entry.nativeGlow = nil
-  entry.keptGlow = glow
+  entry.keptGlow = current
 end
 
-local GLOW_KEYS = {"glowType", "glowLines", "glowFrequency", "glowLength", "glowThickness", "glowXOffset",
-  "glowYOffset", "glowScale", "glowBorder", "glowDuration", "useGlowColor"}
-local function GlowKey(button, parent, anchor, element, w, h)
-  local parts = {tostring(button), tostring(parent), tostring(anchor), w, h}
-  for _, key in ipairs(GLOW_KEYS) do parts[#parts + 1] = tostring(element[key]) end
-  if type(element.glowColor) == "table" then
-    for index = 1, 4 do parts[#parts + 1] = tostring(element.glowColor[index]) end
+local function BuildCacheKey(button, parent, anchor, element, width, height)
+  local parts = {tostring(button), tostring(parent), tostring(anchor), width, height}
+  for _, name in ipairs(SETTING_NAMES) do
+    parts[#parts + 1] = tostring(element[name])
+  end
+  local color = element.glowColor
+  if type(color) == "table" then
+    for channel = 1, 4 do
+      parts[#parts + 1] = tostring(color[channel])
+    end
   end
   return table.concat(parts, "|")
 end
 
-local function NewTexture(glow, parent, layer)
+local function AddTexture(glow, parent, layer)
   local texture = parent:CreateTexture(nil, layer or "OVERLAY")
   texture:SetBlendMode("ADD")
-  glow.textures[#glow.textures + 1] = texture
+  table.insert(glow.textures, texture)
   return texture
 end
 
-local function NewGroup(glow, texture)
-  local group = texture:CreateAnimationGroup()
-  group:SetLooping("REPEAT")
-  glow.groups[#glow.groups + 1] = group
-  return group
+local function AddAnimationGroup(glow, texture)
+  local animationGroup = texture:CreateAnimationGroup()
+  animationGroup:SetLooping("REPEAT")
+  table.insert(glow.groups, animationGroup)
+  return animationGroup
 end
 
-local function Tint(texture, element, fallback)
+local function ApplyColor(texture, element, fallbackColor)
   if element.useGlowColor and type(element.glowColor) == "table" then
     texture:SetDesaturated(true)
     texture:SetVertexColor(unpack(element.glowColor))
-  elseif fallback then
-    texture:SetVertexColor(unpack(fallback))
-  else
-    texture:SetDesaturated(false)
-    texture:SetVertexColor(1, 1, 1, 1)
-  end
-end
-
-local function FlipBook(glow, texture, rows, columns, frames, duration, frameSize)
-  local group = NewGroup(glow, texture)
-  local flip = group:CreateAnimation("FlipBook")
-  flip:SetDuration(duration)
-  flip:SetFlipBookRows(rows)
-  flip:SetFlipBookColumns(columns)
-  flip:SetFlipBookFrames(frames)
-  flip:SetFlipBookFrameWidth(frameSize or 0)
-  flip:SetFlipBookFrameHeight(frameSize or 0)
-  return group
-end
-
-local function Perimeter(glow, texture, holder, w, h, duration, phase, reverse)
-  local perimeter = 2 * (w + h)
-  local function Point(distance)
-    distance = distance % perimeter
-    if distance < w then return distance, 0 end
-    distance = distance - w
-    if distance < h then return w, distance end
-    distance = distance - h
-    if distance < w then return w - distance, h end
-    return 0, h - (distance - w)
-  end
-  local start = phase * perimeter
-  local x0, y0 = Point(start)
-  texture:ClearAllPoints()
-  texture:SetPoint("CENTER", holder, "BOTTOMLEFT", x0, y0)
-  local distances, seen = {perimeter}, {[perimeter] = true}
-  local function Add(distance)
-    if distance > 0 and distance < perimeter and not seen[distance] then distances[#distances + 1] = distance; seen[distance] = true end
-  end
-  for step = 1, 15 do Add(perimeter * step / 16) end
-  for _, corner in ipairs({0, w, w + h, 2 * w + h}) do
-    Add((reverse and (start - corner) or (corner - start)) % perimeter)
-  end
-  table.sort(distances)
-  local group = NewGroup(glow, texture)
-  local path = group:CreateAnimation("Path")
-  path:SetDuration(duration)
-  path:SetCurveType("NONE")
-  for order, distance in ipairs(distances) do
-    local x, y = Point(start + (reverse and -distance or distance))
-    local point = path:CreateControlPoint(nil, nil, order)
-    point:SetOffset(x - x0, y - y0)
-  end
-  return group
-end
-
-function Display.StyleElementGlow(entry, button, parent, anchor, element, w, h)
-  Display.ClearElementGlow(entry)
-  if not element.glow then return end
-  local key = GlowKey(button, parent, anchor, element, w, h)
-  local kept = entry.keptGlow
-  if kept and kept.key == key then
-    entry.nativeGlow, entry.keptGlow = kept, nil
-    if kept.holder then kept.holder:Show() end
-    for _, frame in ipairs(kept.frames) do frame:Show() end
-    for _, texture in ipairs(kept.textures) do texture:Show() end
-    for _, group in ipairs(kept.groups) do button:AddAuraShownAnimation(group) end
     return
   end
+  if fallbackColor then
+    texture:SetVertexColor(unpack(fallbackColor))
+    return
+  end
+  texture:SetDesaturated(false)
+  texture:SetVertexColor(1, 1, 1, 1)
+end
+
+local function AddFlipBook(glow, texture, rows, columns, frameCount, duration, frameSize)
+  local animationGroup = AddAnimationGroup(glow, texture)
+  local flipBook = animationGroup:CreateAnimation("FlipBook")
+  flipBook:SetDuration(duration)
+  flipBook:SetFlipBookRows(rows)
+  flipBook:SetFlipBookColumns(columns)
+  flipBook:SetFlipBookFrames(frameCount)
+  flipBook:SetFlipBookFrameWidth(frameSize or 0)
+  flipBook:SetFlipBookFrameHeight(frameSize or 0)
+  return animationGroup
+end
+
+local function PerimeterPosition(distance, width, height)
+  local total = 2 * (width + height)
+  distance = distance % total
+  if distance < width then
+    return distance, 0
+  end
+  distance = distance - width
+  if distance < height then
+    return width, distance
+  end
+  distance = distance - height
+  if distance < width then
+    return width - distance, height
+  end
+  return 0, height - (distance - width)
+end
+
+local function AddPerimeterPath(glow, texture, holder, width, height, duration, phase, reverse)
+  local total = 2 * (width + height)
+  local origin = phase * total
+  local startX, startY = PerimeterPosition(origin, width, height)
+  texture:ClearAllPoints()
+  texture:SetPoint("CENTER", holder, "BOTTOMLEFT", startX, startY)
+  local offsets = {total}
+  local known = {[total] = true}
+  local function Record(distance)
+    if distance > 0 and distance < total and not known[distance] then
+      offsets[#offsets + 1] = distance
+      known[distance] = true
+    end
+  end
+  for step = 1, 15 do
+    Record(total * step / 16)
+  end
+  local corners = {0, width, width + height, 2 * width + height}
+  for _, corner in ipairs(corners) do
+    if reverse then
+      Record((origin - corner) % total)
+    else
+      Record((corner - origin) % total)
+    end
+  end
+  table.sort(offsets)
+  local animationGroup = AddAnimationGroup(glow, texture)
+  local path = animationGroup:CreateAnimation("Path")
+  path:SetDuration(duration)
+  path:SetCurveType("NONE")
+  for order, distance in ipairs(offsets) do
+    local x, y = PerimeterPosition(origin + (reverse and -distance or distance), width, height)
+    local controlPoint = path:CreateControlPoint(nil, nil, order)
+    controlPoint:SetOffset(x - startX, y - startY)
+  end
+  return animationGroup
+end
+
+local function BuildProcGlow(glow, holder, element, width, height)
+  local scale = Clamp(element.glowScale, 1, 0.25, 4)
+  local texture = AddTexture(glow, holder)
+  texture:SetPoint("CENTER", holder, "CENTER")
+  texture:SetSize(width * 1.4 * scale, height * 1.4 * scale)
+  texture:SetAtlas("UI-HUD-ActionBar-Proc-Loop-Flipbook")
+  ApplyColor(texture, element)
+  AddFlipBook(glow, texture, 6, 5, 30, Clamp(element.glowDuration, 1, 0.1, 10))
+end
+
+local function BuildButtonOverlayGlow(glow, holder, element, width, height, frequency)
+  local frame = AddTexture(glow, holder)
+  frame:SetPoint("CENTER", holder, "CENTER")
+  frame:SetSize(width * 1.4, height * 1.4)
+  frame:SetTexture(TEXTURE_ALERT)
+  frame:SetTexCoord(unpack(COORDS_ALERT))
+  ApplyColor(frame, element)
+  local marching = AddTexture(glow, holder)
+  marching:SetPoint("CENTER", holder, "CENTER")
+  marching:SetSize(width * 1.2, height * 1.2)
+  marching:SetTexture(TEXTURE_ANTS)
+  ApplyColor(marching, element)
+  AddFlipBook(glow, marching, 5, 5, 22, 0.055 / math.max(0.01, math.abs(frequency)), 48)
+end
+
+local function BuildPixelGlow(glow, holder, element, width, height, count, duration, reverse)
+  local thickness = Clamp(element.glowThickness, 2, 0.5, 12)
+  local length = Clamp(element.glowLength, 0, 0, math.min(width, height))
+  if length == 0 then
+    length = math.max(thickness, (width + height) * (2 / count - 0.1))
+  end
+  local side = math.max(thickness, length) / math.sqrt(2)
+  local edges = {}
+  for index, point in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
+    local edge = CreateFrame("Frame", nil, holder)
+    table.insert(glow.frames, edge)
+    edge:SetClipsChildren(true)
+    edge:SetPoint(point, holder, point)
+    if index <= 2 then
+      edge:SetSize(width, thickness)
+    else
+      edge:SetSize(thickness, height)
+    end
+    edges[index] = edge
+    if element.glowBorder then
+      local backdrop = AddTexture(glow, edge, "BACKGROUND")
+      backdrop:SetBlendMode("BLEND")
+      backdrop:SetAllPoints(edge)
+      backdrop:SetColorTexture(0.1, 0.1, 0.1, 0.8)
+    end
+  end
+  for line = 1, count do
+    for _, edge in ipairs(edges) do
+      local dot = AddTexture(glow, edge)
+      dot:SetTexture(TEXTURE_SOLID)
+      dot:SetSize(side, side)
+      dot:SetRotation(math.pi / 4)
+      ApplyColor(dot, element, COLOR_PIXEL)
+      AddPerimeterPath(glow, dot, holder, width, height, duration, (line - 1) / count, reverse)
+    end
+  end
+end
+
+local function BuildShineGlow(glow, holder, element, width, height, count, duration, reverse)
+  local size = 8 * Clamp(element.glowScale, 1, 0.25, 4)
+  for spark = 1, count do
+    local texture = AddTexture(glow, holder)
+    texture:SetTexture(TEXTURE_SOCKET)
+    texture:SetTexCoord(unpack(COORDS_SOCKET))
+    texture:SetSize(size, size)
+    ApplyColor(texture, element)
+    local animationGroup = AddPerimeterPath(glow, texture, holder, width, height, duration, (spark - 1) / count, reverse)
+    for half = 1, 2 do
+      local fade = animationGroup:CreateAnimation("Alpha")
+      fade:SetOrder(1)
+      fade:SetStartDelay(half == 1 and 0 or duration / 2)
+      fade:SetDuration(duration / 2)
+      fade:SetFromAlpha(half == 1 and 0.2 or 1)
+      fade:SetToAlpha(half == 1 and 1 or 0.2)
+    end
+  end
+end
+
+local function RestoreKeptGlow(entry, kept, button)
+  entry.nativeGlow = kept
   entry.keptGlow = nil
-  local glow = {button = button, groups = {}, textures = {}, frames = {}, key = key}
-  entry.nativeGlow = glow
-  local xOffset = Number(element.glowXOffset, 0, -200, 200)
-  local yOffset = Number(element.glowYOffset, 0, -200, 200)
+  if kept.holder then
+    kept.holder:Show()
+  end
+  for _, frame in ipairs(kept.frames) do
+    frame:Show()
+  end
+  for _, texture in ipairs(kept.textures) do
+    texture:Show()
+  end
+  for _, animationGroup in ipairs(kept.groups) do
+    button:AddAuraShownAnimation(animationGroup)
+  end
+end
+
+local function AcquireHolder(entry, parent)
   entry.glowHolders = entry.glowHolders or {}
   local holder = entry.glowHolders[parent]
   if not holder then
     holder = CreateFrame("Frame", nil, parent)
     entry.glowHolders[parent] = holder
   end
+  return holder
+end
+
+function Display.StyleElementGlow(entry, button, parent, anchor, element, w, h)
+  Display.ClearElementGlow(entry)
+  if not element.glow then
+    return
+  end
+  local cacheKey = BuildCacheKey(button, parent, anchor, element, w, h)
+  local kept = entry.keptGlow
+  if kept and kept.key == cacheKey then
+    RestoreKeptGlow(entry, kept, button)
+    return
+  end
+  entry.keptGlow = nil
+  local glow = {button = button, groups = {}, textures = {}, frames = {}, key = cacheKey}
+  entry.nativeGlow = glow
+  local xOffset = Clamp(element.glowXOffset, 0, -200, 200)
+  local yOffset = Clamp(element.glowYOffset, 0, -200, 200)
+  local holder = AcquireHolder(entry, parent)
   glow.holder = holder
   holder:ClearAllPoints()
   holder:SetPoint("CENTER", anchor, "CENTER")
-  local gw, gh = math.max(2, w + xOffset * 2), math.max(2, h + yOffset * 2)
-  holder:SetSize(gw, gh)
+  local width = math.max(2, w + xOffset * 2)
+  local height = math.max(2, h + yOffset * 2)
+  holder:SetSize(width, height)
   holder:Show()
   local kind = element.glowType or "Proc"
-  local frequency = Number(element.glowFrequency, 0.25, -10, 10)
+  local frequency = Clamp(element.glowFrequency, 0.25, -10, 10)
   if kind == "Proc" then
-    local scale = Number(element.glowScale, 1, 0.25, 4)
-    local texture = NewTexture(glow, holder)
-    texture:SetPoint("CENTER", holder, "CENTER")
-    texture:SetSize(gw * 1.4 * scale, gh * 1.4 * scale)
-    texture:SetAtlas("UI-HUD-ActionBar-Proc-Loop-Flipbook")
-    Tint(texture, element)
-    FlipBook(glow, texture, 6, 5, 30, Number(element.glowDuration, 1, 0.1, 10))
+    BuildProcGlow(glow, holder, element, width, height)
   elseif kind == "buttonOverlay" then
-    local outer = NewTexture(glow, holder)
-    outer:SetPoint("CENTER", holder, "CENTER")
-    outer:SetSize(gw * 1.4, gh * 1.4)
-    outer:SetTexture(ALERT)
-    outer:SetTexCoord(unpack(ALERT_TC))
-    Tint(outer, element)
-    local ants = NewTexture(glow, holder)
-    ants:SetPoint("CENTER", holder, "CENTER")
-    ants:SetSize(gw * 1.2, gh * 1.2)
-    ants:SetTexture(ANTS)
-    Tint(ants, element)
-    FlipBook(glow, ants, 5, 5, 22, 0.055 / math.max(0.01, math.abs(frequency)), 48)
+    BuildButtonOverlayGlow(glow, holder, element, width, height, frequency)
   else
-    local pixel = kind == "Pixel"
-    local count = math.floor(Number(element.glowLines, pixel and 8 or 4, 1, 32))
+    local isPixel = kind == "Pixel"
+    local count = math.floor(Clamp(element.glowLines, isPixel and 8 or 4, 1, 32))
     local duration = frequency == 0 and 4 or math.max(0.1, math.abs(1 / frequency))
     local reverse = frequency < 0
-    if pixel then
-      local thickness = Number(element.glowThickness, 2, 0.5, 12)
-      local length = Number(element.glowLength, 0, 0, math.min(gw, gh))
-      if length == 0 then length = math.max(thickness, (gw + gh) * (2 / count - 0.1)) end
-      local side = math.max(thickness, length) / math.sqrt(2)
-      local edges = {}
-      for index, point in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
-        local edge = CreateFrame("Frame", nil, holder)
-        glow.frames[#glow.frames + 1] = edge
-        edge:SetClipsChildren(true)
-        edge:SetPoint(point, holder, point)
-        if index <= 2 then edge:SetSize(gw, thickness) else edge:SetSize(thickness, gh) end
-        edges[index] = edge
-        if element.glowBorder then
-          local border = NewTexture(glow, edge, "BACKGROUND")
-          border:SetBlendMode("BLEND")
-          border:SetAllPoints(edge)
-          border:SetColorTexture(0.1, 0.1, 0.1, 0.8)
-        end
-      end
-      for line = 1, count do
-        for _, edge in ipairs(edges) do
-          local texture = NewTexture(glow, edge)
-          texture:SetTexture(WHITE)
-          texture:SetSize(side, side)
-          texture:SetRotation(math.pi / 4)
-          Tint(texture, element, PIXEL_COLOR)
-          Perimeter(glow, texture, holder, gw, gh, duration, (line - 1) / count, reverse)
-        end
-      end
+    if isPixel then
+      BuildPixelGlow(glow, holder, element, width, height, count, duration, reverse)
     else
-      local size = 8 * Number(element.glowScale, 1, 0.25, 4)
-      for sparkle = 1, count do
-        local texture = NewTexture(glow, holder)
-        texture:SetTexture(SPARKLE)
-        texture:SetTexCoord(unpack(SPARKLE_TC))
-        texture:SetSize(size, size)
-        Tint(texture, element)
-        local group = Perimeter(glow, texture, holder, gw, gh, duration, (sparkle - 1) / count, reverse)
-        for half = 1, 2 do
-          local alpha = group:CreateAnimation("Alpha")
-          alpha:SetOrder(1)
-          alpha:SetStartDelay(half == 1 and 0 or duration / 2)
-          alpha:SetDuration(duration / 2)
-          alpha:SetFromAlpha(half == 1 and 0.2 or 1)
-          alpha:SetToAlpha(half == 1 and 1 or 0.2)
-        end
-      end
+      BuildShineGlow(glow, holder, element, width, height, count, duration, reverse)
     end
   end
-  for _, group in ipairs(glow.groups) do button:AddAuraShownAnimation(group) end
+  for _, animationGroup in ipairs(glow.groups) do
+    button:AddAuraShownAnimation(animationGroup)
+  end
 end

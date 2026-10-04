@@ -48,6 +48,8 @@ local properties = {
   desaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   width = {
@@ -71,6 +73,7 @@ local properties = {
   color = {
     display = L["Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color"
   },
   inverse = {
@@ -312,6 +315,13 @@ if cooldownAlphaCurve then
   cooldownAlphaCurve:AddPoint(0.001, 1)
 end
 
+local function RefreshCountdownAlpha(region)
+  local textDuration = region.countdownTextDuration
+  if textDuration then
+    region.cooldown:GetCountdownFontString():SetAlpha(textDuration:EvaluateRemainingDuration(cooldownAlphaCurve))
+  end
+end
+
 local function modify(parent, region, data)
   -- Legacy members stacks and text2
   region.stacks = nil
@@ -399,6 +409,7 @@ local function modify(parent, region, data)
   region.texYOffset = data.texYOffset or 0
   region:UpdateSize()
 
+  region.desaturateWanted = data.desaturate or false
   icon:SetDesaturated(data.desaturate);
 
   local tooltipType = Private.CanHaveTooltip(data);
@@ -438,7 +449,6 @@ local function modify(parent, region, data)
     cooldown:SetReverse(effectiveReverse)
     Private.CDMAuraProgress.Style(region)
     if cooldown.durationObject then
-      -- Duration objects are applied again on every secret update, only restart the swipe when needed
       if reverseChanged and cooldown:IsShown() then
         -- WORKAROUND SetReverse not applying until next frame
         cooldown:SetCooldown(0, 0)
@@ -463,9 +473,15 @@ local function modify(parent, region, data)
     local countdown = cooldown:GetCountdownFontString()
     local textDuration = state and state.cdmHideGCDText and state.cdmTextDurationObject
     if textDuration and cooldownAlphaCurve then
+      self.countdownTextDuration = textDuration
       countdown:SetAlpha(textDuration:EvaluateRemainingDuration(cooldownAlphaCurve))
+      Private.SetNativeRefresh(self, "countdownAlpha", RefreshCountdownAlpha)
     else
       countdown:SetAlpha(1)
+      if self.countdownTextDuration then
+        self.countdownTextDuration = nil
+        Private.SetNativeRefresh(self, "countdownAlpha", nil)
+      end
     end
     if OmniCC and OmniCC.Cooldown and OmniCC.Cooldown.SetNoCooldownCount then
       cooldown:SetHideCountdownNumbers(true)
@@ -549,7 +565,6 @@ local function modify(parent, region, data)
       end
     end
 
-    -- An aura applied during the restriction: the client draws its secret icon
     if iconPath == nil and iconState and type(iconState.secretIcon) ~= "nil" then
       self.icon:SetTexture(iconState.secretIcon)
       return
@@ -568,8 +583,18 @@ local function modify(parent, region, data)
     region:UpdateSize();
   end
 
+  function region:SetSecretDesaturation(value)
+    self.secretDesaturation = true
+    icon:SetDesaturation(value)
+  end
+
   function region:SetDesaturated(b)
+    self.desaturateWanted = b
+    self.secretDesaturation = nil
     icon:SetDesaturated(b);
+    if not b then
+      Private.ApplyCooldownDesaturation(self)
+    end
   end
 
   function region:SetRegionWidth(width)
@@ -652,7 +677,6 @@ local function modify(parent, region, data)
       else
         cooldown:Resume()
       end
-      -- Duration objects stay drawable when their values are secret
       if self.durationObject and cooldown.SetCooldownFromDurationObject then
         cooldown.expirationTime = nil
         cooldown.duration = nil

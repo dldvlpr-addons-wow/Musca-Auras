@@ -1,167 +1,149 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, OptionsPrivate = ...
 
-local Type, Version = "WeakAurasColorPicker", 1
+local Type, Version = "WeakAurasColorPicker", 3
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
-if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
+if not AceGUI then return end
+if (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
-local pairs = pairs
-local CreateFrame, UIParent = CreateFrame, UIParent
+local UIParent, CreateFrame = UIParent, CreateFrame
+local picker = ColorPickerFrame
 
-local function ColorCallback(self, r, g, b, a, isAlpha)
-  if not self.HasAlpha then
-    a = 1
+local function readPickerColor()
+  local r, g, b = picker:GetColorRGB()
+  return r, g, b, picker:GetColorAlpha()
+end
+
+local function applyPickedColor(widget, r, g, b, a, confirmed)
+  if not widget.HasAlpha then a = 1 end
+  local unchanged = r == widget.r and g == widget.g and b == widget.b and a == widget.a
+  if unchanged then return end
+  widget:SetColor(r, g, b, a)
+  if picker:IsVisible() then
+    widget:Fire("OnValueChanged", r, g, b, a)
+  elseif confirmed then
+    widget:Fire("OnValueConfirmed", r, g, b, a)
   end
-  if r == self.r and g == self.g and b == self.b and a == self.a then
+end
+
+local function relay(eventName)
+  return function(frame) return frame.obj:Fire(eventName) end
+end
+
+local function openPicker(frame)
+  picker:Hide()
+  local widget = frame.obj
+  if widget.disabled then
+    AceGUI:ClearFocus()
     return
   end
-  self:SetColor(r, g, b, a)
-  if ColorPickerFrame:IsVisible() then
-    self:Fire("OnValueChanged", r, g, b, a)
-  else
-    if isAlpha then
-      self:Fire("OnValueConfirmed", r, g, b, a)
-    end
+  picker:SetFrameStrata("FULLSCREEN_DIALOG")
+  picker:SetFrameLevel(frame:GetFrameLevel() + 10)
+  picker:SetClampedToScreen(true)
+
+  local startR, startG, startB, startA = widget.r, widget.g, widget.b, widget.a or 1
+
+  local request = { r = startR, g = startG, b = startB }
+  request.opacity = startA
+  request.hasOpacity = widget.HasAlpha
+  request.swatchFunc = function()
+    local r, g, b, a = readPickerColor()
+    applyPickedColor(widget, r, g, b, a)
   end
-end
-
-local function Control_OnEnter(frame)
-  frame.obj:Fire("OnEnter")
-end
-
-local function Control_OnLeave(frame)
-  frame.obj:Fire("OnLeave")
-end
-
-local function ColorSwatch_OnClick(frame)
-  ColorPickerFrame:Hide()
-  local self = frame.obj
-  if not self.disabled then
-    ColorPickerFrame:SetFrameStrata("FULLSCREEN_DIALOG")
-    ColorPickerFrame:SetFrameLevel(frame:GetFrameLevel() + 10)
-    ColorPickerFrame:SetClampedToScreen(true)
-
-    local r2, g2, b2, a2 = self.r, self.g, self.b, (self.a or 1)
-
-    local info = {
-      swatchFunc = function()
-        local r, g, b = ColorPickerFrame:GetColorRGB()
-        local a = ColorPickerFrame:GetColorAlpha()
-        ColorCallback(self, r, g, b, a)
-      end,
-
-      hasOpacity = self.HasAlpha,
-      opacityFunc = function()
-        local r, g, b = ColorPickerFrame:GetColorRGB()
-        local a = ColorPickerFrame:GetColorAlpha()
-        ColorCallback(self, r, g, b, a, true)
-      end,
-      opacity = a2,
-
-      cancelFunc = function()
-        ColorCallback(self, r2, g2, b2, a2, true)
-      end,
-
-      r = r2,
-      g = g2,
-      b = b2,
-    }
-
-    OptionsPrivate.PrepareColorPalette(info)
-    ColorPickerFrame:SetupColorPickerAndShow(info)
-    OptionsPrivate.ShowColorPalette()
+  request.opacityFunc = function()
+    local r, g, b, a = readPickerColor()
+    applyPickedColor(widget, r, g, b, a, true)
   end
+  request.cancelFunc = function()
+    applyPickedColor(widget, startR, startG, startB, startA, true)
+  end
+
+  OptionsPrivate.PrepareColorPalette(request)
+  picker:SetupColorPickerAndShow(request)
+  OptionsPrivate.ShowColorPalette()
   AceGUI:ClearFocus()
 end
 
-local methods = {
+local widgetMethods = {
   ["OnAcquire"] = function(self)
-    self:SetHeight(24)
-    self:SetWidth(200)
+    self:SetLabel(nil)
+    self:SetDisabled(nil)
     self:SetHasAlpha(false)
     self:SetColor(0, 0, 0, 1)
-    self:SetDisabled(nil)
-    self:SetLabel(nil)
+    self:SetWidth(200)
+    self:SetHeight(24)
   end,
 
   ["SetLabel"] = function(self, text)
-    self.text:SetText(text)
+    return self.text:SetText(text)
   end,
 
   ["SetColor"] = function(self, r, g, b, a)
-    r, g, b, a = r or 1, g or 1, b or 1, a or 1
-    self.r = r
-    self.g = g
-    self.b = b
-    self.a = a or 1
-    self.colorSwatch:SetVertexColor(r, g, b, a)
+    self.r, self.g, self.b, self.a = r or 1, g or 1, b or 1, a or 1
+    self.colorSwatch:SetVertexColor(self.r, self.g, self.b, self.a)
   end,
 
-  ["SetHasAlpha"] = function(self, HasAlpha)
-    self.HasAlpha = HasAlpha
+  ["SetHasAlpha"] = function(self, hasAlpha)
+    self.HasAlpha = hasAlpha
   end,
 
   ["SetDisabled"] = function(self, disabled)
     self.disabled = disabled
-    if self.disabled then
+    local shade = disabled and 0.5 or 1
+    self.text:SetTextColor(shade, shade, shade)
+    if disabled then
       self.frame:Disable()
-      self.text:SetTextColor(0.5, 0.5, 0.5)
     else
       self.frame:Enable()
-      self.text:SetTextColor(1, 1, 1)
     end
-  end
+  end,
 }
 
 local function Constructor()
-  local frame = CreateFrame("Button", nil, UIParent)
-  frame:Hide()
+  local button = CreateFrame("Button", nil, UIParent)
+  button:EnableMouse(true)
+  button:Hide()
 
-  frame:EnableMouse(true)
-  frame:SetScript("OnEnter", Control_OnEnter)
-  frame:SetScript("OnLeave", Control_OnLeave)
-  frame:SetScript("OnClick", ColorSwatch_OnClick)
+  local swatch = button:CreateTexture(nil, "OVERLAY")
+  swatch:SetSize(19, 19)
+  swatch:SetTexture(130939)
+  swatch:SetPoint("LEFT")
 
-  local colorSwatch = frame:CreateTexture(nil, "OVERLAY")
-  colorSwatch:SetWidth(19)
-  colorSwatch:SetHeight(19)
-  colorSwatch:SetTexture(130939)
-  colorSwatch:SetPoint("LEFT")
+  local backdrop = button:CreateTexture(nil, "BACKGROUND")
+  backdrop:SetSize(16, 16)
+  backdrop:SetColorTexture(1, 1, 1)
+  backdrop:SetPoint("CENTER", swatch)
+  backdrop:Show()
+  swatch.background = backdrop
 
-  local texture = frame:CreateTexture(nil, "BACKGROUND")
-  colorSwatch.background = texture
-  texture:SetWidth(16)
-  texture:SetHeight(16)
-  texture:SetColorTexture(1, 1, 1)
-  texture:SetPoint("CENTER", colorSwatch)
-  texture:Show()
+  local tiles = button:CreateTexture(nil, "BACKGROUND")
+  tiles:SetSize(14, 14)
+  tiles:SetTexture(188523)
+  tiles:SetTexCoord(0.25, 0, 0.5, 0.25)
+  tiles:SetVertexColor(1, 1, 1, 0.75)
+  tiles:SetDesaturated(true)
+  tiles:SetPoint("CENTER", swatch)
+  tiles:Show()
+  swatch.checkers = tiles
 
-  local checkers = frame:CreateTexture(nil, "BACKGROUND")
-  colorSwatch.checkers = checkers
-  checkers:SetWidth(14)
-  checkers:SetHeight(14)
-  checkers:SetTexture(188523)
-  checkers:SetTexCoord(.25, 0, 0.5, .25)
-  checkers:SetDesaturated(true)
-  checkers:SetVertexColor(1, 1, 1, 0.75)
-  checkers:SetPoint("CENTER", colorSwatch)
-  checkers:Show()
+  local label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  label:SetHeight(24)
+  label:SetJustifyH("LEFT")
+  label:SetTextColor(1, 1, 1)
+  label:SetPoint("LEFT", swatch, "RIGHT", 2, 0)
+  label:SetPoint("RIGHT")
 
-  local text = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  text:SetHeight(24)
-  text:SetJustifyH("LEFT")
-  text:SetTextColor(1, 1, 1)
-  text:SetPoint("LEFT", colorSwatch, "RIGHT", 2, 0)
-  text:SetPoint("RIGHT")
+  button:SetScript("OnEnter", relay("OnEnter"))
+  button:SetScript("OnLeave", relay("OnLeave"))
+  button:SetScript("OnClick", openPicker)
 
-  local widget = {
-    colorSwatch = colorSwatch,
-    text        = text,
-    frame       = frame,
-    type        = Type
-  }
-  for method, func in pairs(methods) do
-    widget[method] = func
+  local widget = {}
+  widget.type = Type
+  widget.frame = button
+  widget.colorSwatch = swatch
+  widget.text = label
+  for name, method in pairs(widgetMethods) do
+    widget[name] = method
   end
 
   return AceGUI:RegisterAsWidget(widget)

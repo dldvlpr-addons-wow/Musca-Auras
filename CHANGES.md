@@ -25,11 +25,129 @@ This file lists every file changed from the upstream 5.22.0 release, as required
   using the option only one is used. `WeakAuras/Animations.lua`:
   an animation that starts on a secret alpha starts from 1. `WeakAuras/Locales/enUS.lua`: the two new strings.
   Curve checked in game on WoW Forever 70124 (a frame alpha follows the energy of the player in combat).
+- Features also found in ForeverAuras, written for this fork with ForeverAuras as the behavior reference. Tested
+  in game on WoW Forever 70124: Desaturate while on cooldown with its condition, Hide GCD Text, `%N.p` and `%N.s`
+  on Aura (Modern), restriction events, the new Character Stats (values match the game API out of combat, hidden in
+  combat), Important on the casts of the player. The rest is not tested in game yet.
+  - `WeakAuras/Prototypes.lua`: Cast trigger, "Important" tristate and condition, read from
+    `C_Spell.IsSpellImportant`; a secret value is unknown and hides the cast when the filter is used.
+  - `WeakAuras/Prototypes.lua`: Cooldown Progress (Spell) trigger, "Desaturate while on cooldown" (state
+    `desaturateSpell`) and "Hide GCD Text" (with Show Global Cooldown, sets the `cdmHideGCDText`, `cdmGCDOnly` and
+    `cdmTextDurationObject` fields already read by `WeakAuras/DurationText.lua` and the Icon region);
+    `Private.ExecEnv.GetSpellCooldownDurationWithoutGCD`. `WeakAuras/WeakAuras.lua`: while a state carries
+    `desaturateSpell`, the icon desaturation is set every 0.1 s from
+    `C_CurveUtil.EvaluateColorValueFromBoolean(duration:IsZero(), 0, 1)`, secret in combat, through
+    `Private.SetNativeRefresh`, one shared 0.1 s ticker for visible regions. A Desaturate setting or condition of the
+    aura wins over the option and comes back when the option is off (`WeakAuras/RegionTypes/Icon.lua` keeps it in
+    `desaturateWanted`, `WeakAuras/RegionTypes/AuraBar.lua` in `desaturateIcon`). `WeakAuras/RegionTypes/Icon.lua`:
+    the countdown alpha read from `cdmTextDurationObject` is evaluated again by the same ticker, so the numbers hide
+    when the cooldown ends during a global cooldown, for the Cooldown Manager trigger too.
+  - `WeakAuras/Prototypes.lua`: Character Stats trigger, Bonus Healing, Ranged Attack Power, Spell Haste (%),
+    Ranged Haste (%) and Expertise (%) on Classic Era clients, with the `UNIT_RANGED_ATTACK_POWER`,
+    `UNIT_SPELL_HASTE` and `UNIT_RANGEDDAMAGE` events; `WeakAuras.GetEffectiveAttackPower(ranged)`,
+    `Private.ExecEnv.GetRangedHastePercent`.
+  - `WeakAuras/Prototypes.lua`: Unit Characteristics trigger, "Ignore out of checking range" (`UnitIsVisible`) for
+    group units, refreshed on `PARTY_MEMBER_ENABLE` and `PARTY_MEMBER_DISABLE`.
+  - `WeakAuras/CDMAuraProgress.lua`: a `%N.p` or `%N.s` text whose trigger N is an Aura (Modern) trigger on one
+    unit, in an aura not drawn by the game's aura widgets, is drawn by an aura container bound to that trigger
+    (created out of combat only, refreshed on target, focus and pet changes). A new time format applies out of
+    combat without a reload; the per frame update allocates nothing once bound.
+  - `WeakAuras/Init.lua`: the restriction state is checked again on `PLAYER_IN_COMBAT_CHANGED`,
+    `ENCOUNTER_STATE_CHANGED`, `CHALLENGE_MODE_START` and the `PVP_MATCH_*` events.
+  - `WeakAuras/Locales/enUS.lua`: the new strings.
+- Spell charges in combat. `WeakAuras/Prototypes.lua`: `Private.ExecEnv.GetSpellDisplayCount` reads
+  `C_Spell.GetSpellDisplayCount`; the Cooldown Progress (Spell) trigger stores it as `secretStacks` while the cooldown
+  of a spell with charges or a count is secret, shown by a `%s` text. `WeakAuras/GenericTrigger.lua`:
+  `WeakAuras.IsSpellCooldownSecret`. Not tested in game yet.
+- Conditions on secret values. `WeakAuras/Conditions.lua`: when a condition tests a value the game keeps secret,
+  the alpha, color and desaturation it changes are computed by the game itself
+  (`C_CurveUtil.EvaluateColorValueFromBoolean` for booleans, a step curve on the duration object for "remaining time
+  lower or greater than"), in priority order with the other conditions; the normal values come back when the value is
+  readable again. The remaining time is refreshed every 0.1 s while it is secret. Linked conditions keep the normal
+  behavior. `WeakAuras/GenericTrigger.lua`: `conditionSecretTest` of a trigger argument. `WeakAuras/Prototypes.lua`:
+  secret tests for Interruptible and Important (Cast), Spell Usable, Insufficient Resources and Spell in Range; the
+  Spell Usable and Insufficient Resources tests no longer compare a secret value. `WeakAuras/WeakAuras.lua`: the
+  `secretFlag` fields of a state stay secret. `WeakAuras/RegionTypes/RegionPrototype.lua`, `Icon.lua`, `Text.lua`,
+  `Texture.lua`, `AuraBar.lua`: the alpha, color and desaturation properties accept a secret value, with a secret
+  desaturation setter. `WeakAuras/Animations.lua`: no color animation from a secret color. Tested in game on WoW
+  Forever 70124: Interruptible color, Spell in Range, Insufficient Resources, remaining time lower than a value.
+
+### Fixed
+- Secret values no longer raise Lua errors. Not tested in game yet.
+  - `WeakAuras/GenericTrigger.lua`: a trigger filter on a secret value fails alone instead of stopping the whole
+    trigger function; dynamic fields (name, icon...) that turn secret are stored without comparison; a secret unit
+    GUID counts as unknown, so the unit change events are still sent and the GUID tables stay current.
+  - `WeakAuras/Prototypes.lua`: Cast trigger, `C_Spell.IsSpellImportant` is called under `pcall`, as the spell ID
+    of another unit is secret, and a secret stage count of a channel is skipped.
+  - `WeakAuras/Prototypes.lua`, `WeakAuras/WeakAuras.lua`, `WeakAuras/RegionTypes/Text.lua`,
+    `WeakAuras/SubRegionTypes/SubText.lua`: Cast trigger keeps a
+    secret spell name in `state.secretName`; the `%n` placeholder gives it to the text as is, the text, raid
+    marker replacement and rotated subtext offset skip a secret string, and chat actions other than print and combat text are skipped
+    when the message is secret. A secret text is set without measuring it, so the text region keeps its last
+    readable size instead of shrinking to 1 pixel and disappearing. Tested in game on WoW Forever 70124.
+  - `WeakAuras/SubRegionTypes/Glow.lua`: no glow while the size of the region is secret.
+  - `WeakAuras/Animations.lua`: a zoom animation starts from the configured size when the size is secret.
+  - `WeakAuras/Prototypes.lua`: Bag Space and Equipment Durability give no value while the game keeps it secret.
 
 ### Changed
+- Rewritten in this fork's own way, same behavior, from the files taken from ForeverAuras on 2026-10-03:
+  `WeakAuras/TextStyle.lua`, `WeakAuras/DurationText.lua`, `WeakAuras/ProgressTextureNative.lua`,
+  `WeakAuras/CDMBackground.lua`, `WeakAuras/DispelTypeDisplay.lua`, `WeakAuras/SubRegionTypes/CDMDispel.lua`,
+  `WeakAuras/SubRegionTypes/CDMDispelBorder.lua`, `WeakAurasOptions/ColorPalette.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasColorPicker.lua`, `WeakAurasOptions/TriggerSecretWarnings.lua`,
+  `WeakAurasOptions/VersionCheck.lua`, `WeakAurasOptions/SubRegionOptions/CDMDispel.lua`,
+  `WeakAurasOptions/SubRegionOptions/CDMDispelBorder.lua`. Tested in game on WoW Forever 70124.
+- Rewritten the same way, same behavior: `WeakAuras/CooldownViewerTrigger.lua` (the unused `hasTimer` argument is
+  gone), `WeakAuras/CooldownViewerCatalog.lua`, `WeakAuras/CDMSetup.lua`, `WeakAuras/CDMAuraProgress.lua`,
+  `WeakAurasOptions/CooldownViewerOptions.lua`. Tested in game on WoW Forever 70124 (cooldown and buff triggers;
+  class pack setup ran on a character already set up, so it changed nothing).
+- Rewritten the same way, same behavior, Aura (Modern): `WeakAuras/BlizzardAuraDisplay.lua`,
+  `WeakAuras/SecretAuraSingle.lua`, `WeakAuras/SecretAuraFlow.lua`, `WeakAuras/SecretAuraConditions.lua`,
+  `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/SecretAuraGlow.lua`, `WeakAuras/SecretAuraTrigger.lua`,
+  `WeakAuras/SecretAuraPreview.lua`, `WeakAurasOptions/AuraDisplayOptions.lua`,
+  `WeakAurasOptions/AuraTriggerOptions.lua` (two unused constants removed),
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`. Tested in game on WoW Forever 70124 (player buff by exact and
+  all-ranks spell ID, target debuff, remaining time condition, native ring, Modern Aura Group).
+- Rewritten the same way, same behavior, talent picker of the load options:
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasMiniTalent.lua` (widget type and version kept). Tested in
+  game on WoW Forever 70124.
+- Second pass, local names and equivalent expressions only, same behavior: `WeakAuras/ProgressTextureNative.lua`,
+  `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAuras/CDMSetup.lua`, `WeakAuras/SecretAuraConditions.lua`,
+  `WeakAuras/SecretAuraSingle.lua`. Tested in game on WoW Forever 70124.
+- Fork code moved out of `WeakAuras/Prototypes.lua` to keep the upstream file closer to 5.22.0, same behavior:
+  new `WeakAuras/ClassicEraTriggers.lua` (Ammo, Bag Space, Equipment Durability, Role and Tracking triggers, loaded
+  after `Prototypes.lua`), new `WeakAuras/PrototypeSecretHelpers.lua` (secret value and cast helpers, loaded before
+  `Prototypes.lua`), Cooldown Manager spell lists moved to `WeakAuras/CooldownViewerCatalog.lua`, `WeakAuras/WeakAuras.toc`
+  lists the two new files. Tested in game on WoW Forever 70124 (Bag Space, Equipment Durability, Role, Tracking,
+  health and mana percent, player cast bar, Cooldown Manager triggers); Ammo not tested yet.
+- Fork code moved out of `WeakAuras/RegionTypes/AuraBar.lua` the same way, same behavior: new
+  `WeakAuras/RegionTypes/AuraBarNative.lua` (native StatusBar drawing for secret values and additional bars, loaded
+  before `AuraBar.lua`), `WeakAuras/WeakAuras.toc` lists it. Tested in game on WoW Forever 70124 (player cast bar).
+- Fork code moved out of `WeakAuras/Conditions.lua` the same way, same behavior: new `WeakAuras/SecretConditions.lua`
+  (conditions on secret values: generated code, secret pick, boolean and remaining time selection, refresh), loaded
+  after `Conditions.lua`, `WeakAuras/WeakAuras.toc` lists it. Tested in game on WoW Forever 70124 (interruptible color,
+  range and mana, remaining time and combat conditions).
+- Fork code moved out of `WeakAuras/RegionTypes/ProgressTexture.lua`, `WeakAuras/SubRegionTypes/SubText.lua` and
+  `WeakAuras/Init.lua` the same way, same behavior: new `WeakAuras/RegionTypes/ProgressTextureSecret.lua` (native ring
+  and bar for secret progress, loaded before `ProgressTexture.lua`), new `WeakAuras/SubRegionTypes/SubTextNative.lua`
+  (native text for secret values and duration text, loaded before `SubText.lua`), new `WeakAuras/SecretRestrictions.lua`
+  (combat log, secret value and restriction detection, loaded right after `Init.lua`), `WeakAuras/WeakAuras.toc` lists
+  them. Tested in game on WoW Forever 70124 (native ring and text on an aura, restriction detection in and out of
+  combat).
+- Fork code moved out of `WeakAuras/BuffTrigger2.lua` the same way, same behavior: new
+  `WeakAuras/BuffTriggerRestrictedAuras.lua` (readable auras added during the restriction, loaded before
+  `BuffTrigger2.lua`), `WeakAuras/WeakAuras.toc` lists it. Tested in game on WoW Forever 70124 (Aura trigger
+  in and out of combat).
+- Fork code moved out of `WeakAurasOptions/RegionOptions/Group.lua` the same way, same behavior: new
+  `WeakAurasOptions/RegionOptions/GroupModernFlow.lua` (Aura (Modern) group options and icon, loaded before
+  `Group.lua`), `WeakAurasOptions/WeakAurasOptions.toc` lists it. Tested in game on WoW Forever 70124.
+- Comments added by this fork removed from the WeakAuras files and from `WeakAuras/ForeverAurasImport.lua`,
+  `WeakAuras/SubRegionTypes/DispelIcon.lua`, no code change.
 - `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`: the low mana alert points to the new option instead of "Does not
   work".
 - `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`, `DESCRIPTION.md`: 1.4.1.
+- `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: 1.4.2.
+- `DESCRIPTION.md`: the ForeverAuras credit is one line pointing to this file.
 
 ## 2026-10-03
 
@@ -38,7 +156,7 @@ This file lists every file changed from the upstream 5.22.0 release, as required
   checked, the trigger also listens to `PLAYER_TARGET_CHANGED`. `WeakAuras/GenericTrigger.lua`: on that event, every
   state of the trigger is removed, as for "Hide when target dies"; both options now apply to the Spell Cast
   Succeeded trigger only. `WeakAuras/Locales/enUS.lua`: the two new strings. `TUTORIAL.md`,
-  `WeakAuras/ForeverTutorial.lua`: the option and the missed spell limit. Not tested in game yet.
+  `WeakAuras/ForeverTutorial.lua`: the option and the missed spell limit. Tested in game on WoW Forever 70124.
 
 Port of the ForeverAuras features this fork did not have yet. Code taken from ForeverAuras and adapted to this
 fork's names and existing mechanisms. Not tested in game yet.
@@ -177,7 +295,7 @@ fork's names and existing mechanisms. Not tested in game yet.
   `UnitPowerPercent` with the `CurveConstants.ZeroToOne` curve while the value is secret. `WeakAuras/WeakAuras.lua`
   does not scrub it, `WeakAuras/RegionTypes/RegionPrototype.lua` passes it with the main progress.
 - `WeakAuras/RegionTypes/Text.lua`: a Text aura draws secret values natively like a Text sub element
-  (`WeakAuras/SubRegionTypes/SubText.lua`, shared `Private.UpdateNativeText`): a text that is only `%p` follows the
+  (`WeakAuras/SubRegionTypes/SubTextNative.lua`, shared `Private.UpdateNativeText`): a text that is only `%p` follows the
   duration object, and a text made of `%p`, `%t`, `%value`, `%total`, `%health`, `%maxhealth`, `%power`, `%maxpower`,
   `%percenthealth`, `%percentpower` and plain text shows the secret value, total and percent (the Health and Power
   triggers store `secretPercentText` from the `CurveConstants.ScaleTo100` curve); a literal `%` is kept, a text

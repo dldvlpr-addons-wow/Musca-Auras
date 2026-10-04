@@ -1,17 +1,35 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, OptionsPrivate = ...
-local function createOptions(parentData, data, index, subIndex)
-  local points, areas = {}, {}
-  for child in OptionsPrivate.Private.TraverseLeafsOrAura(parentData) do
-    Mixin(points, OptionsPrivate.Private.GetAnchorsForData(child, "point"))
-    Mixin(areas, OptionsPrivate.Private.GetAnchorsForData(child, "area"))
+
+local SUBTYPE = "subcdmdispel"
+
+local function collectAnchors(parentData)
+  local pointAnchors, areaAnchors = {}, {}
+  local Private = OptionsPrivate.Private
+  for child in Private.TraverseLeafsOrAura(parentData) do
+    Mixin(pointAnchors, Private.GetAnchorsForData(child, "point"))
+    Mixin(areaAnchors, Private.GetAnchorsForData(child, "area"))
   end
-  local options = {
-    __title = "CDM Dispel Type Icon " .. subIndex, __order = 1,
-    dispelVisible = {type = "toggle", name = "Show Icon", order = 1, width = WeakAuras.normalWidth},
+  return pointAnchors, areaAnchors
+end
+
+local function createOptions(parentData, data, index, subIndex)
+  local pointAnchors, areaAnchors = collectAnchors(parentData)
+
+  local options = {}
+  options.__title = "CDM Dispel Type Icon " .. subIndex
+  options.__order = 1
+  options.dispelVisible = {
+    type = "toggle",
+    name = "Show Icon",
+    order = 1,
+    width = WeakAuras.normalWidth,
   }
-  OptionsPrivate.commonOptions.PositionOptionsForSubElement(data, options, 10, areas, points)
-  OptionsPrivate.AddUpDownDeleteDuplicate(options, parentData, index, "subcdmdispel")
+
+  OptionsPrivate.commonOptions.PositionOptionsForSubElement(data, options, 10, areaAnchors, pointAnchors)
+  OptionsPrivate.AddUpDownDeleteDuplicate(options, parentData, index, SUBTYPE)
   return options
 end
-WeakAuras.RegisterSubRegionOptions("subcdmdispel", createOptions, "Shows the dispel type of a Cooldown Manager buff trigger.")
+
+WeakAuras.RegisterSubRegionOptions(SUBTYPE, createOptions,
+  "Shows the dispel type of a Cooldown Manager buff trigger.")
