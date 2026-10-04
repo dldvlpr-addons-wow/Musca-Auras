@@ -1,2 +1,8 @@
 # Release archives: rebuilt on demand, not versioned.
 *.zip
+
+# Claude Code settings and agent memory: local only.
+.claude/
+
+# Local feature backlog.
+FEATURES-A-VENIR.md

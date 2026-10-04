@@ -10,25 +10,58 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.4.1',
+  versionString = '1.4.2',
   dateString = '2026-10-04',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md',
   highlightText = [==[
-- Low energy, low mana and low health alerts work in combat: the Health and Power triggers have a new Show only below (%) option]==],  commitText = [==[1.4.1 (2026-10-04):
+- Internal code reorganized, same behavior. Restart the game after the update: the new files are not loaded by a /reload]==],  commitText = [==[1.4.2 (2026-10-04):
+
+Changes:
+
+- Internal code reorganized: the WoW Forever code moved out of the WeakAuras files into files of its own. Nothing changes in your auras, the behavior is the same. Tested in game on WoW Forever
+- Restart the game after the update: the new files are not loaded by a /reload
+
+Known limitations:
+
+- Not tested in game yet: Important on the casts of other units, Ignore out of checking range, spell charges in combat
+- Aura (Modern) needs the spell ID of the aura itself, which can differ from the spell you cast on WoW Forever
+- /wa is also used by ForeverAuras: disable ForeverAuras, or type /weakauras
+- With the classic Aura trigger, buffs and debuffs are hidden in combat. Use Aura (Modern) for combat
+- Combat log triggers never fire: the game forbids the combat log to addons
+
+1.4.1 (2026-10-04):
 
 New:
 
 - Health and Power triggers: Show only below (%). The game itself hides the aura while the percent is at or above the value, in combat too. Example: Power, Energy, 70 shows a rogue icon under 70 energy (with 100 max energy). The aura stays active: sounds, glows and other actions still run. Not available for Stagger
 - Spell Cast Succeeded trigger: Hide when target changes. The timer started by your cast hides when you change or clear your target. Targeting the first mob again does not bring the timer back
+- Cooldown Progress (Spell) trigger: Desaturate while on cooldown. The game desaturates the icon while the spell is on cooldown, global cooldown excluded, in combat too
+- Cooldown Progress (Spell) trigger: Hide GCD Text. With Show Global Cooldown, the countdown numbers hide while only the global cooldown runs; the swipe still shows it
+- Cast trigger: Important filter and condition, for casts the game marks as important. While the spell is secret the value is unknown and the filter hides the cast
+- Character Stats trigger: Bonus Healing, Ranged Attack Power, Spell Haste (%), Ranged Haste (%) and Expertise (%)
+- Unit Characteristics trigger: Ignore out of checking range, for group members the game has not loaded (about 100 yards)
+- Text sub elements: %1.p and %1.s show the remaining time and stacks of an Aura (Modern) trigger on one unit in combat, also when that trigger is not the progress source of the aura
+- Conditions work in combat on secret values: Interruptible, Important, Spell Usable, Insufficient Resources, Spell in Range, and remaining time lower or greater than a value. The game itself applies the alpha, color and desaturation they set, in the usual priority order. Nothing to change in your auras
+
+Fixes:
+
+- Cast trigger on a mob (target, focus, nameplates): the cast shows again; the Important check stopped the trigger
+- Cast trigger on a mob in combat: %n shows the secret spell name instead of nothing
+- Secret values in combat no longer stop a whole trigger: a filter on a secret value fails alone
+- No Lua error from a glow, a zoom animation, Bag Space or Equipment Durability while the game keeps a value secret
 
 Changes:
 
+- Cooldown Progress (Spell) trigger: a %s text shows the charges of a spell in combat, read from the game
 - Guide (/wa tutorial): the low mana alert moves out of "Does not work"
+- Secret restrictions are checked again on combat, encounter, Mythic+ and PvP match changes, not only on entering and leaving combat
 
 Known limitations:
 
 - Show only below (%): the value is a percent of the maximum, not an amount. The option replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using the option, only one is used. While the /wa window is open, the aura stays visible
-- Not tested in game yet: Hide when target changes
+- Tested in game: Desaturate while on cooldown, Hide GCD Text, %1.p and %1.s on Aura (Modern), the new Character Stats (hidden in combat, where the game keeps stats secret), Hide when target changes, Important on the casts of the player, conditions on secret values (Interruptible color of a mob's cast, Spell in Range, Insufficient Resources, remaining time lower than a value), the secret spell name of a mob's cast with %n
+- Conditions on secret values: only alpha, color (icon, text, texture, bar) and desaturation follow them in combat; sounds, glows and other changes of such a condition do not run while the value is secret. Linked conditions are not covered. A remaining time condition placed after another secret condition on the same property is ignored in combat
+- Not tested in game yet: Important on the casts of other units, Ignore out of checking range, the fixes above, spell charges in combat
 - Combat log triggers never fire: the game forbids the combat log to addons
 
 1.4.0 (2026-10-03):

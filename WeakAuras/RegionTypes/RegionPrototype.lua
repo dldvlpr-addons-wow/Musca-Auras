@@ -110,6 +110,7 @@ function Private.regionPrototype.AddProperties(properties, defaultsForRegion)
     properties["alpha"] = {
       display = L["Alpha"],
       setter = "SetRegionAlpha",
+      secretCapable = true,
       type = "number",
       min = 0,
       max = 1,
@@ -507,8 +508,6 @@ local function UpdateProgressFromState(self, minMaxConfig, state, progressSource
       self.value = value - adjustMin
       self.total = max - adjustMin
     end
-    -- A secret progress (see ScrubSecretState) can be drawn natively, without adjusted min/max values
-    -- type() is the only test allowed on a secret
     if property == "value" and totalProperty == "total"
        and type(state.secretValue) == "number" and type(state.secretTotal) == "number"
        and not (minMaxConfig.adjustedMin or minMaxConfig.adjustedMinRelPercent
@@ -576,8 +575,6 @@ local function UpdateProgressFromState(self, minMaxConfig, state, progressSource
     self.duration = max - adjustMin
     self.expirationTime = expirationTime - adjustMin
     self.remaining = remaining
-    -- A duration object from the 12.x engine can be drawn natively even when its values are secret,
-    -- but it cannot be combined with adjusted min/max values
     if property == "expirationTime" and not paused
        and not (minMaxConfig.adjustedMin or minMaxConfig.adjustedMinRelPercent
                 or minMaxConfig.adjustedMax or minMaxConfig.adjustedMaxRelPercent)

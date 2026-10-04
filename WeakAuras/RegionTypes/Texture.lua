@@ -38,11 +38,14 @@ local properties = {
   color = {
     display = L["Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color",
   },
   desaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool"
   },
   width = {
@@ -191,6 +194,10 @@ local function modify(parent, region, data)
 
   function region:SetDesaturated(b)
     self.texture:SetDesaturated(b)
+  end
+
+  function region:SetSecretDesaturation(value)
+    self.texture:SetDesaturation(value)
   end
 
   --- @type fun(degrees: number?)

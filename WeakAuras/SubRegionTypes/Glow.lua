@@ -141,8 +141,8 @@ local properties = {
 }
 
 local function glowStart(self, frame, color)
-
-  if frame:GetWidth() < 1 or frame:GetHeight() < 1 then
+  local width, height = frame:GetWidth(), frame:GetHeight()
+  if Private.IsSecret(width, height) or width < 1 or height < 1 then
     self.glowStop(frame)
     return
   end

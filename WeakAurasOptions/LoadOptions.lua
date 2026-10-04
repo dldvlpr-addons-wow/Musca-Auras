@@ -785,7 +785,6 @@ function OptionsPrivate.ConstructOptions(prototype, data, startorder, triggernum
           };
           order = order + 1;
           if arg.cooldownManagerPicker and C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet then
-            -- Fills the spell with an exact spell ID taken from the Cooldown Manager catalog
             options["cooldownManager"..name..suffix] = {
               type = "select",
               width = WeakAuras.doubleWidth,

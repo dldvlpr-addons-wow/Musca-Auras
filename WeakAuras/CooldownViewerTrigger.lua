@@ -2,318 +2,411 @@ if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
 function Private.MigrateCDMCooldownTrigger(trigger)
-  if trigger and trigger.type == "cdm" and trigger.event == "Blizzard CDM Utility" then
-    trigger.event = "Blizzard Cooldown Manager"
-    trigger.cdmSource = "cooldown"
-  end
+  if not trigger then return end
+  if trigger.type ~= "cdm" or trigger.event ~= "Blizzard CDM Utility" then return end
+  trigger.event = "Blizzard Cooldown Manager"
+  trigger.cdmSource = "cooldown"
 end
 
-local catalog
-local refreshEvents = {
-  PLAYER_ENTERING_WORLD = true,
-  PLAYER_SPECIALIZATION_CHANGED = true,
-  SPELLS_CHANGED = true,
-  PLAYER_EQUIPMENT_CHANGED = true,
-  WA_CDM_LAYOUT_CHANGED = true,
-  COOLDOWN_VIEWER_DATA_LOADED = true,
-  COOLDOWN_VIEWER_TABLE_HOTFIXED = true,
-  COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED = true,
-}
-
-local function IsReadable(value)
-  return not (issecretvalue and issecretvalue(value))
+local RELOAD_EVENTS = {}
+for _, eventName in ipairs({
+  "PLAYER_ENTERING_WORLD", "PLAYER_SPECIALIZATION_CHANGED", "SPELLS_CHANGED", "PLAYER_EQUIPMENT_CHANGED",
+  "WA_CDM_LAYOUT_CHANGED", "COOLDOWN_VIEWER_DATA_LOADED", "COOLDOWN_VIEWER_TABLE_HOTFIXED",
+  "COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED",
+}) do
+  RELOAD_EVENTS[eventName] = true
 end
 
-local function IsAvailable()
-  return C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet and C_CooldownViewer.GetCooldownViewerCooldownInfo and Enum and Enum.CooldownViewerCategory and C_Spell and C_Spell.GetSpellCooldownDuration
+local function canRead(value)
+  if issecretvalue then return not issecretvalue(value) end
+  return true
 end
 
-local catalogTime
-
-local function CatalogRefresh(event)
-  if refreshEvents[event] then return true end
-  return event == "OPTIONS" and not (catalog and catalogTime == GetTime())
+local function readFlag(value)
+  if canRead(value) and type(value) == "boolean" then return value end
 end
 
-local function GetCatalog(refresh)
+local function readPositiveNumber(value)
+  return canRead(value) and type(value) == "number" and value > 0
+end
+
+local function viewerApiReady()
+  return C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet
+    and C_CooldownViewer.GetCooldownViewerCooldownInfo
+    and Enum and Enum.CooldownViewerCategory
+    and C_Spell and C_Spell.GetSpellCooldownDuration
+end
+
+local catalogCache
+local catalogStamp
+
+local function shouldReloadCatalog(event)
+  if RELOAD_EVENTS[event] then return true end
+  if event ~= "OPTIONS" then return false end
+  return not (catalogCache and catalogStamp == GetTime())
+end
+
+local function loadCatalog(forceReload)
   local batch = Private.cdmScanBatch
   if batch and batch.catalog then return batch.catalog end
-  if catalog and not refresh then
-    if batch then batch.catalog = catalog end
-    return catalog
+  if not catalogCache or forceReload then
+    catalogCache = viewerApiReady() and Private.CDMCatalog() or {}
+    catalogStamp = GetTime()
   end
-  catalog = IsAvailable() and Private.CDMCatalog() or {}
-  catalogTime = GetTime()
-  if batch then batch.catalog = catalog end
-  return catalog
+  if batch then batch.catalog = catalogCache end
+  return catalogCache
 end
 
-local function SpellRank(id)
-  if not IsReadable(id) or type(id) ~= "number" then return end
-  local text = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(id)
-  return IsReadable(text) and type(text) == "string" and tonumber(text:match("%d+")) or nil
+local function rankFromSubtext(spellID)
+  if not canRead(spellID) or type(spellID) ~= "number" then return end
+  local subtext = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(spellID)
+  if not canRead(subtext) or type(subtext) ~= "string" then return nil end
+  return tonumber(subtext:match("%d+"))
 end
 
-local function ExactMatch(info, id)
-  if IsReadable(info.spellID) and info.spellID == id then return 2 end
-  local baseRank, rank = SpellRank(info.spellID), SpellRank(id)
-  if baseRank and rank and baseRank ~= rank then return 0 end
-  for _, field in ipairs({"linkedSpellID", "overrideSpellID"}) do
-    if IsReadable(info[field]) and info[field] == id then return 1 end
-  end
-  for _, linked in ipairs(info.linkedSpellIDs or {}) do
-    if IsReadable(linked) and linked == id then return 1 end
+local function sameReadable(value, wanted)
+  return canRead(value) and value == wanted
+end
+
+local function matchStrength(info, wanted)
+  if sameReadable(info.spellID, wanted) then return 2 end
+  local ownRank, wantedRank = rankFromSubtext(info.spellID), rankFromSubtext(wanted)
+  if ownRank and wantedRank and ownRank ~= wantedRank then return 0 end
+  if sameReadable(info.linkedSpellID, wanted) or sameReadable(info.overrideSpellID, wanted) then return 1 end
+  for _, linkedID in ipairs(info.linkedSpellIDs or {}) do
+    if sameReadable(linkedID, wanted) then return 1 end
   end
   return 0
 end
 
-function Private.CDMSpellQueries(trigger)
-  if not (trigger.cdmUseNames or trigger.cdmUseExactIDs or (trigger.event == "Blizzard CDM Item" and trigger.cdmUseItemIDs)) then return end
-  local queries, seen = {}, {}
-  local function Add(values, exact, itemExact)
-    for _, value in ipairs(values or {}) do
-      local query = tostring(value):match("^%s*(.-)%s*$")
-      local key = (itemExact and "item:" or exact and "id:" or "name:") .. query
-      if query ~= "" and not seen[key] then
-        seen[key] = true
-        local buff = trigger.event == "Blizzard CDM Buff"
-        queries[#queries + 1] = {type = "cdm", event = trigger.event, cdmSource = buff and "buff" or "cooldown",
-          cdmSelection = "spell", cdmSpell = query, cdmExact = exact, cdmItemExact = itemExact == true, use_ignoreSpellKnown = trigger.use_ignoreSpellKnown,
-          showGCD = trigger.use_cdmShowGCD == true, track = trigger.cdmTrack or "auto", hideGCDText = trigger.cdmHideGCDText ~= false,
-          showMode = buff and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"),
-          requireTarget = buff and trigger.cdmRequireTarget == true}
-      end
-    end
-  end
-  if trigger.cdmUseNames then Add(trigger.cdmNames, false) end
-  if trigger.cdmUseExactIDs then Add(trigger.cdmExactIDs, true) end
-  if trigger.event == "Blizzard CDM Item" and trigger.cdmUseItemIDs then Add(trigger.cdmItemIDs, false, true) end
-  return queries
-end
-
-local resolved = {}
-
-local function BuffNameIndex(entries)
-  if resolved.buffNames then return resolved.buffNames end
-  local names, spells = {}, {}
-  local frames = Private.CDMFrames()
-  for entryID, entry in pairs(entries) do
-    if Private.CDMIsBuff(entry.category) then
-      local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID)
-      if info then
-        local displayed = entry.displayed == true
-        local ids = Private.CDMAuraSpellIDs(info)
-        local frame = frames[entryID]
-        local frameSpell = frame and frame.GetSpellID and frame:GetSpellID()
-        if IsReadable(frameSpell) and type(frameSpell) == "number" then ids[#ids + 1] = frameSpell end
-        for _, spellID in ipairs(ids) do
-          local spell = spells[spellID]
-          if spell == nil then
-            local info = C_Spell.GetSpellInfo(spellID)
-            spell = info and {name = info.name:lower(), id = spellID} or false
-            spells[spellID] = spell
-          end
-          if spell then
-            local candidates = names[spell.name]
-            if not candidates then candidates = {}; names[spell.name] = candidates end
-            candidates[#candidates + 1] = {spell = spell, entryID = entryID, displayed = displayed,
-              direct = IsReadable(info.spellID) and info.spellID == spellID and 1 or 0}
-          end
-        end
-      end
-    end
-  end
-  resolved.buffNames = names
-  return names
-end
-function Private.ResolveCDMSpell(trigger, event)
-  if trigger.type == "cdm" then trigger.cdmSource = trigger.event == "Blizzard CDM Buff" and "buff" or "cooldown" end
-  if refreshEvents[event] then Private.CDMResetIdentities() end
-  local entries = GetCatalog(CatalogRefresh(event))
-  local query = tostring(trigger.cdmSpell or ""):match("^%s*(.-)%s*$")
-  if trigger.event == "Blizzard CDM Item" then
-    local selected = {buffSpellIDsByEntry = {}}
-    local id = tonumber(query)
-    local spell = id and not trigger.cdmItemExact and C_Spell.GetSpellInfo(id)
-    local name = (spell and spell.name or query):lower()
-    local frames = Private.CDMFrames()
-    for entryID, entry in pairs(entries) do
-      local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID)
-      if info and Private.CDMEntryMatches(trigger, entry, info, event == "OPTIONS") then
-        local identity = Private.CDMIdentity(entryID, entry, info, frames[entryID])
-        local useSpell
-        if identity.itemID and C_Item and C_Item.GetItemSpell then
-          local _, spellID = C_Item.GetItemSpell(identity.itemID)
-          useSpell = spellID
-        end
-        local spellInfo = (useSpell or identity.spellID) and C_Spell.GetSpellInfo(useSpell or identity.spellID)
-        local matches
-        if trigger.cdmItemExact then
-          matches = id and identity.itemID == id
-        elseif trigger.cdmExact then
-          matches = id and (ExactMatch(info, id) > 0 or identity.spellID == id or useSpell == id)
-        else
-          matches = query ~= "" and (identity.name:lower() == name or spellInfo and spellInfo.name:lower() == name)
-        end
-        if matches then selected[#selected + 1] = entryID end
-      end
-    end
-    table.sort(selected)
-    return selected
-  end
-  local key = tostring(trigger.cdmSelection) .. ":" .. tostring(trigger.event) .. ":" .. query .. ":" .. tostring(trigger.cdmExact) .. ":" .. (trigger.cdmSource or "cooldown") .. ":" .. tostring(trigger.use_ignoreSpellKnown) .. ":" .. tostring(event == "OPTIONS")
-  if resolved.entries ~= entries then resolved = {entries = entries} end
-  if resolved[key] then return resolved[key] end
-  local id = tonumber(query)
-  if trigger.cdmExact and not id then return {} end
-  local spell = id and C_Spell.GetSpellInfo(id)
-  local name = (spell and spell.name or query):lower()
-  local exact = trigger.cdmExact == true
-  if event ~= "OPTIONS" and trigger.event == "Blizzard CDM Buff" and not exact then
-    local bestEntry, bestSpell, bestRank, bestDirect
-    for _, candidate in ipairs(BuffNameIndex(entries)[name] or {}) do
-      local spell = candidate.spell
-      if spell.known == nil then
-        spell.known = WeakAuras.IsSpellKnownIncludingPet(spell.id) == true
-        if spell.known then spell.rank = SpellRank(spell.id) or 0 end
-      end
-      if spell.known then
-        local rank, direct, entryID = spell.rank, candidate.direct, candidate.entryID
-        local displayed = candidate.displayed
-        if not bestSpell or rank > bestRank or (rank == bestRank and displayed
-            and (not bestEntry or direct > bestDirect or (direct == bestDirect and entryID < bestEntry))) then
-          bestEntry, bestSpell, bestRank, bestDirect = displayed and entryID or nil, spell.id, rank, direct
-        end
-      end
-    end
-    local selected = bestEntry and {bestEntry} or {}
-    selected.singleClone, selected.buffName = true, name
-    selected.buffResolvedSpellID = bestSpell
-    selected.buffSpellIDs = bestSpell and {bestSpell} or {}
-    resolved[key] = selected
-    return selected
-  end
-  local anyBuffRank = not exact and trigger.cdmSource == "buff"
-  local buffSpellIDs, seen, buffEntryIDs = {}, {}, {}
-  local function AddBuffID(spellID)
-    if not IsReadable(spellID) or type(spellID) ~= "number" or seen[spellID] then return end
-    local spell = C_Spell.GetSpellInfo(spellID)
-    if spell and spell.name:lower() == name then seen[spellID] = true; buffSpellIDs[#buffSpellIDs + 1] = spellID end
-  end
-  local best, bestRank, bestScore
-  local memo = event == "OPTIONS" and resolved
-  if memo and not memo.entryInfo then memo.entryInfo, memo.identities, memo.spellNames = {}, {}, {} end
-  local function EntryInfo(entryID)
-    if not memo then return C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID) end
-    local cached = memo.entryInfo[entryID]
-    if cached == nil then
-      cached = C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID) or false
-      memo.entryInfo[entryID] = cached
-    end
-    return cached or nil
-  end
-  local function Identity(entryID, entry, info)
-    if not memo then return Private.CDMIdentity(entryID, entry, info) end
-    local cached = memo.identities[entryID]
-    if not cached then
-      cached = Private.CDMIdentity(entryID, entry, info)
-      memo.identities[entryID] = cached
-    end
-    return cached
-  end
-  local function SpellNameLower(spellID)
-    if not memo then
-      local spellInfo = C_Spell.GetSpellInfo(spellID)
-      return spellInfo and spellInfo.name:lower()
-    end
-    local cached = memo.spellNames[spellID]
-    if cached == nil then
-      local spellInfo = C_Spell.GetSpellInfo(spellID)
-      cached = spellInfo and spellInfo.name:lower() or false
-      memo.spellNames[spellID] = cached
-    end
-    return cached or nil
-  end
-  for entryID, entry in pairs(entries) do
-    if (event == "OPTIONS" or entry.known or exact or anyBuffRank or trigger.use_ignoreSpellKnown) and Private.CDMIsBuff(entry.category) == (trigger.cdmSource == "buff") then
-      local info = EntryInfo(entryID)
-      if info and (trigger.cdmSelection ~= "spell" or Private.CDMEntryMatches(trigger, entry, info, event == "OPTIONS")) then
-        local identity = Identity(entryID, entry, info)
-        local score = exact and ExactMatch(info, id) or 1
-        local matches = exact and score > 0 or not exact and identity.name:lower() == name
-        local auraSpellIDs = anyBuffRank and Private.CDMAuraSpellIDs(info)
-        if anyBuffRank and not matches then
-          for _, spellID in ipairs(auraSpellIDs) do
-            if SpellNameLower(spellID) == name then matches = true; break end
-          end
-        end
-        if matches and anyBuffRank then
-          buffEntryIDs[#buffEntryIDs + 1] = entryID
-          AddBuffID(identity.spellID)
-          for _, spellID in ipairs(auraSpellIDs) do AddBuffID(spellID) end
-          score = entry.known and 1 or 0
-        end
-        if matches and identity.spellID then
-          local subtext = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(trigger.cdmSelection == "spell" and info.spellID or identity.spellID)
-          local rank = IsReadable(subtext) and type(subtext) == "string" and tonumber(subtext:match("%d+")) or 0
-          if not best or score > bestScore or (score == bestScore and (rank > bestRank or (rank == bestRank and entryID < best))) then best, bestRank, bestScore = entryID, rank, score end
-        end
-      end
-    end
-  end
-  if event == "OPTIONS" and not best then
-    resolved[key] = {previewSpell = spell or {name = query, iconID = 134400, spellID = id}, singleClone = true}
-    return resolved[key]
-  end
-  resolved[key] = best and {best} or {}
-  if anyBuffRank then
-    table.sort(buffSpellIDs)
-    table.sort(buffEntryIDs)
-    resolved[key].buffSpellIDs = buffSpellIDs
-    if trigger.cdmSelection == "spell" then resolved[key].buffEntryIDs = buffEntryIDs end
-  end
-  if trigger.cdmSelection == "spell" then resolved[key].singleClone = true end
-  return resolved[key]
-end
-
 function Private.CDMEntryMatches(trigger, entry, info, preview)
   if not preview and entry.displayed ~= true then return false end
-  local c = Enum.CooldownViewerCategory
-  local item = info.equipSlot ~= nil or info.spellCategoryID ~= nil
-    or entry.sourceCategory == c.EquipSlotEssential or entry.sourceCategory == c.EquipSlotTracked
-  if trigger.event == "Blizzard CDM Item" then return item and not Private.CDMIsBuff(entry.category) end
-  if trigger.event == "Blizzard CDM Buff" then return Private.CDMIsBuff(entry.category) end
-  if item then return false end
-  return entry.category == c.Essential or entry.category == c.Utility
+  local categories = Enum.CooldownViewerCategory
+  local isItem = info.equipSlot ~= nil or info.spellCategoryID ~= nil
+    or entry.sourceCategory == categories.EquipSlotEssential
+    or entry.sourceCategory == categories.EquipSlotTracked
+  local kind = trigger.event
+  if kind == "Blizzard CDM Item" then return isItem and not Private.CDMIsBuff(entry.category) end
+  if kind == "Blizzard CDM Buff" then return Private.CDMIsBuff(entry.category) end
+  if isItem then return false end
+  return entry.category == categories.Essential or entry.category == categories.Utility
 end
 
 function Private.CDMAuraSpellIDs(info)
-  local ids, seen = {}, {}
-  local function Add(id)
-    if IsReadable(id) and type(id) == "number" and id > 0 and not seen[id] then
-      seen[id] = true; ids[#ids + 1] = id
+  local ids, known = {}, {}
+  local function push(candidate)
+    if readPositiveNumber(candidate) and not known[candidate] then
+      known[candidate] = true
+      ids[#ids + 1] = candidate
     end
   end
-  Add(info.spellID); Add(info.overrideSpellID); Add(info.overrideTooltipSpellID); Add(info.linkedSpellID)
-  for _, id in ipairs(info.linkedSpellIDs or {}) do Add(id) end
+  for _, field in ipairs({"spellID", "overrideSpellID", "overrideTooltipSpellID", "linkedSpellID"}) do
+    push(info[field])
+  end
+  for _, linkedID in ipairs(info.linkedSpellIDs or {}) do push(linkedID) end
   table.sort(ids)
   return ids
 end
 
+function Private.CDMSpellQueries(trigger)
+  local useItems = trigger.event == "Blizzard CDM Item" and trigger.cdmUseItemIDs
+  if not (trigger.cdmUseNames or trigger.cdmUseExactIDs or useItems) then return end
+  local isBuff = trigger.event == "Blizzard CDM Buff"
+  local template = {
+    type = "cdm",
+    event = trigger.event,
+    cdmSource = isBuff and "buff" or "cooldown",
+    cdmSelection = "spell",
+    use_ignoreSpellKnown = trigger.use_ignoreSpellKnown,
+    showGCD = trigger.use_cdmShowGCD == true,
+    track = trigger.cdmTrack or "auto",
+    hideGCDText = trigger.cdmHideGCDText ~= false,
+    showMode = isBuff and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"),
+    requireTarget = isBuff and trigger.cdmRequireTarget == true,
+  }
+  local queries, taken = {}, {}
+  local function collect(values, exact, itemExact)
+    for _, raw in ipairs(values or {}) do
+      local text = tostring(raw):match("^%s*(.-)%s*$")
+      local dedupeKey = (itemExact and "item:" or exact and "id:" or "name:") .. text
+      if text ~= "" and not taken[dedupeKey] then
+        taken[dedupeKey] = true
+        local query = {}
+        for field, value in pairs(template) do query[field] = value end
+        query.cdmSpell = text
+        query.cdmExact = exact
+        query.cdmItemExact = itemExact == true
+        queries[#queries + 1] = query
+      end
+    end
+  end
+  if trigger.cdmUseNames then collect(trigger.cdmNames, false) end
+  if trigger.cdmUseExactIDs then collect(trigger.cdmExactIDs, true) end
+  if useItems then collect(trigger.cdmItemIDs, false, true) end
+  return queries
+end
+
+local lookupCache = {}
+
+local function indexBuffNames(entries)
+  if lookupCache.buffNames then return lookupCache.buffNames end
+  local byName, spellRecords = {}, {}
+  local frames = Private.CDMFrames()
+  local function recordFor(spellID)
+    local record = spellRecords[spellID]
+    if record == nil then
+      local spellInfo = C_Spell.GetSpellInfo(spellID)
+      record = spellInfo and {name = spellInfo.name:lower(), id = spellID} or false
+      spellRecords[spellID] = record
+    end
+    return record
+  end
+  for entryID, entry in pairs(entries) do
+    local info = Private.CDMIsBuff(entry.category) and C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID)
+    if info then
+      local shown = entry.displayed == true
+      local spellIDs = Private.CDMAuraSpellIDs(info)
+      local frame = frames[entryID]
+      local frameSpell = frame and frame.GetSpellID and frame:GetSpellID()
+      if canRead(frameSpell) and type(frameSpell) == "number" then spellIDs[#spellIDs + 1] = frameSpell end
+      for _, spellID in ipairs(spellIDs) do
+        local record = recordFor(spellID)
+        if record then
+          local bucket = byName[record.name]
+          if not bucket then
+            bucket = {}
+            byName[record.name] = bucket
+          end
+          bucket[#bucket + 1] = {
+            spell = record,
+            entryID = entryID,
+            displayed = shown,
+            direct = sameReadable(info.spellID, spellID) and 1 or 0,
+          }
+        end
+      end
+    end
+  end
+  lookupCache.buffNames = byName
+  return byName
+end
+
+local function pickItemEntries(trigger, entries, event, query)
+  local picked = {buffSpellIDsByEntry = {}}
+  local numeric = tonumber(query)
+  local spell = numeric and not trigger.cdmItemExact and C_Spell.GetSpellInfo(numeric)
+  local lowered = (spell and spell.name or query):lower()
+  local frames = Private.CDMFrames()
+  local preview = event == "OPTIONS"
+  for entryID, entry in pairs(entries) do
+    local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID)
+    if info and Private.CDMEntryMatches(trigger, entry, info, preview) then
+      local identity = Private.CDMIdentity(entryID, entry, info, frames[entryID])
+      local itemSpell
+      if identity.itemID and C_Item and C_Item.GetItemSpell then
+        local _, linkedSpell = C_Item.GetItemSpell(identity.itemID)
+        itemSpell = linkedSpell
+      end
+      local effective = itemSpell or identity.spellID
+      local spellInfo = effective and C_Spell.GetSpellInfo(effective)
+      local hit
+      if trigger.cdmItemExact then
+        hit = numeric and identity.itemID == numeric
+      elseif trigger.cdmExact then
+        hit = numeric and (matchStrength(info, numeric) > 0 or identity.spellID == numeric or itemSpell == numeric)
+      else
+        hit = query ~= "" and (identity.name:lower() == lowered or spellInfo and spellInfo.name:lower() == lowered)
+      end
+      if hit then picked[#picked + 1] = entryID end
+    end
+  end
+  table.sort(picked)
+  return picked
+end
+
+local function pickBuffByName(entries, lowered)
+  local topEntry, topSpell, topRank, topDirect
+  for _, candidate in ipairs(indexBuffNames(entries)[lowered] or {}) do
+    local record = candidate.spell
+    if record.known == nil then
+      record.known = WeakAuras.IsSpellKnownIncludingPet(record.id) == true
+      if record.known then record.rank = rankFromSubtext(record.id) or 0 end
+    end
+    if record.known then
+      local rank, direct, entryID = record.rank, candidate.direct, candidate.entryID
+      local displayed = candidate.displayed
+      local beatsTop = not topSpell or rank > topRank
+        or (rank == topRank and displayed
+          and (not topEntry or direct > topDirect or (direct == topDirect and entryID < topEntry)))
+      if beatsTop then
+        topEntry, topSpell, topRank, topDirect = displayed and entryID or nil, record.id, rank, direct
+      end
+    end
+  end
+  local picked = topEntry and {topEntry} or {}
+  picked.singleClone = true
+  picked.buffName = lowered
+  picked.buffResolvedSpellID = topSpell
+  picked.buffSpellIDs = topSpell and {topSpell} or {}
+  return picked
+end
+
+local function memoizedLookups(memo)
+  if memo and not memo.entryInfo then
+    memo.entryInfo, memo.identities, memo.spellNames = {}, {}, {}
+  end
+  local function cooldownInfo(entryID)
+    if not memo then return C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID) end
+    local stored = memo.entryInfo[entryID]
+    if stored == nil then
+      stored = C_CooldownViewer.GetCooldownViewerCooldownInfo(entryID) or false
+      memo.entryInfo[entryID] = stored
+    end
+    return stored or nil
+  end
+  local function identityOf(entryID, entry, info)
+    if not memo then return Private.CDMIdentity(entryID, entry, info) end
+    local stored = memo.identities[entryID]
+    if not stored then
+      stored = Private.CDMIdentity(entryID, entry, info)
+      memo.identities[entryID] = stored
+    end
+    return stored
+  end
+  local function loweredSpellName(spellID)
+    if not memo then
+      local spellInfo = C_Spell.GetSpellInfo(spellID)
+      return spellInfo and spellInfo.name:lower()
+    end
+    local stored = memo.spellNames[spellID]
+    if stored == nil then
+      local spellInfo = C_Spell.GetSpellInfo(spellID)
+      stored = spellInfo and spellInfo.name:lower() or false
+      memo.spellNames[spellID] = stored
+    end
+    return stored or nil
+  end
+  return cooldownInfo, identityOf, loweredSpellName
+end
+
+local function scanEntries(trigger, entries, event, query, numeric, spell, lowered)
+  local preview = event == "OPTIONS"
+  local exact = trigger.cdmExact == true
+  local wantsBuff = trigger.cdmSource == "buff"
+  local spreadAuras = not exact and wantsBuff
+  local auraSpellList, auraSeen, auraEntryList = {}, {}, {}
+  local function addAuraSpell(spellID)
+    if not canRead(spellID) or type(spellID) ~= "number" or auraSeen[spellID] then return end
+    local spellInfo = C_Spell.GetSpellInfo(spellID)
+    if spellInfo and spellInfo.name:lower() == lowered then
+      auraSeen[spellID] = true
+      auraSpellList[#auraSpellList + 1] = spellID
+    end
+  end
+  local cooldownInfo, identityOf, loweredSpellName = memoizedLookups(preview and lookupCache)
+  local topEntry, topRank, topScore
+  for entryID, entry in pairs(entries) do
+    local admitted = preview or entry.known or exact or spreadAuras or trigger.use_ignoreSpellKnown
+    if admitted and Private.CDMIsBuff(entry.category) == wantsBuff then
+      local info = cooldownInfo(entryID)
+      if info and (trigger.cdmSelection ~= "spell" or Private.CDMEntryMatches(trigger, entry, info, preview)) then
+        local identity = identityOf(entryID, entry, info)
+        local score = exact and matchStrength(info, numeric) or 1
+        local hit = exact and score > 0 or not exact and identity.name:lower() == lowered
+        local auraIDs = spreadAuras and Private.CDMAuraSpellIDs(info)
+        if spreadAuras and not hit then
+          for _, auraID in ipairs(auraIDs) do
+            if loweredSpellName(auraID) == lowered then
+              hit = true
+              break
+            end
+          end
+        end
+        if hit and spreadAuras then
+          auraEntryList[#auraEntryList + 1] = entryID
+          addAuraSpell(identity.spellID)
+          for _, auraID in ipairs(auraIDs) do addAuraSpell(auraID) end
+          score = entry.known and 1 or 0
+        end
+        if hit and identity.spellID then
+          local probe = trigger.cdmSelection == "spell" and info.spellID or identity.spellID
+          local subtext = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(probe)
+          local rank = canRead(subtext) and type(subtext) == "string" and tonumber(subtext:match("%d+")) or 0
+          local better = not topEntry or score > topScore
+            or (score == topScore and (rank > topRank or (rank == topRank and entryID < topEntry)))
+          if better then topEntry, topRank, topScore = entryID, rank, score end
+        end
+      end
+    end
+  end
+  if preview and not topEntry then
+    return {previewSpell = spell or {name = query, iconID = 134400, spellID = numeric}, singleClone = true}
+  end
+  local result = topEntry and {topEntry} or {}
+  if spreadAuras then
+    table.sort(auraSpellList)
+    table.sort(auraEntryList)
+    result.buffSpellIDs = auraSpellList
+    if trigger.cdmSelection == "spell" then result.buffEntryIDs = auraEntryList end
+  end
+  if trigger.cdmSelection == "spell" then result.singleClone = true end
+  return result
+end
+
+function Private.ResolveCDMSpell(trigger, event)
+  if trigger.type == "cdm" then
+    trigger.cdmSource = trigger.event == "Blizzard CDM Buff" and "buff" or "cooldown"
+  end
+  if RELOAD_EVENTS[event] then Private.CDMResetIdentities() end
+  local entries = loadCatalog(shouldReloadCatalog(event))
+  local query = tostring(trigger.cdmSpell or ""):match("^%s*(.-)%s*$")
+  if trigger.event == "Blizzard CDM Item" then
+    return pickItemEntries(trigger, entries, event, query)
+  end
+  local cacheKey = table.concat({
+    tostring(trigger.cdmSelection),
+    tostring(trigger.event),
+    query,
+    tostring(trigger.cdmExact),
+    trigger.cdmSource or "cooldown",
+    tostring(trigger.use_ignoreSpellKnown),
+    tostring(event == "OPTIONS"),
+  }, ":")
+  if lookupCache.entries ~= entries then lookupCache = {entries = entries} end
+  if lookupCache[cacheKey] then return lookupCache[cacheKey] end
+  local numeric = tonumber(query)
+  if trigger.cdmExact and not numeric then return {} end
+  local spell = numeric and C_Spell.GetSpellInfo(numeric)
+  local lowered = (spell and spell.name or query):lower()
+  local outcome
+  if event ~= "OPTIONS" and trigger.event == "Blizzard CDM Buff" and trigger.cdmExact ~= true then
+    outcome = pickBuffByName(entries, lowered)
+  else
+    outcome = scanEntries(trigger, entries, event, query, numeric, spell, lowered)
+  end
+  lookupCache[cacheKey] = outcome
+  return outcome
+end
+
 function Private.GetCDMPickerSelections(trigger, event)
-  local selected = {buffSpellIDsByEntry = {}}
-  local entries = GetCatalog(CatalogRefresh(event))
-  for key, enabled in pairs(trigger.cdmSpells and trigger.cdmSpells.multi or {}) do
-    local id = tonumber(key)
+  local picked = {buffSpellIDsByEntry = {}}
+  local entries = loadCatalog(shouldReloadCatalog(event))
+  local chosen = trigger.cdmSpells and trigger.cdmSpells.multi or {}
+  for rawKey, enabled in pairs(chosen) do
+    local id = tonumber(rawKey)
     local entry = id and entries[id]
     local info = entry and C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
     if enabled and info and Private.CDMEntryMatches(trigger, entry, info, event == "OPTIONS") then
-      selected[#selected + 1] = id
-      selected.buffSpellIDsByEntry[id] = Private.CDMAuraSpellIDs(info)
+      picked[#picked + 1] = id
+      picked.buffSpellIDsByEntry[id] = Private.CDMAuraSpellIDs(info)
     end
   end
-  table.sort(selected)
-  return selected
+  table.sort(picked)
+  return picked
+end
+
+local function hasFreeTextSpell(trigger)
+  return trigger.cdmSpell ~= nil and tostring(trigger.cdmSpell):find("%S") and trigger.event ~= "Blizzard CDM Item"
 end
 
 function Private.CDMNativeSelections(trigger)
@@ -325,561 +418,606 @@ function Private.CDMNativeSelections(trigger)
     end
     return bindings
   end
-  if trigger.cdmSpell ~= nil and tostring(trigger.cdmSpell):find("%S") and trigger.event ~= "Blizzard CDM Item" then
-    local selected = Private.ResolveCDMSpell(trigger)
-    local id = trigger.cdmExact and tonumber(trigger.cdmSpell)
-    return {id and selected[1] and {id} or selected.buffSpellIDs}
+  if hasFreeTextSpell(trigger) then
+    local resolution = Private.ResolveCDMSpell(trigger)
+    local exactID = trigger.cdmExact and tonumber(trigger.cdmSpell)
+    return {exactID and resolution[1] and {exactID} or resolution.buffSpellIDs}
   end
-  local selected = Private.GetCDMPickerSelections(trigger, "OPTIONS")
+  local picked = Private.GetCDMPickerSelections(trigger, "OPTIONS")
   local bindings = {}
-  for _, id in ipairs(selected) do bindings[#bindings + 1] = selected.buffSpellIDsByEntry[id] end
+  for _, id in ipairs(picked) do bindings[#bindings + 1] = picked.buffSpellIDsByEntry[id] end
   return bindings
 end
 
-local function GetSelections(trigger)
+local function collectSelectionIDs(trigger)
   local queries = Private.CDMSpellQueries(trigger)
   if queries then
-    local selected, seen = {}, {}
+    local merged, present = {}, {}
     for _, query in ipairs(queries) do
       for _, id in ipairs(Private.ResolveCDMSpell(query)) do
-        if not seen[id] then selected[#selected + 1] = id; seen[id] = true end
+        if not present[id] then
+          merged[#merged + 1] = id
+          present[id] = true
+        end
       end
     end
-    return selected
+    return merged
   end
-  if trigger.cdmSpell ~= nil and tostring(trigger.cdmSpell):find("%S") and trigger.event ~= "Blizzard CDM Item" then return Private.ResolveCDMSpell(trigger) end
+  if hasFreeTextSpell(trigger) then return Private.ResolveCDMSpell(trigger) end
   return Private.GetCDMPickerSelections(trigger)
 end
 
-local function GetValues(trigger)
-  local values = {}
+local function describeEntries(trigger)
+  local labels = {}
   local frames = Private.CDMFrames()
-  for id, entry in pairs(GetCatalog(true)) do
+  for id, entry in pairs(loadCatalog(true)) do
     local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
     if info then
       local identity = Private.CDMIdentity(id, entry, info, frames[id])
-      local placement = entry.displayed == true and "Displayed" or entry.displayed == false and "Not displayed" or "Layout unavailable"
-      local learned = entry.known and "" or " - Not learned"
-      values[id] = placement .. " - " .. Private.CDMCategoryName(entry.category) .. " - " .. identity.name .. " [" .. (identity.spellID or identity.itemID or "Unknown") .. "]" .. learned
+      local placement = "Layout unavailable"
+      if entry.displayed == true then placement = "Displayed"
+      elseif entry.displayed == false then placement = "Not displayed" end
+      local suffix = entry.known and "" or " - Not learned"
+      local reference = identity.spellID or identity.itemID or "Unknown"
+      labels[id] = table.concat({
+        placement, Private.CDMCategoryName(entry.category), identity.name .. " [" .. reference .. "]" .. suffix,
+      }, " - ")
     end
   end
-  for _, id in ipairs(GetSelections(trigger)) do
-    if type(id) == "number" and not values[id] then values[id] = "Unavailable in this specialization" end
+  for _, id in ipairs(collectSelectionIDs(trigger)) do
+    if type(id) == "number" and not labels[id] then labels[id] = "Unavailable in this specialization" end
   end
-  return values
+  return labels
 end
 
-local function ReadBoolean(value)
-  if IsReadable(value) and type(value) == "boolean" then return value end
-end
+local cooldownFlags = {}
 
-local spellCooldowns = {}
-local function GetSpellCooldownState(spellID, event)
+local function trackCooldownFlags(spellID, event)
   local info = C_Spell.GetSpellCooldown and C_Spell.GetSpellCooldown(spellID)
-  local active = info and ReadBoolean(info.isActive)
+  local active = info and readFlag(info.isActive)
   if active == nil then return end
-  local status = spellCooldowns[spellID]
-  if not status then status = {}; spellCooldowns[spellID] = status end
+  local flags = cooldownFlags[spellID]
+  if not flags then
+    flags = {}
+    cooldownFlags[spellID] = flags
+  end
   if not active then
-    status.onCooldown, status.onGCD = false, false
+    flags.onCooldown, flags.onGCD = false, false
+  elseif event == "SPELL_UPDATE_COOLDOWN" then
+    if readFlag(info.isOnGCD) == nil then
+      flags.onCooldown, flags.onGCD = nil, nil
+    else
+      local gcdRunning = info.isOnGCD == true
+      flags.onCooldown, flags.onGCD = not gcdRunning, gcdRunning
+    end
   end
-  if active and event == "SPELL_UPDATE_COOLDOWN" and ReadBoolean(info.isOnGCD) == nil then
-    status.onCooldown, status.onGCD = nil, nil
-  end
-  if active and event == "SPELL_UPDATE_COOLDOWN" and ReadBoolean(info.isOnGCD) ~= nil then
-    local onGCD = info.isOnGCD == true
-    status.onCooldown, status.onGCD = not onGCD, onGCD
-  end
-  return status.onCooldown, true, status.onGCD
+  return flags.onCooldown, true, flags.onGCD
 end
 
-local emptyDuration
-local function GetEmptyDuration()
-  emptyDuration = emptyDuration or C_DurationUtil.CreateDuration()
-  return emptyDuration
+local blankDurationObject
+
+local function blankDuration()
+  blankDurationObject = blankDurationObject or C_DurationUtil.CreateDuration()
+  return blankDurationObject
 end
 
-local function QueueRefresh()
-  Private.QueueCDMRefresh()
+local touchedClones = {}
+
+local RESET_FIELDS = {
+  "durationObject", "duration", "expirationTime", "modRate",
+  "cdmTextDurationObject", "cdmTextDurationRequired",
+  "cdmAuraRenderUnit", "cdmAuraRenderSpellIDs",
+  "cdmCountdownSource", "cdmStackSource", "cdmTextRecord", "cdmDispelName",
+  "debuffClass", "isUsable", "insufficientResources",
+  "onCooldown", "isReady", "recharging", "stacks", "auraActive",
+}
+
+local FRESH_DEFAULTS = {
+  show = true,
+  changed = true,
+  autoHide = false,
+  progressType = "static",
+  value = 1,
+  total = 1,
+  cdmSuppressGCD = false,
+  cdmNativePaused = false,
+  cdmGCDOnly = false,
+}
+
+local SHOW_FILTERS = {
+  cooldown = function(state) return state.onCooldown == true end,
+  ready = function(state) return state.onCooldown == false end,
+  active = function(state) return state.auraActive == true end,
+  missing = function(state) return state.auraActive == false end,
+}
+
+local function fillPreviewState(state)
+  state.progressType, state.duration, state.expirationTime = "timed", 6, GetTime() + 6
+  state.value, state.total = nil, nil
+  state.stacks, state.auraActive, state.onCooldown = 3, true, true
+  state.cdmHideGCDText = false
 end
 
-local built = {}
-local function BuildCooldownViewerStates(allstates, selected, event, showGCD, track, hideGCDText, showMode, exactID, requireTarget, ignoreSpellKnown)
-  wipe(built)
-  if event == "PLAYER_SPECIALIZATION_CHANGED" or event == "PLAYER_EQUIPMENT_CHANGED" or event == "PLAYER_ENTERING_WORLD" then Private.CDMResetIdentities() end
-  local available = GetCatalog(CatalogRefresh(event))
+local function fillBuffState(state, ctx, cooldownID, identity, info, bindingIDs)
+  local selected, available, frames = ctx.selected, ctx.available, ctx.frames
+  if not selected.buffEntryIDs then
+    Private.CDMApplyAura(state, identity, info, frames[cooldownID], ctx.opts.exactID, bindingIDs or selected.buffSpellIDs)
+    return
+  end
+  local topAura, topScore
+  for _, auraID in ipairs(selected.buffEntryIDs) do
+    local auraInfo = C_CooldownViewer.GetCooldownViewerCooldownInfo(auraID)
+    if auraInfo and available[auraID] then
+      local trial = {}
+      local auraIdentity = Private.CDMIdentity(auraID, available[auraID], auraInfo, frames[auraID])
+      Private.CDMApplyAura(trial, auraIdentity, auraInfo, frames[auraID], nil, selected.buffSpellIDs)
+      local score = 0
+      if trial.auraActive == true then score = 2 elseif trial.auraActive == nil then score = 1 end
+      if not topAura or score > topScore then topAura, topScore = trial, score end
+    end
+  end
+  for field, value in pairs(topAura or {}) do state[field] = value end
+  if state.progressType ~= "static" then state.value, state.total = nil, nil end
+end
+
+local function fillSpellState(state, identity, frame, event, opts)
+  local spellID = identity.spellID
+  if C_SpellBook and C_SpellBook.FindSpellOverrideByID then
+    local replacement = C_SpellBook.FindSpellOverrideByID(spellID)
+    if readPositiveNumber(replacement) then spellID = replacement end
+  end
+  if C_Spell.IsSpellUsable then
+    local usable, lacksResources = C_Spell.IsSpellUsable(spellID)
+    state.isUsable = readFlag(usable)
+    state.insufficientResources = readFlag(lacksResources)
+  end
+  local onCooldown, flagsKnown, onGCD = trackCooldownFlags(spellID, event)
+  local realDuration = onGCD == true and blankDuration() or C_Spell.GetSpellCooldownDuration(spellID, true)
+  local textDuration = realDuration
+  local native = Private.CDMGetNativeCooldown(frame, identity.spellID)
+  state.cdmNativeRevision = native and native.revision
+  local shownDuration = opts.showGCD and native and native.duration or realDuration
+  state.cdmNativePaused = native and native.paused == true or false
+  if native then
+    state.inRange = native.inRange
+    state.stacks = native.charges
+    if native.charges ~= nil then state.isReady = native.charges > 0 end
+    if native.onGCD ~= nil then state.cdmGCDOnly = native.onGCD end
+    if native.onCooldown ~= nil then
+      state.onCooldown = native.onCooldown
+      if state.stacks == nil then state.isReady = not native.onCooldown end
+    end
+    if native.recharging ~= nil then state.recharging = native.recharging end
+  end
+  if onCooldown ~= nil then
+    state.onCooldown, state.isReady = onCooldown, not onCooldown
+    state.cdmNativePaused = false
+    if onCooldown then
+      shownDuration = realDuration
+      state.cdmGCDOnly = false
+    elseif onGCD then
+      shownDuration = opts.showGCD and C_Spell.GetSpellCooldownDuration(spellID) or nil
+      state.cdmGCDOnly = true
+    else
+      shownDuration = realDuration
+      state.cdmGCDOnly = false
+    end
+  elseif flagsKnown and not state.cdmGCDOnly then
+    shownDuration = opts.showGCD and C_Spell.GetSpellCooldownDuration(spellID) or realDuration
+    state.cdmNativePaused = false
+  end
+  local charges = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(spellID)
+  if charges then
+    local current = charges.currentCharges
+    local refilling = readFlag(charges.isActive)
+    if refilling ~= nil then state.recharging = refilling end
+    if canRead(current) and type(current) == "number" then
+      state.stacks = current
+      state.isReady, state.onCooldown = current > 0, current == 0
+    elseif native and native.recharging == true then
+      state.isReady, state.onCooldown = true, false
+    end
+  end
+  local track = opts.track
+  if C_Spell.GetSpellChargeDuration and (track == "charges" or (track == "auto" and state.recharging == true)) then
+    local chargeDuration = C_Spell.GetSpellChargeDuration(spellID)
+    if chargeDuration then
+      shownDuration, textDuration = chargeDuration, chargeDuration
+      state.cdmGCDOnly, state.cdmNativePaused = false, false
+    end
+  end
+  if state.cdmGCDOnly and not opts.showGCD then shownDuration = nil end
+  state.cdmSuppressGCD = not shownDuration
+  state.value, state.total = nil, nil
+  if shownDuration then
+    state.progressType, state.durationObject = "durationObject", shownDuration
+  else
+    state.progressType, state.duration, state.expirationTime = "timed", 0, 0
+  end
+  if opts.hideGCDText then
+    state.cdmTextDurationObject = textDuration
+    state.cdmTextDurationRequired = true
+  end
+end
+
+local function anySpellKnown(candidates)
+  for _, id in pairs(candidates) do
+    if readPositiveNumber(id) and id < 2147483647 and WeakAuras.IsSpellKnownIncludingPet(id) then
+      return true
+    end
+  end
+  return false
+end
+
+local function finalizeVisibility(state, entry, info, identity, opts)
+  local mode = opts.showMode
+  if mode == "usable" then
+    state.show = state.isUsable == true
+  elseif mode == "unusable" then
+    state.show = state.isUsable == false
+  end
+  if not opts.ignoreSpellKnown and not state.cdmBuff
+      and not Private.CDMEntryMatches({event = "Blizzard CDM Item"}, entry, info) then
+    local learned = anySpellKnown({identity.spellID, info.spellID, info.overrideSpellID, info.linkedSpellID})
+    if not learned then state.show = false end
+  end
+  local filter = state.show and SHOW_FILTERS[mode]
+  if filter then state.show = filter(state) end
+end
+
+local function composeEntry(allstates, ctx, index, cooldownID, entry, info)
+  local selected, event, opts = ctx.selected, ctx.event, ctx.opts
+  local frame = ctx.frames[cooldownID]
+  local identity = Private.CDMIdentity(cooldownID, entry, info, frame)
+  local forcedSpell = opts.exactID or selected.buffResolvedSpellID
+  if forcedSpell then
+    local forcedInfo = C_Spell.GetSpellInfo(forcedSpell)
+    identity = {
+      spellID = forcedSpell,
+      name = forcedInfo and forcedInfo.name or identity.name,
+      icon = forcedInfo and forcedInfo.iconID or identity.icon,
+    }
+  end
+  local cloneID = selected.singleClone and "spell" or tostring(cooldownID)
+  local state = allstates[cloneID]
+  if not state then
+    state = {}
+    allstates[cloneID] = state
+  elseif not touchedClones[cloneID] then
+    wipe(state)
+  end
+  touchedClones[cloneID] = true
+  for field, value in pairs(FRESH_DEFAULTS) do state[field] = value end
+  for _, field in ipairs(RESET_FIELDS) do state[field] = nil end
+  local isBuff = Private.CDMIsBuff(entry.category)
+  local bindingIDs = selected.buffSpellIDsByEntry and selected.buffSpellIDsByEntry[cooldownID]
+  state.index, state.name, state.icon = index, identity.name, identity.icon
+  state.spellId, state.itemId = identity.spellID, identity.itemID
+  state.cooldownID = type(cooldownID) == "number" and cooldownID or nil
+  state.cdmDisplayed, state.cdmCategory = entry.displayed, Private.CDMCategoryName(entry.category)
+  state.cdmBuff = isBuff
+  state.cdmAuraSpellIDs = nil
+  if isBuff then
+    state.cdmAuraSpellIDs = bindingIDs or (opts.exactID and {opts.exactID}) or selected.buffSpellIDs or {identity.spellID}
+  end
+  state.cdmTextPreview = event == "OPTIONS"
+  state.cdmHideGCDText = opts.hideGCDText == true
+
+  if event == "OPTIONS" then
+    fillPreviewState(state)
+  elseif isBuff then
+    fillBuffState(state, ctx, cooldownID, identity, info, bindingIDs)
+  elseif identity.slot or identity.itemID then
+    Private.CDMApplyItem(state, identity)
+  elseif identity.spellID then
+    fillSpellState(state, identity, frame, event, opts)
+  end
+  if event ~= "OPTIONS" then finalizeVisibility(state, entry, info, identity, opts) end
+  state.hasTimer = state.durationObject ~= nil or state.progressType == "timed"
+end
+
+local PASSIVE_EVENTS = {
+  WA_CDM_REFRESH = true,
+  OPTIONS = true,
+  GET_ITEM_INFO_RECEIVED = true,
+  ITEM_DATA_LOAD_RESULT = true,
+}
+
+local IDENTITY_RESET_EVENTS = {
+  PLAYER_SPECIALIZATION_CHANGED = true,
+  PLAYER_EQUIPMENT_CHANGED = true,
+  PLAYER_ENTERING_WORLD = true,
+}
+
+local function buildStates(allstates, selected, event, opts)
+  wipe(touchedClones)
+  if IDENTITY_RESET_EVENTS[event] then Private.CDMResetIdentities() end
+  local available = loadCatalog(shouldReloadCatalog(event))
   local frames = Private.CDMFrames()
   for _, state in pairs(allstates) do
     state.show = false
     state.changed = true
   end
 
-  if event ~= "WA_CDM_REFRESH" and event ~= "OPTIONS"
-      and event ~= "GET_ITEM_INFO_RECEIVED" and event ~= "ITEM_DATA_LOAD_RESULT"
-      and #selected > 0 then QueueRefresh() end
+  if not PASSIVE_EVENTS[event] and #selected > 0 then Private.QueueCDMRefresh() end
   if event == "OPTIONS" and selected.previewSpell then
-    local spell = selected.previewSpell
-    allstates.spell = {show = true, changed = true, progressType = "timed", duration = 6,
-      expirationTime = GetTime() + 6, autoHide = false, name = spell.name, icon = spell.iconID,
-      spellId = spell.spellID, cdmTextPreview = true, index = 1}
-    built.spell = true
+    local sample = selected.previewSpell
+    allstates.spell = {
+      show = true, changed = true, progressType = "timed", duration = 6,
+      expirationTime = GetTime() + 6, autoHide = false, name = sample.name, icon = sample.iconID,
+      spellId = sample.spellID, cdmTextPreview = true, index = 1,
+    }
+    touchedClones.spell = true
     return true
   end
-  if not IsAvailable() then return true end
-  if requireTarget and event ~= "OPTIONS" then
-    local exists = UnitExists("target")
-    local attackable = UnitCanAttack("player", "target")
-    if not IsReadable(exists) or not IsReadable(attackable) then return true end
-    if not exists or not attackable then return true end
+  if not viewerApiReady() then return true end
+  if opts.requireTarget and event ~= "OPTIONS" then
+    local targetExists = UnitExists("target")
+    local targetHostile = UnitCanAttack("player", "target")
+    if not canRead(targetExists) or not canRead(targetHostile) then return true end
+    if not targetExists or not targetHostile then return true end
   end
 
+  local ctx = {selected = selected, event = event, opts = opts, available = available, frames = frames}
   for index, cooldownID in ipairs(selected) do
     local entry = available[cooldownID]
-    if entry and (event == "OPTIONS" or entry.known or exactID or selected.buffSpellIDs or selected.buffSpellIDsByEntry or ignoreSpellKnown) then
+    local admitted = entry and (event == "OPTIONS" or entry.known or opts.exactID
+      or selected.buffSpellIDs or selected.buffSpellIDsByEntry or opts.ignoreSpellKnown)
+    if admitted then
       local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
-      if info then
-        local identity = Private.CDMIdentity(cooldownID, entry, info, frames[cooldownID])
-        local displaySpellID = exactID or selected.buffResolvedSpellID
-        if displaySpellID then
-          local spell = C_Spell.GetSpellInfo(displaySpellID)
-          identity = {spellID = displaySpellID, name = spell and spell.name or identity.name, icon = spell and spell.iconID or identity.icon}
-        end
-        local cloneID = selected.singleClone and "spell" or tostring(cooldownID)
-        local state = allstates[cloneID]
-        if not state then
-          state = {}
-          allstates[cloneID] = state
-        elseif not built[cloneID] then
-          wipe(state)
-        end
-        built[cloneID] = true
-        state.show, state.changed, state.autoHide = true, true, false
-        state.index, state.name, state.icon = index, identity.name, identity.icon
-        state.spellId, state.itemId, state.cooldownID = identity.spellID, identity.itemID, type(cooldownID) == "number" and cooldownID or nil
-        state.cdmDisplayed, state.cdmCategory = entry.displayed, Private.CDMCategoryName(entry.category)
-        state.progressType, state.value, state.total = "static", 1, 1
-        state.durationObject, state.duration, state.expirationTime, state.modRate = nil, nil, nil, nil
-        state.cdmTextDurationObject, state.cdmTextDurationRequired = nil, nil
-        state.cdmSuppressGCD = false
-        state.cdmNativePaused = false
-        state.cdmBuff = Private.CDMIsBuff(entry.category)
-        local bindingIDs = selected.buffSpellIDsByEntry and selected.buffSpellIDsByEntry[cooldownID]
-        state.cdmAuraSpellIDs = state.cdmBuff and (bindingIDs or (exactID and {exactID}) or selected.buffSpellIDs or {identity.spellID}) or nil
-        state.cdmTextPreview = event == "OPTIONS"
-        state.cdmAuraRenderUnit, state.cdmAuraRenderSpellIDs = nil, nil
-        state.cdmCountdownSource, state.cdmStackSource, state.cdmTextRecord, state.cdmDispelName = nil, nil, nil, nil
-        state.debuffClass = nil
-        state.isUsable, state.insufficientResources = nil, nil
-        state.onCooldown, state.isReady, state.recharging, state.stacks, state.auraActive = nil, nil, nil, nil, nil
-        state.cdmGCDOnly, state.cdmHideGCDText = false, hideGCDText == true
-
-        if event == "OPTIONS" then
-          state.progressType, state.duration, state.expirationTime = "timed", 6, GetTime() + 6
-          state.value, state.total = nil, nil
-          state.stacks, state.auraActive, state.onCooldown = 3, true, true
-          state.cdmHideGCDText = false
-        elseif Private.CDMIsBuff(entry.category) then
-          if selected.buffEntryIDs then
-            local bestAura, bestScore
-            for _, auraID in ipairs(selected.buffEntryIDs) do
-              local auraInfo = C_CooldownViewer.GetCooldownViewerCooldownInfo(auraID)
-              if auraInfo and available[auraID] then
-                local candidate = {}
-                local auraIdentity = Private.CDMIdentity(auraID, available[auraID], auraInfo, frames[auraID])
-                Private.CDMApplyAura(candidate, auraIdentity, auraInfo, frames[auraID], nil, selected.buffSpellIDs)
-                local score = candidate.auraActive == true and 2 or candidate.auraActive == nil and 1 or 0
-                if not bestAura or score > bestScore then bestAura, bestScore = candidate, score end
-              end
-            end
-            for key, value in pairs(bestAura or {}) do state[key] = value end
-            if state.progressType ~= "static" then state.value, state.total = nil, nil end
-          else
-            Private.CDMApplyAura(state, identity, info, frames[cooldownID], exactID, bindingIDs or selected.buffSpellIDs)
-          end
-        elseif identity.slot or identity.itemID then
-          Private.CDMApplyItem(state, identity)
-        elseif identity.spellID then
-          local spellID = identity.spellID
-          if C_SpellBook and C_SpellBook.FindSpellOverrideByID then
-            local override = C_SpellBook.FindSpellOverrideByID(spellID)
-            if IsReadable(override) and type(override) == "number" and override > 0 then spellID = override end
-          end
-          if C_Spell.IsSpellUsable then
-            local usable, insufficientResources = C_Spell.IsSpellUsable(spellID)
-            state.isUsable = ReadBoolean(usable)
-            state.insufficientResources = ReadBoolean(insufficientResources)
-          end
-          local onCooldown, hasCooldownFlags, onGCD = GetSpellCooldownState(spellID, event)
-          local realDuration = onGCD == true and GetEmptyDuration() or C_Spell.GetSpellCooldownDuration(spellID, true)
-          local textDuration = realDuration
-          local native = Private.CDMGetNativeCooldown(frames[cooldownID], identity.spellID)
-          state.cdmNativeRevision = native and native.revision
-          local duration = showGCD and native and native.duration or realDuration
-          state.cdmNativePaused = native and native.paused == true or false
-          if native then
-            state.inRange = native.inRange
-            state.stacks = native.charges
-            if native.charges ~= nil then state.isReady = native.charges > 0 end
-            if native.onGCD ~= nil then state.cdmGCDOnly = native.onGCD end
-            if native.onCooldown ~= nil then
-              state.onCooldown = native.onCooldown
-              if state.stacks == nil then state.isReady = not native.onCooldown end
-            end
-            if native.recharging ~= nil then state.recharging = native.recharging end
-          end
-          if onCooldown ~= nil then
-            state.onCooldown, state.isReady = onCooldown, not onCooldown
-            if onCooldown then
-              duration = realDuration
-              state.cdmGCDOnly, state.cdmNativePaused = false, false
-            elseif onGCD then
-              duration = showGCD and C_Spell.GetSpellCooldownDuration(spellID) or nil
-              state.cdmGCDOnly, state.cdmNativePaused = true, false
-            else
-              duration = realDuration
-              state.cdmGCDOnly, state.cdmNativePaused = false, false
-            end
-          elseif hasCooldownFlags and not state.cdmGCDOnly then
-            duration = showGCD and C_Spell.GetSpellCooldownDuration(spellID) or realDuration
-            state.cdmNativePaused = false
-          end
-          local charges = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(spellID)
-          if charges then
-            local count = charges.currentCharges
-            local recharging = ReadBoolean(charges.isActive)
-            if recharging ~= nil then state.recharging = recharging end
-            if IsReadable(count) and type(count) == "number" then
-              state.stacks = count
-              state.isReady, state.onCooldown = count > 0, count == 0
-            elseif native and native.recharging == true then
-              state.isReady, state.onCooldown = true, false
-            end
-          end
-          if C_Spell.GetSpellChargeDuration and (track == "charges" or (track == "auto" and state.recharging == true)) then
-            local chargeDuration = C_Spell.GetSpellChargeDuration(spellID)
-            if chargeDuration then
-              duration, textDuration = chargeDuration, chargeDuration
-              state.cdmGCDOnly, state.cdmNativePaused = false, false
-            end
-          end
-          if state.cdmGCDOnly and not showGCD then
-            duration = nil
-          end
-          state.cdmSuppressGCD = not duration
-          if duration then
-            state.progressType, state.durationObject = "durationObject", duration
-            state.value, state.total = nil, nil
-          else
-            state.progressType, state.duration, state.expirationTime = "timed", 0, 0
-            state.value, state.total = nil, nil
-          end
-          if hideGCDText then
-            state.cdmTextDurationObject = textDuration
-            state.cdmTextDurationRequired = true
-          end
-        end
-        if event ~= "OPTIONS" then
-          if showMode == "usable" then state.show = state.isUsable == true
-          elseif showMode == "unusable" then state.show = state.isUsable == false end
-          if not ignoreSpellKnown and not state.cdmBuff and not Private.CDMEntryMatches({event = "Blizzard CDM Item"}, entry, info) then
-            local known = false
-            for _, id in pairs({identity.spellID, info.spellID, info.overrideSpellID, info.linkedSpellID}) do
-              if IsReadable(id) and type(id) == "number" and id > 0 and id < 2147483647
-                  and WeakAuras.IsSpellKnownIncludingPet(id) then known = true; break end
-            end
-            if not known then state.show = false end
-          end
-          if state.show and showMode == "cooldown" then state.show = state.onCooldown == true elseif state.show and showMode == "ready" then state.show = state.onCooldown == false elseif state.show and showMode == "active" then state.show = state.auraActive == true elseif state.show and showMode == "missing" then state.show = state.auraActive == false end
-        end
-        state.hasTimer = state.durationObject ~= nil or state.progressType == "timed"
-      end
+      if info then composeEntry(allstates, ctx, index, cooldownID, entry, info) end
     end
   end
   return true
 end
 
-local snapshots = setmetatable({}, {__mode = "k"})
-local persistentOutputs = setmetatable({}, {__mode = "k"})
-local function GetOutputs(selected, event, showGCD, track, hideGCDText, showMode, exactID, requireTarget, ignoreSpellKnown)
+local outputPool = setmetatable({}, {__mode = "k"})
+
+local function childTable(parent, key)
+  local child = parent[key]
+  if not child then
+    child = {}
+    parent[key] = child
+  end
+  return child
+end
+
+local function computeOutputs(selected, event, showGCD, track, hideGCDText, showMode, exactID, requireTarget, ignoreSpellKnown)
   local batch = Private.cdmScanBatch
-  local key = (event or "") .. ":" .. tostring(showGCD) .. ":" .. tostring(track) .. ":" .. tostring(hideGCDText)
-    .. ":" .. tostring(showMode) .. ":" .. tostring(exactID) .. ":" .. tostring(requireTarget) .. ":" .. tostring(ignoreSpellKnown)
-  local cache
+  local key = table.concat({
+    event or "", tostring(showGCD), tostring(track), tostring(hideGCDText),
+    tostring(showMode), tostring(exactID), tostring(requireTarget), tostring(ignoreSpellKnown),
+  }, ":")
+  local batchBucket
   if batch then
     batch.outputs = batch.outputs or {}
-    cache = batch.outputs[selected]
-    if not cache then cache = {}; batch.outputs[selected] = cache end
-    if cache[key] then return cache[key] end
+    batchBucket = childTable(batch.outputs, selected)
+    if batchBucket[key] then return batchBucket[key] end
   end
-  local store = persistentOutputs[selected]
-  if not store then store = {}; persistentOutputs[selected] = store end
-  local outputs = store[key]
-  if not outputs then outputs = {}; store[key] = outputs end
-  BuildCooldownViewerStates(outputs, selected, event, showGCD, track, hideGCDText, showMode, exactID, requireTarget, ignoreSpellKnown)
+  local outputs = childTable(childTable(outputPool, selected), key)
+  buildStates(outputs, selected, event, {
+    showGCD = showGCD, track = track, hideGCDText = hideGCDText, showMode = showMode,
+    exactID = exactID, requireTarget = requireTarget, ignoreSpellKnown = ignoreSpellKnown,
+  })
   for cloneID in pairs(outputs) do
-    if not built[cloneID] then outputs[cloneID] = nil end
+    if not touchedClones[cloneID] then outputs[cloneID] = nil end
   end
-  if cache then cache[key] = outputs end
+  if batchBucket then batchBucket[key] = outputs end
   return outputs
 end
-local function SameOutput(previous, current)
+
+local function unchangedSince(previous, current)
   if not previous or current.cdmBuff then return false end
   if InCombatLockdown and InCombatLockdown() then return false end
-  for key, value in pairs(current) do
-    if key ~= "changed" then
-      local old = previous[key]
-      if not IsReadable(value) or not IsReadable(old) or value ~= old then return false end
+  for field, value in pairs(current) do
+    if field ~= "changed" then
+      local before = previous[field]
+      if not canRead(value) or not canRead(before) or value ~= before then return false end
     end
   end
-  for key in pairs(previous) do
-    if key ~= "changed" and current[key] == nil then return false end
+  for field in pairs(previous) do
+    if field ~= "changed" and current[field] == nil then return false end
   end
   return true
 end
 
-local function CommitStates(allstates, outputs)
-  local previous = snapshots[allstates]
-  if not previous then previous = {}; snapshots[allstates] = previous end
-  local changed = false
+local lastApplied = setmetatable({}, {__mode = "k"})
+
+local function stripSnapshotFields(state, snapshot)
+  if not snapshot then return end
+  for field in pairs(snapshot) do
+    if field ~= "changed" then state[field] = nil end
+  end
+end
+
+local function copyFields(destination, source)
+  for field, value in pairs(source) do destination[field] = value end
+end
+
+local function applyOutputs(allstates, outputs)
+  local history = childTable(lastApplied, allstates)
+  local dirty = false
   for key, output in pairs(outputs) do
     local state = allstates[key]
-    local snapshot = previous[key]
-    if not state or not SameOutput(snapshot, output) or state.show ~= output.show then
-      if not state then state = {}; allstates[key] = state end
-      if snapshot then
-        for field in pairs(snapshot) do
-          if field ~= "changed" then state[field] = nil end
-        end
+    local snapshot = history[key]
+    if not state or not unchangedSince(snapshot, output) or state.show ~= output.show then
+      if not state then
+        state = {}
+        allstates[key] = state
       end
-      for field, value in pairs(output) do state[field] = value end
+      stripSnapshotFields(state, snapshot)
+      copyFields(state, output)
       state.changed = true
-      changed = true
+      dirty = true
     end
-    if snapshot then wipe(snapshot) else snapshot = {}; previous[key] = snapshot end
-    for field, value in pairs(output) do snapshot[field] = value end
+    if snapshot then
+      wipe(snapshot)
+    else
+      snapshot = {}
+      history[key] = snapshot
+    end
+    copyFields(snapshot, output)
   end
   for key, state in pairs(allstates) do
     if not outputs[key] and state.show then
-      local snapshot = previous[key]
-      if snapshot then
-        for field in pairs(snapshot) do
-          if field ~= "changed" then state[field] = nil end
-        end
-      end
+      stripSnapshotFields(state, history[key])
       state.show, state.changed = false, true
-      changed = true
+      dirty = true
     end
   end
-  for key in pairs(previous) do
-    if not outputs[key] then previous[key] = nil end
+  for key in pairs(history) do
+    if not outputs[key] then history[key] = nil end
   end
-  return changed
+  return dirty
 end
 
-function Private.UpdateCooldownViewerStates(allstates, ...)
-  return CommitStates(allstates, GetOutputs(...))
+Private.UpdateCooldownViewerStates = function(allstates, ...)
+  return applyOutputs(allstates, computeOutputs(...))
 end
 
 Private.ExecEnv.UpdateCooldownViewerStates = Private.UpdateCooldownViewerStates
+Private.ExecEnv.GetCDMPickerSelections = Private.GetCDMPickerSelections
+
 Private.ExecEnv.UpdateCDMSpell = function(allstates, config, event, ...)
   local selected = Private.ResolveCDMSpell(config, event)
-  return Private.UpdateCooldownViewerStates(allstates, selected, event, config.showGCD, config.track, config.hideGCDText, config.showMode, config.cdmExact and tonumber(config.cdmSpell) or nil, config.requireTarget, config.use_ignoreSpellKnown)
+  local exactID = config.cdmExact and tonumber(config.cdmSpell) or nil
+  return Private.UpdateCooldownViewerStates(allstates, selected, event, config.showGCD, config.track,
+    config.hideGCDText, config.showMode, exactID, config.requireTarget, config.use_ignoreSpellKnown)
 end
 
 local listOutputs = setmetatable({}, {__mode = "k"})
 local listClones = setmetatable({}, {__mode = "k"})
-function Private.ExecEnv.UpdateCDMSelectionList(allstates, queries, event)
-  local outputs = listOutputs[allstates]
-  if outputs then wipe(outputs) else outputs = {}; listOutputs[allstates] = outputs end
-  local clones = listClones[allstates]
-  if not clones then clones = {}; listClones[allstates] = clones end
+
+Private.ExecEnv.UpdateCDMSelectionList = function(allstates, queries, event)
+  local merged = listOutputs[allstates]
+  if merged then wipe(merged) else merged = {}; listOutputs[allstates] = merged end
+  local cloneStore = childTable(listClones, allstates)
   for queryIndex, query in ipairs(queries) do
     local selected = Private.ResolveCDMSpell(query, event)
-    local temporary = GetOutputs(selected, event, query.showGCD, query.track, query.hideGCDText,
-      query.showMode, query.event ~= "Blizzard CDM Item" and query.cdmExact and tonumber(query.cdmSpell) or nil, query.requireTarget, query.use_ignoreSpellKnown)
-    for _, state in pairs(temporary) do
+    local exactID = query.event ~= "Blizzard CDM Item" and query.cdmExact and tonumber(query.cdmSpell) or nil
+    local produced = computeOutputs(selected, event, query.showGCD, query.track, query.hideGCDText,
+      query.showMode, exactID, query.requireTarget, query.use_ignoreSpellKnown)
+    for _, candidate in pairs(produced) do
+      local state = candidate
       local key = tostring(state.cooldownID) .. ":" .. tostring(state.spellId or query.cdmSpell)
       if query.event == "Blizzard CDM Buff" then
-        key = query.cdmExact and ("id:" .. tostring(tonumber(query.cdmSpell))) or ("name:" .. (selected.buffName or query.cdmSpell))
-        local clone = clones[key]
-        if clone then wipe(clone) else clone = {}; clones[key] = clone end
-        for field, value in pairs(state) do clone[field] = value end
+        if query.cdmExact then
+          key = "id:" .. tostring(tonumber(query.cdmSpell))
+        else
+          key = "name:" .. (selected.buffName or query.cdmSpell)
+        end
+        local clone = cloneStore[key]
+        if clone then wipe(clone) else clone = {}; cloneStore[key] = clone end
+        copyFields(clone, state)
         clone.index = queryIndex
         state = clone
       end
-      if not outputs[key] or not outputs[key].show or state.show then outputs[key] = state end
+      local current = merged[key]
+      if not current or not current.show or state.show then merged[key] = state end
     end
   end
-  return CommitStates(allstates, outputs)
+  return applyOutputs(allstates, merged)
 end
 
-local function BooleanCondition(field)
+local function boolTest(field)
   return function(state, needle)
     return state and state.show and state[field] ~= nil and state[field] == (needle == 1)
   end
 end
 
-Private.CooldownViewerPrototype = {
-  type = "cdm",
-  name = "Cooldown",
-  statesParameter = "full",
-  progressType = "timed",
-  cooldownViewerProgress = true,
-  automaticrequired = true,
-  force_events = "PLAYER_ENTERING_WORLD",
-  internal_events = {"WA_CDM_REFRESH", "WA_CDM_LAYOUT_CHANGED"},
-  GetNameAndIcon = function(trigger)
-    local entries, frames = GetCatalog(), Private.CDMFrames()
-    for _, id in ipairs(GetSelections(trigger)) do
-      local info = entries[id] and C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
-      if info then
-        local identity = Private.CDMIdentity(id, entries[id], info, frames[id])
-        return identity.name, identity.icon
-      end
-    end
-    return "Cooldown Manager", 134400
-  end,
-  events = function()
-    local events = {"PLAYER_ENTERING_WORLD", "PLAYER_SPECIALIZATION_CHANGED", "SPELLS_CHANGED", "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_CHARGES", "SPELL_UPDATE_ICON", "PLAYER_EQUIPMENT_CHANGED", "BAG_UPDATE_COOLDOWN", "PLAYER_TARGET_CHANGED", "PLAYER_TOTEM_UPDATE"}
-    if IsAvailable() then
-      events[#events + 1] = "COOLDOWN_VIEWER_DATA_LOADED"
-      events[#events + 1] = "COOLDOWN_VIEWER_TABLE_HOTFIXED"
-      events[#events + 1] = "COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED"
-    end
-    return {events = events, unit_events = {player = {"UNIT_AURA"}, target = {"UNIT_AURA", "UNIT_FACTION", "UNIT_FLAGS"}}}
-  end,
-  triggerFunction = function(trigger)
-    if trigger.event == "Blizzard CDM Buff" then Private.CDMFrames() end
-    if trigger.event == "Blizzard CDM Buff" and (trigger.cdmUseRemaining or trigger.cdmUseStacks or trigger.cdmUseTotal or trigger.cdmUseElapsed) then
-      local base = {}
-      for key, value in pairs(trigger) do base[key] = value end
-      base.cdmUseRemaining, base.cdmUseStacks, base.cdmUseTotal, base.cdmUseElapsed = nil, nil, nil, nil
-      local source = Private.CooldownViewerPrototype.triggerFunction(base)
-      return ("local update=(function() %s end)()\nlocal rawStates={}\nreturn function(allstates,event) update(rawStates,event); return Private.ExecEnv.UpdateCDMBuffFilters(allstates,rawStates,event,%q,%q,%q,%q,%q,%q,%q,%q) end"):format(source, trigger.cdmUseRemaining and tostring(trigger.cdmRemainingTime or 10) or "", trigger.cdmRemainingOperator or "<", trigger.cdmUseStacks and tostring(trigger.cdmStackCount or 1) or "", trigger.cdmStackOperator or ">=", trigger.cdmUseTotal and tostring(trigger.cdmTotalTime or 10) or "", trigger.cdmTotalOperator or "<", trigger.cdmUseElapsed and tostring(trigger.cdmElapsedTime or 10) or "", trigger.cdmElapsedOperator or ">=")
-    end
-    local queries = Private.CDMSpellQueries(trigger)
-    if queries then
-      local serialized = {}
-      for _, query in ipairs(queries) do
-        serialized[#serialized + 1] = ("{type='cdm',event=%q,cdmSelection='spell',cdmSpell=%q,cdmExact=%s,cdmItemExact=%s,use_ignoreSpellKnown=%s,showGCD=%s,track=%q,hideGCDText=%s,showMode=%q,requireTarget=%s}"):format(
-          query.event, query.cdmSpell, tostring(query.cdmExact), tostring(query.cdmItemExact), tostring(query.use_ignoreSpellKnown == true),
-          tostring(query.showGCD), query.track, tostring(query.hideGCDText), query.showMode, tostring(query.requireTarget))
-      end
-      return ("local queries={%s}\nreturn function(allstates,event) return Private.ExecEnv.UpdateCDMSelectionList(allstates,queries,event) end"):format(table.concat(serialized, ","))
-    end
-    if trigger.type == "cdm" then trigger.cdmSource = trigger.event == "Blizzard CDM Buff" and "buff" or "cooldown" end
-    if trigger.cdmSpell ~= nil and tostring(trigger.cdmSpell):find("%S") and trigger.event ~= "Blizzard CDM Item" then
-      return ("local config = {type=%q,event=%q,cdmSelection=%q,cdmSpell=%q, cdmExact=%s, cdmSource=%q, showGCD=%s, track=%q, hideGCDText=%s, showMode=%q, requireTarget=%s, use_ignoreSpellKnown=%s}\nreturn function(allstates,event,...) return Private.ExecEnv.UpdateCDMSpell(allstates,config,event,...) end"):format(trigger.type or "", trigger.event or "", trigger.cdmSelection or "", trigger.cdmSpell, tostring(trigger.cdmExact == true), trigger.cdmSource or "cooldown", tostring(trigger.use_cdmShowGCD == true), trigger.cdmTrack or "auto", tostring(trigger.cdmHideGCDText ~= false), trigger.cdmSource == "buff" and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"), tostring(trigger.cdmSource == "buff" and trigger.cdmRequireTarget == true), tostring(trigger.use_ignoreSpellKnown == true))
-    end
-    local selected = {}
-    for key, enabled in pairs(trigger.cdmSpells and trigger.cdmSpells.multi or {}) do
-      local id = tonumber(key)
-      if enabled and id then selected[#selected + 1] = ("[%d]=true"):format(id) end
-    end
-    return ("local config={type='cdm',event=%q,cdmSpells={multi={%s}}}\nreturn function(allstates,event,...) local selected=Private.ExecEnv.GetCDMPickerSelections(config,event); return Private.ExecEnv.UpdateCooldownViewerStates(allstates,selected,event,%s,%q,%s,%q,nil,%s,%s) end"):format(trigger.event or "Blizzard Cooldown Manager", table.concat(selected, ","), tostring(trigger.use_cdmShowGCD == true), trigger.cdmTrack or "auto", tostring(trigger.cdmHideGCDText ~= false), trigger.event == "Blizzard CDM Buff" and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"), tostring(trigger.event == "Blizzard CDM Buff" and trigger.cdmRequireTarget == true), tostring(trigger.use_ignoreSpellKnown == true))
-  end,
-  args = {
-    {
-      name = "cdmSpells",
-      display = "Cooldown Manager entries",
-      type = "multiselect",
-      required = true,
-      multiNoSingle = true,
-      sorted = true,
-      values = GetValues,
-    },
-    {
-      name = "cdmShowGCD",
-      display = "Include global cooldown",
-      type = "toggle",
-    },
-    {
-      name = "spellId",
-      display = "Spell ID",
-      hidden = true,
-      conditionType = "number",
-      operator_types = "only_equal",
-    },
-    {
-      name = "name",
-      display = "Spell Name",
-      hidden = true,
-      conditionType = "string",
-    },
-    {
-      name = "onCooldown",
-      display = "On Cooldown",
-      hidden = true,
-      conditionType = "bool",
-      conditionTest = BooleanCondition("onCooldown"),
-    },
-    {
-      name = "isReady",
-      display = "Ready",
-      hidden = true,
-      conditionType = "bool",
-      conditionTest = BooleanCondition("isReady"),
-    },
-    {
-      name = "recharging",
-      display = "Recharging",
-      hidden = true,
-      conditionType = "bool",
-      conditionTest = BooleanCondition("recharging"),
-    },
-  },
+local function conditionArg(name, display, conditionType)
+  local arg = {name = name, display = display, conditionType = conditionType, hidden = true}
+  if conditionType == "bool" then arg.conditionTest = boolTest(name) end
+  if conditionType == "number" then arg.operator_types = "only_equal" end
+  return arg
+end
+
+local ORDER_TESTS = {
+  ["<"] = function(left, right) return left < right end,
+  ["<="] = function(left, right) return left <= right end,
+  [">"] = function(left, right) return left > right end,
+  [">="] = function(left, right) return left >= right end,
 }
 
-for _, field in ipairs({{"itemId", "Item ID", "number"}, {"cdmCategory", "CDM Category", "string"}, {"cdmDisplayed", "Displayed in CDM", "bool"}, {"auraActive", "Aura Active (when readable)", "bool"}, {"hasTimer", "Timer Available", "bool"}}) do
-  local arg = {name = field[1], display = field[2], conditionType = field[3], hidden = true}
-  if field[3] == "bool" then arg.conditionTest = BooleanCondition(field[1]) end
-  if field[3] == "number" then arg.operator_types = "only_equal" end
-  table.insert(Private.CooldownViewerPrototype.args, arg)
-end
+local STACK_TESTS = {
+  ["<"] = ORDER_TESTS["<"],
+  ["<="] = ORDER_TESTS["<="],
+  [">"] = ORDER_TESTS[">"],
+  [">="] = ORDER_TESTS[">="],
+  ["=="] = function(left, right) return left == right end,
+  ["~="] = function(left, right) return left ~= right end,
+}
 
-if EventRegistry and EventRegistry.RegisterCallback then
-  EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
-    catalog = nil
-    C_Timer.After(0, function()
-      if Private.ScanEvents then Private.ScanEvents("WA_CDM_LAYOUT_CHANGED") end
-    end)
-  end, Private.CooldownViewerPrototype)
-end
+local REMAINING_TESTS = {
+  ["<"] = ORDER_TESTS["<"],
+  ["<="] = ORDER_TESTS["<="],
+  [">"] = ORDER_TESTS[">"],
+  [">="] = ORDER_TESTS[">="],
+  ["=="] = function(left, right) return math.abs(left - right) < 0.05 end,
+  ["~="] = function(left, right) return math.abs(left - right) >= 0.05 end,
+}
 
-Private.CooldownViewerBuffPrototype = {}
-for key, value in pairs(Private.CooldownViewerPrototype) do Private.CooldownViewerBuffPrototype[key] = value end
-Private.CooldownViewerBuffPrototype.name = "Buff/Debuff"
-
-local buffArgs, cooldownArgs = {}, {}
-for _, arg in ipairs(Private.CooldownViewerPrototype.args) do
-  if arg.name ~= "hasTimer" then
-    if arg.name ~= "onCooldown" and arg.name ~= "isReady" and arg.name ~= "recharging" and arg.name ~= "cdmShowGCD" then
-      buffArgs[#buffArgs + 1] = arg
-    end
-    if arg.name ~= "auraActive" then cooldownArgs[#cooldownArgs + 1] = arg end
-  end
-end
-Private.CooldownViewerBuffPrototype.args = buffArgs
-local function BuffRemainingTime(state)
+local function auraRemaining(state)
   if not state or not state.show or not state.cdmBuff or state.auraActive ~= true then return end
-  local remaining, timeScale = nil, 1
-  if state.durationObject then
-    local total = state.durationObject:GetTotalDuration()
-    if not IsReadable(total) or type(total) ~= "number" or total <= 0 then return end
-    remaining = state.durationObject:GetRemainingDuration()
+  local remaining, scale = nil, 1
+  local timer = state.durationObject
+  if timer then
+    local total = timer:GetTotalDuration()
+    if not canRead(total) or type(total) ~= "number" or total <= 0 then return end
+    remaining = timer:GetRemainingDuration()
   else
-    local duration, expiration, rate = state.duration, state.expirationTime, state.modRate
-    if not IsReadable(duration) or not IsReadable(expiration) or not IsReadable(rate) then return end
-    if type(duration) ~= "number" or duration <= 0 or type(expiration) ~= "number" then return end
+    local span, expiresAt, rate = state.duration, state.expirationTime, state.modRate
+    if not canRead(span) or not canRead(expiresAt) or not canRead(rate) then return end
+    if type(span) ~= "number" or span <= 0 or type(expiresAt) ~= "number" then return end
     rate = rate or 1
     if type(rate) ~= "number" or rate <= 0 then return end
-    remaining = (expiration - GetTime()) / rate
-    timeScale = rate
+    remaining = (expiresAt - GetTime()) / rate
+    scale = rate
   end
-  if IsReadable(remaining) and type(remaining) == "number" and remaining == remaining and remaining < math.huge then
-    return math.max(0, remaining), timeScale
+  if canRead(remaining) and type(remaining) == "number" and remaining == remaining and remaining < math.huge then
+    return math.max(0, remaining), scale
   end
 end
+
+local function auraTimeValue(state, wantElapsed)
+  if not state.show or not state.cdmBuff or state.auraActive ~= true then return end
+  local total, measured, scale = nil, nil, 1
+  local timer = state.durationObject
+  if timer then
+    total = timer:GetTotalDuration()
+    if not canRead(total) or type(total) ~= "number" or total <= 0 or total >= math.huge then return end
+    if wantElapsed then measured = timer:GetElapsedDuration() else measured = total end
+  else
+    total, scale = state.duration, state.modRate
+    if not canRead(total) or not canRead(scale) then return end
+    scale = scale or 1
+    if type(total) ~= "number" or total <= 0 or total >= math.huge then return end
+    if type(scale) ~= "number" or scale <= 0 or scale >= math.huge then return end
+    measured = total / scale
+    if wantElapsed then
+      local expiresAt = state.expirationTime
+      if not canRead(expiresAt) or type(expiresAt) ~= "number" then return end
+      measured = (GetTime() - (expiresAt - total)) / scale
+    end
+  end
+  if canRead(measured) and type(measured) == "number" and measured == measured and measured < math.huge then
+    return math.max(0, measured), scale
+  end
+end
+
+local function stacksPass(state, wanted, op)
+  local count = state.stacks
+  if state.auraActive ~= true or not canRead(count) or type(count) ~= "number" then return false end
+  local compare = STACK_TESTS[op]
+  return compare and compare(count, wanted) or false
+end
+
+local function timePass(measured, threshold, op)
+  if measured == nil then return false end
+  local compare = ORDER_TESTS[op]
+  return compare and compare(measured, threshold) or false
+end
+
 local remainingCondition = {
   name = "cdmRemaining",
   display = "Remaining Time (when readable)",
@@ -887,165 +1025,278 @@ local remainingCondition = {
   conditionType = "number",
   noProgressSource = true,
   conditionTest = function(state, value, op)
-    local remaining = BuffRemainingTime(state)
+    local remaining = auraRemaining(state)
     value = tonumber(value)
     if remaining == nil or not value then return false end
-    if op == "<" then return remaining < value
-    elseif op == "<=" then return remaining <= value
-    elseif op == ">" then return remaining > value
-    elseif op == ">=" then return remaining >= value
-    elseif op == "==" then return math.abs(remaining - value) < 0.05
-    elseif op == "~=" then return math.abs(remaining - value) >= 0.05 end
-    return false
+    local compare = REMAINING_TESTS[op]
+    return compare and compare(remaining, value) or false
   end,
   conditionRecheckTime = function(state, value)
-    local remaining, timeScale = BuffRemainingTime(state)
+    local remaining, scale = auraRemaining(state)
     value = tonumber(value)
     if not remaining or remaining <= 0 or not value then return end
-    local delay = remaining * timeScale
+    local wait = remaining * scale
     for _, boundary in ipairs({value + 0.05, value, value - 0.05}) do
       if boundary >= 0 and remaining >= boundary then
-        delay = math.min(delay, (remaining - boundary) * timeScale + 0.001)
+        wait = math.min(wait, (remaining - boundary) * scale + 0.001)
       end
     end
-    return GetTime() + math.max(0.001, delay)
+    return GetTime() + math.max(0.001, wait)
   end,
 }
-buffArgs[#buffArgs + 1] = remainingCondition
-local remainingWakeups = setmetatable({}, {__mode = "k"})
-local function BuffStacksMatch(state, value, op)
-  local stacks = state.stacks
-  if state.auraActive ~= true or not IsReadable(stacks) or type(stacks) ~= "number" then return false end
-  if op == "<" then return stacks < value
-  elseif op == "<=" then return stacks <= value
-  elseif op == ">" then return stacks > value
-  elseif op == ">=" then return stacks >= value
-  elseif op == "==" then return stacks == value
-  elseif op == "~=" then return stacks ~= value end
-  return false
-end
-local function BuffTimeValue(state, elapsed)
-  if not state.show or not state.cdmBuff or state.auraActive ~= true then return end
-  local total, value, timeScale = nil, nil, 1
-  if state.durationObject then
-    total = state.durationObject:GetTotalDuration()
-    if not IsReadable(total) or type(total) ~= "number" or total <= 0 or total >= math.huge then return end
-    if elapsed then value = state.durationObject:GetElapsedDuration()
-    else value = total end
-  else
-    total, timeScale = state.duration, state.modRate
-    if not IsReadable(total) or not IsReadable(timeScale) then return end
-    timeScale = timeScale or 1
-    if type(total) ~= "number" or total <= 0 or total >= math.huge then return end
-    if type(timeScale) ~= "number" or timeScale <= 0 or timeScale >= math.huge then return end
-    value = total / timeScale
-    if elapsed then
-      local expiration = state.expirationTime
-      if not IsReadable(expiration) or type(expiration) ~= "number" then return end
-      value = (GetTime() - (expiration - total)) / timeScale
+
+local filterOutputs = setmetatable({}, {__mode = "k"})
+local pendingWakeups = setmetatable({}, {__mode = "k"})
+
+local function scheduleWakeup(rawStates, nextCheck)
+  local pending = pendingWakeups[rawStates]
+  if pending and pending.at == nextCheck then return end
+  if pending and pending.timer and pending.timer.Cancel then pending.timer:Cancel() end
+  pendingWakeups[rawStates] = nil
+  if not nextCheck then return end
+  local wakeup = {at = nextCheck}
+  pendingWakeups[rawStates] = wakeup
+  local function fire()
+    if pendingWakeups[rawStates] == wakeup then
+      pendingWakeups[rawStates] = nil
+      Private.QueueCDMRefresh()
     end
   end
-  if IsReadable(value) and type(value) == "number" and value == value and value < math.huge then
-    return math.max(0, value), timeScale
+  local wait = math.max(0.001, nextCheck - GetTime())
+  if C_Timer.NewTimer then
+    wakeup.timer = C_Timer.NewTimer(wait, fire)
+  else
+    C_Timer.After(wait, fire)
   end
 end
-local function BuffTimeMatches(value, threshold, op)
-  if value == nil then return false end
-  if op == "<" then return value < threshold
-  elseif op == "<=" then return value <= threshold
-  elseif op == ">" then return value > threshold
-  elseif op == ">=" then return value >= threshold end
-  return false
-end
-local filterOutputs = setmetatable({}, {__mode = "k"})
-function Private.ExecEnv.UpdateCDMBuffFilters(allstates, rawStates, event, value, op, stackValue, stackOp, totalValue, totalOp, elapsedValue, elapsedOp)
+
+Private.ExecEnv.UpdateCDMBuffFilters = function(allstates, rawStates, event, value, op, stackValue, stackOp, totalValue, totalOp, elapsedValue, elapsedOp)
   value, stackValue = tonumber(value), tonumber(stackValue)
   totalValue, elapsedValue = tonumber(totalValue), tonumber(elapsedValue)
-  local outputs = filterOutputs[rawStates]
-  if not outputs then outputs = {}; filterOutputs[rawStates] = outputs end
+  local outputs = childTable(filterOutputs, rawStates)
   for key in pairs(outputs) do
     if not rawStates[key] then outputs[key] = nil end
   end
   local nextCheck
+  local function earliest(candidate)
+    if not nextCheck or candidate < nextCheck then nextCheck = candidate end
+  end
   for key, state in pairs(rawStates) do
     local output = outputs[key]
     if output then wipe(output) else output = {} end
-    for field, entry in pairs(state) do output[field] = entry end
+    copyFields(output, state)
     if event ~= "OPTIONS" then
       if value then
         output.show = state.show and remainingCondition.conditionTest(state, value, op) or false
-        local nextTime = remainingCondition.conditionRecheckTime(state, value)
-        if nextTime and (not nextCheck or nextTime < nextCheck) then nextCheck = nextTime end
+        local recheck = remainingCondition.conditionRecheckTime(state, value)
+        if recheck then earliest(recheck) end
       end
-      if stackValue then output.show = output.show and BuffStacksMatch(state, stackValue, stackOp) or false end
-      if totalValue then output.show = output.show and BuffTimeMatches(BuffTimeValue(state), totalValue, totalOp) or false end
+      if stackValue then output.show = output.show and stacksPass(state, stackValue, stackOp) or false end
+      if totalValue then output.show = output.show and timePass(auraTimeValue(state), totalValue, totalOp) or false end
       if elapsedValue then
-        local elapsed, timeScale = BuffTimeValue(state, true)
-        output.show = output.show and BuffTimeMatches(elapsed, elapsedValue, elapsedOp) or false
-        local remaining = BuffRemainingTime(state)
+        local elapsed, scale = auraTimeValue(state, true)
+        output.show = output.show and timePass(elapsed, elapsedValue, elapsedOp) or false
+        local remaining = auraRemaining(state)
         if elapsed and remaining and remaining > 0 and elapsed <= elapsedValue then
-          local delay = math.min((elapsedValue - elapsed) * timeScale + 0.001, remaining * timeScale)
-          local nextTime = GetTime() + math.max(0.001, delay)
-          if not nextCheck or nextTime < nextCheck then nextCheck = nextTime end
+          local wait = math.min((elapsedValue - elapsed) * scale + 0.001, remaining * scale)
+          earliest(GetTime() + math.max(0.001, wait))
         end
       end
     end
     outputs[key] = output
   end
-  local pending = remainingWakeups[rawStates]
-  if not pending or pending.at ~= nextCheck then
-    if pending and pending.timer and pending.timer.Cancel then pending.timer:Cancel() end
-    remainingWakeups[rawStates] = nil
-    if nextCheck then
-      local wakeup = {at = nextCheck}
-      remainingWakeups[rawStates] = wakeup
-      local function Refresh()
-        if remainingWakeups[rawStates] == wakeup then
-          remainingWakeups[rawStates] = nil
-          Private.QueueCDMRefresh()
-        end
-      end
-      local delay = math.max(0.001, nextCheck - GetTime())
-      if C_Timer.NewTimer then wakeup.timer = C_Timer.NewTimer(delay, Refresh)
-      else C_Timer.After(delay, Refresh) end
+  scheduleWakeup(rawStates, nextCheck)
+  return applyOutputs(allstates, outputs)
+end
+
+local function presentEvents()
+  local list = {
+    "PLAYER_ENTERING_WORLD", "PLAYER_SPECIALIZATION_CHANGED", "SPELLS_CHANGED",
+    "SPELL_UPDATE_COOLDOWN", "SPELL_UPDATE_CHARGES", "SPELL_UPDATE_ICON",
+    "PLAYER_EQUIPMENT_CHANGED", "BAG_UPDATE_COOLDOWN", "PLAYER_TARGET_CHANGED", "PLAYER_TOTEM_UPDATE",
+  }
+  if viewerApiReady() then
+    for _, eventName in ipairs({
+      "COOLDOWN_VIEWER_DATA_LOADED", "COOLDOWN_VIEWER_TABLE_HOTFIXED", "COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED",
+    }) do
+      list[#list + 1] = eventName
     end
   end
-  return CommitStates(allstates, outputs)
+  return {events = list, unit_events = {
+    player = {"UNIT_AURA"},
+    target = {"UNIT_AURA", "UNIT_FACTION", "UNIT_FLAGS"},
+  }}
 end
-Private.CooldownViewerPrototype.args = cooldownArgs
 
-Private.ExecEnv.GetCDMPickerSelections = Private.GetCDMPickerSelections
-Private.CooldownViewerUtilityPrototype = {}
-Private.CooldownViewerItemPrototype = {}
-for key, value in pairs(Private.CooldownViewerPrototype) do
-  Private.CooldownViewerUtilityPrototype[key] = value
-  Private.CooldownViewerItemPrototype[key] = value
-end
-Private.CooldownViewerUtilityPrototype.name = "Cooldown"
-Private.CooldownViewerItemPrototype.name = "Item"
-local spellArgs = {}
-for i, arg in ipairs(Private.CooldownViewerPrototype.args) do spellArgs[i] = arg end
-spellArgs[#spellArgs + 1] = {name = "inRange", display = "Spell In Range", hidden = true,
-  conditionType = "bool", conditionTest = BooleanCondition("inRange")}
-spellArgs[#spellArgs + 1] = {name = "isUsable", display = "Spell Usable", hidden = true,
-  conditionType = "bool", conditionTest = BooleanCondition("isUsable")}
-spellArgs[#spellArgs + 1] = {name = "insufficientResources", display = "Insufficient Resources", hidden = true,
-  conditionType = "bool", conditionTest = BooleanCondition("insufficientResources")}
-Private.CooldownViewerPrototype.args = spellArgs
-Private.CooldownViewerUtilityPrototype.args = spellArgs
-local cooldownEvents = Private.CooldownViewerPrototype.events
-local function SpellCooldownEvents()
-  local result = cooldownEvents()
-  for _, event in ipairs({"ACTIONBAR_UPDATE_USABLE", "ACTION_USABLE_CHANGED", "SPELL_UPDATE_USABLE", "UPDATE_SHAPESHIFT_FORM"}) do
-    result.events[#result.events + 1] = event
+local function extendEvents(extras)
+  return function()
+    local result = presentEvents()
+    for _, eventName in ipairs(extras) do result.events[#result.events + 1] = eventName end
+    return result
   end
-  return result
 end
-Private.CooldownViewerPrototype.events = SpellCooldownEvents
-Private.CooldownViewerUtilityPrototype.events = SpellCooldownEvents
-Private.CooldownViewerItemPrototype.events = function()
-  local result = cooldownEvents()
-  result.events[#result.events + 1] = "GET_ITEM_INFO_RECEIVED"
-  result.events[#result.events + 1] = "ITEM_DATA_LOAD_RESULT"
-  return result
+
+local spellEvents = extendEvents({
+  "ACTIONBAR_UPDATE_USABLE", "ACTION_USABLE_CHANGED", "SPELL_UPDATE_USABLE", "UPDATE_SHAPESHIFT_FORM",
+})
+local itemEvents = extendEvents({"GET_ITEM_INFO_RECEIVED", "ITEM_DATA_LOAD_RESULT"})
+
+local function nameAndIcon(trigger)
+  local entries, frames = loadCatalog(), Private.CDMFrames()
+  for _, id in ipairs(collectSelectionIDs(trigger)) do
+    local info = entries[id] and C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
+    if info then
+      local identity = Private.CDMIdentity(id, entries[id], info, frames[id])
+      return identity.name, identity.icon
+    end
+  end
+  return "Cooldown Manager", 134400
+end
+
+local function thresholdText(enabled, value, fallback)
+  return enabled and tostring(value or fallback) or ""
+end
+
+local function compileTrigger(trigger)
+  local isBuff = trigger.event == "Blizzard CDM Buff"
+  if isBuff then Private.CDMFrames() end
+  if isBuff and (trigger.cdmUseRemaining or trigger.cdmUseStacks or trigger.cdmUseTotal or trigger.cdmUseElapsed) then
+    local inner = {}
+    for field, value in pairs(trigger) do inner[field] = value end
+    inner.cdmUseRemaining, inner.cdmUseStacks, inner.cdmUseTotal, inner.cdmUseElapsed = nil, nil, nil, nil
+    local innerSource = compileTrigger(inner)
+    local template = "local update=(function() %s end)()\nlocal rawStates={}\n"
+      .. "return function(allstates,event) update(rawStates,event); "
+      .. "return Private.ExecEnv.UpdateCDMBuffFilters(allstates,rawStates,event,%q,%q,%q,%q,%q,%q,%q,%q) end"
+    return template:format(
+      innerSource,
+      thresholdText(trigger.cdmUseRemaining, trigger.cdmRemainingTime, 10), trigger.cdmRemainingOperator or "<",
+      thresholdText(trigger.cdmUseStacks, trigger.cdmStackCount, 1), trigger.cdmStackOperator or ">=",
+      thresholdText(trigger.cdmUseTotal, trigger.cdmTotalTime, 10), trigger.cdmTotalOperator or "<",
+      thresholdText(trigger.cdmUseElapsed, trigger.cdmElapsedTime, 10), trigger.cdmElapsedOperator or ">=")
+  end
+  local queries = Private.CDMSpellQueries(trigger)
+  if queries then
+    local literals = {}
+    local queryTemplate = "{type='cdm',event=%q,cdmSelection='spell',cdmSpell=%q,cdmExact=%s,"
+      .. "cdmItemExact=%s,use_ignoreSpellKnown=%s,showGCD=%s,track=%q,hideGCDText=%s,"
+      .. "showMode=%q,requireTarget=%s}"
+    for _, query in ipairs(queries) do
+      literals[#literals + 1] = queryTemplate:format(
+        query.event, query.cdmSpell, tostring(query.cdmExact), tostring(query.cdmItemExact),
+        tostring(query.use_ignoreSpellKnown == true), tostring(query.showGCD), query.track,
+        tostring(query.hideGCDText), query.showMode, tostring(query.requireTarget))
+    end
+    return ("local queries={%s}\nreturn function(allstates,event) "
+      .. "return Private.ExecEnv.UpdateCDMSelectionList(allstates,queries,event) end"):format(table.concat(literals, ","))
+  end
+  if trigger.type == "cdm" then
+    trigger.cdmSource = isBuff and "buff" or "cooldown"
+  end
+  if hasFreeTextSpell(trigger) then
+    local buffSource = trigger.cdmSource == "buff"
+    local template = "local config = {type=%q,event=%q,cdmSelection=%q,cdmSpell=%q, cdmExact=%s, "
+      .. "cdmSource=%q, showGCD=%s, track=%q, hideGCDText=%s, showMode=%q, requireTarget=%s, "
+      .. "use_ignoreSpellKnown=%s}\n"
+      .. "return function(allstates,event,...) return Private.ExecEnv.UpdateCDMSpell(allstates,config,event,...) end"
+    return template:format(
+      trigger.type or "", trigger.event or "", trigger.cdmSelection or "", trigger.cdmSpell,
+      tostring(trigger.cdmExact == true), trigger.cdmSource or "cooldown",
+      tostring(trigger.use_cdmShowGCD == true), trigger.cdmTrack or "auto",
+      tostring(trigger.cdmHideGCDText ~= false),
+      buffSource and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"),
+      tostring(buffSource and trigger.cdmRequireTarget == true),
+      tostring(trigger.use_ignoreSpellKnown == true))
+  end
+  local literalKeys = {}
+  for rawKey, enabled in pairs(trigger.cdmSpells and trigger.cdmSpells.multi or {}) do
+    local id = tonumber(rawKey)
+    if enabled and id then literalKeys[#literalKeys + 1] = ("[%d]=true"):format(id) end
+  end
+  local template = "local config={type='cdm',event=%q,cdmSpells={multi={%s}}}\n"
+    .. "return function(allstates,event,...) "
+    .. "local selected=Private.ExecEnv.GetCDMPickerSelections(config,event); "
+    .. "return Private.ExecEnv.UpdateCooldownViewerStates(allstates,selected,event,%s,%q,%s,%q,nil,%s,%s) end"
+  return template:format(
+    trigger.event or "Blizzard Cooldown Manager", table.concat(literalKeys, ","),
+    tostring(trigger.use_cdmShowGCD == true), trigger.cdmTrack or "auto",
+    tostring(trigger.cdmHideGCDText ~= false),
+    isBuff and (trigger.cdmBuffShow or "active") or (trigger.cdmShow or "always"),
+    tostring(isBuff and trigger.cdmRequireTarget == true),
+    tostring(trigger.use_ignoreSpellKnown == true))
+end
+
+local argByName = {
+  cdmSpells = {
+    name = "cdmSpells",
+    display = "Cooldown Manager entries",
+    type = "multiselect",
+    required = true,
+    multiNoSingle = true,
+    sorted = true,
+    values = describeEntries,
+  },
+  cdmShowGCD = {name = "cdmShowGCD", display = "Include global cooldown", type = "toggle"},
+  spellId = conditionArg("spellId", "Spell ID", "number"),
+  name = conditionArg("name", "Spell Name", "string"),
+  onCooldown = conditionArg("onCooldown", "On Cooldown", "bool"),
+  isReady = conditionArg("isReady", "Ready", "bool"),
+  recharging = conditionArg("recharging", "Recharging", "bool"),
+  itemId = conditionArg("itemId", "Item ID", "number"),
+  cdmCategory = conditionArg("cdmCategory", "CDM Category", "string"),
+  cdmDisplayed = conditionArg("cdmDisplayed", "Displayed in CDM", "bool"),
+  auraActive = conditionArg("auraActive", "Aura Active (when readable)", "bool"),
+  inRange = conditionArg("inRange", "Spell In Range", "bool"),
+  isUsable = conditionArg("isUsable", "Spell Usable", "bool"),
+  insufficientResources = conditionArg("insufficientResources", "Insufficient Resources", "bool"),
+}
+
+local function argList(names)
+  local list = {}
+  for position, argName in ipairs(names) do list[position] = argByName[argName] end
+  return list
+end
+
+local cooldownNames = {
+  "cdmSpells", "cdmShowGCD", "spellId", "name", "onCooldown", "isReady", "recharging",
+  "itemId", "cdmCategory", "cdmDisplayed",
+}
+local cooldownArgs = argList(cooldownNames)
+local spellNames = {unpack(cooldownNames)}
+for _, extra in ipairs({"inRange", "isUsable", "insufficientResources"}) do spellNames[#spellNames + 1] = extra end
+local spellArgs = argList(spellNames)
+local buffArgs = argList({"cdmSpells", "spellId", "name", "itemId", "cdmCategory", "cdmDisplayed", "auraActive"})
+buffArgs[#buffArgs + 1] = remainingCondition
+
+local INTERNAL_EVENTS = {"WA_CDM_REFRESH", "WA_CDM_LAYOUT_CHANGED"}
+
+local function newPrototype(displayName, eventsFunction, args)
+  return {
+    type = "cdm",
+    name = displayName,
+    statesParameter = "full",
+    progressType = "timed",
+    cooldownViewerProgress = true,
+    automaticrequired = true,
+    force_events = "PLAYER_ENTERING_WORLD",
+    internal_events = INTERNAL_EVENTS,
+    GetNameAndIcon = nameAndIcon,
+    events = eventsFunction,
+    triggerFunction = compileTrigger,
+    args = args,
+  }
+end
+
+Private.CooldownViewerPrototype = newPrototype("Cooldown", spellEvents, spellArgs)
+Private.CooldownViewerBuffPrototype = newPrototype("Buff/Debuff", presentEvents, buffArgs)
+Private.CooldownViewerUtilityPrototype = newPrototype("Cooldown", spellEvents, spellArgs)
+Private.CooldownViewerItemPrototype = newPrototype("Item", itemEvents, cooldownArgs)
+
+if EventRegistry and EventRegistry.RegisterCallback then
+  EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
+    catalogCache = nil
+    C_Timer.After(0, function()
+      if Private.ScanEvents then Private.ScanEvents("WA_CDM_LAYOUT_CHANGED") end
+    end)
+  end, Private.CooldownViewerPrototype)
 end

@@ -24,6 +24,7 @@
 embeds.xml
 
 Init.lua
+SecretRestrictions.lua
 Compatibility.lua
 locales.xml
 ArchiveTypes\Repository.lua
@@ -40,7 +41,9 @@ CDMBackground.lua
 CDMSetup.lua
 CooldownViewerCatalog.lua
 CooldownViewerTrigger.lua
+PrototypeSecretHelpers.lua
 Prototypes.lua
+ClassicEraTriggers.lua
 Profiling.lua
 Profiling.xml
 WeakAuras.lua
@@ -51,6 +54,7 @@ Modernize.lua
 ForeverAurasImport.lua
 Animations.lua
 Conditions.lua
+SecretConditions.lua
 AnchorToWeakAuras.lua
 
 # Trigger systems
@@ -65,6 +69,7 @@ SecretAuraSingle.lua
 SecretAuraGlow.lua
 SecretAuraFlow.lua
 SecretAuraTrigger.lua
+BuffTriggerRestrictedAuras.lua
 BuffTrigger2.lua
 GenericTrigger.lua
 BossMods.lua
@@ -86,9 +91,11 @@ BaseRegions\TextureCoords.lua
 BaseRegions\CircularProgressTexture.lua
 BaseRegions\LinearProgressTexture.lua
 ProgressTextureNative.lua
+RegionTypes\ProgressTextureSecret.lua
 RegionTypes\ProgressTexture.lua
 BaseRegions\Texture.lua
 RegionTypes\Texture.lua
+RegionTypes\AuraBarNative.lua
 RegionTypes\AuraBar.lua
 RegionTypes\Icon.lua
 RegionTypes\Text.lua
@@ -100,6 +107,7 @@ RegionTypes\Model.lua
 
 # Sub-region support
 SubRegionTypes\Background.lua
+SubRegionTypes\SubTextNative.lua
 SubRegionTypes\SubText.lua
 SubRegionTypes\Border.lua
 SubRegionTypes\DispelIcon.lua

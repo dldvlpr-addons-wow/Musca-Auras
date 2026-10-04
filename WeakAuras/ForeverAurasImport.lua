@@ -4,27 +4,20 @@ local AddonName = ...
 ---@class Private
 local Private = select(2, ...)
 
--- Converts auras exported by ForeverAuras (a WeakAuras fork for WoW Forever) to this addon's format.
--- Only the saved data format is read: types without equivalent are kept disabled, and listed in the chat.
-
--- ForeverAuras numbers its internal versions like this addon, so its exports are found by their content only
 local addonsPathPrefix = "[Aa][Dd][Dd][Oo][Nn][Ss][\\/]+"
 local apiReferencePattern = "ForeverAuras([%.:%[])"
 
 local handBySwingType = { [0] = "main", [1] = "off", [2] = "ranged" }
 
--- TimelineParser triggers need the ExRT_Reminder addon, and the boss timeline of the client behind it
 local unsupportedEvents = {
   ["TimelineParser Timer"] = true,
   ["TimelineParser Stage"] = true,
 }
 
--- Code fields: custom*, message_custom, and the code of a Custom Check condition
 local function IsCodeField(tbl, key)
   return type(key) == "string" and (key:find("custom", 1, true) or (key == "value" and tbl.variable == "customcheck"))
 end
 
--- Media paths of ForeverAuras in any string, its API in custom code only
 local function HasForeverAurasReferences(tbl)
   for key, value in pairs(tbl) do
     if type(value) == "string" then
@@ -91,7 +84,6 @@ end
 
 local function ConvertTrigger(trigger, warn)
   if trigger.event == "Swing Timer" then
-    -- swingType is the only weapon setting ForeverAuras reads
     local hand = handBySwingType[tonumber(trigger.swingType)]
     if hand and (trigger.hand ~= hand or not trigger.use_hand) then
       trigger.hand = hand
@@ -150,7 +142,6 @@ local function ConvertAura(data, warnings)
   end
 
   local changed = RenameReferences(data)
-  -- Migration 89 of this addon, which ForeverAuras numbers differently
   data.information = data.information or {}
   if data.information.showNilIsFalse ~= true then
     data.information.showNilIsFalse = true
@@ -165,7 +156,6 @@ local function ConvertAura(data, warnings)
     end
   end
 
-  -- Bag Space variables without equivalent, in conditions (checks can nest in and / or checks)
   local function WarnConditionVariables(check)
     if type(check) ~= "table" then
       return
@@ -181,13 +171,10 @@ local function ConvertAura(data, warnings)
     WarnConditionVariables(type(condition) == "table" and condition.check)
   end
 
-  -- Exports older than 90 still need migration 90, the same in both addons
   data.internalVersion = (tonumber(data.internalVersion) or 0) >= 90 and WeakAuras.InternalVersion() or 89
   return changed or #warnings > warningCount
 end
 
---- Converts in place an imported aura and its children when they come from ForeverAuras.
---- @return boolean converted
 function Private.ConvertForeverAurasImport(data, children)
   local converted = false
   local warnings = {}

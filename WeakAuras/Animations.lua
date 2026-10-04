@@ -103,10 +103,13 @@ local function RunAnimation(key, anim, elapsed, time)
       anim.region:SetAnimRotation(rotate)
     end
   end
-  if(anim.colorFunc and anim.region.ColorAnim) then
+  local startR, startG, startB, startA
+  if anim.colorFunc and anim.region.ColorAnim then
+    startR, startG, startB, startA = anim.region:GetColor()
+  end
+  if anim.colorFunc and anim.region.ColorAnim and not Private.IsSecret(startR, startG, startB, startA) then
     local errorHandler = WeakAuras.IsOptionsOpen() and noopErrorHandler
                                                    or Private.GetErrorHandlerUid(anim.auraUID, L["Color Animation"])
-    local startR, startG, startB, startA = anim.region:GetColor()
     startR, startG, startB, startA = startR or 1, startG or 1, startB or 1, startA or 1
     local ok, r, g, b, a = xpcall(anim.colorFunc, errorHandler, progress, startR, startG, startB, startA,
                                   anim.colorR, anim.colorG, anim.colorB, anim.colorA)
@@ -244,6 +247,9 @@ function Private.Animate(namespace, uid, type, anim, region, inverse, onFinished
       anim.scalex = anim.scalex or 1;
       anim.scaley = anim.scaley or 1;
       startWidth, startHeight = region:GetWidth(), region:GetHeight();
+      if Private.IsSecret(startWidth, startHeight) then
+        startWidth, startHeight = region.width or 0, region.height or 0
+      end
       anim.rotate = anim.rotate or 0;
       anim.colorR = anim.colorR or 1;
       anim.colorG = anim.colorG or 1;

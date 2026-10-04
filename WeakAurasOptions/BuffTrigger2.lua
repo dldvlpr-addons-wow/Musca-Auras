@@ -1527,7 +1527,6 @@ local function GetBuffTriggerOptions(data, triggernum)
                     IsSingleMissing(trigger))
 
   if C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet then
-    -- Adds the aura spell IDs of a buff tracked by the Cooldown Manager
     aura_options.cooldownManagerAura = {
       type = "select",
       width = WeakAuras.doubleWidth,
