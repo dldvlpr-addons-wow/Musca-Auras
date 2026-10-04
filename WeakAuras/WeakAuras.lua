@@ -5016,6 +5016,34 @@ local function ApplyStateToRegion(id, cloneId, region, parent)
   Private.BlizzardAuraDisplay.SyncProgressSource(region, WeakAuras.GetData(id))
   region:Update();
 
+  local thresholdAlpha
+  if not WeakAuras.IsOptionsOpen() then
+    for _, triggerState in pairs(region.states) do
+      if type(triggerState.thresholdAlpha) == "number" then
+        thresholdAlpha = triggerState.thresholdAlpha
+        break
+      end
+    end
+  end
+  if thresholdAlpha then
+    if region.SetRegionAlpha then
+      region:SetRegionAlpha(thresholdAlpha)
+    else
+      region.alpha = thresholdAlpha
+      region:SetAlpha(region.animAlpha or thresholdAlpha)
+    end
+    region.thresholdAlphaApplied = true
+  elseif region.thresholdAlphaApplied then
+    region.thresholdAlphaApplied = nil
+    if region.SetRegionAlpha then
+      local data = WeakAuras.GetData(id)
+      region:SetRegionAlpha(data and data.alpha or 1)
+    else
+      region.alpha = nil
+      region:SetAlpha(region.animAlpha or 1)
+    end
+  end
+
   region.subRegionEvents:Notify("Update", region.state, region.states)
 
   UpdateMouseoverTooltip(region);
@@ -5169,7 +5197,7 @@ local function ScrubSecretState(state)
   for key, value in pairs(state) do
     -- Kept secret for native widgets: progress, and the stack text and icon of BuffTrigger2
     if key ~= "secretValue" and key ~= "secretTotal" and key ~= "secretPercent" and key ~= "secretPercentText"
-       and key ~= "secretStacks" and key ~= "secretIcon"
+       and key ~= "secretStacks" and key ~= "secretIcon" and key ~= "thresholdAlpha"
     then
       if issecretvalue(value) then
         state[key] = last[key]

@@ -29,6 +29,13 @@ Click the <span style="color:#ffd100"><strong>Guide</strong></span> button at th
 
 ***
 
+## <span style="color:#0cf">✨ New in 1.4.1</span>
+
+*   **Low energy, mana or health alerts in combat:** the Health and Power triggers have a new **Show only below (%)** option. The game itself hides the aura above the value.
+*   **Spell Cast Succeeded trigger:** Hide when target changes.
+
+***
+
 ## <span style="color:#0cf">✨ New in 1.3.0</span>
 
 *   **Progress Textures** move in combat: linear and circular fills follow the hidden value, like the Progress Bar.

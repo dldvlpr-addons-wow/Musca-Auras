@@ -13,7 +13,32 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-04
+
+### Added
+- `WeakAuras/Prototypes.lua`: "Show only below (%)" option of the Health and Power triggers (not for Stagger).
+  `Private.ExecEnv.ThresholdAlpha` passes a step curve (1 below the value, 0 from the value) to `UnitHealthPercent`
+  or `UnitPowerPercent` and stores the result, secret in combat, as `thresholdAlpha`. `WeakAuras/WeakAuras.lua`:
+  `thresholdAlpha` is not scrubbed, and it is set as the alpha of the region when the state is applied, Text and
+  Stop Motion regions included, except while the options are open; the alpha of the aura comes back when the
+  option is off. Alpha conditions are not kept, an alpha animation wins while it runs, and with several triggers
+  using the option only one is used. `WeakAuras/Animations.lua`:
+  an animation that starts on a secret alpha starts from 1. `WeakAuras/Locales/enUS.lua`: the two new strings.
+  Curve checked in game on WoW Forever 70124 (a frame alpha follows the energy of the player in combat).
+
+### Changed
+- `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`: the low mana alert points to the new option instead of "Does not
+  work".
+- `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`, `DESCRIPTION.md`: 1.4.1.
+
 ## 2026-10-03
+
+### Added
+- `WeakAuras/Prototypes.lua`: "Hide when target changes" option of the Spell Cast Succeeded trigger. When it is
+  checked, the trigger also listens to `PLAYER_TARGET_CHANGED`. `WeakAuras/GenericTrigger.lua`: on that event, every
+  state of the trigger is removed, as for "Hide when target dies"; both options now apply to the Spell Cast
+  Succeeded trigger only. `WeakAuras/Locales/enUS.lua`: the two new strings. `TUTORIAL.md`,
+  `WeakAuras/ForeverTutorial.lua`: the option and the missed spell limit. Not tested in game yet.
 
 Port of the ForeverAuras features this fork did not have yet. Code taken from ForeverAuras and adapted to this
 fork's names and existing mechanisms. Not tested in game yet.

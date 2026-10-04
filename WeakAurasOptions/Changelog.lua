@@ -10,13 +10,28 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.4.0',
-  dateString = '2026-10-03',
+  versionString = '1.4.1',
+  dateString = '2026-10-04',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md',
   highlightText = [==[
-- The addon loads again: the 1.3.2 download from CurseForge stopped at start-up and /wa did nothing
-- New trigger type: Aura (Modern), drawn by the game's own aura widgets, so duration and stacks keep moving in combat
-- New trigger type: Blizzard Cooldown Manager, drawn natively, so it keeps working in combat]==],  commitText = [==[1.4.0 (2026-10-03):
+- Low energy, low mana and low health alerts work in combat: the Health and Power triggers have a new Show only below (%) option]==],  commitText = [==[1.4.1 (2026-10-04):
+
+New:
+
+- Health and Power triggers: Show only below (%). The game itself hides the aura while the percent is at or above the value, in combat too. Example: Power, Energy, 70 shows a rogue icon under 70 energy (with 100 max energy). The aura stays active: sounds, glows and other actions still run. Not available for Stagger
+- Spell Cast Succeeded trigger: Hide when target changes. The timer started by your cast hides when you change or clear your target. Targeting the first mob again does not bring the timer back
+
+Changes:
+
+- Guide (/wa tutorial): the low mana alert moves out of "Does not work"
+
+Known limitations:
+
+- Show only below (%): the value is a percent of the maximum, not an amount. The option replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using the option, only one is used. While the /wa window is open, the aura stays visible
+- Not tested in game yet: Hide when target changes
+- Combat log triggers never fire: the game forbids the combat log to addons
+
+1.4.0 (2026-10-03):
 
 New:
 

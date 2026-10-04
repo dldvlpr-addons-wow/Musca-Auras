@@ -2551,6 +2551,31 @@ Private.ExecEnv.SecretPercent = function(kind, unit, value, total, powerType, sc
   end
 end
 
+local thresholdCurves = {}
+Private.ExecEnv.ThresholdAlpha = function(kind, unit, powerType, threshold)
+  if not threshold or threshold <= 0
+     or not (C_CurveUtil and C_CurveUtil.CreateCurve and Enum and Enum.LuaCurveType) then
+    return nil
+  end
+  local curve = thresholdCurves[threshold]
+  if not curve then
+    curve = C_CurveUtil.CreateCurve()
+    curve:SetType(Enum.LuaCurveType.Step)
+    curve:AddPoint(0, 1)
+    curve:AddPoint(threshold / 100, 0)
+    thresholdCurves[threshold] = curve
+  end
+  local ok, alpha
+  if kind == "health" then
+    ok, alpha = pcall(UnitHealthPercent, unit, true, curve)
+  else
+    ok, alpha = pcall(UnitPowerPercent, unit, powerType, false, curve)
+  end
+  if ok and type(alpha) == "number" then
+    return alpha
+  end
+end
+
 Private.ExecEnv.GetCastDurationObject = function(unit, castType)
   local getter = castType == "channel" and UnitChannelDuration or UnitCastingDuration
   if not getter then
@@ -3546,11 +3571,13 @@ Private.event_prototypes = {
         unit = string.lower(unit)
         local name, realm = WeakAuras.UnitNameWithRealm(unit)
         local smart = %s
+        local nativeThreshold = %s
       ]=];
 
       ret = ret .. unitHelperFunctions.SpecificUnitCheck(trigger)
 
-      return ret:format(trigger.unit == "group" and "true" or "false");
+      return ret:format(trigger.unit == "group" and "true" or "false",
+                        tostring(trigger.use_nativeThreshold and tonumber(trigger.nativeThreshold) or nil));
     end,
     statesParameter = "unit",
     args = {
@@ -3624,6 +3651,21 @@ Private.event_prototypes = {
         name = "secretPercentText",
         hidden = true,
         init = "Private.ExecEnv.SecretPercent('health', unit, value, total, nil, true)",
+        test = "true",
+        store = true
+      },
+      {
+        name = "nativeThreshold",
+        display = L["Show only below (%)"],
+        desc = L["The game hides the aura while the percent is at or above this value, in combat too. The aura stays active: sounds, glows and other actions still run. Replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using this option, only one is used."],
+        type = "string",
+        validate = WeakAuras.ValidateNumeric,
+        test = "true"
+      },
+      {
+        name = "thresholdAlpha",
+        hidden = true,
+        init = "Private.ExecEnv.ThresholdAlpha('health', unit, nil, nativeThreshold)",
         test = "true",
         store = true
       },
@@ -4096,7 +4138,10 @@ Private.event_prototypes = {
         local unitPowerType = UnitPowerType(unit);
         local powerTypeToCheck = powerType or unitPowerType;
         if not WeakAuras.IsRetail() and powerType == 99 then powerType = 1 end
-      ]=]):format(trigger.unit == "group" and "true" or "false", trigger.use_powertype and trigger.powertype or "nil"))
+        local nativeThreshold = %s
+      ]=]):format(trigger.unit == "group" and "true" or "false", trigger.use_powertype and trigger.powertype or "nil",
+                  tostring(trigger.use_nativeThreshold and (not trigger.use_powertype or trigger.powertype ~= 99)
+                           and tonumber(trigger.nativeThreshold) or nil)))
 
       local powerType = trigger.use_powertype and trigger.powertype or nil
       if WeakAuras.IsRetail() then
@@ -4339,6 +4384,24 @@ Private.event_prototypes = {
         name = "secretPercentText",
         hidden = true,
         init = "Private.ExecEnv.SecretPercent('power', unit, value, total, powerTypeToCheck, true)",
+        test = "true",
+        store = true
+      },
+      {
+        name = "nativeThreshold",
+        display = L["Show only below (%)"],
+        desc = L["The game hides the aura while the percent is at or above this value, in combat too. The aura stays active: sounds, glows and other actions still run. Replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using this option, only one is used."],
+        type = "string",
+        validate = WeakAuras.ValidateNumeric,
+        enable = function(trigger)
+          return not trigger.use_powertype or trigger.powertype ~= 99
+        end,
+        test = "true"
+      },
+      {
+        name = "thresholdAlpha",
+        hidden = true,
+        init = "Private.ExecEnv.ThresholdAlpha('power', unit, powerTypeToCheck, nativeThreshold)",
         test = "true",
         store = true
       },
@@ -8704,6 +8767,9 @@ Private.event_prototypes = {
       if trigger.use_hideOnTargetDeath then
         AddUnitEventForEvents(result, nil, "PLAYER_TARGET_DIED")
       end
+      if trigger.use_hideOnTargetChange then
+        AddUnitEventForEvents(result, nil, "PLAYER_TARGET_CHANGED")
+      end
       return result
     end,
     name = L["Spell Cast Succeeded"],
@@ -8773,6 +8839,13 @@ Private.event_prototypes = {
         name = "hideOnTargetDeath",
         display = L["Hide when target dies"],
         desc = L["Hides the timer when your current target dies. The death of a mob that is no longer your target is not seen. If you change target and the new target dies, the timer is hidden too."],
+        type = "toggle",
+        test = "true"
+      },
+      {
+        name = "hideOnTargetChange",
+        display = L["Hide when target changes"],
+        desc = L["Hides the timer when you change or clear your target. Targeting the first mob again does not bring the timer back."],
         type = "toggle",
         test = "true"
       },

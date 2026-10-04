@@ -114,7 +114,7 @@ Triggers that use the combat log (`CLEU`, "Combat Log") never fire. For damage t
 - Aura trigger filtered by **Native Filter** (crowd control, cast by me...): nothing shows at the moment.
 - Other players' casts.
 - Enemy names and IDs in instances.
-- Low mana alert, mana or energy tick timer in combat.
+- Mana or energy tick timer in combat.
 - Combat log triggers.
 
 ---
@@ -129,7 +129,7 @@ Stop reading the combat. **Prepare** before the pull, or **deduce** from what yo
 | Buff missing in combat, alert | Check buffs and consumables before the pull |
 | Boss casts X, alert | Boss timeline from the pull (`ENCOUNTER_START`) |
 | Cooldown ready, flash | Let the action bar show the cooldown |
-| Low mana, alert | Show the mana bar, no logic on it |
+| Low mana, alert | Power trigger, "Show only below (%)" option |
 
 For debuffs on enemies, the Blizzard nameplates and target frame can show them ("only my debuffs").
 Use them for what only the game can see.
@@ -158,6 +158,12 @@ or dispelled. It follows one target only.
 **Hide when target dies** only sees the death of your current target. If you change target and the mob with your
 DoT dies, the timer keeps running. If you change target and the new target dies, the timer is hidden. For a buff
 on yourself, leave the box unchecked.
+
+**Hide when target changes** hides the timer as soon as you target another mob or clear your target. A target change
+during a cast is not seen. Targeting the first mob again does not bring the timer back.
+
+A missed or resisted spell still starts the timer: the game reports the cast as succeeded, and the combat log that
+tells misses is not available to addons on WoW Forever.
 
 Ready-made example for Immolate rank 1 (spell ID 348, 15 seconds). Copy this text, then `/wa`, **Import**:
 
