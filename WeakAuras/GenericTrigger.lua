@@ -666,7 +666,8 @@ local function RunTriggerFunc(allStates, data, id, triggernum, event, arg1, arg2
   local unitForUnitTrigger
   local cloneIdForUnitTrigger
 
-  if event == "PLAYER_TARGET_DIED" and data.prototype and data.trigger.use_hideOnTargetDeath then
+  if data.prototype and data.event == "Spell Cast Succeeded" and ((event == "PLAYER_TARGET_DIED" and data.trigger.use_hideOnTargetDeath)
+      or (event == "PLAYER_TARGET_CHANGED" and data.trigger.use_hideOnTargetChange)) then
     for cloneId in pairs(allStates) do
       if Private.EndEvent(allStates, cloneId) then
         updateTriggerState = true

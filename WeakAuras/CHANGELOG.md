@@ -1,3 +1,38 @@
+# WeakAuras Forever 1.4.1 (2026-10-04)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
+
+## Highlights
+
+- Low energy, low mana and low health alerts work in combat: the Health and Power triggers have a new **Show only
+  below (%)** option.
+
+## New
+
+- Health and Power triggers: **Show only below (%)**. The game itself hides the aura while the percent is at or
+  above the value, in combat too. Example: Power, Energy, 70 shows a rogue icon under 70 energy (with 100 max
+  energy). The aura stays active: sounds, glows and other actions still run. Not available for Stagger.
+- Spell Cast Succeeded trigger: **Hide when target changes**. The timer started by your cast hides when you change
+  or clear your target. Targeting the first mob again does not bring the timer back.
+
+## Changes
+
+- Guide (`/wa tutorial`): the low mana alert moves out of "Does not work".
+
+## Known limitations
+
+- Show only below (%): the value is a percent of the maximum, not an amount. The option replaces the alpha of the
+  aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers
+  using the option, only one is used. While the `/wa` window is open, the aura stays visible.
+- Not tested in game yet: Hide when target changes.
+- Aura (Modern) needs the spell ID of the aura itself, which can differ from the spell you cast on WoW Forever.
+- `/wa` is also used by ForeverAuras: disable ForeverAuras, or type `/weakauras`.
+- With the classic Aura trigger, buffs and debuffs are hidden in combat. Use Aura (Modern) for combat.
+- The Native Filter of the Aura trigger shows nothing at the moment.
+- Combat log triggers never fire: the game forbids the combat log to addons.
+- The Blizzard Cooldown Manager is not enabled for every class on the WoW Forever beta.
+- Nameplate anchoring only works with the default Blizzard nameplates.
+
 # WeakAuras Forever 1.4.0 (2026-10-03)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
