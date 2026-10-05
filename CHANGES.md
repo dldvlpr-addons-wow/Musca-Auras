@@ -1,17 +1,35 @@
-# WeakAuras Forever
+# Musca Auras
 
 Port of [WeakAuras](https://github.com/WeakAuras/WeakAuras2) 5.22.0 (Classic Era flavor) to WoW Forever 1.60.1,
 a Classic client running on the modern 12.x engine (interface 16001).
 
 Original work: The WeakAuras Team, GPL-2.0 (see `WeakAuras/LICENSE`).
 Modifications: dldvlpr, GPL-2.0.
-Portions taken from ForeverAuras (m33shoq, GPL-2.0), a WeakAuras fork for WoW Forever: the talent data reader and
+Portions taken from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever: the talent data reader and
 the talent picker widget, see 2026-09-30; the secret value handling, load options and options panels listed on
 2026-10-03. Specialization data in `WeakAuras/PlayerSpecialization.lua` comes from talentsforever.com under
 CC-BY 4.0, see `WeakAuras/SpecializationData-LICENSE.txt`, and the spell rank data in `WeakAuras/SecretAuraRanks.lua`
 too, see `WeakAuras/SpellRankData-LICENSE.txt`.
+`WeakAuras/RegionTypes/AuraBarNative.lua` contains code from M33kAuras (m33shoq, GPL-2.0).
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
+
+## 2026-10-05
+
+### Changed
+- The fork is renamed from "WeakAuras Forever" to "Musca Auras". Folders, files, saved variables, the `WeakAuras`
+  API, the `/wa` and `/weakauras` commands and the import format keep the WeakAuras names.
+- `WeakAuras/WeakAuras.toc`, `WeakAurasArchive/WeakAurasArchive.toc`, `WeakAurasModelPaths/WeakAurasModelPaths.toc`,
+  `WeakAurasOptions/WeakAurasOptions.toc`, `WeakAurasTemplates/WeakAurasTemplates.toc`: new `## Title`.
+- `WeakAuras/WeakAuras.lua`: title of the first login message.
+- `WeakAuras/ForeverTutorial.lua`: title and text of the in-game guide.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: Guide button tooltip, thanks text and Discord text.
+- `WeakAuras/Libs/LibCustomGlow-1.0/LibCustomGlow-1.0.lua`, `WeakAuras/Libs/LibRangeCheck-3.0/LibRangeCheck-3.0.lua`,
+  `WeakAuras/Libs/Chomp/Internal.lua`: comments only.
+- `.github/workflows/release.yml`: changelog heading check and CurseForge file name.
+- `README.md` (with a new license section), `DESCRIPTION.md`, `GUIDE.md`, `TUTORIAL.md`, `TESTS-EN-JEU.md`,
+  `CHANGES.md` (title, ForeverAuras author corrected to Neroxrw, M33kAuras credit),
+  `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: new name, version 1.5.0.
 
 ## 2026-10-04
 

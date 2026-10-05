@@ -366,7 +366,7 @@ function OptionsPrivate.CreateFrame()
   end)
   guideButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-    GameTooltip:SetText("WeakAuras Forever Guide")
+    GameTooltip:SetText("Musca Auras Guide")
     GameTooltip:AddLine("Learn everything about WeakAuras on WoW Forever: how an aura works, what changed in combat, "
       .. "what works and what does not, step-by-step recipes and ready-made auras to import.", 1, 1, 1, true)
     GameTooltip:Show()
@@ -513,7 +513,7 @@ function OptionsPrivate.CreateFrame()
     return table.concat(patreonLines, "\n")
   end
 
-  local thanksList = "WeakAuras Forever: WoW Forever 1.60 port by dldvlpr, based on WeakAuras by The WeakAuras Team." .. "\n\n"
+  local thanksList = "Musca Auras: WoW Forever 1.60 port by dldvlpr, based on WeakAuras by The WeakAuras Team." .. "\n\n"
                      .. L["We thank"] .. "\n"
                      .. L["All maintainers of the libraries we use, especially:"] .. "\n"
                      .. "• " .. L["Ace: Funkeh, Nevcairiel"] .. "\n"
@@ -533,7 +533,7 @@ function OptionsPrivate.CreateFrame()
   local thanksListK = lineWrapDiscordList(OptionsPrivate.Private.DiscordListK)
 
   local discordButton = addFooter(L["Discord"], [[Interface\AddOns\WeakAuras\Media\Textures\discord.tga]], "Coming soon",
-            "The WeakAuras Forever Discord server is coming soon.")
+            "The Musca Auras Discord server is coming soon.")
   discordButton:SetParent(tipFrame)
   discordButton:SetPoint("LEFT", tipFrame, "LEFT")
 

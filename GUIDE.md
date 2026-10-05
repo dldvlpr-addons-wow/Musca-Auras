@@ -1,9 +1,9 @@
-# WeakAuras Forever: the complete guide
+# Musca Auras: the complete guide
 
 Everything you need to build auras on WoW Forever, from your first icon to boss timers.
 
 WoW Forever looks like Classic, but it runs on the modern game engine. During combat this engine hides most combat
-data from addons ("secret" data). WeakAuras Forever is built around that: the game draws what addons cannot read,
+data from addons ("secret" data). Musca Auras is built around that: the game draws what addons cannot read,
 so your icons, bars, timers and stack counts keep working in combat. This guide shows how to use it.
 
 **Contents**
@@ -82,7 +82,7 @@ An aura can have several triggers. In the Trigger tab, choose **All triggers** (
 During combat, a boss encounter or a PvP match, the game gives addons "secret" values: WeakAuras holds them but
 cannot read them, compare them or do math with them.
 
-WeakAuras Forever handles this for you:
+Musca Auras handles this for you:
 
 | What you want | In combat |
 | --- | --- |
@@ -467,7 +467,7 @@ if issecretvalue(value) then
 end
 ```
 
-Without this check, the code stops in combat. WeakAuras Forever catches the error: the aura keeps its last state.
+Without this check, the code stops in combat. Musca Auras catches the error: the aura keeps its last state.
 
 **2. Use the modern functions.** `GetSpellInfo`, `GetSpellCooldown`, `UnitBuff`, `UnitDebuff` no longer exist.
 Use `C_Spell.GetSpellInfo`, `C_Spell.GetSpellCooldown`, `C_UnitAuras.GetAuraDataBySpellName`,
@@ -532,10 +532,10 @@ Ready-made example (Immolate rank 1). Copy, then `/wa`, **Import**:
 
 ### From ForeverAuras
 
-Export your auras from ForeverAuras, disable it, then import the strings in WeakAuras Forever. They are converted
+Export your auras from ForeverAuras, disable it, then import the strings in Musca Auras. They are converted
 on import, and the chat lists anything that could not be converted.
 
-| ForeverAuras | WeakAuras Forever |
+| ForeverAuras | Musca Auras |
 | --- | --- |
 | Cooldown Manager trigger, cooldown | Cooldown trigger |
 | Cooldown Manager trigger, buff | Aura trigger, with the buff's spell IDs, stacks, remaining, elapsed and total filters |

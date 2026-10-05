@@ -2511,7 +2511,7 @@ local function RepairDatabase()
 end
 
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
-  text = "|cff00ccffWeakAuras Forever|r\n\n"
+  text = "|cff00ccffMusca Auras|r\n\n"
     .. "WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, "
     .. "so many Classic auras need changes.\n\n"
     .. "|cffffcc00Not possible or limited:|r\n"

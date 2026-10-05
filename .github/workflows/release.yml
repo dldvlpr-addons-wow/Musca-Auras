@@ -30,7 +30,7 @@ jobs:
         run: |
           version="${TAG#v}"
           case "$(head -n1 WeakAuras/CHANGELOG.md) " in
-            "# WeakAuras Forever $version "*) ;;
+            "# Musca Auras $version "*) ;;
             *) echo "::error::The first heading of WeakAuras/CHANGELOG.md is not for $version"; exit 1 ;;
           esac
           [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API_KEY secret is missing"; exit 1; }
@@ -70,7 +70,7 @@ jobs:
 
           metadata=$(jq -n \
             --arg changelog "$(awk '/^# /{n++} n==1' WeakAuras/CHANGELOG.md)" \
-            --arg name "WeakAuras Forever $version" \
+            --arg name "Musca Auras $version" \
             --arg type "$release_type" \
             --argjson versions "$game_version_ids" \
             '{changelog: $changelog, changelogType: "markdown", displayName: $name, gameVersions: $versions, releaseType: $type}')

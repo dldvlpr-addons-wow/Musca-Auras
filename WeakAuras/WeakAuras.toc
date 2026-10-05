@@ -1,6 +1,6 @@
 ## Interface: 16001
 # WOW_INTERFACE_TARGETS: vanilla
-## Title: WeakAuras Forever
+## Title: Musca Auras
 ## Author: The WeakAuras Team, dldvlpr (WoW Forever port)
 ## X-License: GPL-2.0
 ## X-Website: https://github.com/dldvlpr-addons-wow/WeakAuras-Forever
