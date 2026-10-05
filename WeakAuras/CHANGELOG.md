@@ -5,8 +5,21 @@ Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://
 ## Changes
 
 - Renamed to Musca Auras. Nothing changes in your auras or settings.
+- Modern Aura Group: Progress Bar displays are accepted, not only Icons.
+- Aura (Modern) with a Remaining Time threshold on an Icon: textures and other display elements added in the
+  Display tab now show with the icon instead of staying hidden.
+- Aura (Modern): glows keep moving after the aura is clicked in the options.
+- Aura (Modern): new Include Pets option (Players and Pets, Pets only) for group, party and raid.
+- Power trigger: new "Show at or above the value instead" for "Show only below (%)". With the energy hidden by the
+  game in combat, use it instead of a Power comparison, for example energy at or above 80 with a Swing Timer.
+- Conditions on a value hidden by the game no longer cause a Lua error.
 
 # WeakAuras Forever 1.4.2 (2026-10-04)
+
+> **Heads-up:** this version reorganizes a large part of the code. It was tested in game on WoW Forever, but
+> problems may show up that the tests missed. If you get Lua errors or an aura no longer behaves as in 1.4.1,
+> install 1.4.1 again from the Files tab of the CurseForge page. Your auras are kept: the saved data format did not
+> change. Please report the error on GitHub or CurseForge, with the text of the error.
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
 

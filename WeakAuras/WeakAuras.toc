@@ -70,7 +70,10 @@ SecretAuraGlow.lua
 SecretAuraFlow.lua
 SecretAuraTrigger.lua
 BuffTriggerRestrictedAuras.lua
+BuffTriggerNativeFilter.lua
 BuffTrigger2.lua
+GenericTriggerRestricted.lua
+SecretSpellCooldown.lua
 GenericTrigger.lua
 BossMods.lua
 

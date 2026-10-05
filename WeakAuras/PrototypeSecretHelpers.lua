@@ -64,18 +64,19 @@ Private.ExecEnv.GetSpellCooldownDurationWithoutGCD = function(spellId)
 end
 
 local thresholdCurves = {}
-Private.ExecEnv.ThresholdAlpha = function(kind, unit, powerType, threshold)
+Private.ExecEnv.ThresholdAlpha = function(kind, unit, powerType, threshold, above)
   if not threshold or threshold <= 0
      or not (C_CurveUtil and C_CurveUtil.CreateCurve and Enum and Enum.LuaCurveType) then
     return nil
   end
-  local curve = thresholdCurves[threshold]
+  local key = above and -threshold or threshold
+  local curve = thresholdCurves[key]
   if not curve then
     curve = C_CurveUtil.CreateCurve()
     curve:SetType(Enum.LuaCurveType.Step)
-    curve:AddPoint(0, 1)
-    curve:AddPoint(threshold / 100, 0)
-    thresholdCurves[threshold] = curve
+    curve:AddPoint(0, above and 0 or 1)
+    curve:AddPoint(threshold / 100, above and 1 or 0)
+    thresholdCurves[key] = curve
   end
   local ok, alpha
   if kind == "health" then

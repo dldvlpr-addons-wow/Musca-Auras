@@ -34,6 +34,48 @@ This file lists every file changed from the upstream 5.22.0 release, as required
   `DESCRIPTION.md`, `GUIDE.md`, `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`,
   `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAurasOptions/Changelog.lua`, the 1.5.0 entry of
   `WeakAuras/CHANGELOG.md`). Past changelog entries keep the old URL, which GitHub redirects.
+- Fork code moved out of `WeakAuras/BuffTrigger2.lua` again, same behavior: `WeakAuras/BuffTriggerRestrictedAuras.lua`
+  now also holds the refresh of the auras during the restriction, the reset of the player auras on a recast, the
+  rescan when the restriction ends and the per aura protection of the state update; new
+  `WeakAuras/BuffTriggerNativeFilter.lua` (native filter of the Aura trigger, loaded before `BuffTrigger2.lua`),
+  `WeakAuras/WeakAuras.toc` lists it.
+- Fork code moved out of `WeakAuras/GenericTrigger.lua`, same behavior: new `WeakAuras/GenericTriggerRestricted.lua`
+  (loaded before `GenericTrigger.lua`, listed in `WeakAuras/WeakAuras.toc`) holds the `WA_RESTRICTION_CHANGED` and
+  `WA_SECRET_STATE_UPDATE` events sent when the restriction changes, the combat log and secret threshold warnings
+  (`GenericTrigger.lua` calls `Private.UpdateRestrictedTriggerWarnings` at the end of the trigger load) and the
+  totem slots read while totems are secret (`Private.ExecEnv.GetTotemSlotInfo`).
+- Fork code moved out of `WeakAuras/GenericTrigger.lua`, same behavior: new `WeakAuras/SecretSpellCooldown.lua`
+  (loaded before `GenericTrigger.lua`, listed in `WeakAuras/WeakAuras.toc`) holds the reading of secret spell
+  cooldowns: the GCD flag of each spell, the wand shot hold, the readiness check and its polling
+  (`Private.CreateSecretSpellCooldown`, which adds `UpdateSecretReady` and `ClearSecretReady` to the spell cooldown
+  tracker and returns the handler of its events), and `Private.IsDurationObjectRunning`, used by the Global
+  Cooldown trigger.
+
+### Fixed
+- `WeakAuras/SecretSpellCooldown.lua`: while cooldowns are secret, Cooldown Ready could fire after a global cooldown
+  alone, because the end of the global cooldown is seen at the next 0.1 s check and a frame hitch adds to it. A spell
+  must now stay not ready for more than 2 s instead of 1.6 s before Cooldown Ready fires.
+- `WeakAuras/SecretAuraFlow.lua`: an aura in a Modern Aura Group can use a Progress Bar display, not only an Icon.
+- `WeakAuras/SecretAuraSingle.lua`: an Icon on Aura (Modern) with a Remaining Time threshold showed only the icon
+  and the duration text; its other display elements (textures, other texts, borders) stayed hidden. A second aura
+  slot of the game's aura widget now drives an invisible duration text whose width follows the threshold, and these
+  elements are drawn inside a frame clipped to that text, so they show and hide with the icon.
+- `WeakAuras/SecretAuraGlow.lua`, `WeakAuras/BlizzardAuraDisplay.lua`: on Aura (Modern), a glow restyled while the
+  aura is shown (for example when the aura is clicked in the options) stayed still or disappeared, because the game
+  plays the registered animations only when the aura appears. The element glows and the main glow now start right
+  after they are registered.
+- `WeakAuras/Conditions.lua`: a number condition on a secret value is false instead of raising a Lua error.
+
+### Added
+- `WeakAuras/Prototypes.lua`, `WeakAuras/PrototypeSecretHelpers.lua`: Power trigger, "Show at or above the value
+  instead" for "Show only below (%)": the step curve passed to `UnitPowerPercent` is inverted (0 below the value, 1
+  from the value). With a secret power, a Power trigger with a comparison is inactive; this option shows the aura
+  from a value without comparing it, for example with a Swing Timer trigger and "All Triggers".
+  `WeakAuras/Locales/enUS.lua`: the new string.
+- `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAurasOptions/SecretAuraTriggerOptions.lua`: Aura (Modern), "Include Pets"
+  (Players and Pets, Pets only) for the group, party and raid units: the pets of the tracked members (`pet`,
+  `partypetN`, `raidpetN`) that exist are added after the name and role filters, the unit list and the native aura
+  sounds are rebuilt on `UNIT_PET`, and Players and Pets doubles the number of unit slots.
 
 ## 2026-10-04
 

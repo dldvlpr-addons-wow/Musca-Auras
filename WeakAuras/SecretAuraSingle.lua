@@ -5,6 +5,7 @@ local Disp = Private.BlizzardAuraDisplay
 local MISSING_GROUP_NAME = "FAMissing"
 local PRESENCE_GROUP_NAME = "FAPresence"
 local REMAINING_ICON_SLOT = "FARemainIcon"
+local REMAINING_GATE_SLOT = "FARemainGate"
 local EDGE_EPSILON = 0.001
 local TEXCOORD_SCALE = 1024
 local GATE_TOLERANCE = 0.5
@@ -726,14 +727,17 @@ function Disp.RemainingGateProblem(auraData, auraTrigger)
   end
 end
 
-function Disp.RemainingGateRange(auraData, auraTrigger)
-  auraTrigger = auraTrigger or Disp.GetTrigger(auraData)
-  if auraData.regionType == "icon" or not remainingEnabled(auraTrigger) or Disp.RemainingGateProblem(auraData, auraTrigger) then return end
-  local operator, seconds = Disp.RemainingWindow(auraTrigger)
+local function remainingRange(operator, seconds)
   if operator == "<" then return 0, seconds - EDGE_EPSILON end
   if operator == "<=" then return 0, seconds end
   if operator == ">" then return seconds + EDGE_EPSILON end
   return seconds
+end
+
+function Disp.RemainingGateRange(auraData, auraTrigger)
+  auraTrigger = auraTrigger or Disp.GetTrigger(auraData)
+  if auraData.regionType == "icon" or not remainingEnabled(auraTrigger) or Disp.RemainingGateProblem(auraData, auraTrigger) then return end
+  return remainingRange(Disp.RemainingWindow(auraTrigger))
 end
 
 function Disp.UsesGate(auraData)
@@ -1012,8 +1016,48 @@ function Disp.TimedGlowHolder(nativeView, auraData, index, frame)
   return late.holder
 end
 
+local function moveHolder(holder, parent)
+  if holder:GetParent() == parent then return end
+  local level = holder:GetFrameLevel()
+  holder:SetParent(parent)
+  holder:SetFrameLevel(level)
+end
+
+function Disp.AttachRemainingHolders(nativeView, auraData)
+  local gateText = nativeView.container and nativeView.container.remainingGateText
+  local clip
+  if gateText and not nativeView.preview then
+    clip = nativeView.remainingClip or CreateFrame("Frame", nil, nativeView.button, "DisableUntrustedLayoutScriptsTemplate")
+    nativeView.remainingClip = clip
+    clip:SetClipsChildren(true)
+    clip:ClearAllPoints()
+    clip:SetPoint("TOPLEFT", gateText, "TOPLEFT")
+    clip:SetPoint("BOTTOMRIGHT", gateText, "BOTTOMRIGHT")
+    clip:Show()
+  end
+  local limited = not nativeView.preview and auraData.regionType == "icon"
+    and Disp.RemainingWindow(Disp.GetTrigger(auraData)) ~= nil
+  for index, subElement in ipairs(auraData.subRegions or {}) do
+    local holder = nativeView.elementFrames and nativeView.elementFrames["shared" .. index]
+    if holder and not Disp.IsDetachedElement(auraData, subElement) then
+      local kind = subElement.type
+      local keep = kind == "subglow" or kind == "subbackground"
+        or (kind == "subtext" and Disp.TextKind(subElement.text_text) == "duration")
+      if not limited or keep then
+        moveHolder(holder, nativeView.gateClip or nativeView.button)
+      elseif clip then
+        moveHolder(holder, clip)
+        holder:Show()
+      else
+        holder:Hide()
+      end
+    end
+  end
+end
+
 function Disp.StyleRemainingList(nativeView, auraData)
   nativeView.remainingHidesIcon = nil
+  Disp.AttachRemainingHolders(nativeView, auraData)
   if nativeView.preview then return end
   local limited = auraData.regionType == "icon" and Disp.RemainingWindow(Disp.GetTrigger(auraData)) ~= nil
   if nativeView.conditionOverlay then nativeView.conditionOverlay:SetShown(not limited) end
@@ -1023,16 +1067,7 @@ function Disp.StyleRemainingList(nativeView, auraData)
   nativeView.icon:Hide()
   nativeView.button:ClearDurationCooldown()
   nativeView.cooldown:Hide()
-  nativeView.button:ClearApplicationCount()
-  nativeView.button:ClearSpellName()
   nativeView.border:Hide()
-  for index, subElement in ipairs(auraData.subRegions or {}) do
-    local kind = subElement.type
-    local keep = kind == "subglow" or kind == "subbackground"
-      or (kind == "subtext" and Disp.TextKind(subElement.text_text) == "duration")
-    local holder = nativeView.elementFrames and nativeView.elementFrames["shared" .. index]
-    if holder and not keep then holder:Hide() end
-  end
 end
 
 local function missingMargin(auraData, width, height)
@@ -1681,6 +1716,42 @@ function Disp.StyleDurationGate(nativeView, auraData)
   end
 end
 
+local function ensureRemainingGate(singleState, displayInstance, ownerRegion, auraData, auraTrigger, operator, seconds)
+  local auraContainer = displayInstance.container
+  local gate = ensureSlot(singleState, displayInstance, ownerRegion, REMAINING_GATE_SLOT, auraTrigger, auraData)
+  if not gate then return end
+  local width, height = Disp.Dimensions(auraData)
+  local size, fill, margin = gateFill(width, height)
+  local lower, upper = remainingRange(operator, seconds)
+  local formatter, failureMessage = gateFormatter(lower, upper, fill)
+  gate.text = gate.text or gate.button:CreateFontString(nil, "BACKGROUND")
+  local succeeded = formatter ~= nil
+  if succeeded then
+    gate.text:SetFont(STANDARD_TEXT_FONT, size, "")
+    gate.text:SetWordWrap(false)
+    gate.text:SetWidth(0)
+    placeGateText(gate.text, gate.button, margin)
+    if not invisibleCurve then
+      invisibleCurve = C_CurveUtil.CreateColorCurve()
+      invisibleCurve:SetType(Enum.LuaCurveType.Step)
+      invisibleCurve:AddPoint(0, CreateColor(0, 0, 0, 0))
+    end
+    local bindingProperty = Enum.DurationTextBindingProperty.RemainingDuration
+    gate.button:ClearDurationText()
+    succeeded, failureMessage = pcall(gate.button.SetDurationText, gate.button, gate.text, {
+      textFormat = {formatString = "{}", components = {{property = bindingProperty, formatter = formatter}}},
+      textColor = {curve = invisibleCurve, property = bindingProperty},
+    })
+  end
+  if not succeeded then
+    Warn(auraData, "Blizzard refused the Remaining Time check: " .. tostring(failureMessage))
+    return
+  end
+  gate.text:Show()
+  auraContainer.remainingGateText = gate.text
+  auraContainer:SetAuraSlotEnabled(REMAINING_GATE_SLOT, true)
+end
+
 function Disp.ConfigureSingle(displayInstance, ownerRegion, auraData, index)
   local auraTrigger = Disp.GetTrigger(auraData)
   local valid = index == 1 and Disp.ValidateSingle(auraData, auraTrigger) == nil
@@ -1702,7 +1773,11 @@ function Disp.ConfigureSingle(displayInstance, ownerRegion, auraData, index)
     disableMissing(singleState)
   end
   local operator, seconds = Disp.RemainingWindow(auraTrigger)
-  if isSingle and operator then ensureRemaining(singleState, displayInstance, ownerRegion, auraData, auraTrigger, operator, seconds) end
+  displayInstance.container.remainingGateText = nil
+  if isSingle and operator and ensureRemaining(singleState, displayInstance, ownerRegion, auraData, auraTrigger, operator, seconds) then
+    ensureRemainingGate(singleState, displayInstance, ownerRegion, auraData, auraTrigger, operator, seconds)
+  end
+  for _, entry in ipairs(displayInstance.buttons or {}) do Disp.AttachRemainingHolders(entry, auraData) end
   for key, slot in pairs(singleState.slots or {}) do
     if not slot.used then pcall(displayInstance.container.SetAuraSlotEnabled, displayInstance.container, key, false) end
   end

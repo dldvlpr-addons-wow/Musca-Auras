@@ -994,11 +994,6 @@ function WeakAuras.ScanUnitEvents(event, unit, ...)
   scannerFrame:Queue(Private.ScanUnitEvents, event, unit, ...)
 end
 
-Private.callbacks:RegisterCallback("RestrictionChanged", function()
-  Private.ScanEvents("WA_RESTRICTION_CHANGED")
-  Private.ScanEvents("WA_SECRET_STATE_UPDATE")
-end)
-
 local unitStatEvents = {
   UNIT_HEALTH = true, UNIT_HEALTH_FREQUENT = true, UNIT_MAXHEALTH = true,
   UNIT_POWER_FREQUENT = true, UNIT_POWER_UPDATE = true, UNIT_MAXPOWER = true,
@@ -1712,7 +1707,6 @@ function GenericTrigger.Add(data, region)
   watched_trigger_events[id] = nil
 
   local warnAboutCLEUEvents = false
-  local warnAboutCombatLog, warnAboutSecretThreshold = false, false
 
   for triggernum, triggerData in ipairs(data.triggers) do
     local trigger, untrigger = triggerData.trigger, triggerData.untrigger
@@ -1760,21 +1754,6 @@ function GenericTrigger.Add(data, region)
 
             prototype = event_prototypes[trigger.event]
             triggerFuncStr = ConstructFunction(prototype, trigger);
-
-            if not Private.hasCombatLog then
-              if trigger.event == "Combat Log" then
-                warnAboutCombatLog = true
-              elseif trigger.event == "Health" or trigger.event == "Power" then
-                for _, arg in ipairs(prototype.args) do
-                  local enabled = arg.enable == nil or arg.enable == true
-                                  or type(arg.enable) == "function" and arg.enable(trigger)
-                  if arg.type == "number" and arg.name and arg.name ~= "countCharged" and enabled
-                     and trigger["use_" .. arg.name] and trigger[arg.name] then
-                    warnAboutSecretThreshold = true
-                  end
-                end
-              end
-            end
 
             statesParameter = prototype.statesParameter;
             triggerFunc = Private.LoadFunction(triggerFuncStr, id);
@@ -1909,10 +1888,6 @@ function GenericTrigger.Add(data, region)
               if event == "CLEU" or event == "COMBAT_LOG_EVENT_UNFILTERED" then
                 warnAboutCLEUEvents = true
               end
-              local upperEvent = event:upper()
-              if not Private.hasCombatLog and (upperEvent:find("^CLEU") or upperEvent:find("^COMBAT_LOG_EVENT")) then
-                warnAboutCombatLog = true
-              end
               for i in event:gmatch("[^:]+") do
                 if not trueEvent then
                   trueEvent = string.upper(i)
@@ -2027,19 +2002,7 @@ function GenericTrigger.Add(data, region)
     Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning")
   end
 
-  if warnAboutCombatLog then
-    Private.AuraWarnings.UpdateWarning(data.uid, "forever_combat_log", "warning",
-      "WoW Forever does not give the combat log to addons: combat log triggers and CLEU events never fire.")
-  else
-    Private.AuraWarnings.UpdateWarning(data.uid, "forever_combat_log")
-  end
-  if warnAboutSecretThreshold then
-    Private.AuraWarnings.UpdateWarning(data.uid, "forever_secret_threshold", "warning",
-      "In combat, WoW Forever can hide health and power values from addons. A threshold on them cannot be checked "
-      .. "then: the aura keeps its last state, or hides for a percent or deficit threshold.")
-  else
-    Private.AuraWarnings.UpdateWarning(data.uid, "forever_secret_threshold")
-  end
+  Private.UpdateRestrictedTriggerWarnings(data)
 end
 
 do
@@ -2416,78 +2379,7 @@ do
   local shootStart
   local shootDuration
 
-  local SHOOT_SPELL_ID = 5019
-  local WAND_HOLD_WINDOW = 3
-  local SECRET_POLL_INTERVAL = 0.1
-  local SECRET_MIN_COOLDOWN = 1.6
   local SECRET_UNKNOWN_DURATION = 3600
-  local gcdFlags, gcdFlagSince = {}, {}
-  local wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
-  local castAfterShot, lastCast = {}, {}
-
-  local function UpdateSpellCooldownGCD(spellID)
-    local info = C_Spell.GetSpellCooldown(spellID)
-    local wasOnGCD = gcdFlags[spellID] == true
-    gcdFlags[spellID] = nil
-    if info and not Private.IsSecret(info.isOnGCD) and type(info.isOnGCD) == "boolean" then
-      gcdFlags[spellID] = info.isOnGCD
-    end
-    if gcdFlags[spellID] ~= true then
-      gcdFlagSince[spellID] = nil
-    elseif not wasOnGCD then
-      gcdFlagSince[spellID] = GetTime()
-    end
-  end
-
-  local function ClearWandHold()
-    wipe(castAfterShot)
-    wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
-  end
-
-  local function NoteWandShot()
-    local now = GetTime()
-    if now - wandLastShotUpdate > 0.05 then
-      wandShotAt = now
-      wipe(castAfterShot)
-    end
-    wandLastShotUpdate = now
-  end
-
-  local function NotePlayerCast(spellID)
-    if Private.IsSecret(spellID) or type(spellID) ~= "number" then
-      ClearWandHold()
-    elseif spellID == SHOOT_SPELL_ID then
-      NoteWandShot()
-    else
-      lastCast[spellID] = GetTime()
-      castAfterShot[spellID] = true
-    end
-  end
-
-  local function IsWandHeldSpell(spellID)
-    return spellID ~= SHOOT_SPELL_ID and GetTime() - wandShotAt < WAND_HOLD_WINDOW and not castAfterShot[spellID]
-  end
-
-  local function GetSecretSpellReady(spellID)
-    local info = C_Spell.GetSpellCooldown(spellID)
-    if not info or Private.IsSecret(info.isActive) or type(info.isActive) ~= "boolean" then
-      return nil, false
-    end
-    if not Private.IsSecret(info.isEnabled) and info.isEnabled == false then
-      return false, info.isActive
-    end
-    if not info.isActive then
-      return true, false
-    end
-    local ok, cooldown = pcall(C_Spell.GetSpellCooldownDuration, spellID, true)
-    if ok and Private.IsDurationObject(cooldown) then
-      local okZero, zero = pcall(cooldown.IsZero, cooldown)
-      if okZero and type(zero) == "boolean" and not Private.IsSecret(zero) then
-        return zero, true
-      end
-    end
-    return gcdFlags[spellID], true
-  end
 
   local function GetRuneDuration()
     local runeDuration = -100;
@@ -2497,16 +2389,6 @@ do
       runeDuration = duration > 0 and duration or runeDuration
     end
     return runeDuration
-  end
-
-  local function IsDurationObjectRunning(durationObject)
-    local okZero, isZero = pcall(durationObject.IsZero, durationObject)
-    local okExpired, hasExpired = pcall(durationObject.HasExpired, durationObject)
-    if okZero and okExpired and type(isZero) == "boolean" and type(hasExpired) == "boolean"
-       and not Private.IsSecret(isZero, hasExpired)
-    then
-      return not isZero and not hasExpired
-    end
   end
 
   local function CheckGCD()
@@ -2544,7 +2426,7 @@ do
       if ok and Private.IsDurationObject(durationObject) then
         running = spellCooldownInfo and spellCooldownInfo.isActive
         if type(running) ~= "boolean" or Private.IsSecret(running) then
-          running = IsDurationObjectRunning(durationObject)
+          running = Private.IsDurationObjectRunning(durationObject)
         end
       end
       if running then
@@ -3131,77 +3013,7 @@ do
     end
   }
 
-  local secretPolled = {}
-  local secretPoller = CreateFrame("Frame")
-  secretPoller:Hide()
-  secretPoller.elapsed = 0
-  secretPoller:SetScript("OnUpdate", function(self, elapsed)
-    self.elapsed = self.elapsed + elapsed
-    if self.elapsed < SECRET_POLL_INTERVAL then
-      return
-    end
-    self.elapsed = 0
-    SpellDetails.quietSecretCheck = true
-    for id in pairs(secretPolled) do
-      if SpellDetails.data[id] and SpellDetails.data[id].secret then
-        local info = C_Spell.GetSpellCooldown(id)
-        local active = info and info.isActive
-        if Private.IsSecret(active) or active ~= true or gcdFlags[id] == true then
-          SpellDetails:CheckSpellCooldown(id, GetRuneDuration())
-        end
-      else
-        secretPolled[id] = nil
-      end
-    end
-    SpellDetails.quietSecretCheck = nil
-    if not next(secretPolled) then
-      self:Hide()
-    end
-  end)
-
-  function SpellDetails:UpdateSecretReady(effectiveSpellId)
-    local detail = self.data[effectiveSpellId]
-    local ready, active = GetSecretSpellReady(effectiveSpellId)
-    local now = GetTime()
-    if ready == true and active and gcdFlags[effectiveSpellId] == true and gcdFlagSince[effectiveSpellId]
-       and now - gcdFlagSince[effectiveSpellId] < SECRET_MIN_COOLDOWN
-    then
-      ready = false
-    end
-    local wandOnly = false
-    if detail.notReadyWand then
-      local cast = lastCast[effectiveSpellId]
-      wandOnly = not cast or (detail.lastReadyAt and cast < detail.lastReadyAt - 0.2) or false
-    end
-    if detail.secretReady == false and ready == true and detail.notReadySince and not wandOnly
-       and now - detail.notReadySince > SECRET_MIN_COOLDOWN and not WeakAuras.IsPaused()
-    then
-      self:SendEventsForSpell(effectiveSpellId, "SPELL_COOLDOWN_READY", effectiveSpellId)
-    end
-    if ready == false then
-      if detail.secretReady ~= false or not detail.notReadySince then
-        detail.notReadySince = now
-        detail.notReadyWand = IsWandHeldSpell(effectiveSpellId) or nil
-      end
-      secretPolled[effectiveSpellId] = true
-      secretPoller:Show()
-    else
-      detail.notReadySince, detail.notReadyWand = nil, nil
-      if ready == true then
-        detail.lastReadyAt = now
-      end
-      secretPolled[effectiveSpellId] = nil
-    end
-    local changed = detail.secretReady ~= ready
-    detail.secretReady = ready
-    return changed
-  end
-
-  function SpellDetails:ClearSecretReady(effectiveSpellId)
-    local detail = self.data[effectiveSpellId]
-    detail.secretReady, detail.notReadySince, detail.notReadyWand = nil, nil, nil
-    secretPolled[effectiveSpellId] = nil
-  end
+  local HandleSecretCooldownEvent = Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
 
   local mark_ACTIONBAR_UPDATE_COOLDOWN, mark_PLAYER_ENTERING_WORLD
 
@@ -3236,31 +3048,14 @@ do
       cdReadyFrame:RegisterEvent("RUNE_TYPE_UPDATE");
     end
     cdReadyFrame.HandleEvent = function(self, event, ...)
-      if event == "UNIT_SPELLCAST_SUCCEEDED" then
-        NotePlayerCast((select(3, ...)))
+      if HandleSecretCooldownEvent(event, ...) then
         return
-      elseif event == "SPELL_UPDATE_COOLDOWN" then
-        local arg1, baseSpellID = ...
-        if (not Private.IsSecret(arg1) and arg1 == SHOOT_SPELL_ID)
-           or (not Private.IsSecret(baseSpellID) and baseSpellID == SHOOT_SPELL_ID)
-        then
-          local info = C_Spell.GetSpellCooldown(SHOOT_SPELL_ID)
-          if info and not Private.IsSecret(info.isActive) and info.isActive == true then
-            NoteWandShot()
-          end
-        end
-        for id in pairs(SpellDetails.data) do
-          UpdateSpellCooldownGCD(id)
-        end
       end
       if (event == "PLAYER_ENTERING_WORLD") then
         cdReadyFrame.inWorld = GetTime()
-        ClearWandHold()
       end
       if (event == "PLAYER_LEAVING_WORLD") then
         cdReadyFrame.inWorld = nil
-        wipe(gcdFlags)
-        wipe(gcdFlagSince)
       end
       if not cdReadyFrame.inWorld then
         return
@@ -4550,85 +4345,6 @@ function Private.ExecEnv.CheckTotemSpellId(spellId, triggerSpellId, followoverri
   end
 
   return false
-end
-
-do
-  local totemSlots = {}
-  local lastTotemCast = {time = -math.huge}
-  local TOTEM_CAST_WINDOW = 0.5
-
-  local function LearnedTotemSpells()
-    if not Private.db then
-      return
-    end
-    Private.db.totemSpells = Private.db.totemSpells or {}
-    return Private.db.totemSpells
-  end
-
-  local function ReadTotemSlot(slot)
-    local haveTotem, name, startTime, duration, icon, modRate, spellId = GetTotemInfo(slot)
-    if Private.IsSecret(haveTotem, name, startTime, duration, icon, modRate, spellId) then
-      return
-    end
-    if haveTotem and startTime and startTime ~= 0 then
-      totemSlots[slot] = {name = name, icon = icon, spellId = spellId}
-      local learned = LearnedTotemSpells()
-      if learned and type(spellId) == "number" and spellId > 0 then
-        learned[spellId] = slot
-      end
-    else
-      totemSlots[slot] = nil
-    end
-    return true
-  end
-
-  local function UpdateSecretTotemSlot(slot)
-    local learned = LearnedTotemSpells()
-    local spellId = lastTotemCast.spellId
-    if spellId and learned and learned[spellId] == slot and GetTime() - lastTotemCast.time <= TOTEM_CAST_WINDOW then
-      totemSlots[slot] = {name = Private.ExecEnv.GetSpellName(spellId), icon = Private.ExecEnv.GetSpellIcon(spellId), spellId = spellId}
-      return true
-    end
-    local changed = totemSlots[slot] ~= nil
-    totemSlots[slot] = nil
-    return changed
-  end
-
-  local totemFrame = CreateFrame("Frame")
-  totemFrame:RegisterEvent("PLAYER_TOTEM_UPDATE")
-  totemFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-  totemFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-  totemFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
-  totemFrame:SetScript("OnEvent", function(_, event, arg1, _, spellId)
-    if event == "UNIT_SPELLCAST_SUCCEEDED" then
-      local public = not Private.IsSecret(spellId) and type(spellId) == "number"
-      lastTotemCast.time, lastTotemCast.spellId = GetTime(), public and spellId or nil
-      local learned = public and LearnedTotemSpells()
-      local slot = learned and learned[spellId]
-      if slot and not ReadTotemSlot(slot) and UpdateSecretTotemSlot(slot) then
-        Private.ScanEvents("WA_TOTEM_UPDATE", slot)
-      end
-    elseif event == "PLAYER_TOTEM_UPDATE" then
-      if type(arg1) == "number" and not Private.IsSecret(arg1) and not ReadTotemSlot(arg1) then
-        UpdateSecretTotemSlot(arg1)
-      end
-      Private.ScanEvents("WA_TOTEM_UPDATE", arg1)
-    else
-      for slot = 1, 5 do
-        ReadTotemSlot(slot)
-      end
-      Private.ScanEvents("WA_TOTEM_UPDATE")
-    end
-  end)
-
-  function Private.ExecEnv.GetTotemSlotInfo(slot)
-    local haveTotem, name, startTime, duration, icon, modRate, spellId = GetTotemInfo(slot)
-    local totem = totemSlots[slot]
-    if totem and Private.IsSecret(name, icon, spellId) then
-      return haveTotem, totem.name, startTime, duration, totem.icon, modRate, totem.spellId
-    end
-    return haveTotem, name, startTime, duration, icon, modRate, spellId
-  end
 end
 
 -- Queueable Spells

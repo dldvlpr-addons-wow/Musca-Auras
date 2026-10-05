@@ -253,6 +253,7 @@ local function RestoreKeptGlow(entry, kept, button)
   end
   for _, animationGroup in ipairs(kept.groups) do
     button:AddAuraShownAnimation(animationGroup)
+    animationGroup:Play()
   end
 end
 
@@ -309,5 +310,6 @@ function Display.StyleElementGlow(entry, button, parent, anchor, element, w, h)
   end
   for _, animationGroup in ipairs(glow.groups) do
     button:AddAuraShownAnimation(animationGroup)
+    animationGroup:Play()
   end
 end

@@ -319,8 +319,9 @@ local function CreateTestForCondition(data, input, allConditionsTemplate, usedSt
     elseif (cType == "number" and value and op) then
       local v = tonumber(value)
       if (v) then
-          check = stateCheck .. stateVariableCheck .. "state[" .. trigger .. "]" .. string.format("[%q]", variable)
-                  .. op .. v;
+          local varString = "state[" .. trigger .. "]" .. string.format("[%q]", variable)
+          check = stateCheck .. stateVariableCheck .. "not Private.ExecEnv.IsSecret(" .. varString .. ") and "
+                  .. varString .. op .. v;
       end
     elseif (cType == "timer" and value and op) then
       local triggerState = "state[" .. trigger .. "]"

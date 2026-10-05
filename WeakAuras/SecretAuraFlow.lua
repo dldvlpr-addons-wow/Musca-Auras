@@ -15,7 +15,7 @@ local CENTER_REMAP = {
   CENTER_VERTICAL = {{"TOP", "DOWN"}, {"BOTTOM", "UP"}},
 }
 local PROBLEMS = {
-  notIcon = "In a Modern Aura Group, use an Icon display.",
+  notIcon = "In a Modern Aura Group, use an Icon or Progress Bar display.",
   remaining = "In a Modern Aura Group, Remaining Time is not available yet.",
   single = "Grouped by unit frame or nameplate, use Show On: Aura(s) Found.",
   nameplate = "Grouped by nameplate, choose the Nameplate unit.",
@@ -435,7 +435,7 @@ end
 
 function Display.FlowProblem(data, trigger)
   if not Display.FlowGroup(data) then return end
-  if data.regionType ~= "icon" then return PROBLEMS.notIcon end
+  if data.regionType ~= "icon" and data.regionType ~= "aurabar" then return PROBLEMS.notIcon end
   if Display.RemainingWindow(trigger) then return PROBLEMS.remaining end
   local mode = Display.FlowFrameMode(data)
   if not mode then return end
