@@ -300,9 +300,15 @@ end
 local PostWarning = MakeWarningPoster("blizzard_aura_display")
 local PostSoundWarning = MakeWarningPoster("blizzard_aura_sound")
 
+local PET_GROUP_UNITS = {group = true, party = true, raid = true}
+
 local function SlotCount(triggerConfig)
   if Display.ShowOn and Display.ShowOn(triggerConfig) ~= "showOnActive" then return 1 end
-  return UNIT_SLOT_COUNTS[triggerConfig.unit] or 1
+  local slotCount = UNIT_SLOT_COUNTS[triggerConfig.unit] or 1
+  if triggerConfig.use_includePets and triggerConfig.includePets == "PlayersAndPets" and PET_GROUP_UNITS[triggerConfig.unit] then
+    slotCount = slotCount * 2
+  end
+  return slotCount
 end
 
 local function UnitNameMatches(triggerConfig, unitId)
@@ -338,6 +344,24 @@ local function ExpandBaseUnits(triggerConfig)
   return {unitId}
 end
 
+local function PetToken(unitId)
+  if unitId == "player" then return "pet" end
+  local prefix, number = unitId:match("^(%a+)(%d+)$")
+  if prefix == "party" or prefix == "raid" then return prefix .. "pet" .. number end
+end
+
+local function WithPets(triggerConfig, unitList)
+  local petMode = triggerConfig.use_includePets and triggerConfig.includePets
+  if petMode ~= "PlayersAndPets" and petMode ~= "PetsOnly" then return unitList end
+  local petList = {}
+  for _, tokenName in ipairs(unitList) do
+    if petMode == "PlayersAndPets" then petList[#petList + 1] = tokenName end
+    local petToken = PetToken(tokenName)
+    if petToken and UnitExists(petToken) then petList[#petList + 1] = petToken end
+  end
+  return petList
+end
+
 local function ExpandUnits(triggerConfig)
   if triggerConfig.unit == "member" then
     return {(Display.SpecificUnit(triggerConfig))}
@@ -353,8 +377,9 @@ local function ExpandUnits(triggerConfig)
         keptList[#keptList + 1] = tokenName
       end
     end
-    return keptList
+    return WithPets(triggerConfig, keptList)
   end
+  if isFilterable then return WithPets(triggerConfig, unitList) end
   return unitList
 end
 Display.UnitTokens = ExpandUnits
@@ -1000,6 +1025,7 @@ local function ApplyGlowStyle(displayState, auraData, unitGlowFrame)
   for _, animationEntry in ipairs(listEntry.animations) do animationEntry:SetDuration(seconds / #listEntry.animations) end
   textureLayer:Show()
   displayState.button:AddAuraShownAnimation(listEntry.group)
+  listEntry.group:Play()
   glowFrame.registered = listEntry.group
 end
 
@@ -1724,11 +1750,12 @@ local LISTENED_EVENTS = {
   "NAME_PLATE_UNIT_ADDED", "NAME_PLATE_UNIT_REMOVED", "UNIT_NAME_UPDATE", "PLAYER_ROLES_ASSIGNED",
 }
 
-local function WantsUnitUpdate(modeName, eventName, unitId)
+local function WantsUnitUpdate(modeName, eventName, unitId, includePets)
   if eventName == "UNIT_TARGET" then
     return (modeName == "targettarget" and unitId == "target") or (modeName == "focustarget" and unitId == "focus")
   elseif eventName == "UNIT_PET" then
     return (modeName == "pet" and unitId == "player") or modeName == "member"
+      or (includePets and PET_GROUP_UNITS[modeName] == true)
   end
   local modeSet = UNIT_EVENT_ATTACH[eventName]
   return modeSet == nil or modeSet[modeName] == true
@@ -1771,11 +1798,12 @@ local function OnRegionEvent(auraRegion, eventName, unitId)
   local modeName = triggerConfig and triggerConfig.unit
   if eventName == "NAME_PLATE_UNIT_ADDED" or eventName == "NAME_PLATE_UNIT_REMOVED" then
     OnNameplateEvent(auraRegion, modeName, eventName, unitId)
-  elseif not (queuedApplies[auraRegion] and not IsRestricted()) and WantsUnitUpdate(modeName, eventName, unitId) then
+  elseif not (queuedApplies[auraRegion] and not IsRestricted()) and WantsUnitUpdate(modeName, eventName, unitId, triggerConfig and triggerConfig.use_includePets) then
     UpdateUnits(auraRegion)
   end
   if triggerConfig and (eventName == "GROUP_ROSTER_UPDATE" or eventName == "PLAYER_ROLES_ASSIGNED"
-    or (eventName == "UNIT_NAME_UPDATE" and triggerConfig.useUnitNames)) and UNIT_EVENT_ATTACH.GROUP_ROSTER_UPDATE[modeName] then
+    or (eventName == "UNIT_NAME_UPDATE" and triggerConfig.useUnitNames)
+    or (eventName == "UNIT_PET" and triggerConfig.use_includePets)) and UNIT_EVENT_ATTACH.GROUP_ROSTER_UPDATE[modeName] then
     UpdateSounds(auraRegion)
   end
 end

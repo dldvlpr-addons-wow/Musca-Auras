@@ -110,3 +110,120 @@ function Private.CreateAddReadableRestrictedAuras(matchData, ScanUnit, MarkResca
 
   return AddReadableRestrictedAuras
 end
+
+function Private.CreateRestrictedAuraRefresh(matchData, matchDataByTrigger, matchDataChanged, TooltipHelper, MarkRescanPending)
+  local function RemoveMatchData(matchDataChanged, unit, filter, auraInstanceID)
+    local data = matchData[unit] and matchData[unit][filter] and matchData[unit][filter][auraInstanceID]
+    if data then
+      matchData[unit][filter][auraInstanceID] = nil
+      for id, triggerData in pairs(data.auras) do
+        for triggernum in pairs(triggerData) do
+          matchDataByTrigger[id][triggernum][unit][auraInstanceID] = nil
+          matchDataChanged[id] = matchDataChanged[id] or {}
+          matchDataChanged[id][triggernum] = true
+        end
+      end
+      if data.dataInstanceID then
+        TooltipHelper:Untrack(data.dataInstanceID, data)
+      end
+    end
+  end
+
+  local function RefreshRestrictedAuras(matchDataChanged, unit)
+    if not matchData[unit] then
+      return
+    end
+    for filter, matchDataPerFilter in pairs(matchData[unit]) do
+      for auraInstanceID, data in pairs(matchDataPerFilter) do
+        local ok, durationObject
+        if next(data.auras) then
+          ok, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
+        end
+        if ok then
+          if durationObject == nil then
+            RemoveMatchData(matchDataChanged, unit, filter, auraInstanceID)
+          else
+            local stacksOk, secretStacks = pcall(C_UnitAuras.GetAuraApplicationDisplayCount, unit, auraInstanceID)
+            data.secretStacks = nil
+            if stacksOk and type(secretStacks) == "string" then
+              data.secretStacks = secretStacks
+            end
+            data.durationObject = durationObject
+            for id, triggerData in pairs(data.auras) do
+              for triggernum in pairs(triggerData) do
+                matchDataChanged[id] = matchDataChanged[id] or {}
+                matchDataChanged[id][triggernum] = true
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  local function ResetRecastPlayerAuras(time, spellId)
+    local playerAuras = matchData.player and matchData.player.HELPFUL
+    if not playerAuras or type(spellId) ~= "number" or Private.IsSecret(spellId) then
+      return
+    end
+    for _, data in pairs(playerAuras) do
+      local duration = data.duration
+      if data.spellId == spellId and data.unitCaster == "player"
+         and not Private.IsSecret(duration) and type(duration) == "number" and duration > 0
+      then
+        local modRate = not Private.IsSecret(data.modRate) and data.modRate or 1
+        data.expirationTime = time + duration * modRate
+        data.lastChanged = time
+        MarkRescanPending()
+        for id, triggerData in pairs(data.auras) do
+          for triggernum in pairs(triggerData) do
+            matchDataChanged[id] = matchDataChanged[id] or {}
+            matchDataChanged[id][triggernum] = true
+          end
+        end
+      end
+    end
+  end
+
+  return RefreshRestrictedAuras, ResetRecastPlayerAuras
+end
+
+function Private.RegisterRestrictionChangedRescan(frame, restrictedRefreshUnits, SetAurasRestricted, ConsumeRescanPending,
+                                                 HandleEvent)
+  Private.callbacks:RegisterCallback("RestrictionChanged", function(_, isRestricted)
+    local restricted = Private.IsRestricted("auras")
+    if restricted == nil then
+      restricted = isRestricted
+    end
+    SetAurasRestricted(restricted)
+    if not restricted then
+      wipe(restrictedRefreshUnits)
+    end
+    if not restricted and ConsumeRescanPending() then
+      HandleEvent(frame, "PLAYER_ENTERING_WORLD")
+      for _, unit in ipairs({"player", "pet", "target", "focus", "party1", "party2", "party3", "party4"}) do
+        if UnitExists(unit) then
+          HandleEvent(frame, "UNIT_AURA", unit)
+        end
+      end
+    end
+  end)
+end
+
+function Private.CreateProtectedUpdateStates(UpdateStates, MarkRescanPending, IsAurasRestricted)
+  local singleMatchDataChanged = {}
+  return function(matchDataChanged, time)
+    for id, triggers in pairs(matchDataChanged) do
+      singleMatchDataChanged[id] = triggers
+      local ok, errorMessage = pcall(UpdateStates, singleMatchDataChanged, time)
+      singleMatchDataChanged[id] = nil
+      if not ok then
+        Private.StopProfileAura(id)
+        MarkRescanPending()
+        if not (IsAurasRestricted() or Private.IsRestricted("auras")) then
+          geterrorhandler()(errorMessage)
+        end
+      end
+    end
+  end
+end

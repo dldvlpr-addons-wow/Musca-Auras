@@ -3968,9 +3968,11 @@ Private.event_prototypes = {
         local powerTypeToCheck = powerType or unitPowerType;
         if not WeakAuras.IsRetail() and powerType == 99 then powerType = 1 end
         local nativeThreshold = %s
+        local nativeThresholdAbove = %s
       ]=]):format(trigger.unit == "group" and "true" or "false", trigger.use_powertype and trigger.powertype or "nil",
                   tostring(trigger.use_nativeThreshold and (not trigger.use_powertype or trigger.powertype ~= 99)
-                           and tonumber(trigger.nativeThreshold) or nil)))
+                           and tonumber(trigger.nativeThreshold) or nil),
+                  tostring(trigger.use_nativeThresholdAbove == true)))
 
       local powerType = trigger.use_powertype and trigger.powertype or nil
       if WeakAuras.IsRetail() then
@@ -4219,7 +4221,7 @@ Private.event_prototypes = {
       {
         name = "nativeThreshold",
         display = L["Show only below (%)"],
-        desc = L["The game hides the aura while the percent is at or above this value, in combat too. The aura stays active: sounds, glows and other actions still run. Replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using this option, only one is used."],
+        desc = L["The game hides the aura while the percent is at or above this value, in combat too. With \"Show at or above the value instead\", it hides the aura while the percent is below this value. The aura stays active: sounds, glows and other actions still run. Replaces the alpha of the aura: alpha conditions are not kept, and an alpha animation shows the aura while it runs. With several triggers using this option, only one is used."],
         type = "string",
         validate = WeakAuras.ValidateNumeric,
         enable = function(trigger)
@@ -4228,9 +4230,18 @@ Private.event_prototypes = {
         test = "true"
       },
       {
+        name = "nativeThresholdAbove",
+        display = L["Show at or above the value instead"],
+        type = "toggle",
+        enable = function(trigger)
+          return trigger.use_nativeThreshold and (not trigger.use_powertype or trigger.powertype ~= 99)
+        end,
+        test = "true"
+      },
+      {
         name = "thresholdAlpha",
         hidden = true,
-        init = "Private.ExecEnv.ThresholdAlpha('power', unit, powerTypeToCheck, nativeThreshold)",
+        init = "Private.ExecEnv.ThresholdAlpha('power', unit, powerTypeToCheck, nativeThreshold, nativeThresholdAbove)",
         test = "true",
         store = true
       },

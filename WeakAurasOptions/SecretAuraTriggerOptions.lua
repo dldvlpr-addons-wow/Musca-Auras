@@ -180,6 +180,23 @@ local function addGroupMemberOptions(options, ctx)
       save("unitRoles", trigger.unitRoles)
     end,
   }
+  options.useIncludePets = {
+    type = "toggle", name = "Include Pets", order = 4.5, width = width,
+    desc = "Also track the pets of the group members.",
+    hidden = function() return not inGroupUnit(trigger) end,
+    get = function() return trigger.use_includePets or false end,
+    set = function(_, value)
+      if value and trigger.includePets == nil then trigger.includePets = "PlayersAndPets" end
+      save("use_includePets", value)
+    end,
+  }
+  options.includePets = {
+    type = "select", name = "Include Pets", order = 4.6, width = width,
+    values = {PlayersAndPets = "Players and Pets", PetsOnly = "Pets only"},
+    hidden = function() return not trigger.use_includePets or not inGroupUnit(trigger) end,
+    get = function() return trigger.includePets end,
+    set = function(_, value) save("includePets", value) end,
+  }
   options.filtersHeader = {type = "header", name = "Aura Filters", order = 10}
   options.includeNameplateOnly = {
     type = "toggle", name = "Include nameplate-only auras", order = 21, width = "full",
