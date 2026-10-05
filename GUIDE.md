@@ -577,7 +577,7 @@ when combat ends.
 **Performance.** Load auras only where you need them, and use `/wa pstart combat` then `/wa pprint` to find the
 expensive ones.
 
-Report a bug: https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues
+Report a bug: https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 
 ---
 

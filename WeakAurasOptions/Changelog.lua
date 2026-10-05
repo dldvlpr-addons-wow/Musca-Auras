@@ -12,7 +12,7 @@ local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
   versionString = '1.5.0',
   dateString = '2026-10-05',
-  fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md',
+  fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
 - Renamed to Musca Auras. Nothing changes in your auras or settings]==],  commitText = [==[1.5.0 (2026-10-05):
 
