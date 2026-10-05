@@ -1,4 +1,4 @@
-# WeakAuras Forever tutorial
+# Musca Auras tutorial
 
 How WeakAuras works on WoW Forever, and how to build auras that keep working in combat.
 
@@ -284,7 +284,7 @@ if issecretvalue and issecretvalue(value) then
 end
 ```
 
-Without this check, the code stops with a Lua error in combat. WeakAuras Forever does not show those errors:
+Without this check, the code stops with a Lua error in combat. Musca Auras does not show those errors:
 the aura just keeps its last state.
 
 In combat, the `C_UnitAuras` functions refuse addon code when auras are secret. They stop the code with
@@ -318,9 +318,9 @@ https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues
 ## 10. Coming from ForeverAuras
 
 Export your auras from ForeverAuras, then paste the strings in the WeakAuras import window. Groups work too.
-WeakAuras Forever converts them on import, and lists in the chat what it could not convert.
+Musca Auras converts them on import, and lists in the chat what it could not convert.
 
-| ForeverAuras | WeakAuras Forever |
+| ForeverAuras | Musca Auras |
 | --- | --- |
 | Cooldown Manager trigger, cooldown | Cooldown trigger (spell ID, or name if ForeverAuras used names) |
 | Cooldown Manager trigger, buff | Aura trigger (your buffs, or your debuffs on the target) |

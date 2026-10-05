@@ -1,4 +1,4 @@
-<p style="text-align:center">![WeakAuras Forever](https://raw.githubusercontent.com/dldvlpr-addons-wow/WeakAuras-Forever/main/.github/logo.png)</p>
+<p style="text-align:center">![Musca Auras](https://raw.githubusercontent.com/dldvlpr-addons-wow/WeakAuras-Forever/main/.github/logo.png)</p>
 
 # <span style="color:#0cf">WeakAuras</span> <span style="color:#ffd100">Forever</span>
 
@@ -9,7 +9,7 @@ Icons, bars, texts and timers that keep working on the modern engine, even in co
 
 ## <span style="color:#0cf">⚡ What is it?</span>
 
-WoW Forever looks like Classic, but it runs on the **modern game engine**. That engine hides most combat data from addons, and the regular WeakAuras breaks. **WeakAuras Forever** is WeakAuras 5.22.0 ported to WoW Forever (client 1.60.1):
+WoW Forever looks like Classic, but it runs on the **modern game engine**. That engine hides most combat data from addons, and the regular WeakAuras breaks. **Musca Auras** is WeakAuras 5.22.0 ported to WoW Forever (client 1.60.1):
 
 *   <span style="color:#ffd100"><strong>Same addon, same habits.</strong></span> `/wa` opens the options, and your saved auras load as they are.
 *   <span style="color:#ffd100"><strong>No Lua error storm in combat.</strong></span> When the game hides a value, the aura keeps its last state and updates when the data is readable again.
@@ -42,7 +42,7 @@ Click the <span style="color:#ffd100"><strong>Guide</strong></span> button at th
 
 ## <span style="color:#0cf">🌐 Auras from Wago</span>
 
-<span style="color:#4caf50"><strong>Auras from Wago work in WeakAuras Forever.</strong></span> Import them the usual way.
+<span style="color:#4caf50"><strong>Auras from Wago work in Musca Auras.</strong></span> Import them the usual way.
 
 <span style="color:#ff9800"><strong>Some of them can have bugs.</strong></span> They were made for an older game engine, and the engine change on WoW Forever affects them:
 
@@ -51,7 +51,7 @@ Click the <span style="color:#ffd100"><strong>Guide</strong></span> button at th
 *   spells typed by name can miss: every rank has its own ID, type spell IDs instead;
 *   custom code that calls removed functions (`GetSpellInfo`, `UnitBuff`…) shows an error: update it to `C_Spell`, `C_UnitAuras`, `C_Item`.
 
-If an aura from Wago misbehaves, the guide shows how to rebuild the part that breaks. Report anything that looks like a WeakAuras Forever bug on GitHub.
+If an aura from Wago misbehaves, the guide shows how to rebuild the part that breaks. Report anything that looks like a Musca Auras bug on GitHub.
 
 Auras exported from **ForeverAuras** import as they are: same data version, same talent IDs, and their Aura (Modern) and Cooldown Manager triggers are kept. What has no equivalent is listed in the chat.
 
@@ -112,7 +112,7 @@ Discord: coming soon.
 
 ## <span style="color:#0cf">⚖ License and credits</span>
 
-*   **WeakAuras Forever** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/LICENSE). Changes © 2026 dldvlpr, same license. This project is not affiliated with, nor endorsed by, the WeakAuras Team.
+*   **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/LICENSE). Changes © 2026 dldvlpr, same license. This project is not affiliated with, nor endorsed by, the WeakAuras Team.
 *   Portions derived from ForeverAuras (m33shoq, GPL v2), see CHANGES.md.
 *   **Specialization and spell rank data** come from talentsforever.com, under CC-BY 4.0.
 *   **Bundled libraries** keep their own licenses, included in their folders under `WeakAuras/Libs/`: Ace3 (AceComm, AceSerializer, AceTimer, CallbackHandler, LibStub), Archivist, Chomp, LibCompress, LibCustomGlow, LibDBIcon, LibDataBroker, LibDeflate, LibDispel, LibGetFrame, LibRangeCheck, LibSerialize, LibSharedMedia, LibSpecialization, LibSpellRange, TaintLess.

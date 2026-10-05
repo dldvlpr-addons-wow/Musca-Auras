@@ -10,11 +10,17 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.4.2',
-  dateString = '2026-10-04',
+  versionString = '1.5.0',
+  dateString = '2026-10-05',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md',
   highlightText = [==[
-- Internal code reorganized, same behavior. Restart the game after the update: the new files are not loaded by a /reload]==],  commitText = [==[1.4.2 (2026-10-04):
+- Renamed to Musca Auras. Nothing changes in your auras or settings]==],  commitText = [==[1.5.0 (2026-10-05):
+
+Changes:
+
+- Renamed to Musca Auras. Nothing changes in your auras or settings
+
+1.4.2 (2026-10-04):
 
 Changes:
 

@@ -1,4 +1,4 @@
-# Tests en jeu : WeakAuras Forever
+# Tests en jeu : Musca Auras
 
 Rien de ce qui a été codé n'a été testé en jeu. Ce fichier donne l'ordre des tests, ce qu'il faut voir, et le prompt
 à donner à Claude à la fin.
@@ -161,7 +161,7 @@ l'étape 4. Si la commande 2 ou 3 affiche une erreur, copie-la en entier.
 ## Étape 9 : import ForeverAuras (10 min)
 
 - [ ] Dans ForeverAuras (réactivé seul), exporte 3 ou 4 auras variées : Cooldown Manager, Aura (Blizzard), Swing, Ammo, Bag Space, bordure ou icône de dispel.
-- [ ] Désactive ForeverAuras, réactive WeakAuras Forever, importe les chaînes.
+- [ ] Désactive ForeverAuras, réactive Musca Auras, importe les chaînes.
 - [ ] Le chat affiche « Converted from ForeverAuras. » et la liste de ce qui n'est pas converti.
 - [ ] Chaque aura importée marche comme dans ForeverAuras. Note celles qui diffèrent.
 
@@ -180,7 +180,7 @@ l'étape 4. Si la commande 2 ou 3 affiche une erreur, copie-la en entier.
 Copie ce bloc, remplis les résultats, colle le tout dans une nouvelle conversation dans ce dossier :
 
 ```
-Voici les résultats des tests en jeu de WeakAuras Forever, dans l'ordre de TESTS-EN-JEU.md.
+Voici les résultats des tests en jeu de Musca Auras, dans l'ordre de TESTS-EN-JEU.md.
 Lis TESTS-EN-JEU.md et CHANGES.md pour le contexte.
 
 Étape 1 (valeurs) :

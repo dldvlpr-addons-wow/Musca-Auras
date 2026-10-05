@@ -490,7 +490,7 @@ Internal:SetScript("OnEvent", function(self, event, ...)
 		Internal:UpdateBattleNetAccountData()
 	elseif event == "ADDON_LOADED" then
 		-- Tweak CTL's conservative estimates.
-		-- WoW Forever (WeakAuras Forever change): a Classic client (interface 1.x) keeps the conservative estimates
+		-- WoW Forever (Musca Auras change): a Classic client (interface 1.x) keeps the conservative estimates
 		if WOW_PROJECT_ID == WOW_PROJECT_MAINLINE and select(4, GetBuildInfo()) >= 20000 then
 			ChatThrottleLib.BURST = math.max(ChatThrottleLib.BURST, 6144)
 			ChatThrottleLib.MAX_CPS = math.max(ChatThrottleLib.MAX_CPS, 2048)

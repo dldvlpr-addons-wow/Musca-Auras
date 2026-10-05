@@ -1,6 +1,6 @@
-<img src=".github/logo.png" alt="WeakAuras Forever logo" width="128" align="right">
+<img src=".github/logo.png" alt="Musca Auras logo" width="128" align="right">
 
-# WeakAuras Forever
+# Musca Auras
 
 The WeakAuras you know, running on WoW Forever (client 1.60.1).
 Open the options with `/wa` or `/weakauras`, or with the minimap icon.
@@ -13,7 +13,7 @@ Classic Era, SoD or Retail will not work as they are:
 
 - Auras that read the combat log (CLEU triggers, "Combat Log" events) never
   fire. The combat log is closed to addons on this engine.
-- Most combat data is hidden from addons during combat. WeakAuras Forever
+- Most combat data is hidden from addons during combat. Musca Auras
   lets the game draw it (timers, bars, texts set to only `%p` or `%s`), but conditions
   and thresholds on that data wait until combat ends.
 - Some old game functions no longer exist. Custom code calling them errors
@@ -49,9 +49,6 @@ Found a bug? https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues
 
 Discord: coming soon
 
-## License
+## ⚖ License
 
-WeakAuras Forever is a modified version of WeakAuras2 by The WeakAuras Team,
-released under the GNU GPL v2.
-Changes © 2026 dldvlpr, same license. The full license is in [LICENSE](LICENSE)
-and every modified file is listed in [CHANGES.md](CHANGES.md).
+Fork of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2) © The WeakAuras Team, with code from [ForeverAuras](https://github.com/neroxrw/foreverauras) (Neroxrw) and [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq). Changes © 2026 dldvlpr. [GPL v2](LICENSE), no warranty. Changes: [CHANGES.md](CHANGES.md). Data: talentsforever.com (CC-BY 4.0). Not affiliated with the WeakAuras Team or Blizzard Entertainment.

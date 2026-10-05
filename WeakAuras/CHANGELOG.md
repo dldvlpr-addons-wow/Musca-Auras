@@ -1,3 +1,11 @@
+# Musca Auras 1.5.0 (2026-10-05)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
+
+## Changes
+
+- Renamed to Musca Auras. Nothing changes in your auras or settings.
+
 # WeakAuras Forever 1.4.2 (2026-10-04)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
