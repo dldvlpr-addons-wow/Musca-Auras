@@ -311,7 +311,7 @@ Most packs made for Classic Era, Season of Discovery or Retail need work:
 - move buff and consumable checks out of combat (section 6).
 
 Found an aura that should work and does not? Report it:
-https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues
+https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 
 ---
 

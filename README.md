@@ -45,7 +45,7 @@ Do not install it next to another WeakAuras build.
 
 ## Support
 
-Found a bug? https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues
+Found a bug? https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 
 Discord: coming soon
 

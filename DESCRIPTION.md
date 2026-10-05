@@ -1,4 +1,4 @@
-<p style="text-align:center">![Musca Auras](https://raw.githubusercontent.com/dldvlpr-addons-wow/WeakAuras-Forever/main/.github/logo.png)</p>
+<p style="text-align:center">![Musca Auras](https://raw.githubusercontent.com/dldvlpr-addons-wow/Musca-Auras/main/.github/logo.png)</p>
 
 # <span style="color:#0cf">WeakAuras</span> <span style="color:#ffd100">Forever</span>
 
@@ -104,7 +104,7 @@ Install with the CurseForge app, or copy the five folders `WeakAuras`, `WeakAura
 
 ## <span style="color:#0cf">🐞 Support</span>
 
-Found a bug, or an aura that should work and does not? [Open an issue on GitHub](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues).
+Found a bug, or an aura that should work and does not? [Open an issue on GitHub](https://github.com/dldvlpr-addons-wow/Musca-Auras/issues).
 
 Discord: coming soon.
 
@@ -112,10 +112,10 @@ Discord: coming soon.
 
 ## <span style="color:#0cf">⚖ License and credits</span>
 
-*   **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/LICENSE). Changes © 2026 dldvlpr, same license. This project is not affiliated with, nor endorsed by, the WeakAuras Team.
+*   **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/LICENSE). Changes © 2026 dldvlpr, same license. This project is not affiliated with, nor endorsed by, the WeakAuras Team.
 *   Portions derived from ForeverAuras (m33shoq, GPL v2), see CHANGES.md.
 *   **Specialization and spell rank data** come from talentsforever.com, under CC-BY 4.0.
 *   **Bundled libraries** keep their own licenses, included in their folders under `WeakAuras/Libs/`: Ace3 (AceComm, AceSerializer, AceTimer, CallbackHandler, LibStub), Archivist, Chomp, LibCompress, LibCustomGlow, LibDBIcon, LibDataBroker, LibDeflate, LibDispel, LibGetFrame, LibRangeCheck, LibSerialize, LibSharedMedia, LibSpecialization, LibSpellRange, TaintLess.
-*   **Source code and change list:** every modified file, with the date and the nature of the change, is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md), as required by the GPL v2 section 2a. Full source: [github.com/dldvlpr-addons-wow/WeakAuras-Forever](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever).
+*   **Source code and change list:** every modified file, with the date and the nature of the change, is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md), as required by the GPL v2 section 2a. Full source: [github.com/dldvlpr-addons-wow/Musca-Auras](https://github.com/dldvlpr-addons-wow/Musca-Auras).
 *   **No warranty.** This addon is provided as is, without warranty of any kind, as stated in the GPL v2.
 *   World of Warcraft and WoW Forever are trademarks of Blizzard Entertainment, Inc. This addon is a fan project, not affiliated with Blizzard.

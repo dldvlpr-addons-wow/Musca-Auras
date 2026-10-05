@@ -3,7 +3,7 @@
 ## Title: Musca Auras Archive
 ## Author: The WeakAuras Team, dldvlpr (WoW Forever port)
 ## X-License: GPL-2.0
-## X-Website: https://github.com/dldvlpr-addons-wow/WeakAuras-Forever
+## X-Website: https://github.com/dldvlpr-addons-wow/Musca-Auras
 ## Version: 5.22.0
 ## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.blp
 ## LoadOnDemand: 1

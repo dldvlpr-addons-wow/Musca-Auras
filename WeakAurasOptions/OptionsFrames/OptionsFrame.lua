@@ -537,7 +537,7 @@ function OptionsPrivate.CreateFrame()
   discordButton:SetParent(tipFrame)
   discordButton:SetPoint("LEFT", tipFrame, "LEFT")
 
-  local documentationButton = addFooter(L["Documentation"], [[Interface\AddOns\WeakAuras\Media\Textures\GitHub.tga]], "https://github.com/dldvlpr-addons-wow/WeakAuras-Forever",
+  local documentationButton = addFooter(L["Documentation"], [[Interface\AddOns\WeakAuras\Media\Textures\GitHub.tga]], "https://github.com/dldvlpr-addons-wow/Musca-Auras",
             L["Check out our wiki for a large collection of examples and snippets."])
   documentationButton:SetParent(tipFrame)
   documentationButton:SetPoint("LEFT", discordButton, "RIGHT", footerSpacing, 0)
@@ -561,7 +561,7 @@ function OptionsPrivate.CreateFrame()
     changelogButton:SetPoint("LEFT", thanksButton, "RIGHT", footerSpacing, 0)
   end
 
-  local reportbugButton = addFooter(L["Found a Bug?"], [[Interface\AddOns\WeakAuras\Media\Textures\bug_report.tga]], "https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/issues/new",
+  local reportbugButton = addFooter(L["Found a Bug?"], [[Interface\AddOns\WeakAuras\Media\Textures\bug_report.tga]], "https://github.com/dldvlpr-addons-wow/Musca-Auras/issues/new",
             L["Report bugs on our issue tracker."], nil, nil, true)
   reportbugButton:SetParent(tipFrame)
   reportbugButton:SetPoint("RIGHT", tipFrame, "RIGHT")

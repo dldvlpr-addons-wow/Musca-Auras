@@ -30,6 +30,10 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 - `README.md` (with a new license section), `DESCRIPTION.md`, `GUIDE.md`, `TUTORIAL.md`, `TESTS-EN-JEU.md`,
   `CHANGES.md` (title, ForeverAuras author corrected to Neroxrw, M33kAuras credit),
   `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: new name, version 1.5.0.
+- Repository URLs point to `github.com/dldvlpr-addons-wow/Musca-Auras` (the five `.toc` `X-Website`, `README.md`,
+  `DESCRIPTION.md`, `GUIDE.md`, `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`,
+  `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAurasOptions/Changelog.lua`, the 1.5.0 entry of
+  `WeakAuras/CHANGELOG.md`). Past changelog entries keep the old URL, which GitHub redirects.
 
 ## 2026-10-04
 
