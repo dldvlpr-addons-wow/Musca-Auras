@@ -1,11 +1,14 @@
+-- Single-aura mode of the native display: remaining window, fallback and missing states, learned
+-- durations and profiles. Fills Private.BlizzardAuraDisplay; called by BlizzardAuraDisplay.lua,
+-- SecretAuraTrigger.lua, SecretAuraAppearance.lua, SecretAuraPreview.lua and TriggerOptions.lua.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Disp = Private.BlizzardAuraDisplay
 
-local MISSING_GROUP_NAME = "FAMissing"
-local PRESENCE_GROUP_NAME = "FAPresence"
-local REMAINING_ICON_SLOT = "FARemainIcon"
-local REMAINING_GATE_SLOT = "FARemainGate"
+local MISSING_GROUP_NAME = "MuscaMissing"
+local PRESENCE_GROUP_NAME = "MuscaPresence"
+local REMAINING_ICON_SLOT = "MuscaRemainIcon"
+local REMAINING_GATE_SLOT = "MuscaRemainGate"
 local EDGE_EPSILON = 0.001
 local TEXCOORD_SCALE = 1024
 local GATE_TOLERANCE = 0.5
@@ -862,19 +865,28 @@ local function learnProfile(profiles, changed, token, aura, harmful, spellId, du
   end
 end
 
-local function scanUnit(unit, filters, learn)
+-- Reused across UNIT_AURA events instead of fresh closures and tables per event.
+local learnTargets = {changed = {}}
+
+local function learnAura(token, aura, harmful)
+  local spellId, duration = aura.spellId, aura.duration
+  learnSeenDuration(learnTargets.seenDurations, learnTargets.changed, spellId, duration)
+  learnProfile(learnTargets.profiles, learnTargets.changed, token, aura, harmful, spellId, duration)
+end
+
+local function scanUnit(unit, filters)
   for _, filter in ipairs(filters) do
     for slot = 1, 40 do
       local succeeded, aura = pcall(C_UnitAuras.GetAuraDataByIndex, unit, slot, filter)
       if not succeeded or type(aura) ~= "table" then break end
-      learn(unit, aura, filter == "HARMFUL")
+      learnAura(unit, aura, filter == "HARMFUL")
     end
   end
 end
 
-local function scanGroupMembers(scan)
-  for member = 1, (IsInRaid() and GetNumGroupMembers() or 0) do scan("raid" .. member) end
-  for member = 1, (not IsInRaid() and GetNumSubgroupMembers() or 0) do scan("party" .. member) end
+local function scanGroupMembers(filters)
+  for member = 1, (IsInRaid() and GetNumGroupMembers() or 0) do scanUnit("raid" .. member, filters) end
+  for member = 1, (not IsInRaid() and GetNumSubgroupMembers() or 0) do scanUnit("party" .. member, filters) end
 end
 
 local function onSpellDataLoaded(spellId)
@@ -889,37 +901,37 @@ local function onSpellDataLoaded(spellId)
 end
 
 local function onAurasChanged(event, unit, updateInfo)
+  if event == "UNIT_AURA" and unit ~= "target" and unit ~= "focus" and not isFriendlyToken(unit) then return end
   local seenDurations, profiles = learnedDurations(), learnedProfiles()
   if not seenDurations or not profiles then return end
-  local changed = {}
-  local function learn(token, aura, harmful)
-    local spellId, duration = aura.spellId, aura.duration
-    learnSeenDuration(seenDurations, changed, spellId, duration)
-    learnProfile(profiles, changed, token, aura, harmful, spellId, duration)
-  end
+  local changed = learnTargets.changed
+  wipe(changed)
+  learnTargets.seenDurations, learnTargets.profiles = seenDurations, profiles
   local filters = next(watchedIDs) and BOTH_FILTERS or DEBUFF_FILTER
-  local function scan(token) scanUnit(token, filters, learn) end
   if event == "UNIT_AURA" then
-    if unit ~= "target" and unit ~= "focus" and not isFriendlyToken(unit) then return end
     if type(updateInfo) == "table" and not updateInfo.isFullUpdate then
-      for _, aura in ipairs(updateInfo.addedAuras or {}) do
-        local harmful = aura.isHarmful
-        if not issecretvalue(harmful) then learn(unit, aura, harmful == true) end
+      if updateInfo.addedAuras then
+        for _, aura in ipairs(updateInfo.addedAuras) do
+          local harmful = aura.isHarmful
+          if not issecretvalue(harmful) then learnAura(unit, aura, harmful == true) end
+        end
       end
-      for _, instanceId in ipairs(updateInfo.updatedAuraInstanceIDs or {}) do
-        local succeeded, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, unit, instanceId)
-        if succeeded and type(aura) == "table" and not issecretvalue(aura.isHarmful) then
-          learn(unit, aura, aura.isHarmful == true)
+      if updateInfo.updatedAuraInstanceIDs then
+        for _, instanceId in ipairs(updateInfo.updatedAuraInstanceIDs) do
+          local succeeded, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, unit, instanceId)
+          if succeeded and type(aura) == "table" and not issecretvalue(aura.isHarmful) then
+            learnAura(unit, aura, aura.isHarmful == true)
+          end
         end
       end
     else
-      scan(unit)
+      scanUnit(unit, filters)
     end
   elseif event == "PLAYER_TARGET_CHANGED" then
-    scan("target")
+    scanUnit("target", filters)
   else
-    for _, token in ipairs(FIXED_UNITS) do scan(token) end
-    if learnsFromGroup then scanGroupMembers(scan) end
+    for _, token in ipairs(FIXED_UNITS) do scanUnit(token, filters) end
+    if learnsFromGroup then scanGroupMembers(filters) end
   end
   if next(changed) then reapplyWaiting(changed) end
 end
@@ -936,8 +948,7 @@ learnEvents:SetScript("OnEvent", function(_, event, unit, updateInfo)
     reapplyAfterCombat = {}
     reapplyWaiting(deferred)
   end
-  if (not next(watchedIDs) and not next(watchedProfiles)) or InCombatLockdown()
-    or (C_Secrets and C_Secrets.ShouldAurasBeSecret and C_Secrets.ShouldAurasBeSecret()) then return end
+  if (not next(watchedIDs) and not next(watchedProfiles)) or WeakAuras.IsRestricted() then return end
   onAurasChanged(event, unit, updateInfo)
 end)
 

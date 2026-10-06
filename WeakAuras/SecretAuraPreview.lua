@@ -1,8 +1,11 @@
+-- Options preview of the native aura display: sample native buttons with fake bindings.
+-- Fills Private.BlizzardAuraDisplay; called by BlizzardAuraDisplay.lua, SecretAuraSingle.lua and SecretAuraConditions.lua.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Display = Private.BlizzardAuraDisplay
 
 local SAMPLE_DURATION = 6
+Display.PREVIEW_SAMPLE_DURATION = SAMPLE_DURATION
 local BINDING_KINDS = {"Icon", "DurationText", "ApplicationCount", "SpellName", "DurationBar", "DurationCooldown"}
 
 local function AttachBindingMethods(button)

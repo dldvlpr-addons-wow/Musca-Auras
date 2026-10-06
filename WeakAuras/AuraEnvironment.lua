@@ -636,7 +636,8 @@ function env_getglobal_custom(k)
 end
 
 local PrivateForBuiltIn = {
-  ExecEnv = Private.ExecEnv
+  ExecEnv = Private.ExecEnv,
+  SpellCooldownState = Private.SpellCooldownState
 }
 
 local env_getglobal_builtin

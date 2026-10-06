@@ -53,16 +53,6 @@ Private.ExecEnv.GetSpellDisplayCount = function(spellId)
   if ok and type(text) == "string" then return text end
 end
 
-Private.ExecEnv.GetSpellCooldownDurationWithoutGCD = function(spellId)
-  if not spellId or not C_Spell.GetSpellCooldownDuration then
-    return nil
-  end
-  local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, spellId, true)
-  if ok and Private.IsDurationObject(duration) then
-    return duration
-  end
-end
-
 local thresholdCurves = {}
 Private.ExecEnv.ThresholdAlpha = function(kind, unit, powerType, threshold, above)
   if not threshold or threshold <= 0

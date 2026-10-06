@@ -5066,9 +5066,10 @@ function Private.ApplyCooldownDesaturation(region)
   if not spellId or region.secretDesaturation or DesaturationWanted(region) or not C_CurveUtil.EvaluateColorValueFromBoolean then
     return
   end
-  local duration = Private.ExecEnv.GetSpellCooldownDurationWithoutGCD(spellId)
-  if duration then
-    region.icon:SetDesaturation(C_CurveUtil.EvaluateColorValueFromBoolean(duration:IsZero(), 0, 1))
+  -- GCD only, wand hold and charges left keep the icon saturated.
+  local desaturation = Private.SpellCooldownState.SelectSpell(spellId, 1, 0)
+  if Private.IsSecret(desaturation) or desaturation ~= nil then
+    region.icon:SetDesaturation(desaturation)
   end
 end
 

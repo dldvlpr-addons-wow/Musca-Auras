@@ -1,3 +1,6 @@
+-- Appearance of the native aura display: icon, Masque, size, detached and sub-elements (text, border,
+-- glow, texture, dispel). Fills Private.BlizzardAuraDisplay; called by BlizzardAuraDisplay.lua
+-- (StyleAppearance, ValidateAppearance, MigrateAppearance), preview, flow, Conditions.lua and options.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Display = Private.BlizzardAuraDisplay
@@ -720,7 +723,7 @@ local function StyleBaseIcon(native, data, button, baseFrame)
   Display.StyleIconTexCoords(native, data)
   icon:SetVertexColor(unpack(data.regionType == "aurabar" and data.icon_color or data.color or {1, 1, 1, 1}))
   if data.regionType == "icon" or (data.regionType == "aurabar" and data.icon) then
-    if data.iconSource == 0 and data.displayIcon then
+    if data.iconSource == 0 and data.displayIcon and data.displayIcon ~= "" then
       icon:SetTexture(data.displayIcon)
     else
       button:SetIcon(icon)

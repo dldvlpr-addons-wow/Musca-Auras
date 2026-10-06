@@ -1,3 +1,6 @@
+-- Core of the native aura display (Aura (Modern)): eligibility, validation, migration, apply/release
+-- and native aura containers. Creates Private.BlizzardAuraDisplay, filled by the SecretAura*.lua files.
+-- Callers: WeakAuras.lua, Conditions.lua, CDMAuraProgress.lua, RegionTypes/Group.lua, WeakAurasOptions.
 if not WeakAuras.IsLibsOK() then return end
 local _, Internal = ...
 local MediaLibrary = LibStub("LibSharedMedia-3.0")
@@ -10,6 +13,19 @@ local queuedSoundSyncs = {}
 local liveRegions = {}
 local GLOW_FRAME_LEVEL_STEP = 8
 local retiredParent
+-- Last anchor set by UpdateInstance on each container; ApplyLayout and RetireFrame drop it when they re-anchor.
+local containerAnchors = setmetatable({}, {__mode = "k"})
+
+local function KeepsAnchor(frame, point, relativeTo, relativePoint, x, y)
+  local last = containerAnchors[frame]
+  return last ~= nil and last[1] == point and last[2] == relativeTo and last[3] == relativePoint
+    and last[4] == x and last[5] == y
+end
+
+-- An anchor set in combat may have been blocked on a protected frame, so only anchors set out of combat are kept.
+local function NoteAnchor(frame, point, relativeTo, relativePoint, x, y)
+  containerAnchors[frame] = not InCombatLockdown() and {point, relativeTo, relativePoint, x, y} or nil
+end
 
 local function MakeFilterRow(fieldKey, caption, tooltip)
   return {fieldKey, caption, tooltip}
@@ -102,7 +118,8 @@ Display.dynamicGroupWarning = "Aura (Modern) in a Dynamic Group: It keeps its po
 local SUPPORTED_REGION_TYPES = {icon = true, aurabar = true, text = true, progresstexture = true}
 local HELPFUL_ONLY_FILTERS = {CANCELABLE = true, EXTERNAL_DEFENSIVE = true, BIG_DEFENSIVE = true, IMPORTANT = true, isStealable = true}
 local HARMFUL_ONLY_FILTERS = {CROWD_CONTROL = true, isPriorityAura = true, isBossAura = true, isRoleAura = true, isBossOrRoleAura = true}
-local UNIT_SLOT_COUNTS = {group = 40, raid = 40, nameplate = 40, party = 5, arena = 5, boss = 10}
+local UNIT_SLOT_COUNTS = {group = 40, raid = 40, party = 5, arena = 5, boss = 10}
+local NAMEPLATE_SLOT_STEP = 10
 local MEMBER_UNIT_PATTERNS = {
   {pattern = "^party[1-4]$", category = "party"},
   {pattern = "^partypet[1-4]$", category = "party"},
@@ -115,7 +132,8 @@ local HIDDEN_REGION_FIELDS = {"icon", "cooldown", "button", "bar", "secretBar", 
 local VALID_SOUND_CHANNELS = {Master = true, SFX = true, Music = true, Ambience = true, Dialog = true}
 local EDITOR_FIRST_BATCH, EDITOR_BATCH_SIZE = 2, 4
 local EDITOR_APPLY_BATCH = 2
-local APPLY_BATCH_SIZE = 3
+local APPLY_BUDGET_MS = 8
+local LOGIN_POLL_SECONDS = 0.2
 
 local function IsPlateFilter(fieldKey)
   return fieldKey == "nameplateShowAll" or fieldKey == "nameplateShowPersonal"
@@ -159,6 +177,9 @@ function Display.GetSavedTrigger(auraData)
   end
 end
 
+-- Copies without classification, per saved trigger; Display.Modify drops them when the aura data changes.
+local classifiedTriggers = setmetatable({}, {__mode = "k"})
+
 local function DropClassification(triggerConfig)
   triggerConfig.processedAuraType = nil
   if triggerConfig.sortMethod == "UnitFrameDebuff" then triggerConfig.sortMethod = "Default" end
@@ -176,11 +197,21 @@ function Display.GetTrigger(auraData, shownFilters)
     return clone
   end
   if savedTrigger.processedAuraType or savedTrigger.sortMethod == "UnitFrameDebuff" then
-    local clone = CopyTable(savedTrigger)
-    DropClassification(clone)
+    local clone = classifiedTriggers[savedTrigger]
+    if not clone then
+      clone = CopyTable(savedTrigger)
+      DropClassification(clone)
+      classifiedTriggers[savedTrigger] = clone
+    end
     return clone
   end
   return savedTrigger
+end
+
+local function ForgetClassifiedTriggers(auraData)
+  for _, listEntry in ipairs(auraData.triggers or {}) do
+    if type(listEntry) == "table" and listEntry.trigger then classifiedTriggers[listEntry.trigger] = nil end
+  end
 end
 
 function Display.HasTrigger(auraData)
@@ -285,7 +316,7 @@ end
 Display.FilterString = JoinFilters
 
 local function IsRestricted()
-  return InCombatLockdown() or (C_Secrets and C_Secrets.ShouldAurasBeSecret())
+  return WeakAuras.IsRestricted()
 end
 
 local function InPreview()
@@ -302,9 +333,23 @@ local PostSoundWarning = MakeWarningPoster("blizzard_aura_sound")
 
 local PET_GROUP_UNITS = {group = true, party = true, raid = true}
 
+-- Nameplate tokens shared by every display; they grow past the highest token seen, never shrink.
+local nameplateTokens, nameplateIndexes = {}, {}
+
+local function GrowNameplateTokens(highestIndex)
+  local wanted = (math.ceil(highestIndex / NAMEPLATE_SLOT_STEP) + 1) * NAMEPLATE_SLOT_STEP
+  if wanted <= #nameplateTokens then return false end
+  for index = #nameplateTokens + 1, wanted do
+    local token = "nameplate" .. index
+    nameplateTokens[index], nameplateIndexes[token] = token, index
+  end
+  return true
+end
+GrowNameplateTokens(30) -- floor of 40, the former fixed cap
+
 local function SlotCount(triggerConfig)
   if Display.ShowOn and Display.ShowOn(triggerConfig) ~= "showOnActive" then return 1 end
-  local slotCount = UNIT_SLOT_COUNTS[triggerConfig.unit] or 1
+  local slotCount = triggerConfig.unit == "nameplate" and #nameplateTokens or UNIT_SLOT_COUNTS[triggerConfig.unit] or 1
   if triggerConfig.use_includePets and triggerConfig.includePets == "PlayersAndPets" and PET_GROUP_UNITS[triggerConfig.unit] then
     slotCount = slotCount * 2
   end
@@ -338,6 +383,9 @@ local function ExpandBaseUnits(triggerConfig)
   elseif unitId == "raid" then
     if IsInRaid() then return SequenceTokens("raid", GetNumGroupMembers()) end
     return {}
+  elseif unitId == "nameplate" and SlotCount(triggerConfig) > 1 then
+    -- Shared, read-only: no table per event.
+    return nameplateTokens
   elseif unitId == "boss" or unitId == "arena" or unitId == "nameplate" then
     return SequenceTokens(unitId, SlotCount(triggerConfig))
   end
@@ -795,7 +843,6 @@ local function HideProgressLayers(auraRegion, savedTrigger)
   for _, spinnerFrame in ipairs(auraRegion.extraSpinners) do
     for _, textureLayer in ipairs(spinnerFrame.textures) do HideAndRemember(savedTrigger, textureLayer) end
   end
-  if auraRegion.nativeProgress then HideAndRemember(savedTrigger, auraRegion.nativeProgress.bar) end
 end
 
 local function HideRegionParts(auraRegion)
@@ -828,12 +875,15 @@ function Display.Restore(auraRegion)
   auraRegion.secretAuraConditionValues = nil
   for targetFrame, opacity in pairs(auraRegion.blizzardSuppressed or {}) do targetFrame:SetAlpha(opacity) end
   auraRegion.blizzardSuppressed = nil
-  if auraRegion.blizzardOriginalUpdate then
-    auraRegion.Update = auraRegion.blizzardOriginalUpdate.func
+  -- Only put back what our wrapper replaced: a region Modify may have installed a newer function since.
+  local savedUpdate = auraRegion.blizzardOriginalUpdate
+  if savedUpdate then
+    if auraRegion.Update == savedUpdate.wrapper then auraRegion.Update = savedUpdate.func end
     auraRegion.blizzardOriginalUpdate = nil
   end
-  if auraRegion.blizzardOriginalPreShow then
-    auraRegion.PreShow = auraRegion.blizzardOriginalPreShow.func
+  local savedPreShow = auraRegion.blizzardOriginalPreShow
+  if savedPreShow then
+    if auraRegion.PreShow == savedPreShow.wrapper then auraRegion.PreShow = savedPreShow.func end
     auraRegion.blizzardOriginalPreShow = nil
   end
 end
@@ -851,7 +901,8 @@ function Display.HideUnitGlows(auraRegion)
   end
 end
 
-function Display.Release(auraRegion)
+-- leaveGrid: the aura is disabled or invalid, not just unloaded, so it also leaves its Grid.
+function Display.Release(auraRegion, leaveGrid)
   Display.ReleaseAuraLearning(auraRegion)
   Display.HideUnitGlows(auraRegion)
   Display.Restore(auraRegion)
@@ -860,6 +911,7 @@ function Display.Release(auraRegion)
   local displayState = auraRegion.blizzardAuraDisplay
   if not displayState then return end
   displayState.active = false
+  if leaveGrid then displayState.gridMember = nil end
   displayState.instanceQueue = nil
   for _, displayInstance in ipairs(displayState.instances) do
     displayInstance.container:SetEnabled(false)
@@ -868,6 +920,7 @@ function Display.Release(auraRegion)
   end
   Internal.AuraWarnings.UpdateWarning(displayState.data.uid, "blizzard_aura_single", nil)
   Internal.AuraWarnings.UpdateWarning(displayState.data.uid, "blizzard_aura_dynamicgroup", nil)
+  Internal.AuraWarnings.UpdateWarning(displayState.data.uid, "blizzard_aura_grid", nil)
   liveRegions[auraRegion] = nil
   UpdateSounds(auraRegion)
   Display.RechainFlow(Display.FlowGroup(displayState.data))
@@ -880,6 +933,7 @@ function Display.RetireFrame(targetFrame)
   if targetFrame.SetEnabled then targetFrame:SetEnabled(false) end
   targetFrame:Hide()
   targetFrame:ClearAllPoints()
+  containerAnchors[targetFrame] = nil
   targetFrame:SetParent(retiredParent)
 end
 
@@ -1159,6 +1213,7 @@ local function ApplyLayout(displayInstance, auraRegion, auraData)
   local anchorRef = AnchorForGrowth(flowDirection)
   local auraContainer = displayInstance.container
   auraContainer:ClearAllPoints()
+  containerAnchors[auraContainer] = nil
   local isCentered = flowDirection == "CENTER_HORIZONTAL" or flowDirection == "CENTER_VERTICAL"
   if isCentered then
     auraContainer:SetPoint("CENTER", auraRegion, "CENTER")
@@ -1212,6 +1267,7 @@ local function SetupAuraButton(displayKind, auraRegion, auraContainer, auraButto
   ApplyNativeStyle(displayState, displayKind.data, auraRegion)
   displayKind.buttons[#displayKind.buttons + 1] = displayState
 end
+Display.SetupAuraButton = SetupAuraButton
 
 local function MakeInstance(auraRegion, auraData)
   local displayKind = {buttons = {}, data = auraData}
@@ -1299,38 +1355,52 @@ local function AttachToUnitFrame(auraContainer, auraRegion, auraData, displayOpt
     or parentFrame:GetFrameLevel() + 1
   if HasChanged(auraContainer:GetFrameLevel(), frameLevel) then auraContainer:SetFrameLevel(frameLevel) end
   if not attachMode then
+    local point, relativeTo, relativePoint = auraData.selfPoint or "CENTER", anchorTarget or auraRegion, auraData.anchorPoint or "CENTER"
+    local x, y = auraData.xOffset or 0, auraData.yOffset or 0
+    if KeepsAnchor(auraContainer, point, relativeTo, relativePoint, x, y) then return end
     auraContainer:ClearAllPoints()
-    auraContainer:SetPoint(auraData.selfPoint or "CENTER", anchorTarget or auraRegion, auraData.anchorPoint or "CENTER",
-      auraData.xOffset or 0, auraData.yOffset or 0)
+    auraContainer:SetPoint(point, relativeTo, relativePoint, x, y)
+    NoteAnchor(auraContainer, point, relativeTo, relativePoint, x, y)
   end
 end
 
 local function AttachToNameplate(auraContainer, auraRegion, auraData, displayOptions, anchorTarget)
-  auraContainer:ClearAllPoints()
+  local point, relativePoint, x, y = "BOTTOM", "TOP", displayOptions.nameplateX or 0, displayOptions.nameplateY or 8
   if auraData.anchorFrameType == "NAMEPLATE" then
-    auraContainer:SetPoint(auraData.selfPoint or "BOTTOM", anchorTarget or auraRegion, auraData.anchorPoint or "TOP",
-      auraData.xOffset or 0, auraData.yOffset or 0)
-  else
-    auraContainer:SetPoint("BOTTOM", anchorTarget or auraRegion, "TOP", displayOptions.nameplateX or 0, displayOptions.nameplateY or 8)
+    point, relativePoint = auraData.selfPoint or "BOTTOM", auraData.anchorPoint or "TOP"
+    x, y = auraData.xOffset or 0, auraData.yOffset or 0
   end
+  local relativeTo = anchorTarget or auraRegion
+  if KeepsAnchor(auraContainer, point, relativeTo, relativePoint, x, y) then return end
+  auraContainer:ClearAllPoints()
+  auraContainer:SetPoint(point, relativeTo, relativePoint, x, y)
+  NoteAnchor(auraContainer, point, relativeTo, relativePoint, x, y)
 end
 
 local function AttachToList(displayState, position, auraContainer, auraRegion, auraData, growthDirection)
   local isVertical = GrowsVertically(growthDirection)
   local anchorRef = AnchorForGrowth(growthDirection)
-  auraContainer:ClearAllPoints()
+  local point, relativeTo, relativePoint, x, y = anchorRef, Display.ContentAnchor(auraRegion), anchorRef, 0, 0
+  local followsContent = true
   if growthDirection == "CENTER_HORIZONTAL" or growthDirection == "CENTER_VERTICAL" then
-    auraContainer:SetPoint("CENTER", auraRegion, "CENTER")
+    point, relativeTo, relativePoint, followsContent = "CENTER", auraRegion, "CENTER", false
   elseif PackUnits(auraData) and position > 1 then
-    local previousFrame = displayState.instances[position - 1].container
-    local edgePoint = growthDirection == "LEFT" and "TOPLEFT" or growthDirection == "UP" and "TOPLEFT"
+    relativeTo = displayState.instances[position - 1].container
+    relativePoint = growthDirection == "LEFT" and "TOPLEFT" or growthDirection == "UP" and "TOPLEFT"
       or growthDirection == "DOWN" and "BOTTOMLEFT" or "TOPRIGHT"
-    auraContainer:SetPoint(anchorRef, previousFrame, edgePoint,
-      isVertical and 0 or (growthDirection == "LEFT" and 1 or -1),
-      isVertical and (growthDirection == "UP" and -1 or 1) or 0)
-  else
-    Display.AnchorToContent(auraContainer, anchorRef, auraRegion, anchorRef)
+    x = isVertical and 0 or (growthDirection == "LEFT" and 1 or -1)
+    y = isVertical and (growthDirection == "UP" and -1 or 1) or 0
+    followsContent = false
   end
+  if KeepsAnchor(auraContainer, point, relativeTo, relativePoint, x, y) then return end
+  auraContainer:ClearAllPoints()
+  containerAnchors[auraContainer] = nil
+  if not followsContent then
+    auraContainer:SetPoint(point, relativeTo, relativePoint, x, y)
+  elseif not Display.AnchorToContent(auraContainer, anchorRef, auraRegion, anchorRef) then
+    return
+  end
+  NoteAnchor(auraContainer, point, relativeTo, relativePoint, x, y)
 end
 
 local function UpdateUnitGlow(displayInstance, displayState, auraRegion, displayOptions, unitId, unitFrameMap, anchorTarget)
@@ -1338,7 +1408,7 @@ local function UpdateUnitGlow(displayInstance, displayState, auraRegion, display
   local targetFrame = unitFrameMap and unitId and displayOptions.unitGlow and anchorTarget
   if targetFrame and targetFrame:IsForbidden() then targetFrame = nil end
   local isShown = not InPreview() and targetFrame ~= nil and targetFrame ~= false and auraRegion:IsShown()
-    and not displayState.unitGlowsHidden and displayOptions.unitGlow == true
+    and not displayState.unitGlowsHidden and displayOptions.unitGlow == true and not displayInstance.statusHidden
   local glowHost = targetFrame or auraRegion
   AttachContainer(displayInstance.unitGlow, glowHolder, unitId, glowHost)
   glowHolder:ClearAllPoints()
@@ -1357,6 +1427,44 @@ local function UpdateUnitGlow(displayInstance, displayState, auraRegion, display
   if isShown then glowHolder:UpdateAllAuras() end
 end
 
+-- Ignore Dead / Ignore Disconnected, group units only (as Aura triggers). Returns whether the unit is
+-- hidden, plus a secret dead or connected flag that only the native alpha may read.
+local function UnitIgnored(triggerConfig, unitId)
+  if not (unitId and PET_GROUP_UNITS[triggerConfig.unit]) then return false end
+  local secretConnected
+  if triggerConfig.ignoreDisconnected then
+    local isConnected = UnitIsConnected(unitId)
+    if issecretvalue(isConnected) then
+      secretConnected = isConnected
+    elseif not isConnected then
+      return true
+    end
+  end
+  if triggerConfig.ignoreDead then
+    local isDead = UnitIsDeadOrGhost(unitId)
+    -- Only one secret flag can drive the alpha: a secret connection keeps priority, as before.
+    if issecretvalue(isDead) then
+      if secretConnected ~= nil then return false, nil, secretConnected end
+      return false, isDead
+    end
+    if isDead then return true end
+  end
+  return false, nil, secretConnected
+end
+Display.UnitIgnored = UnitIgnored
+
+local function ApplyStatusAlpha(displayInstance, secretDead, secretConnected)
+  local auraContainer, containerAlpha = displayInstance.container, displayInstance.containerAlpha or 1
+  displayInstance.statusSecret = secretDead ~= nil or secretConnected ~= nil
+  if secretDead ~= nil then
+    auraContainer:SetAlphaFromBoolean(secretDead, 0, containerAlpha)
+  elseif secretConnected ~= nil then
+    auraContainer:SetAlphaFromBoolean(secretConnected, containerAlpha, 0)
+  else
+    auraContainer:SetAlpha(containerAlpha)
+  end
+end
+
 local function UpdateInstance(auraRegion, displayState, position, displayInstance, unitSet, growthDirection, attachMode, droppedUnit)
   local auraData = displayState.data
   local displayOptions = auraData.blizzardAuraDisplay
@@ -1364,11 +1472,24 @@ local function UpdateInstance(auraRegion, displayState, position, displayInstanc
   local unitId = unitSet[position]
   local unitFrameMap, plateMap = AttachModes(auraData, attachMode)
   local anchorTarget = LocateAnchor(unitId, unitFrameMap, plateMap, droppedUnit)
-  local isShown = not InPreview() and unitId ~= nil and auraRegion:IsShown()
+  if displayState.gridMember then
+    -- The group's shared grid container shows this aura for the unit.
+    displayInstance.visible = false
+    displayInstance.statusHidden = nil
+    auraContainer:SetEnabled(false)
+    auraContainer:Hide()
+    Display.RefreshSingle(displayInstance, nil, false)
+    Display.RefreshFlowShadow(displayInstance, nil, false)
+    return
+  end
+  local isIgnored, secretDead, secretConnected = UnitIgnored(Display.GetTrigger(auraData) or {}, unitId)
+  displayInstance.statusHidden = isIgnored
+  local isShown = not InPreview() and unitId ~= nil and auraRegion:IsShown() and not isIgnored
     and (not (unitFrameMap or plateMap) or anchorTarget ~= nil)
   local parentFrame = unitFrameMap and auraData.anchorFrameParent ~= false and anchorTarget or auraRegion
   AttachContainer(displayInstance, auraContainer, unitId, parentFrame)
-  auraContainer:SetAlpha(parentFrame == auraRegion and 1 or auraData.alpha or 1)
+  displayInstance.containerAlpha = parentFrame == auraRegion and 1 or auraData.alpha or 1
+  ApplyStatusAlpha(displayInstance, secretDead, secretConnected)
   local strataName = (auraData.frameStrata == nil or auraData.frameStrata == 1) and parentFrame:GetFrameStrata() or auraRegion:GetFrameStrata()
   if HasChanged(auraContainer:GetFrameStrata(), strataName) then auraContainer:SetFrameStrata(strataName) end
   if unitFrameMap then
@@ -1408,7 +1529,7 @@ local function UpdateUnits(auraRegion, droppedUnit, updatedUnit)
       UpdateInstance(auraRegion, displayState, position, displayInstance, unitSet, growthDirection, attachMode, droppedUnit)
     end
   end
-  if attachMode then Display.RelinkFlowUnits(Display.FlowGroup(auraData)) end
+  Display.RefreshFlowUnits(Display.FlowGroup(auraData), droppedUnit)
   Display.UpdateDetachedFrameLevels(auraRegion)
   UpdatePreview(auraRegion)
 end
@@ -1519,6 +1640,7 @@ local function MakeDisplayState(auraRegion, auraData)
       displayInstance.container:Hide()
       Display.RefreshSingle(displayInstance, nil, false)
     end
+    if displayState.gridMember then Display.RefreshFlowUnits(Display.FlowGroup(displayState.data)) end
     UpdateSounds(auraRegion)
   end)
   auraRegion:HookScript("OnShow", function()
@@ -1531,23 +1653,25 @@ local function MakeDisplayState(auraRegion, auraData)
   return displayState
 end
 
+local function RetireInstance(displayInstance)
+  displayInstance.container:SetEnabled(false)
+  displayInstance.container:Hide()
+  Display.RefreshSingle(displayInstance, nil, false)
+  if displayInstance.single and displayInstance.single.missing then displayInstance.single.missing.active = false end
+  Display.RetireFrame(displayInstance.container)
+  if displayInstance.flowShadow then Display.RetireFrame(displayInstance.flowShadow) end
+  if displayInstance.unitGlow then Display.RetireFrame(displayInstance.unitGlow.container) end
+end
+
 local function DropInstances(displayState)
-  for _, displayInstance in ipairs(displayState.instances) do
-    displayInstance.container:SetEnabled(false)
-    displayInstance.container:Hide()
-    Display.RefreshSingle(displayInstance, nil, false)
-    if displayInstance.single and displayInstance.single.missing then displayInstance.single.missing.active = false end
-    Display.RetireFrame(displayInstance.container)
-    if displayInstance.flowShadow then Display.RetireFrame(displayInstance.flowShadow) end
-    if displayInstance.unitGlow then Display.RetireFrame(displayInstance.unitGlow.container) end
-  end
+  for _, displayInstance in ipairs(displayState.instances) do RetireInstance(displayInstance) end
   displayState.instances = {}
 end
 
 function Display.Apply(auraRegion, auraData)
   GroupLayoutWarning(auraData)
   if not Display.Enabled(auraData) then
-    Display.Release(auraRegion)
+    Display.Release(auraRegion, true)
     PostWarning(auraData)
     PostSoundWarning(auraData)
     return
@@ -1555,7 +1679,7 @@ function Display.Apply(auraRegion, auraData)
   HideRegionParts(auraRegion)
   local issue = Display.Validate(auraData)
   if issue then
-    Display.Release(auraRegion)
+    Display.Release(auraRegion, true)
     PostWarning(auraData, issue)
     return
   end
@@ -1582,14 +1706,22 @@ function Display.Apply(auraRegion, auraData)
   end
   local displayState = auraRegion.blizzardAuraDisplay or MakeDisplayState(auraRegion, auraData)
   displayState.data = auraData
+  local wasGridMember = displayState.gridMember
+  displayState.gridMember = Display.GridMember(auraData)
+  displayState.generation = (displayState.generation or 0) + 1
   Display.EnsureFlowStart(auraRegion, auraData)
   displayState.previewStyled = InPreview() and auraData or nil
   if InPreview() then RefreshPreviewNotice(auraRegion) end
   displayState.unitGlowsHidden = false
   local needsFlow = Display.FlowGroup(auraData) ~= nil
   if displayState.instances[1] and displayState.instances[1].flowContainer ~= needsFlow then DropInstances(displayState) end
-  for position = 1, SlotCount(Display.GetTrigger(auraData)) do
+  local slotCount = SlotCount(Display.GetTrigger(auraData))
+  for position = 1, slotCount do
     if not displayState.instances[position] then displayState.instances[position] = MakeInstance(auraRegion, auraData) end
+  end
+  for position = #displayState.instances, slotCount + 1, -1 do
+    RetireInstance(displayState.instances[position])
+    displayState.instances[position] = nil
   end
   Display.ClearSingleWarning(auraData)
   displayState.instanceQueue, queuedInstances[auraRegion] = nil, nil
@@ -1607,7 +1739,8 @@ function Display.Apply(auraRegion, auraData)
   Display.EnsureFlowShadows(auraRegion, auraData)
   Display.SetFlowEnd(auraRegion, auraData,
     singleConfig and singleConfig.missing and singleConfig.missing.active and singleConfig.missing.presenceActive and singleConfig.missing.presence)
-  Display.RechainFlow(Display.FlowGroup(auraData))
+  -- A child leaving the grid also rebuilds the grid of its former group, even when that group left Modern Flow.
+  Display.RechainFlow(Display.FlowGroup(auraData) or wasGridMember and auraData.parent and WeakAuras.GetData(auraData.parent) or nil)
   UpdateUnits(auraRegion)
   queuedApplies[auraRegion] = nil
   UpdateSounds(auraRegion)
@@ -1616,30 +1749,38 @@ function Display.Apply(auraRegion, auraData)
 end
 
 local function SetupHooks(auraRegion)
-  if not auraRegion.blizzardOriginalUpdate then
+  -- Wrap again when a region Modify replaced the wrapper with a fresh function.
+  local savedUpdate = auraRegion.blizzardOriginalUpdate
+  if not savedUpdate or auraRegion.Update ~= savedUpdate.wrapper then
     local originalValue = auraRegion.Update
-    auraRegion.blizzardOriginalUpdate = {func = originalValue}
-    auraRegion.Update = function(self, ...)
+    savedUpdate = {func = originalValue}
+    savedUpdate.wrapper = function(self, ...)
       if originalValue then originalValue(self, ...) end
       HideRegionParts(self)
       if Display.UpdateMissingSource then Display.UpdateMissingSource(self) end
     end
+    auraRegion.blizzardOriginalUpdate = savedUpdate
+    auraRegion.Update = savedUpdate.wrapper
   end
-  if not auraRegion.blizzardOriginalPreShow then
-    auraRegion.blizzardOriginalPreShow = {func = auraRegion.PreShow}
-    auraRegion.PreShow = function(self) HideRegionParts(self) end
+  local savedPreShow = auraRegion.blizzardOriginalPreShow
+  if not savedPreShow or auraRegion.PreShow ~= savedPreShow.wrapper then
+    savedPreShow = {func = auraRegion.PreShow, wrapper = function(self) HideRegionParts(self) end}
+    auraRegion.blizzardOriginalPreShow = savedPreShow
+    auraRegion.PreShow = savedPreShow.wrapper
   end
   HideRegionParts(auraRegion)
 end
 
 function Display.Activate(auraRegion, auraData)
   if not Display.Enabled(auraData) then
-    Display.Release(auraRegion)
+    Display.Release(auraRegion, true)
     return
   end
   SetupHooks(auraRegion)
   local displayState = auraRegion.blizzardAuraDisplay
-  if not (displayState and displayState.data == auraData and not queuedApplies[auraRegion] and Display.Validate(auraData) == nil) then
+  if not (displayState and displayState.data == auraData and not queuedApplies[auraRegion] and Display.Validate(auraData) == nil
+    and Display.GridMember(auraData) == displayState.gridMember
+    and #displayState.instances == SlotCount(Display.GetTrigger(auraData))) then
     Display.Apply(auraRegion, auraData)
     return
   end
@@ -1692,7 +1833,7 @@ local function FlushEditor()
     local listEntry = Internal.regions[auraData.id]
     if listEntry and listEntry.region == auraRegion and (WeakAuras.GetData(auraData.id) or auraData) == auraData
       and Display.Enabled(auraData) then
-      Display.Apply(auraRegion, auraData)
+      xpcall(Display.Apply, geterrorhandler(), auraRegion, auraData)
       wasApplied = wasApplied + 1
     end
   end
@@ -1708,10 +1849,12 @@ function Display.CancelEditorApply(auraRegion)
 end
 
 function Display.Modify(auraRegion, auraData)
+  ForgetClassifiedTriggers(auraData)
+  Display.ForgetConditionRules(auraData)
   auraRegion.secretAuraProgressSourceIndex = ProgressKey(auraData)
   auraRegion.secretAuraConditionValues = nil
   if not Display.Enabled(auraData) then
-    Display.Release(auraRegion)
+    Display.Release(auraRegion, true)
     PostWarning(auraData)
     PostSoundWarning(auraData)
     return
@@ -1728,6 +1871,31 @@ function Display.Modify(auraRegion, auraData)
   end
   editorPending[auraRegion] = nil
   Display.Apply(auraRegion, auraData)
+end
+
+-- Sets the group sort on the live containers without a full Apply; false when a child still needs WeakAuras.Add.
+function Display.ApplyFlowSort(group)
+  if IsRestricted() then return false end
+  local sortable = {}
+  for _, childId in ipairs(group.controlledChildren or {}) do
+    local listEntry = Internal.regions[childId]
+    local displayState = listEntry and listEntry.region and listEntry.region.blizzardAuraDisplay
+    local childData = WeakAuras.GetData(childId)
+    if displayState and displayState.data == childData then
+      -- Grid members sort inside the shared grid container, which a full save rebuilds.
+      if not displayState.active or displayState.gridMember then return false end
+      local triggerConfig = Display.GetTrigger(childData)
+      if not triggerConfig or Display.IsSingle(triggerConfig, childData) then return false end
+      for _, displayInstance in ipairs(displayState.instances) do
+        if displayInstance.unitGlow then return false end
+        sortable[#sortable + 1] = {displayInstance.container, childData, triggerConfig}
+      end
+    end
+  end
+  for _, entry in ipairs(sortable) do
+    entry[1]:SetAuraGroupSortMethod("Auras", Display.SortOrder(entry[2], entry[3]))
+  end
+  return true
 end
 
 local UNIT_EVENT_ATTACH = {
@@ -1763,18 +1931,25 @@ end
 
 local isDrainingApplies = false
 
+-- Runs queued applies within a per-frame time budget (at least one per frame). Each apply is
+-- isolated, so one failing aura neither stops the drain nor leaves it flagged as running.
+-- Stops under restrictions (RestrictionChanged starts it again) and waits for the end of login.
 local function FlushApplies()
   if IsRestricted() then
     isDrainingApplies = false
     return
   end
-  local wasApplied = 0
+  if not WeakAuras.IsLoginFinished() then
+    -- ponytail: polls because the login has no completion callback; switch to one if WeakAuras.lua gets it.
+    C_Timer.After(LOGIN_POLL_SECONDS, FlushApplies)
+    return
+  end
+  local startedAt = debugprofilestop()
   for auraRegion, auraData in pairs(queuedApplies) do
     queuedApplies[auraRegion] = nil
     if WeakAuras.GetData(auraData.id) == auraData and Internal.regions[auraData.id] and Internal.regions[auraData.id].region == auraRegion then
-      Display.Apply(auraRegion, auraData)
-      wasApplied = wasApplied + 1
-      if wasApplied >= APPLY_BATCH_SIZE then break end
+      xpcall(Display.Apply, geterrorhandler(), auraRegion, auraData)
+      if debugprofilestop() - startedAt >= APPLY_BUDGET_MS then break end
     end
   end
   if next(queuedApplies) then
@@ -1782,6 +1957,89 @@ local function FlushApplies()
   else
     isDrainingApplies = false
   end
+end
+
+local function StartApplyDrain()
+  if next(queuedApplies) and not isDrainingApplies then
+    isDrainingApplies = true
+    FlushApplies()
+  end
+end
+
+-- Auras added but not loaded get their region and containers outside restrictions, then are released.
+-- Loading one in combat later only reactivates them (Display.Activate); otherwise the first load under
+-- restriction would queue an Apply that the unload drops.
+local unpreparedAuras = {}
+local isPreparing = false
+
+local function PrepareUnloadedAuras()
+  if IsRestricted() then
+    isPreparing = false
+    return
+  end
+  if not WeakAuras.IsLoginFinished() then
+    C_Timer.After(LOGIN_POLL_SECONDS, PrepareUnloadedAuras)
+    return
+  end
+  local startedAt = debugprofilestop()
+  for auraId in pairs(unpreparedAuras) do
+    unpreparedAuras[auraId] = nil
+    local auraData = WeakAuras.GetData(auraId)
+    -- loaded is false for an aura that can load later, nil for one that never loads here (other class, Never).
+    -- With the options open, the editor applies the aura itself and a release would hide its preview.
+    if auraData and Display.Enabled(auraData) and Internal.loaded[auraId] == false and not WeakAuras.GetRegion(auraId)
+      and not WeakAuras.IsOptionsOpen() then
+      local created, auraRegion = xpcall(Internal.EnsureRegion, geterrorhandler(), auraId)
+      if created and auraRegion and Internal.loaded[auraId] == false then
+        xpcall(Display.Release, geterrorhandler(), auraRegion)
+      end
+      if debugprofilestop() - startedAt >= APPLY_BUDGET_MS then break end
+    end
+  end
+  if next(unpreparedAuras) then
+    C_Timer.After(0, PrepareUnloadedAuras)
+  else
+    isPreparing = false
+  end
+end
+
+local function StartPreparing()
+  if next(unpreparedAuras) and not isPreparing then
+    isPreparing = true
+    PrepareUnloadedAuras()
+  end
+end
+
+Internal.callbacks:RegisterCallback("Add", function(_, _, auraId, auraData)
+  if Display.Enabled(auraData) then
+    unpreparedAuras[auraId] = true
+    StartPreparing()
+  end
+end)
+
+Internal.callbacks:RegisterCallback("RestrictionChanged", function(_, isRestricted)
+  if not isRestricted then
+    StartApplyDrain()
+    StartPreparing()
+  end
+end)
+
+-- A token past the shared list grows it; nameplate displays then rebuild through the budgeted apply queue.
+local function NoteNameplate(unitId)
+  if type(unitId) ~= "string" or issecretvalue(unitId) or nameplateIndexes[unitId] then return end
+  local index = tonumber(unitId:match("^nameplate(%d+)$"))
+  if not index or not GrowNameplateTokens(index) then return end
+  for auraRegion in pairs(liveRegions) do
+    local displayState = auraRegion.blizzardAuraDisplay
+    local triggerConfig = Display.GetTrigger(displayState.data)
+    if triggerConfig and triggerConfig.unit == "nameplate" then queuedApplies[auraRegion] = displayState.data end
+  end
+end
+
+-- After a /reload, plates already shown fire no NAME_PLATE_UNIT_ADDED; read their tokens instead.
+local function NoteShownNameplates()
+  for _, plate in ipairs(C_NamePlate.GetNamePlates()) do NoteNameplate(plate.unitToken) end
+  StartApplyDrain()
 end
 
 local function OnNameplateEvent(auraRegion, modeName, eventName, unitId)
@@ -1812,6 +2070,8 @@ local listenerFrame = CreateFrame("Frame")
 for _, eventName in ipairs(LISTENED_EVENTS) do listenerFrame:RegisterEvent(eventName) end
 
 listenerFrame:SetScript("OnEvent", function(_, eventName, unitId)
+  if eventName == "NAME_PLATE_UNIT_ADDED" then NoteNameplate(unitId) end
+  if eventName == "PLAYER_ENTERING_WORLD" then C_Timer.After(0, NoteShownNameplates) end
   if eventName == "UI_SCALE_CHANGED" or eventName == "DISPLAY_SIZE_CHANGED" then
     for auraRegion in pairs(liveRegions) do Display.Apply(auraRegion, auraRegion.blizzardAuraDisplay.data) end
     return
@@ -1824,8 +2084,44 @@ listenerFrame:SetScript("OnEvent", function(_, eventName, unitId)
     for auraRegion in pairs(liveRegions) do Display.RefreshConditionAppearance(auraRegion) end
   end
   for auraRegion in pairs(queuedSoundSyncs) do UpdateSounds(auraRegion) end
-  if next(queuedApplies) and not isDrainingApplies then
-    isDrainingApplies = true
-    FlushApplies()
+  StartApplyDrain()
+end)
+
+-- Deaths, releases and disconnects refresh only the instance bound to that unit, and only when its state flips.
+local statusFrame = CreateFrame("Frame")
+for _, eventName in ipairs({"UNIT_HEALTH", "UNIT_FLAGS", "UNIT_CONNECTION"}) do statusFrame:RegisterEvent(eventName) end
+local function RefreshUnitStatus(unitId)
+  for auraRegion in pairs(liveRegions) do
+    local displayState = auraRegion.blizzardAuraDisplay
+    local triggerConfig = Display.GetTrigger(displayState.data)
+    if triggerConfig and (triggerConfig.ignoreDead or triggerConfig.ignoreDisconnected) and displayState.gridMember then
+      -- The shared grid filters in RefreshGrid; refresh it only when this unit's state flips.
+      displayState.gridIgnored = displayState.gridIgnored or {}
+      -- Units never seen ignored start as false, so other tokens (target, nameplates) do not refresh the grid.
+      local isIgnored = UnitIgnored(triggerConfig, unitId)
+      if (displayState.gridIgnored[unitId] or false) ~= isIgnored then
+        displayState.gridIgnored[unitId] = isIgnored
+        Display.RefreshFlowUnits(Display.FlowGroup(displayState.data))
+      end
+    elseif triggerConfig and (triggerConfig.ignoreDead or triggerConfig.ignoreDisconnected) then
+      for _, displayInstance in ipairs(displayState.instances) do
+        if displayInstance.boundUnit == unitId then
+          local isIgnored, secretDead, secretConnected = UnitIgnored(triggerConfig, unitId)
+          if isIgnored ~= displayInstance.statusHidden then
+            UpdateUnits(auraRegion, nil, unitId)
+            break
+          elseif secretDead ~= nil or secretConnected ~= nil or displayInstance.statusSecret then
+            ApplyStatusAlpha(displayInstance, secretDead, secretConnected)
+          end
+        end
+      end
+    end
   end
+end
+
+statusFrame:SetScript("OnEvent", function(_, _, unitId)
+  -- The batch closes even when one aura errors, so flow refreshes never stay pending.
+  Display.BeginFlowBatch()
+  xpcall(RefreshUnitStatus, geterrorhandler(), unitId)
+  Display.EndFlowBatch()
 end)

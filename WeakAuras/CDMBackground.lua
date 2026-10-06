@@ -17,9 +17,7 @@ local WATCHED_EVENTS = {
 local remembered = setmetatable({}, {__mode = "k"})
 local enforcing = false
 
-local function isSecret(value)
-  return issecretvalue ~= nil and issecretvalue(value)
-end
+local IsSecret = Private.IsSecret
 
 local function shouldHide()
   local db = Private.db
@@ -35,7 +33,7 @@ local function enforceAlpha(frame, requested)
   if enforcing or not isUsable(frame) then return end
   local entry = remembered[frame]
   if entry == nil then return end
-  if requested ~= nil and not isSecret(requested) then
+  if requested ~= nil and not IsSecret(requested) then
     entry.alpha = requested
   end
   enforcing = true
@@ -45,7 +43,7 @@ end
 
 local function adopt(viewer)
   local current = viewer:GetAlpha()
-  remembered[viewer] = {alpha = isSecret(current) and 1 or current}
+  remembered[viewer] = {alpha = IsSecret(current) and 1 or current}
   hooksecurefunc(viewer, "SetAlpha", enforceAlpha)
 end
 

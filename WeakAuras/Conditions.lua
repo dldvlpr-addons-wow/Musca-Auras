@@ -742,8 +742,8 @@ local globalConditions =
   }
 }
 
-function Private.GetGlobalConditions(data)
-  return Private.BlizzardAuraDisplay.FilterGlobalConditions(data, globalConditions);
+function Private.GetGlobalConditions()
+  return globalConditions;
 end
 
 local function ConstructConditionFunction(data)

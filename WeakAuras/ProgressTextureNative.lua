@@ -5,22 +5,10 @@ local NativeProgress = {}
 Private.ProgressTextureNative = NativeProgress
 
 local SOLID_WHITE = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite"
-local WARNING_ID = "native_progress_texture"
-local NO_RADIAL_TEXT = "This client does not support circular Progress Textures with restricted values."
-local NO_INVERSE_TEXT = "Inverse circular progress needs Health or Power with the full range when values are restricted."
 
 local isRing = {CLOCKWISE = true, ANTICLOCKWISE = true}
 local isUpright = {VERTICAL = true, VERTICAL_INVERSE = true}
 local isBackward = {HORIZONTAL_INVERSE = true, VERTICAL_INVERSE = true}
-local deficitSources = {value = true, health = true, power = true}
-local customRangeFields = {"adjustedMin", "adjustedMax", "adjustedMinRelPercent", "adjustedMaxRelPercent"}
-
-local function PostWarning(owner, text)
-  local warningUid = owner.nativeProgressUID
-  if warningUid and Private.AuraWarnings then
-    Private.AuraWarnings.UpdateWarning(warningUid, WARNING_ID, text and "warning" or nil, text)
-  end
-end
 
 function NativeProgress.IsCircular(direction)
   return isRing[direction] == true
@@ -164,147 +152,6 @@ function NativeProgress.Style(widget, look, inverted)
   end
   widget.texture:Show()
   return true
-end
-
-local function HideLegacyForeground(owner)
-  owner.foreground:Hide()
-  owner.foregroundSpinner:Hide()
-  for _, extra in ipairs(owner.extraTextures) do
-    extra:Hide()
-  end
-  for _, extraSpinner in ipairs(owner.extraSpinners) do
-    extraSpinner:Hide()
-  end
-end
-
-function NativeProgress.Stop(owner)
-  if not owner.nativeProgressActive then
-    return
-  end
-  owner.nativeProgressActive = nil
-  owner.nativeProgressKind = nil
-  owner.nativeProgress.bar:Hide()
-  PostWarning(owner)
-  local fallback = owner.circular and owner.foregroundSpinner or owner.foreground
-  fallback:Show()
-end
-
-local function Claim(owner, mode)
-  local widget = owner.nativeProgress
-  if not widget then
-    widget = NativeProgress.Create(owner)
-    owner.nativeProgress = widget
-  end
-  local switching = not owner.nativeProgressActive or owner.nativeProgressKind ~= mode
-  if switching then
-    owner.nativeProgressDirty = true
-    owner.smoothProgress:ResetSmoothedValue()
-  end
-  owner.nativeProgressActive = true
-  owner.nativeProgressKind = mode
-  if owner.FrameTick then
-    owner.FrameTick = nil
-    owner.subRegionEvents:RemoveSubscriber("FrameTick", owner)
-  end
-  HideLegacyForeground(owner)
-  return widget
-end
-
-local function RestyleIfDirty(owner, widget, inverted)
-  if owner.nativeProgressDirty then
-    owner.nativeProgressDirty = nil
-    local supported = NativeProgress.Style(widget, owner, inverted)
-    widget.available = supported
-    PostWarning(owner, not supported and NO_RADIAL_TEXT or nil)
-  end
-  return widget.available
-end
-
-local function UsesCustomRange(owner)
-  for _, field in ipairs(customRangeFields) do
-    if owner[field] then
-      return true
-    end
-  end
-  return false
-end
-
-local function MissingAmount(owner)
-  local snapshot = owner.cdmProgressState or owner.state
-  local progressSource = owner.progressSource
-  local sourceKey = "value"
-  if progressSource and progressSource[1] > 0 then
-    sourceKey = progressSource[3] or "value"
-  end
-  if not snapshot or UsesCustomRange(owner) then
-    return nil
-  end
-  local hasHealth = type(snapshot.health) == "number"
-  if not hasHealth and type(snapshot.power) ~= "number" then
-    return nil
-  end
-  if deficitSources[sourceKey] then
-    return snapshot.deficit
-  elseif sourceKey == "deficit" then
-    return snapshot.value
-  end
-end
-
-function NativeProgress.UpdateValue(owner)
-  local widget = Claim(owner, "value")
-  local inverted = owner.inverseDirection == true
-  local ring = owner.circular
-  if not RestyleIfDirty(owner, widget, inverted and not ring) then
-    return
-  end
-  local amount = owner.value
-  if inverted and ring then
-    amount = MissingAmount(owner)
-    if type(amount) ~= "number" then
-      widget.bar:Hide()
-      PostWarning(owner, NO_INVERSE_TEXT)
-      return
-    end
-  end
-  local statusBar = widget.bar
-  local interpolation = Enum.StatusBarInterpolation
-  local easing = owner.useSmoothProgress and interpolation.ExponentialEaseOut or interpolation.Immediate
-  local low = owner.minProgress or 0
-  local high = owner.maxProgress or owner.total
-  statusBar:SetMinMaxValues(low, high)
-  statusBar:SetValue(amount, easing)
-  PostWarning(owner)
-  statusBar:Show()
-end
-
-function NativeProgress.UpdateDuration(owner)
-  local widget = Claim(owner, "duration")
-  if not RestyleIfDirty(owner, widget, false) then
-    return
-  end
-  local statusBar = widget.bar
-  local timer = owner.durationObject
-  if not Private.IsDurationObject(timer) then
-    statusBar:Hide()
-    return
-  end
-  local timerDirection = Enum.StatusBarTimerDirection
-  local countUp = (owner.inverse and true or false) ~= (owner.inverseDirection and true or false)
-  local mode = countUp and timerDirection.ElapsedTime or timerDirection.RemainingTime
-  statusBar:SetTimerDuration(owner.durationObject, Enum.StatusBarInterpolation.Immediate, mode)
-  statusBar:Show()
-end
-
-function NativeProgress.Refresh(owner)
-  if not owner.nativeProgressActive then
-    return
-  end
-  owner.nativeProgressDirty = true
-  if owner.nativeProgressKind == "duration" then
-    NativeProgress.UpdateDuration(owner)
-  else
-    NativeProgress.UpdateValue(owner)
-  end
 end
 
 local function MakeAuraLook(auraData)

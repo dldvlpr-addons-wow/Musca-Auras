@@ -5654,11 +5654,13 @@ Private.event_prototypes = {
             state.modRate = modRate;
             state.changed = true;
           end
-          local durationObject = WeakAuras.GetSpellCooldownDurationObject(effectiveSpellId, showgcd, ignoreSpellKnown, track)
+          local durationObject, durationObjectWithoutGCD
+            = WeakAuras.GetSpellCooldownDurationObject(effectiveSpellId, showgcd, ignoreSpellKnown, track, showlossofcontrol)
           if state.durationObject ~= durationObject then
             state.durationObject = durationObject
             state.changed = true
           end
+          state.durationObjectWithoutGCD = durationObjectWithoutGCD
           state.progressType = 'timed';
         ]=])
       else -- Tracking charges
@@ -5713,8 +5715,8 @@ Private.event_prototypes = {
       if trigger.use_showgcd and trigger.use_hidegcdtext then
         table.insert(ret, [=[
           state.cdmHideGCDText = true
-          state.cdmGCDOnly = gcdCooldown and true or false
-          local textDuration = state.durationObject and Private.ExecEnv.GetSpellCooldownDurationWithoutGCD(effectiveSpellId) or nil
+          state.cdmGCDOnly = (gcdCooldown or state.durationObject ~= state.durationObjectWithoutGCD and Private.SpellCooldownState.IsGCDOnly(effectiveSpellId)) and true or false
+          local textDuration = state.durationObjectWithoutGCD
           if state.cdmTextDurationObject ~= textDuration then
             state.cdmTextDurationObject = textDuration
             state.changed = true
@@ -5971,6 +5973,12 @@ Private.event_prototypes = {
         conditionType = "bool",
         conditionTest = function(state, needle)
           return state and (state.paused or (not state.gcdCooldown and state.expirationTime and state.expirationTime > GetTime())) == (needle == 1)
+        end,
+        conditionSecretSelect = function(state, valueIfTrue, valueIfFalse)
+          if state and state.paused then
+            return valueIfTrue
+          end
+          return state and Private.SpellCooldownState.SelectDuration(state.durationObjectWithoutGCD, valueIfTrue, valueIfFalse)
         end,
       },
       {

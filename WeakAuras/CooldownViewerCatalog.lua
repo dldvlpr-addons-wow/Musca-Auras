@@ -35,16 +35,14 @@ local TARGET_AURA_FILTERS = {
 
 local PLAIN_TEXT_TOKENS = {bp = true, bs = true, p = true, s = true, caster = true, dispel = true}
 
-local function isReadable(value)
-  return not (issecretvalue and issecretvalue(value))
-end
+local IsSecret = Private.IsSecret
 
 local function readNumber(value)
-  if isReadable(value) and type(value) == "number" then return value end
+  if not IsSecret(value) and type(value) == "number" then return value end
 end
 
 local function readBoolean(value)
-  if isReadable(value) and type(value) == "boolean" then return value end
+  if not IsSecret(value) and type(value) == "boolean" then return value end
 end
 
 local function firstNumber(...)
@@ -55,7 +53,7 @@ local function firstNumber(...)
 end
 
 local function isUnitToken(unit)
-  return isReadable(unit) and (unit == "player" or unit == "target")
+  return not IsSecret(unit) and (unit == "player" or unit == "target")
 end
 
 local function hookMethods(target, names, handler)
@@ -118,7 +116,7 @@ local function hasTimerExpired(rec)
   if not raw then return end
   local startAt, total = readNumber(raw.start), readNumber(raw.duration)
   local rate = readNumber(raw.modRate)
-  if isReadable(raw.modRate) and raw.modRate == nil then rate = 1 end
+  if not IsSecret(raw.modRate) and raw.modRate == nil then rate = 1 end
   if startAt and total and rate and rate > 0 then
     return GetTime() >= startAt + total / rate
   end
@@ -175,7 +173,7 @@ local function observeFrame(frame)
   local function onCooldownDone()
     captureState(frame, rec)
     local auraTimed = frame.cooldownUseAuraDisplayTime
-    if isReadable(auraTimed) and not auraTimed and rec.onGCD == false and hasTimerExpired(rec) == true then
+    if not IsSecret(auraTimed) and not auraTimed and rec.onGCD == false and hasTimerExpired(rec) == true then
       rec.completedRevision = rec.revision
       rec.onCooldown, rec.recharging = false, false
     end
@@ -334,7 +332,7 @@ function Private.CDMCatalog()
           category = placement and placement >= 0 and placement or sourceCategory,
           sourceCategory = sourceCategory,
           displayed = displayed,
-          known = isReadable(info.isKnown) and info.isKnown ~= false,
+          known = not IsSecret(info.isKnown) and info.isKnown ~= false,
         }
       end
     end
@@ -421,11 +419,11 @@ local function applyAuraSource(state, unit, aura)
   state.cdmAuraFilter = "HELPFUL"
   if isUnitToken(unit) then state.cdmAuraUnit = unit end
   local harmful = aura and aura.isHarmful
-  if isReadable(harmful) and type(harmful) == "boolean" then
+  if not IsSecret(harmful) and type(harmful) == "boolean" then
     state.cdmAuraFilter = harmful and "HARMFUL" or "HELPFUL"
   elseif state.cdmAuraUnit == "target" then
     local friend = UnitIsFriend and UnitIsFriend("player", "target")
-    state.cdmAuraFilter = isReadable(friend) and friend == true and "HELPFUL" or "HARMFUL"
+    state.cdmAuraFilter = not IsSecret(friend) and friend == true and "HELPFUL" or "HARMFUL"
   end
   if state.cdmAuraUnit == "target" then
     state.cdmAuraFilter = TARGET_AURA_FILTERS[state.cdmAuraFilter] or TARGET_AURA_FILTERS.HARMFUL
@@ -434,7 +432,7 @@ end
 
 local function markNativeInstance(state, frame, aura)
   local instance = frame.auraInstanceID
-  if not isReadable(instance) then return end
+  if IsSecret(instance) then return end
   if instance ~= nil then
     state.auraActive = true
   elseif not aura then
@@ -466,7 +464,7 @@ end
 
 local function setDispel(state, aura)
   local dispelName = aura.dispelName
-  if not (isReadable(dispelName) and type(dispelName) == "string") then return end
+  if IsSecret(dispelName) or type(dispelName) ~= "string" then return end
   state.cdmDispelName = dispelName
   state.debuffClass = dispelName == "" and "enrage" or dispelName:lower()
 end
@@ -492,7 +490,7 @@ local function captureNativeWidgets(state, frame, unit)
   state.cdmTextRecord = nativeRecords[frame]
 
   local instance = frame.auraInstanceID
-  local canAsk = not isReadable(instance) or type(instance) == "number"
+  local canAsk = IsSecret(instance) or type(instance) == "number"
   if canAsk and isUnitToken(unit) and C_UnitAuras and C_UnitAuras.GetAuraDuration then
     local ok, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, instance)
     if ok and Private.IsDurationObject(durationObject) then useDurationObject(state, durationObject) end
@@ -542,7 +540,7 @@ local function applyCachedAura(state, frame, exactID, buffSpellIDs)
   if nativeMatches then markNativeInstance(state, frame, aura) end
   if exactID and aura and not nativeMatches then aura, unit = nil, nil end
 
-  local nativeAbsent = frame and isReadable(frame.auraInstanceID) and frame.auraInstanceID == nil
+  local nativeAbsent = frame and not IsSecret(frame.auraInstanceID) and frame.auraInstanceID == nil
     and not frame.auraDataCached
   state.cdmAuraRenderUnit, state.cdmAuraRenderSpellIDs = nil, nil
   if nativeMatches and not nativeAbsent and isUnitToken(unit) then
@@ -568,7 +566,7 @@ end
 
 local function resolveNativeActive(state, frame, exactID)
   local active = frame.isActive
-  if not isReadable(active) then
+  if IsSecret(active) then
     state.auraActive = nil
     return
   end
@@ -646,7 +644,7 @@ function Private.CopyCDMCountdownText(destination, state, kind)
   if source and source.IsForbidden and source:IsForbidden() then source = nil end
   if source and (isStack or (state and state.cdmBuff)) and source.IsShown then
     local shown = source:IsShown()
-    if isReadable(shown) and not shown then
+    if not IsSecret(shown) and not shown then
       destination:SetText("")
       return
     end
@@ -654,7 +652,7 @@ function Private.CopyCDMCountdownText(destination, state, kind)
 
   if source then
     local text = source:GetText()
-    if not isStack and state and state.cdmBuff and isReadable(text) and tonumber(text) == 0 then text = "" end
+    if not isStack and state and state.cdmBuff and not IsSecret(text) and tonumber(text) == 0 then text = "" end
     destination:SetText(text)
   elseif state and state.show and state.cdmTextPreview then
     local remaining = state.expirationTime and math.max(0, state.expirationTime - GetTime()) or 6
