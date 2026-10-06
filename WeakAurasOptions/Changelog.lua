@@ -10,11 +10,38 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.5.0',
-  dateString = '2026-10-05',
+  versionString = '1.6.0',
+  dateString = '2026-10-06',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Renamed to Musca Auras. Nothing changes in your auras or settings]==],  commitText = [==[1.5.0 (2026-10-05):
+- Modern Aura Group: Grid mode, off by default
+- Restart the game after the update]==],  commitText = [==[1.6.0 (2026-10-06):
+
+New:
+
+- Modern Aura Group: Grid mode, with Grid direction, Row Width / Column Height, Row Space and Column Space. Off by default: existing groups keep their layout
+- Aura (Modern) on nameplates is no longer limited to 40 nameplates
+
+Changes:
+
+- Spell cooldowns: a global cooldown alone no longer sets off Cooldown Ready or desaturates a spell
+- Fewer updates for Modern Aura Groups, conditions and the Cooldown Manager trigger
+- Restart the game after the update: a new file is not loaded by a /reload
+
+Fixes:
+
+- Modern Aura Group changes skipped in combat are applied at the end of combat, also in battlegrounds and arenas
+- %N.p and %N.s texts are no longer empty in the first combat after a /reload
+- A manual icon with an empty path shows the aura icon
+- Spell charges no longer show outdated values after combat
+
+Known limitations:
+
+- Not tested in game yet: Grid mode, more than 40 nameplates, exports shared between players
+- In a Modern Aura Group, only Aura (Modern) displays are placed by the group. Put other triggers in a Dynamic Group
+- Conditions on a value hidden by the game in combat keep their last state until the end of combat
+
+1.5.0 (2026-10-05):
 
 Changes:
 

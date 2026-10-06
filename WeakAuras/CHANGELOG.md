@@ -1,3 +1,42 @@
+# Musca Auras 1.6.0 (2026-10-06)
+
+> **Heads-up:** tested in game on WoW Forever with a Shaman: spell cooldowns, Aura (Modern) buffs and debuffs, totems,
+> weapon enchants, health, power, swing and cast bars, `/reload` in combat. Not tested in game yet: Grid mode, more
+> than 40 nameplates, exports shared between players. If something breaks,
+> install 1.5.0 again from the Files tab of the CurseForge page and report the error on GitHub or CurseForge.
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Modern Aura Group: Grid mode, with Grid direction, Row Width / Column Height, Row Space and Column Space. Off by
+  default: existing groups keep their layout.
+- Aura (Modern) on nameplates is no longer limited to 40 nameplates.
+
+## Changes
+
+- Spell cooldowns: a global cooldown alone no longer sets off Cooldown Ready or desaturates a spell.
+- Fewer updates for Modern Aura Groups, conditions and the Cooldown Manager trigger.
+- Restart the game after the update: a new file is not loaded by a `/reload`.
+
+## Fixes
+
+- Modern Aura Group changes skipped in combat are applied at the end of combat, also in battlegrounds and
+  arenas.
+- `%N.p` and `%N.s` texts are no longer empty in the first combat after a `/reload`.
+- A manual icon with an empty path shows the aura icon.
+- Spell charges no longer show outdated values after combat.
+
+## Known limitations
+
+- Aura (Modern) needs the spell ID of the aura itself, which can differ from the spell you cast on WoW Forever.
+- In a Modern Aura Group, only Aura (Modern) displays are placed by the group. Put other triggers (totems, weapon
+  enchants, cooldowns) in a Dynamic Group.
+- Conditions on a value hidden by the game in combat, such as target health, keep their last state until the end of
+  combat.
+- With the classic Aura trigger, buffs and debuffs are hidden in combat. Use Aura (Modern) for combat.
+- Combat log triggers never fire: the game forbids the combat log to addons.
+
 # Musca Auras 1.5.0 (2026-10-05)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

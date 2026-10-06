@@ -1,12 +1,14 @@
+-- Spell cooldown event handler for secret cooldown values: duration objects, GCD and latency margins.
+-- Defines Private.CreateSecretSpellCooldown and Private.IsDurationObjectRunning; used by GenericTrigger.lua.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local pairs, next, type, pcall, select, wipe = pairs, next, type, pcall, select, wipe
+local pairs, next, type, pcall, select, math = pairs, next, type, pcall, select, math
 
-local SHOOT_SPELL_ID = 5019
-local WAND_HOLD_WINDOW = 3
 local SECRET_POLL_INTERVAL = 0.1
-local SECRET_MIN_COOLDOWN = 2.0
+local RECHECK_MARGIN = 0.05
+local DEFAULT_GCD_LENGTH = 1.5
+local GCD_LATENCY_MARGIN = 0.1
 
 function Private.IsDurationObjectRunning(durationObject)
   local okZero, isZero = pcall(durationObject.IsZero, durationObject)
@@ -19,53 +21,21 @@ function Private.IsDurationObjectRunning(durationObject)
 end
 
 function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
-  local gcdFlags, gcdFlagSince = {}, {}
-  local wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
-  local castAfterShot, lastCast = {}, {}
+  local SpellCooldownState = Private.SpellCooldownState
+  local gcdSpellID = WeakAuras.IsClassicOrTBCOrWrath() and 29515 or 61304
+  local knownGCDLength = DEFAULT_GCD_LENGTH
 
-  local function UpdateSpellCooldownGCD(spellID)
-    local info = C_Spell.GetSpellCooldown(spellID)
-    local wasOnGCD = gcdFlags[spellID] == true
-    gcdFlags[spellID] = nil
-    if info and not Private.IsSecret(info.isOnGCD) and type(info.isOnGCD) == "boolean" then
-      gcdFlags[spellID] = info.isOnGCD
+  -- Shortest time a spell must stay unavailable to be a real cooldown rather than the GCD.
+  local function GetGCDWindow()
+    local info = C_Spell.GetSpellCooldown(gcdSpellID)
+    local duration = info and info.duration
+    if type(duration) == "number" and not Private.IsSecret(duration) and duration > 0 then
+      knownGCDLength = duration
     end
-    if gcdFlags[spellID] ~= true then
-      gcdFlagSince[spellID] = nil
-    elseif not wasOnGCD then
-      gcdFlagSince[spellID] = GetTime()
-    end
+    return knownGCDLength + GCD_LATENCY_MARGIN
   end
 
-  local function ClearWandHold()
-    wipe(castAfterShot)
-    wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
-  end
-
-  local function NoteWandShot()
-    local now = GetTime()
-    if now - wandLastShotUpdate > 0.05 then
-      wandShotAt = now
-      wipe(castAfterShot)
-    end
-    wandLastShotUpdate = now
-  end
-
-  local function NotePlayerCast(spellID)
-    if Private.IsSecret(spellID) or type(spellID) ~= "number" then
-      ClearWandHold()
-    elseif spellID == SHOOT_SPELL_ID then
-      NoteWandShot()
-    else
-      lastCast[spellID] = GetTime()
-      castAfterShot[spellID] = true
-    end
-  end
-
-  local function IsWandHeldSpell(spellID)
-    return spellID ~= SHOOT_SPELL_ID and GetTime() - wandShotAt < WAND_HOLD_WINDOW and not castAfterShot[spellID]
-  end
-
+  -- ready, active, readable remaining time
   local function GetSecretSpellReady(spellID)
     local info = C_Spell.GetSpellCooldown(spellID)
     if not info or Private.IsSecret(info.isActive) or type(info.isActive) ~= "boolean" then
@@ -78,75 +48,136 @@ function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
       return true, false
     end
     local ok, cooldown = pcall(C_Spell.GetSpellCooldownDuration, spellID, true)
-    if ok and Private.IsDurationObject(cooldown) then
+    if ok and SpellCooldownState.IsDuration(cooldown) then
       local okZero, zero = pcall(cooldown.IsZero, cooldown)
       if okZero and type(zero) == "boolean" and not Private.IsSecret(zero) then
-        return zero, true
+        return zero, true, not zero and SpellCooldownState.ReadableRemaining(cooldown) or nil
       end
     end
-    return gcdFlags[spellID], true
+    return (SpellCooldownState.GetGCDFlag(spellID)), true
   end
 
-  local secretPolled = {}
-  local secretPoller = CreateFrame("Frame")
-  secretPoller:Hide()
-  secretPoller.elapsed = 0
-  secretPoller:SetScript("OnUpdate", function(self, elapsed)
+  local secretSpells = {}
+  local polledSpells, pollQueue, staleSpells = {}, {}, {}
+  local recheckTimers, recheckDeadlines = {}, {}
+
+  local function CancelRecheckTimer(spellID)
+    if recheckTimers[spellID] then
+      recheckTimers[spellID]:Cancel()
+      recheckTimers[spellID], recheckDeadlines[spellID] = nil, nil
+    end
+  end
+
+  local function ForgetSecretSpell(spellID)
+    CancelRecheckTimer(spellID)
+    secretSpells[spellID], polledSpells[spellID] = nil, nil
+    SpellCooldownState.ForgetGCDFlag(spellID)
+  end
+
+  local function RecheckSecretSpell(spellID)
+    local detail = SpellDetails.data[spellID]
+    if not (detail and detail.secret) then
+      ForgetSecretSpell(spellID)
+      return
+    end
+    SpellDetails.quietSecretCheck = true
+    SpellDetails:CheckSpellCooldown(spellID, GetRuneDuration())
+    SpellDetails.quietSecretCheck = nil
+  end
+
+  -- Last resort when no deadline is readable.
+  local poller = CreateFrame("Frame")
+  poller:Hide()
+  poller.elapsed = 0
+  poller:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = self.elapsed + elapsed
     if self.elapsed < SECRET_POLL_INTERVAL then
       return
     end
     self.elapsed = 0
-    SpellDetails.quietSecretCheck = true
-    for id in pairs(secretPolled) do
-      if SpellDetails.data[id] and SpellDetails.data[id].secret then
-        local info = C_Spell.GetSpellCooldown(id)
-        local active = info and info.isActive
-        if Private.IsSecret(active) or active ~= true or gcdFlags[id] == true then
-          SpellDetails:CheckSpellCooldown(id, GetRuneDuration())
-        end
-      else
-        secretPolled[id] = nil
+    local count = 0
+    for spellID in pairs(polledSpells) do
+      count = count + 1
+      pollQueue[count] = spellID
+    end
+    for index = 1, count do
+      local spellID = pollQueue[index]
+      pollQueue[index] = nil
+      if polledSpells[spellID] then
+        RecheckSecretSpell(spellID)
       end
     end
-    SpellDetails.quietSecretCheck = nil
-    if not next(secretPolled) then
+    if not next(polledSpells) then
       self:Hide()
     end
   end)
 
+  local function ScheduleRecheck(spellID, recheckAt)
+    if not recheckAt then
+      CancelRecheckTimer(spellID)
+      polledSpells[spellID] = true
+      poller:Show()
+      return
+    end
+    polledSpells[spellID] = nil
+    if recheckDeadlines[spellID] and math.abs(recheckDeadlines[spellID] - recheckAt) < RECHECK_MARGIN then
+      return
+    end
+    CancelRecheckTimer(spellID)
+    recheckDeadlines[spellID] = recheckAt
+    recheckTimers[spellID] = C_Timer.NewTimer(math.max(recheckAt - GetTime(), 0) + RECHECK_MARGIN, function()
+      recheckTimers[spellID], recheckDeadlines[spellID] = nil, nil
+      RecheckSecretSpell(spellID)
+    end)
+  end
+
+  local function StopRecheck(spellID)
+    CancelRecheckTimer(spellID)
+    polledSpells[spellID] = nil
+  end
+
   function SpellDetails:UpdateSecretReady(effectiveSpellId)
     local detail = self.data[effectiveSpellId]
-    local ready, active = GetSecretSpellReady(effectiveSpellId)
+    if not secretSpells[effectiveSpellId] then
+      secretSpells[effectiveSpellId] = true
+      SpellCooldownState.UpdateGCDFlag(effectiveSpellId)
+    end
+    local ready, active, remaining = GetSecretSpellReady(effectiveSpellId)
     local now = GetTime()
-    if ready == true and active and gcdFlags[effectiveSpellId] == true and gcdFlagSince[effectiveSpellId]
-       and now - gcdFlagSince[effectiveSpellId] < SECRET_MIN_COOLDOWN
-    then
-      ready = false
+    local recheckAt = remaining and now + remaining
+    local gcdWindow = GetGCDWindow()
+    local onGCD, onGCDSince = SpellCooldownState.GetGCDFlag(effectiveSpellId)
+    local gcdHold = false
+    if ready == true and active and onGCD == true and onGCDSince and now - onGCDSince < gcdWindow then
+      ready, gcdHold = false, true
+      recheckAt = onGCDSince + gcdWindow
     end
     local wandOnly = false
     if detail.notReadyWand then
-      local cast = lastCast[effectiveSpellId]
+      local cast = SpellCooldownState.GetLastCast(effectiveSpellId)
       wandOnly = not cast or (detail.lastReadyAt and cast < detail.lastReadyAt - 0.2) or false
     end
-    if detail.secretReady == false and ready == true and detail.notReadySince and not wandOnly
-       and now - detail.notReadySince > SECRET_MIN_COOLDOWN and not WeakAuras.IsPaused()
+    -- A not-ready span made only of GCD holds never fires READY, however late its end timer runs.
+    if detail.secretReady == false and ready == true and detail.notReadySince and not wandOnly and not detail.gcdHoldOnly
+       and now - detail.notReadySince > gcdWindow + 2 * RECHECK_MARGIN and not WeakAuras.IsPaused()
     then
       self:SendEventsForSpell(effectiveSpellId, "SPELL_COOLDOWN_READY", effectiveSpellId)
     end
     if ready == false then
       if detail.secretReady ~= false or not detail.notReadySince then
         detail.notReadySince = now
-        detail.notReadyWand = IsWandHeldSpell(effectiveSpellId) or nil
+        detail.notReadyWand = SpellCooldownState.IsWandHeld(effectiveSpellId) or nil
+        detail.gcdHoldOnly = gcdHold or nil
+      elseif not gcdHold then
+        detail.gcdHoldOnly = nil
       end
-      secretPolled[effectiveSpellId] = true
-      secretPoller:Show()
+      ScheduleRecheck(effectiveSpellId, recheckAt)
     else
-      detail.notReadySince, detail.notReadyWand = nil, nil
+      detail.notReadySince, detail.notReadyWand, detail.gcdHoldOnly = nil, nil, nil
       if ready == true then
         detail.lastReadyAt = now
       end
-      secretPolled[effectiveSpellId] = nil
+      StopRecheck(effectiveSpellId)
     end
     local changed = detail.secretReady ~= ready
     detail.secretReady = ready
@@ -155,32 +186,39 @@ function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
 
   function SpellDetails:ClearSecretReady(effectiveSpellId)
     local detail = self.data[effectiveSpellId]
-    detail.secretReady, detail.notReadySince, detail.notReadyWand = nil, nil, nil
-    secretPolled[effectiveSpellId] = nil
+    detail.secretReady, detail.notReadySince, detail.notReadyWand, detail.gcdHoldOnly = nil, nil, nil, nil
+    ForgetSecretSpell(effectiveSpellId)
   end
 
-  return function(event, ...)
+  local function UpdateSecretSpellGCDFlags()
+    local staleCount = 0
+    for spellID in pairs(secretSpells) do
+      if SpellDetails.data[spellID] then
+        SpellCooldownState.UpdateGCDFlag(spellID)
+      else
+        staleCount = staleCount + 1
+        staleSpells[staleCount] = spellID
+      end
+    end
+    for index = 1, staleCount do
+      ForgetSecretSpell(staleSpells[index])
+      staleSpells[index] = nil
+    end
+  end
+
+  return function(inWorld, event, ...)
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
-      NotePlayerCast((select(3, ...)))
+      SpellCooldownState.NotePlayerCast((select(3, ...)))
       return true
     elseif event == "SPELL_UPDATE_COOLDOWN" then
-      local arg1, baseSpellID = ...
-      if (not Private.IsSecret(arg1) and arg1 == SHOOT_SPELL_ID)
-         or (not Private.IsSecret(baseSpellID) and baseSpellID == SHOOT_SPELL_ID)
-      then
-        local info = C_Spell.GetSpellCooldown(SHOOT_SPELL_ID)
-        if info and not Private.IsSecret(info.isActive) and info.isActive == true then
-          NoteWandShot()
-        end
-      end
-      for id in pairs(SpellDetails.data) do
-        UpdateSpellCooldownGCD(id)
+      if inWorld then
+        SpellCooldownState.NoteCooldownEvent(...)
+        UpdateSecretSpellGCDFlags()
       end
     elseif event == "PLAYER_ENTERING_WORLD" then
-      ClearWandHold()
+      SpellCooldownState.ClearWandHold()
     elseif event == "PLAYER_LEAVING_WORLD" then
-      wipe(gcdFlags)
-      wipe(gcdFlagSince)
+      SpellCooldownState.ClearGCDFlags()
     end
   end
 end

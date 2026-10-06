@@ -17,17 +17,14 @@ for _, eventName in ipairs({
   RELOAD_EVENTS[eventName] = true
 end
 
-local function canRead(value)
-  if issecretvalue then return not issecretvalue(value) end
-  return true
-end
+local IsSecret = Private.IsSecret
 
 local function readFlag(value)
-  if canRead(value) and type(value) == "boolean" then return value end
+  if not IsSecret(value) and type(value) == "boolean" then return value end
 end
 
 local function readPositiveNumber(value)
-  return canRead(value) and type(value) == "number" and value > 0
+  return not IsSecret(value) and type(value) == "number" and value > 0
 end
 
 local function viewerApiReady()
@@ -58,14 +55,14 @@ local function loadCatalog(forceReload)
 end
 
 local function rankFromSubtext(spellID)
-  if not canRead(spellID) or type(spellID) ~= "number" then return end
+  if IsSecret(spellID) or type(spellID) ~= "number" then return end
   local subtext = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(spellID)
-  if not canRead(subtext) or type(subtext) ~= "string" then return nil end
+  if IsSecret(subtext) or type(subtext) ~= "string" then return nil end
   return tonumber(subtext:match("%d+"))
 end
 
 local function sameReadable(value, wanted)
-  return canRead(value) and value == wanted
+  return not IsSecret(value) and value == wanted
 end
 
 local function matchStrength(info, wanted)
@@ -168,7 +165,7 @@ local function indexBuffNames(entries)
       local spellIDs = Private.CDMAuraSpellIDs(info)
       local frame = frames[entryID]
       local frameSpell = frame and frame.GetSpellID and frame:GetSpellID()
-      if canRead(frameSpell) and type(frameSpell) == "number" then spellIDs[#spellIDs + 1] = frameSpell end
+      if not IsSecret(frameSpell) and type(frameSpell) == "number" then spellIDs[#spellIDs + 1] = frameSpell end
       for _, spellID in ipairs(spellIDs) do
         local record = recordFor(spellID)
         if record then
@@ -296,7 +293,7 @@ local function scanEntries(trigger, entries, event, query, numeric, spell, lower
   local spreadAuras = not exact and wantsBuff
   local auraSpellList, auraSeen, auraEntryList = {}, {}, {}
   local function addAuraSpell(spellID)
-    if not canRead(spellID) or type(spellID) ~= "number" or auraSeen[spellID] then return end
+    if IsSecret(spellID) or type(spellID) ~= "number" or auraSeen[spellID] then return end
     local spellInfo = C_Spell.GetSpellInfo(spellID)
     if spellInfo and spellInfo.name:lower() == lowered then
       auraSeen[spellID] = true
@@ -331,7 +328,7 @@ local function scanEntries(trigger, entries, event, query, numeric, spell, lower
         if hit and identity.spellID then
           local probe = trigger.cdmSelection == "spell" and info.spellID or identity.spellID
           local subtext = C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(probe)
-          local rank = canRead(subtext) and type(subtext) == "string" and tonumber(subtext:match("%d+")) or 0
+          local rank = not IsSecret(subtext) and type(subtext) == "string" and tonumber(subtext:match("%d+")) or 0
           local better = not topEntry or score > topScore
             or (score == topScore and (rank > topRank or (rank == topRank and entryID < topEntry)))
           if better then topEntry, topRank, topScore = entryID, rank, score end
@@ -363,15 +360,9 @@ function Private.ResolveCDMSpell(trigger, event)
   if trigger.event == "Blizzard CDM Item" then
     return pickItemEntries(trigger, entries, event, query)
   end
-  local cacheKey = table.concat({
-    tostring(trigger.cdmSelection),
-    tostring(trigger.event),
-    query,
-    tostring(trigger.cdmExact),
-    trigger.cdmSource or "cooldown",
-    tostring(trigger.use_ignoreSpellKnown),
-    tostring(event == "OPTIONS"),
-  }, ":")
+  local cacheKey = tostring(trigger.cdmSelection) .. ":" .. tostring(trigger.event) .. ":" .. query
+    .. ":" .. tostring(trigger.cdmExact) .. ":" .. (trigger.cdmSource or "cooldown")
+    .. ":" .. tostring(trigger.use_ignoreSpellKnown) .. ":" .. tostring(event == "OPTIONS")
   if lookupCache.entries ~= entries then lookupCache = {entries = entries} end
   if lookupCache[cacheKey] then return lookupCache[cacheKey] end
   local numeric = tonumber(query)
@@ -611,7 +602,7 @@ local function fillSpellState(state, identity, frame, event, opts)
     local current = charges.currentCharges
     local refilling = readFlag(charges.isActive)
     if refilling ~= nil then state.recharging = refilling end
-    if canRead(current) and type(current) == "number" then
+    if not IsSecret(current) and type(current) == "number" then
       state.stacks = current
       state.isReady, state.onCooldown = current > 0, current == 0
     elseif native and native.recharging == true then
@@ -754,7 +745,7 @@ local function buildStates(allstates, selected, event, opts)
   if opts.requireTarget and event ~= "OPTIONS" then
     local targetExists = UnitExists("target")
     local targetHostile = UnitCanAttack("player", "target")
-    if not canRead(targetExists) or not canRead(targetHostile) then return true end
+    if IsSecret(targetExists, targetHostile) then return true end
     if not targetExists or not targetHostile then return true end
   end
 
@@ -784,10 +775,9 @@ end
 
 local function computeOutputs(selected, event, showGCD, track, hideGCDText, showMode, exactID, requireTarget, ignoreSpellKnown)
   local batch = Private.cdmScanBatch
-  local key = table.concat({
-    event or "", tostring(showGCD), tostring(track), tostring(hideGCDText),
-    tostring(showMode), tostring(exactID), tostring(requireTarget), tostring(ignoreSpellKnown),
-  }, ":")
+  local key = (event or "") .. ":" .. tostring(showGCD) .. ":" .. tostring(track) .. ":" .. tostring(hideGCDText)
+    .. ":" .. tostring(showMode) .. ":" .. tostring(exactID) .. ":" .. tostring(requireTarget)
+    .. ":" .. tostring(ignoreSpellKnown)
   local batchBucket
   if batch then
     batch.outputs = batch.outputs or {}
@@ -812,7 +802,7 @@ local function unchangedSince(previous, current)
   for field, value in pairs(current) do
     if field ~= "changed" then
       local before = previous[field]
-      if not canRead(value) or not canRead(before) or value ~= before then return false end
+      if IsSecret(value, before) or value ~= before then return false end
     end
   end
   for field in pairs(previous) do
@@ -963,18 +953,18 @@ local function auraRemaining(state)
   local timer = state.durationObject
   if timer then
     local total = timer:GetTotalDuration()
-    if not canRead(total) or type(total) ~= "number" or total <= 0 then return end
+    if IsSecret(total) or type(total) ~= "number" or total <= 0 then return end
     remaining = timer:GetRemainingDuration()
   else
     local span, expiresAt, rate = state.duration, state.expirationTime, state.modRate
-    if not canRead(span) or not canRead(expiresAt) or not canRead(rate) then return end
+    if IsSecret(span, expiresAt, rate) then return end
     if type(span) ~= "number" or span <= 0 or type(expiresAt) ~= "number" then return end
     rate = rate or 1
     if type(rate) ~= "number" or rate <= 0 then return end
     remaining = (expiresAt - GetTime()) / rate
     scale = rate
   end
-  if canRead(remaining) and type(remaining) == "number" and remaining == remaining and remaining < math.huge then
+  if not IsSecret(remaining) and type(remaining) == "number" and remaining == remaining and remaining < math.huge then
     return math.max(0, remaining), scale
   end
 end
@@ -985,29 +975,29 @@ local function auraTimeValue(state, wantElapsed)
   local timer = state.durationObject
   if timer then
     total = timer:GetTotalDuration()
-    if not canRead(total) or type(total) ~= "number" or total <= 0 or total >= math.huge then return end
+    if IsSecret(total) or type(total) ~= "number" or total <= 0 or total >= math.huge then return end
     if wantElapsed then measured = timer:GetElapsedDuration() else measured = total end
   else
     total, scale = state.duration, state.modRate
-    if not canRead(total) or not canRead(scale) then return end
+    if IsSecret(total, scale) then return end
     scale = scale or 1
     if type(total) ~= "number" or total <= 0 or total >= math.huge then return end
     if type(scale) ~= "number" or scale <= 0 or scale >= math.huge then return end
     measured = total / scale
     if wantElapsed then
       local expiresAt = state.expirationTime
-      if not canRead(expiresAt) or type(expiresAt) ~= "number" then return end
+      if IsSecret(expiresAt) or type(expiresAt) ~= "number" then return end
       measured = (GetTime() - (expiresAt - total)) / scale
     end
   end
-  if canRead(measured) and type(measured) == "number" and measured == measured and measured < math.huge then
+  if not IsSecret(measured) and type(measured) == "number" and measured == measured and measured < math.huge then
     return math.max(0, measured), scale
   end
 end
 
 local function stacksPass(state, wanted, op)
   local count = state.stacks
-  if state.auraActive ~= true or not canRead(count) or type(count) ~= "number" then return false end
+  if state.auraActive ~= true or IsSecret(count) or type(count) ~= "number" then return false end
   local compare = STACK_TESTS[op]
   return compare and compare(count, wanted) or false
 end

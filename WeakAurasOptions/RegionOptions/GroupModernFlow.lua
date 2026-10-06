@@ -21,6 +21,15 @@ function OptionsPrivate.AddModernFlowGroupOptions(options, data)
       WeakAuras.ClearAndUpdateOptions(data.id)
     end)
   end
+  -- Sort only changes the order inside each container, so set it on the live containers when no child needs a rebuild.
+  local function SaveFlowSort(key, value)
+    data[key] = value
+    if pendingFlowSave or not Display.ApplyFlowSort(data) then
+      SaveFlow(key, value)
+      return
+    end
+    WeakAuras.Add(data)
+  end
   local function FlowOff() return not data.blizzardFlow end
   options.blizzardFlowGrowth = {
     type = "select", width = WeakAuras.doubleWidth, order = 0.61, name = L["Grow"],
@@ -58,12 +67,12 @@ function OptionsPrivate.AddModernFlowGroupOptions(options, data)
     sorting = {"Default", "ExpirationOnly", "Expiration", "NameOnly", "Name", "ImportantOnly", "BigDefensive", "AuraInstanceIDOnly"},
     desc = "The order of the auras inside each display.",
     get = function() return data.blizzardFlowSort or "Default" end,
-    set = function(_, v) SaveFlow("blizzardFlowSort", v) end,
+    set = function(_, v) SaveFlowSort("blizzardFlowSort", v) end,
   }
   options.blizzardFlowReverse = {
     type = "toggle", width = WeakAuras.normalWidth, order = 0.66, name = "Reverse Sort", hidden = FlowOff,
     get = function() return data.blizzardFlowReverse or false end,
-    set = function(_, v) SaveFlow("blizzardFlowReverse", v or nil) end,
+    set = function(_, v) SaveFlowSort("blizzardFlowReverse", v or nil) end,
   }
   options.blizzardFlowUseLimit = {
     type = "toggle", width = WeakAuras.normalWidth, order = 0.67, name = L["Limit"], hidden = FlowOff,
@@ -77,6 +86,45 @@ function OptionsPrivate.AddModernFlowGroupOptions(options, data)
     disabled = function() return not data.blizzardFlowUseLimit end,
     get = function() return data.blizzardFlowLimit or 5 end,
     set = function(_, v) SaveFlow("blizzardFlowLimit", v) end,
+  }
+  local function GridOff() return not data.blizzardFlowGrid end
+  local function HorizontalGrid()
+    local line = Display.GridType(data):sub(1, 1)
+    return line == "R" or line == "L"
+  end
+  options.blizzardFlowGrid = {
+    type = "toggle", width = WeakAuras.normalWidth, order = 0.69, name = L["Grid"], hidden = FlowOff,
+    desc = "Share one display per unit between the auras of this group, and start a new line after a set number of auras.",
+    get = function() return data.blizzardFlowGrid or false end,
+    set = function(_, v) SaveFlow("blizzardFlowGrid", v or nil) end,
+  }
+  options.blizzardFlowGridType = {
+    type = "select", width = WeakAuras.normalWidth, order = 0.691, name = L["Grid direction"], hidden = FlowOff,
+    values = Display.flowGridTypes, sorting = {"RD", "RU", "LD", "LU", "DR", "DL", "UR", "UL"},
+    disabled = GridOff,
+    get = function() return Display.GridType(data) end,
+    set = function(_, v) SaveFlow("blizzardFlowGridType", v) end,
+  }
+  options.blizzardFlowPerRow = {
+    type = "range", control = "WeakAurasSpinBox", width = WeakAuras.normalWidth, order = 0.692,
+    name = function() return HorizontalGrid() and L["Row Width"] or L["Column Height"] end,
+    desc = "The number of auras on each line.",
+    min = 1, softMax = 20, step = 1, hidden = FlowOff, disabled = GridOff,
+    get = function() return data.blizzardFlowPerRow or 6 end,
+    set = function(_, v) SaveFlow("blizzardFlowPerRow", v) end,
+  }
+  options.blizzardFlowGridSpace = {type = "description", name = "", order = 0.693, width = WeakAuras.normalWidth, hidden = FlowOff}
+  options.blizzardFlowRowSpace = {
+    type = "range", control = "WeakAurasSpinBox", width = WeakAuras.normalWidth, order = 0.694, name = L["Row Space"],
+    min = -20, softMax = 50, step = 1, hidden = FlowOff, disabled = GridOff,
+    get = function() return data.blizzardFlowRowSpace or data.blizzardFlowSpacing or 2 end,
+    set = function(_, v) SaveFlow("blizzardFlowRowSpace", v) end,
+  }
+  options.blizzardFlowColumnSpace = {
+    type = "range", control = "WeakAurasSpinBox", width = WeakAuras.normalWidth, order = 0.695, name = L["Column Space"],
+    min = -20, softMax = 50, step = 1, hidden = FlowOff, disabled = GridOff,
+    get = function() return data.blizzardFlowColumnSpace or data.blizzardFlowSpacing or 2 end,
+    set = function(_, v) SaveFlow("blizzardFlowColumnSpace", v) end,
   }
 end
 

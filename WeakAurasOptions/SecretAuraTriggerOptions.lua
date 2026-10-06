@@ -1,5 +1,6 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, OptionsPrivate = ...
+local L = WeakAuras.L
 
 local GROUP_UNITS = {group = true, party = true, raid = true}
 
@@ -197,6 +198,20 @@ local function addGroupMemberOptions(options, ctx)
     get = function() return trigger.includePets end,
     set = function(_, value) save("includePets", value) end,
   }
+  options.ignoreDead = {
+    type = "toggle", name = L["Ignore Dead"], order = 4.41, width = width,
+    desc = "Hide this member's auras while it is dead or a ghost.",
+    hidden = function() return not inGroupUnit(trigger) end,
+    get = function() return trigger.ignoreDead or false end,
+    set = function(_, value) save("ignoreDead", value or nil) end,
+  }
+  options.ignoreDisconnected = {
+    type = "toggle", name = L["Ignore Disconnected"], order = 4.42, width = width,
+    desc = "Hide this member's auras while it is offline.",
+    hidden = function() return not inGroupUnit(trigger) end,
+    get = function() return trigger.ignoreDisconnected or false end,
+    set = function(_, value) save("ignoreDisconnected", value or nil) end,
+  }
   options.filtersHeader = {type = "header", name = "Aura Filters", order = 10}
   options.includeNameplateOnly = {
     type = "toggle", name = "Include nameplate-only auras", order = 21, width = "full",
@@ -240,7 +255,7 @@ end
 
 local function addSpellSelection(options, ctx)
   local trigger, display = ctx.trigger, ctx.display
-  options.spellSelectionHeader = {type = "header", name = "Spell Selection Filters", order = 4.5}
+  options.spellSelectionHeader = {type = "header", name = "Spell Selection Filters", order = 4.7}
 
   addSpellIdList(options, ctx, {
     toggleKey = "useRankSpellIDs", prefix = "rankspellid", storageKey = "auraRankSpellIDs",

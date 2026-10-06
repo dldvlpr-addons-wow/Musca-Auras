@@ -7,9 +7,7 @@ Private.CDMAuraProgress = Display
 local linkedTexts = setmetatable({}, {__mode = "k"})
 local waitingForCombatEnd = setmetatable({}, {__mode = "k"})
 
-local function IsSecret(value)
-  return issecretvalue and issecretvalue(value)
-end
+local IsSecret = Private.IsSecret
 
 local function IsCdmBuffEntry(entry)
   local trigger = type(entry) == "table" and entry.trigger
@@ -87,7 +85,7 @@ end
 local function AttachNative(native, unit, filter, spellIDs)
   local container = native.container
   local seen, sorted = CollectSpellIDs(spellIDs)
-  local signature = table.concat({unit, filter, table.concat(sorted, ",")}, ":")
+  local signature = unit .. ":" .. filter .. ":" .. table.concat(sorted, ",")
   if native.key ~= signature then
     container:SetEnabled(false)
     container:SetUnit(unit)
@@ -110,7 +108,7 @@ local function DurationFormatSignature(config, index)
   local precision = config[prefix .. "time_precision"] or 1
   local dynamic = timeFormat == -2
   local formatter = Private.GetDurationTextFormatter(floorValue, threshold, precision, dynamic)
-  return table.concat({floorValue, threshold, precision, tostring(dynamic)}, ":"), {textFormatter = formatter}
+  return floorValue .. ":" .. threshold .. ":" .. precision .. ":" .. tostring(dynamic), {textFormatter = formatter}
 end
 
 local function AttachLinkedTextSource(native, kind, config, index)
@@ -141,14 +139,26 @@ local function ReleaseLinkedTexts(sub)
   waitingForCombatEnd[sub] = nil
 end
 
-local function FindLinkedTrigger(parent, index)
-  local parentData = parent.id and WeakAuras.GetData(parent.id)
+local function LinkedTrigger(parentData, index)
   local entry = index and parentData and parentData.triggers and parentData.triggers[index]
   local trigger = type(entry) == "table" and entry.trigger
   if not trigger or trigger.type ~= "secretAura" then return end
   local auraDisplay = Private.BlizzardAuraDisplay
   if auraDisplay.Enabled(parentData) or not auraDisplay.IsSingleUnit(trigger) then return end
   return parentData, trigger
+end
+
+local function FindLinkedTrigger(parent, index)
+  return LinkedTrigger(parent.id and WeakAuras.GetData(parent.id), index)
+end
+
+-- Builds the linked text container while unrestricted, so the first restricted show has a source.
+local function PrepareLinkedText(sub, parentData, config)
+  local kind, index = Private.ParseCDMText(config.text_text)
+  if (kind ~= "p" and kind ~= "s") or WeakAuras.IsRestricted() or not sub.text:GetFont() then return end
+  if not LinkedTrigger(parentData, index) then return end
+  sub.linkedAuraTexts = sub.linkedAuraTexts or {}
+  sub.linkedAuraTexts[kind] = sub.linkedAuraTexts[kind] or NewLinkedText(sub, config, kind, index)
 end
 
 local function ShowLinkedText(parent, sub, config, kind, index)
@@ -163,7 +173,7 @@ local function ShowLinkedText(parent, sub, config, kind, index)
   local byKind = sub.linkedAuraTexts
   local native = byKind[kind]
   if not native then
-    if InCombatLockdown() then
+    if WeakAuras.IsRestricted() then
       waitingForCombatEnd[sub] = true
       sub.text:SetText("")
       return true
@@ -202,9 +212,11 @@ local function ShowLinkedText(parent, sub, config, kind, index)
   return true
 end
 
+-- Returns false when the container cannot be created yet (restricted); the caller then waits.
 local function ShowOwnTimerText(sub, config, unit, filter, spellIDs)
   sub.cdmTextConfig = config
   if not sub.cdmAuraTimer then
+    if WeakAuras.IsRestricted() then return false end
     sub.cdmAuraTimer = NewNativeContainer(sub, function(native, button)
       native.text = button:CreateFontString(nil, "OVERLAY")
       native.text:SetFont(sub.text:GetFont())
@@ -220,23 +232,27 @@ local function ShowOwnTimerText(sub, config, unit, filter, spellIDs)
   sub.cdmNativeText = true
   sub.text:SetText("")
   AttachNative(native, unit, filter, spellIDs)
+  return true
 end
 
 local watcher = CreateFrame("Frame")
 for _, eventName in ipairs({"PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "UNIT_PET", "UNIT_TARGET",
-  "PLAYER_ENTERING_WORLD", "PLAYER_REGEN_ENABLED"}) do
+  "PLAYER_ENTERING_WORLD"}) do
   watcher:RegisterEvent(eventName)
 end
-watcher:SetScript("OnEvent", function(_, eventName)
-  if eventName ~= "PLAYER_REGEN_ENABLED" then
-    for _, native in pairs(linkedTexts) do
-      if native.wanted then native.container:UpdateAllAuras() end
-    end
-    return
+watcher:SetScript("OnEvent", function()
+  for _, native in pairs(linkedTexts) do
+    if native.wanted then native.container:UpdateAllAuras() end
   end
-  for sub in pairs(waitingForCombatEnd) do
-    waitingForCombatEnd[sub] = nil
-    if sub.Update then sub:Update() end
+end)
+
+-- Containers skipped under restrictions are created once they end.
+Private.callbacks:RegisterCallback("RestrictionChanged", function(_, isRestricted)
+  if isRestricted then return end
+  for owner in pairs(waitingForCombatEnd) do
+    waitingForCombatEnd[owner] = nil
+    -- A hidden owner has no state; its next show runs Update again.
+    if owner.Update and owner:IsVisible() then xpcall(owner.Update, geterrorhandler(), owner) end
   end
 end)
 
@@ -285,6 +301,10 @@ function Display.Update(region)
     ReleaseNative(region.cdmAuraTimer)
     return
   end
+  if not region.cdmAuraTimer and WeakAuras.IsRestricted() then
+    waitingForCombatEnd[region] = true
+    return
+  end
   region.cdmAuraTimer = region.cdmAuraTimer or NewNativeContainer(region, function(native, button)
     local cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
     native.cooldown = cooldown
@@ -329,6 +349,7 @@ function Display.ModifyText(parent, sub, parentData, config)
   for _, native in pairs(sub.linkedAuraTexts or {}) do
     native.boundData, native.stylePending = nil, true
   end
+  PrepareLinkedText(sub, parentData, config)
 end
 
 function Display.HideText(sub)
@@ -353,11 +374,12 @@ function Display.UpdateText(parent, sub, config, kind, explicitTrigger)
   ReleaseLinkedTexts(sub)
   if not sub.text:GetFont() then return true end
   local unit, filter, spellIDs = ResolveNativeSource(state)
-  if unit and (kind == "p" or kind == "bp") then
-    ShowOwnTimerText(sub, config, unit, filter, spellIDs)
+  local wantsOwnTimer = unit and (kind == "p" or kind == "bp")
+  if wantsOwnTimer and ShowOwnTimerText(sub, config, unit, filter, spellIDs) then
     return true
   end
   Display.HideText(sub)
+  if wantsOwnTimer then waitingForCombatEnd[sub] = true end
   Private.CopyCDMCountdownText(sub.text, state, kind)
   if sub.UpdateAnchorOnTextChange then sub:UpdateAnchorOnTextChange() end
   return true

@@ -1,3 +1,6 @@
+-- Maps WeakAuras conditions onto native aura indicators (duration colour, stacks, pandemic, highlight,
+-- missing desaturation), with their migration, validation and preview. Fills Private.BlizzardAuraDisplay;
+-- called by BlizzardAuraDisplay.lua, SecretAuraAppearance.lua, Conditions.lua and ConditionOptions.lua.
 if not WeakAuras.IsLibsOK() then
   return
 end
@@ -8,6 +11,7 @@ local SECRET_TRIGGER_TYPE = "secretAura"
 local STEP_COLOR = {1, 1, 1, 1}
 local HIGHLIGHT_COLOR = {1, 0.82, 0, 1}
 local PULSE_BOUNDS = {min = 0.2, max = 5}
+local PANDEMIC_FRACTION = 0.3
 local DISPEL_KEYS = {"None", "Magic", "Curse", "Disease", "Poison", "Bleed", "Enrage", ""}
 local STACK_OPERATORS = {["<"] = true, [">="] = true, [">"] = true, ["<="] = true, ["=="] = true, ["~="] = true}
 local TIME_OPERATORS = {["<"] = true, [">="] = true}
@@ -269,11 +273,12 @@ function AuraDisplay.MissingDesaturated(auraData)
   return HasEnabledChange(auraData, "faAuraMissing", "desaturate", false)
 end
 
-local function FirstSecretTrigger(auraData, strict)
-  for triggerIndex, triggerEntry in ipairs(auraData.triggers or {}) do
-    if strict then
-      if triggerEntry.trigger.type == SECRET_TRIGGER_TYPE then return triggerIndex end
-    elseif type(triggerEntry) == "table" and triggerEntry.trigger and triggerEntry.trigger.type == SECRET_TRIGGER_TYPE then
+local function FirstSecretTrigger(auraData)
+  local triggers = type(auraData) == "table" and auraData.triggers
+  if type(triggers) ~= "table" then return end
+  for triggerIndex, triggerEntry in ipairs(triggers) do
+    if type(triggerEntry) == "table" and type(triggerEntry.trigger) == "table"
+      and triggerEntry.trigger.type == SECRET_TRIGGER_TYPE then
       return triggerIndex
     end
   end
@@ -281,7 +286,7 @@ end
 
 local function MigrateMissing(auraData, legacy)
   if not legacy.missingDesaturate then return end
-  local triggerIndex = FirstSecretTrigger(auraData, false)
+  local triggerIndex = FirstSecretTrigger(auraData)
   if not triggerIndex then return end
   auraData.conditions = auraData.conditions or {}
   table.insert(auraData.conditions, {
@@ -307,7 +312,7 @@ local function MigrateRemaining(auraData, legacy)
     propertyPath = "color"
   end
   propertyPath = ResolveDurationProperty(auraData, propertyPath)
-  local triggerIndex = FirstSecretTrigger(auraData, true)
+  local triggerIndex = FirstSecretTrigger(auraData)
   if not (triggerIndex and propertyPath) then return end
   local conditionList = auraData.conditions or {}
   auraData.conditions = conditionList
@@ -337,7 +342,23 @@ local function ClampedColor(components, fallback)
   return CreateColor(unpack(channels))
 end
 
-local function ThresholdRules(auraData, propertyPath, stack)
+-- Rules and answers per aura and property path, dropped by Display.Modify when the aura data changes.
+local conditionRulesCache = setmetatable({}, {__mode = "k"})
+
+local function CachedRules(auraData)
+  local known = conditionRulesCache[auraData]
+  if not known then
+    known = {owns = {}, duration = {}, stack = {}}
+    conditionRulesCache[auraData] = known
+  end
+  return known
+end
+
+function AuraDisplay.ForgetConditionRules(auraData)
+  conditionRulesCache[auraData] = nil
+end
+
+local function CollectThresholdRules(auraData, propertyPath, stack)
   local collected = {}
   local textKind = stack and "stack" or "duration"
   local operators = stack and STACK_OPERATORS or TIME_OPERATORS
@@ -366,6 +387,17 @@ local function ThresholdRules(auraData, propertyPath, stack)
     end
   end
   return collected
+end
+
+-- The returned list is shared: callers only read it.
+local function ThresholdRules(auraData, propertyPath, stack)
+  local known = CachedRules(auraData)[stack and "stack" or "duration"]
+  local rules = known[propertyPath]
+  if not rules then
+    rules = CollectThresholdRules(auraData, propertyPath, stack)
+    known[propertyPath] = rules
+  end
+  return rules
 end
 
 local function RuleMatches(amount, rule)
@@ -513,7 +545,7 @@ function AuraDisplay.StackTextCondition(auraData, propertyPath)
   return ruleFormatter
 end
 
-local function OwnsDurationColor(auraData, propertyPath)
+local function ComputeOwnsDurationColor(auraData, propertyPath)
   local durationTarget = TextProperty(auraData, propertyPath, "duration")
   if durationTarget and AuraDisplay.SupportsDurationColorCondition() and #ThresholdRules(auraData, durationTarget) > 0 then
     return true
@@ -521,6 +553,16 @@ local function OwnsDurationColor(auraData, propertyPath)
   local stackTarget = TextProperty(auraData, propertyPath, "stack")
   return stackTarget and C_StringUtil and C_StringUtil.CreateNumericRuleFormatter
     and #ThresholdRules(auraData, stackTarget, true) > 0
+end
+
+local function OwnsDurationColor(auraData, propertyPath)
+  local known = CachedRules(auraData).owns
+  local owns = known[propertyPath]
+  if owns == nil then
+    owns = ComputeOwnsDurationColor(auraData, propertyPath) and true or false
+    known[propertyPath] = owns
+  end
+  return owns
 end
 
 local function DetachedPropertyType(auraData, subRegion, key)
@@ -551,42 +593,36 @@ function AuraDisplay.IsNativeConditionProperty(auraData, propertyPath)
   return PropertyType(auraData, propertyPath) ~= nil
 end
 
-local function HighlightDefinitions()
-  return {
-    {"faAuraHighlightColor", {display = "Aura Highlight Color", type = "color", default = {1, 0.82, 0, 1}}},
-    {"faAuraHighlightStyle", {
-      display = "Aura Highlight Style",
-      type = "list",
-      default = "border",
-      values = {
-        border = "Border",
-        glow = "Glow (Static)",
-        pulseBorder = "Border (Pulsing)",
-        pulseGlow = "Glow (Pulsing)",
-        overlay = "Overlay",
-        texture = "Custom Texture",
-      },
-    }},
-    {"faAuraHighlightPulse", {
-      display = "Aura Highlight Pulse Duration", type = "number", default = 1, min = 0.2, max = 5, step = 0.1,
-    }},
-    {"faAuraHighlightSize", {
-      display = "Aura Highlight Thickness / Padding", type = "number", default = 2, min = 1, max = 64, step = 1,
-    }},
-    {"faAuraHighlightTexture", {
-      display = "Aura Highlight Texture", type = "string", default = "Interface\\Buttons\\UI-ActionButton-Border",
-    }},
-  }
-end
+local HIGHLIGHT_DEFINITIONS = {
+  faAuraHighlightColor = {display = "Aura Highlight Color", type = "color", default = {1, 0.82, 0, 1}},
+  faAuraHighlightStyle = {
+    display = "Aura Highlight Style",
+    type = "list",
+    default = "border",
+    values = {
+      border = "Border",
+      glow = "Glow (Static)",
+      pulseBorder = "Border (Pulsing)",
+      pulseGlow = "Glow (Pulsing)",
+      overlay = "Overlay",
+      texture = "Custom Texture",
+    },
+  },
+  faAuraHighlightPulse = {
+    display = "Aura Highlight Pulse Duration", type = "number", default = 1, min = 0.2, max = 5, step = 0.1,
+  },
+  faAuraHighlightSize = {
+    display = "Aura Highlight Thickness / Padding", type = "number", default = 2, min = 1, max = 64, step = 1,
+  },
+  faAuraHighlightTexture = {
+    display = "Aura Highlight Texture", type = "string", default = "Interface\\Buttons\\UI-ActionButton-Border",
+  },
+}
 
 function AuraDisplay.FilterConditionProperties(auraData, definitions)
   if not AuraDisplay.Enabled(auraData) then return definitions end
-  for _, pair in ipairs(HighlightDefinitions()) do definitions[pair[1]] = pair[2] end
+  for key, definition in pairs(HIGHLIGHT_DEFINITIONS) do definitions[key] = definition end
   return definitions
-end
-
-function AuraDisplay.FilterGlobalConditions(_, globalTemplates)
-  return globalTemplates
 end
 
 function AuraDisplay.HighlightBorderLimit(auraData)
@@ -870,7 +906,7 @@ local ROOT_APPLIERS = {
 
 local function ApplyProperty(auraButton, auraData, propertyPath, propertyValue, overrides)
   if OwnsDurationColor(auraData, propertyPath) then return end
-  if not auraButton.preview and (InCombatLockdown() or C_Secrets.ShouldAurasBeSecret()) then return end
+  if not auraButton.preview and WeakAuras.IsRestricted() then return end
   local rawPosition, key = propertyPath:match("^sub%.(%d+)%.(.+)$")
   if not rawPosition then
     local rootApplier = ROOT_APPLIERS[propertyPath]
@@ -929,6 +965,16 @@ local function MissingNative(displayInstance)
   return missing and missing.native
 end
 
+local function SameConditionValue(previous, wanted)
+  if previous == nil or AddonPrivate.IsSecret(previous, wanted) then return false end
+  if type(previous) ~= "table" or type(wanted) ~= "table" then return previous == wanted end
+  if #previous ~= #wanted then return false end
+  for index = 1, #wanted do
+    if AddonPrivate.IsSecret(wanted[index]) or previous[index] ~= wanted[index] then return false end
+  end
+  return true
+end
+
 function AuraDisplay.SetConditionProperty(region, propertyPath, ...)
   local nativeDisplay = region.blizzardAuraDisplay
   if not nativeDisplay or not nativeDisplay.active then return end
@@ -939,6 +985,7 @@ function AuraDisplay.SetConditionProperty(region, propertyPath, ...)
   if valueType == "color" then propertyValue = {...} else propertyValue = (...) end
   local stored = region.secretAuraConditionValues or {}
   region.secretAuraConditionValues = stored
+  if SameConditionValue(stored[propertyPath], propertyValue) then return end
   stored[propertyPath] = propertyValue
   ForEachInstance(nativeDisplay, function(displayInstance)
     for _, auraButton in ipairs(displayInstance.buttons) do
@@ -1222,7 +1269,7 @@ function AuraDisplay.StyleNativeConditionIndicators(nativeDisplay, auraData)
     end
   end
   if not nativeDisplay.preview then return end
-  AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, 6)
+  AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, AuraDisplay.PREVIEW_SAMPLE_DURATION)
 end
 
 local PREVIEW_RULES = {
@@ -1235,7 +1282,9 @@ local PREVIEW_RULES = {
     return (previewEntry.value == "Magic") == (previewEntry.equal ~= false)
   end,
   faAuraNotStealable = function(_, helpful) return helpful end,
-  faAuraPandemic = function(_, _, remaining) return remaining <= 1.8 and remaining > 0 end,
+  faAuraPandemic = function(_, _, remaining)
+    return remaining <= AuraDisplay.PREVIEW_SAMPLE_DURATION * PANDEMIC_FRACTION and remaining > 0
+  end,
 }
 
 function AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, remaining)

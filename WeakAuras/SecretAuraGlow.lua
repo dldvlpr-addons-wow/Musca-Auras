@@ -1,3 +1,5 @@
+-- Glow effects (pixel, ants, alert, socket) on native aura element buttons.
+-- Fills Private.BlizzardAuraDisplay; only SecretAuraAppearance.lua calls it.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Display = Private.BlizzardAuraDisplay

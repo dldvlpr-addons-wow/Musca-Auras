@@ -268,7 +268,64 @@ end);
 
 local compressedTablesCache = {}
 
-function TableToString(inTable, forChat)
+-- Export cipher: Copyright (C) 2026 dldvlpr (Musca Auras), GPL-2.0. Keep this notice in copies.
+-- Musca exports keep the !WA:2! prefix but encrypt the compressed bytes with a stream cipher, so ForeverAuras and
+-- upstream WeakAuras fail to decompress them. Each export starts with a random nonce, so one aura never gives the
+-- same string twice. The key ships with the addon: this stops other addons, not someone who reads this file.
+local NONCE_LENGTH = 4
+local CHUNK_LENGTH = 4096
+local MODULUS = 2147483647
+local STREAM_PARAMETERS = {12059, 27709, 6807, 24097, 18149, 3301, 30011, 9479}
+
+local function StreamSeed(nonce)
+  local seed = #STREAM_PARAMETERS
+  for index, parameter in ipairs(STREAM_PARAMETERS) do
+    seed = (seed * 131 + parameter * index + nonce:byte((index - 1) % NONCE_LENGTH + 1)) % MODULUS
+  end
+  return seed == 0 and 1 or seed
+end
+
+-- Each output byte depends on the stream and on the previous cipher byte, so a changed byte garbles the rest.
+local function Cipher(data, nonce, firstIndex, decrypt)
+  local state = StreamSeed(nonce)
+  local previous = 0
+  local chunks, bytes, count = {}, {}, 0
+  for i = firstIndex, #data do
+    state = state * 16807 % MODULUS
+    local stream = math.floor(state / 256) % 256
+    local byte = data:byte(i)
+    if decrypt then
+      count = count + 1
+      bytes[count] = (byte - stream - previous) % 256
+      previous = byte
+    else
+      previous = (byte + stream + previous) % 256
+      count = count + 1
+      bytes[count] = previous
+    end
+    if count == CHUNK_LENGTH then
+      chunks[#chunks + 1] = string.char(unpack(bytes, 1, count))
+      count = 0
+    end
+  end
+  if count > 0 then
+    chunks[#chunks + 1] = string.char(unpack(bytes, 1, count))
+  end
+  return table.concat(chunks)
+end
+
+local function Encrypt(data)
+  local nonce = string.char(math.random(0, 255), math.random(0, 255), math.random(0, 255), math.random(0, 255))
+  return nonce .. Cipher(data, nonce, 1, false)
+end
+
+local function Decrypt(data)
+  if #data <= NONCE_LENGTH then return nil end
+  return Cipher(data, data:sub(1, NONCE_LENGTH), NONCE_LENGTH + 1, true)
+end
+
+-- Only aura exports are encrypted; link requests and errors stay plain so WeakAuras and ForeverAuras players answer.
+function TableToString(inTable, forChat, encrypt)
   local serialized = LibSerialize:SerializeEx(configForLS, inTable)
   local compressed
   -- get from / add to cache
@@ -288,11 +345,12 @@ function TableToString(inTable, forChat)
       compressedTablesCache[k] = nil
     end
   end
+  local encrypted = encrypt and Encrypt(compressed) or compressed
   local encoded = "!WA:2!"
   if(forChat) then
-    encoded = encoded .. LibDeflate:EncodeForPrint(compressed)
+    encoded = encoded .. LibDeflate:EncodeForPrint(encrypted)
   else
-    encoded = encoded .. LibDeflate:EncodeForWoWAddonChannel(compressed)
+    encoded = encoded .. LibDeflate:EncodeForWoWAddonChannel(encrypted)
   end
   return encoded
 end
@@ -302,7 +360,7 @@ function StringToTable(inString, fromChat)
   -- version 0: simple b64 string, compressed with LC and serialized with AS
   -- version 1: b64 string prepended with "!", compressed with LD and serialized with AS
   -- version 2+: b64 string prepended with !WA:N! (where N is encode version)
-  --   compressed with LD and serialized with LS
+  --   compressed with LD and serialized with LS; Musca exports also encrypt the compressed bytes
   local _, _, encodeVersion, encoded = inString:find("^(!WA:%d+!)(.+)$")
   if encodeVersion then
     encodeVersion = tonumber(encodeVersion:match("%d+"))
@@ -326,6 +384,21 @@ function StringToTable(inString, fromChat)
   end
 
   local decompressed
+  if encodeVersion >= 2 then
+    -- Musca exports first; plain WeakAuras strings fail this decompression and take the regular path.
+    -- A plain string rarely decompresses here too: only a full, table-shaped result counts as a Musca export.
+    local decrypted = Decrypt(decoded)
+    local unreadBytes
+    if decrypted then
+      decompressed, unreadBytes = LibDeflate:DecompressDeflate(decrypted)
+    end
+    if decompressed and unreadBytes == 0 then
+      local success, deserialized = LibSerialize:Deserialize(decompressed)
+      if success and type(deserialized) == "table" then
+        return deserialized
+      end
+    end
+  end
   if encodeVersion > 0 then
     decompressed = LibDeflate:DecompressDeflate(decoded)
     if not(decompressed) then
@@ -388,7 +461,7 @@ function Private.DisplayToString(id, forChat)
         index = index + 1
       end
     end
-    return TableToString(transmit, forChat);
+    return TableToString(transmit, forChat, true);
   else
     return "";
   end

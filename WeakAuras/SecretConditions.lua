@@ -1,3 +1,5 @@
+-- Condition code that stays valid with secret values: Private.ExecEnv Secret* selectors and
+-- Private.CreateSecretConditionCode. Only Conditions.lua uses it.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
@@ -20,6 +22,23 @@ function Private.ExecEnv.SecretBoolSelect(raw, inverted, readableActive, valueIf
       return C_CurveUtil.EvaluateColorValueFromBoolean(raw, valueIfFalse, valueIfTrue)
     end
     return C_CurveUtil.EvaluateColorValueFromBoolean(raw, valueIfTrue, valueIfFalse)
+  end
+  if readableActive then
+    return valueIfTrue
+  end
+  return valueIfFalse
+end
+
+-- The template selector returns nil when it cannot answer; the readable check decides then.
+function Private.ExecEnv.SecretValueSelect(selector, triggerState, inverted, readableActive, valueIfTrue, valueIfFalse)
+  local value
+  if inverted then
+    value = selector(triggerState, valueIfFalse, valueIfTrue)
+  else
+    value = selector(triggerState, valueIfTrue, valueIfFalse)
+  end
+  if Private.IsSecret(value) or value ~= nil then
+    return value
   end
   if readableActive then
     return valueIfTrue
@@ -72,6 +91,9 @@ local function SecretLeafKind(input, allConditionsTemplate)
   local template = allConditionsTemplate[input.trigger] and allConditionsTemplate[input.trigger][input.variable]
   if not template or input.value == nil then
     return nil
+  end
+  if template.type == "bool" and template.secretSelect then
+    return "select", template
   end
   if template.type == "bool" and template.secretTest then
     return "bool", template
@@ -146,6 +168,14 @@ local function SecretSelectExpression(data, input, allConditionsTemplate, valueI
     return string.format("Private.ExecEnv.SecretBoolSelect(Private.ExecEnv.conditionHelpers[%q].secretTests[%d](state[%d]), %s, (%s), %s, %s)",
                          data.uid, #helpers.secretTests, input.trigger, tostring(inverted), check or "false",
                          valueIfTrue, valueIfFalse)
+  elseif kind == "select" then
+    local helpers = Private.ExecEnv.conditionHelpers[data.uid] or {}
+    Private.ExecEnv.conditionHelpers[data.uid] = helpers
+    helpers.secretSelects = helpers.secretSelects or {}
+    tinsert(helpers.secretSelects, template.secretSelect)
+    return string.format("Private.ExecEnv.SecretValueSelect(Private.ExecEnv.conditionHelpers[%q].secretSelects[%d], state[%d], %s, (%s), %s, %s)",
+                         data.uid, #helpers.secretSelects, input.trigger, tostring(input.value == 0), check or "false",
+                         valueIfTrue, valueIfFalse)
   elseif kind == "timer" then
     return string.format("Private.ExecEnv.SecretTimerSelect(state[%d], %q, %s, (%s), %s, %s)",
                          input.trigger, input.op, tonumber(input.value), check or "false", valueIfTrue, valueIfFalse)
@@ -182,7 +212,7 @@ function Private.CreateSecretConditionCode(ret, data, properties, allConditionsT
         for _, change in ipairs(condition.changes) do
           if change.property and SecretCapableProperty(properties[change.property]) then
             secretConditions[conditionNumber] = true
-            secretProperties[change.property] = secretProperties[change.property] or leaves.timer or false
+            secretProperties[change.property] = secretProperties[change.property] or leaves.timer or leaves.select or false
           end
         end
       end

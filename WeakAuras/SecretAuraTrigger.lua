@@ -1,3 +1,5 @@
+-- Trigger system of the Aura (Modern) trigger type (secretAura): load, fallback and fake states, names,
+-- icons and progress. Registered through WeakAuras.RegisterTriggerSystem; uses Private.BlizzardAuraDisplay.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 local Display = Private.BlizzardAuraDisplay

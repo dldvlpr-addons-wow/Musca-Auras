@@ -14,6 +14,72 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-06
+
+Released as 1.6.0. Tested in game on WoW Forever with a Shaman: spell cooldowns, Aura (Modern), totems, weapon
+enchants, bars, `/reload` in combat. Not tested in game: Grid mode, Ignore Dead and Ignore Disconnected, more than 40
+nameplates, exports shared between players.
+
+### Added
+- `WeakAuras/SpellCooldownState.lua`, `WeakAuras/WeakAuras.toc`: one spell cooldown state module (per-spell secret
+  check, charges, GCD-only, loss of control, wand hold, desaturation choice). `WeakAuras/AuraEnvironment.lua` exposes
+  it to built-in trigger code.
+- `WeakAuras/SecretAuraFlow.lua`, `WeakAurasOptions/RegionOptions/GroupModernFlow.lua`: Grid mode for Modern Aura
+  Groups. One shared aura container per group and per unit (screen, unit frames, nameplates) wraps its lines natively.
+  It is rebuilt only when options, units or children change, waits for the end of combat and restrictions, and is
+  removed when the group is unloaded, deleted or leaves the grid. Options: Grid, Grid direction, Row Width / Column
+  Height, Row Space, Column Space. Grid is off by default, so existing groups keep their layout.
+- `WeakAurasOptions/SecretAuraTriggerOptions.lua`, `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAuras/SecretAuraFlow.lua`:
+  Ignore Dead and Ignore Disconnected on Aura (Modern) triggers for group, party and raid. Only the member that
+  changes is refreshed; a secret state hides the container natively instead of being read.
+
+### Changed
+- `WeakAuras/SecretAuraFlow.lua`, `WeakAuras/SecretAuraSingle.lua`: aura group and slot names renamed with this
+  fork's prefix (`MuscaShadow`, `MuscaMissing`, `MuscaPresence`, `MuscaRemainIcon`, `MuscaRemainGate`).
+- `WeakAuras/Transmission.lua`: exports keep the `!WA:2!` prefix, but their compressed bytes are encrypted with a
+  stream cipher and a random nonce, so ForeverAuras and upstream WeakAuras fail to decompress them. Imports and chat
+  links read both Musca and plain WeakAuras strings; link requests stay plain so other players still answer them.
+- `WeakAuras/SecretAuraRanks.lua`, `WeakAuras/PlayerSpecialization.lua`: the CC BY 4.0 attribution of the
+  talentsforever.com data is back at the top of each file, with the list of changes; rank families keep their class
+  and spell comments.
+- `WeakAuras/SecretRestrictions.lua`, `WeakAuras/SecretAuraSingle.lua`, `WeakAuras/SecretAuraConditions.lua`: one
+  restriction check, `WeakAuras.IsRestricted`. It covers combat, secret auras and secret cooldowns, and treats an
+  unreadable answer as restricted.
+- `WeakAuras/SecretSpellCooldown.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/Prototypes.lua`,
+  `WeakAuras/SecretConditions.lua`, `WeakAuras/PrototypeSecretHelpers.lua`, `WeakAuras/WeakAuras.lua`: spell
+  cooldowns go through `SpellCooldownState`. Only secret spells are tracked, with a timer at the readable end instead
+  of polling. A GCD alone no longer sends a ready event or desaturates a spell. New `durationObjectWithoutGCD` field.
+- `WeakAuras/SecretAuraFlow.lua`: Modern Aura Group chaining runs once per group on the next frame instead of once
+  per child.
+- `WeakAuras/BlizzardAuraDisplay.lua`: trigger copies are cached per saved trigger; containers are re-anchored only
+  when their anchor changes; extra unit containers are removed when the unit count drops.
+- `WeakAuras/BlizzardAuraDisplay.lua`: Aura (Modern) on nameplates is no longer capped at 40 nameplates; the token
+  list grows with the nameplates seen and is shared across events.
+- `WeakAuras/SecretAuraConditions.lua`: threshold rules and color ownership are cached per aura; a condition
+  property set to its current value is not applied again.
+- `WeakAurasOptions/RegionOptions/GroupModernFlow.lua`, `WeakAuras/BlizzardAuraDisplay.lua`: Sort and Reverse Sort
+  apply to live containers without adding every child again.
+- `WeakAuras/CooldownViewerTrigger.lua`, `WeakAuras/CooldownViewerCatalog.lua`, `WeakAuras/CDMBackground.lua`,
+  `WeakAuras/CDMAuraProgress.lua`: cache keys no longer build a table; local secret checks use `Private.IsSecret`.
+- `WeakAuras/SecretAuraSingle.lua`: aura learning no longer creates closures and tables on every UNIT_AURA event.
+- `WeakAuras/SecretAuraConditions.lua`, `WeakAuras/Conditions.lua`, `WeakAuras/SecretAuraFlow.lua`: unused
+  `FilterGlobalConditions`, `flowFrameModes` and `FlowGrowthKey` removed; highlight definitions built once.
+- `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAuras/SecretAura*.lua`, `WeakAuras/SecretConditions.lua`,
+  `WeakAuras/SecretRestrictions.lua`, `WeakAuras/SecretSpellCooldown.lua`: short note on each file's role and callers.
+
+### Fixed
+- `WeakAuras/BlizzardAuraDisplay.lua`: queued Modern Aura applies run under `xpcall` within 8 ms per frame, wait
+  for the end of login and resume when restrictions end; Restore no longer puts back a stale Update or PreShow.
+- `WeakAuras/SecretAuraFlow.lua`: group chaining and unit frame links skipped in combat are replayed at the end of
+  combat, even while a PvP or key restriction stays active.
+- `WeakAuras/CDMAuraProgress.lua`: native aura containers are not created under restrictions; `%N.p` and `%N.s`
+  texts build their source when the aura loads, so they are no longer empty in the first combat.
+- `WeakAuras/GenericTrigger.lua`: spells added while secret get their charges; stale secret charges are no longer
+  reported.
+- `WeakAuras/SecretAuraAppearance.lua`: a manual icon source with an empty path shows the aura icon.
+- `WeakAuras/SecretAuraConditions.lua`, `WeakAuras/SecretAuraPreview.lua`: condition migration no longer errors on
+  auras without triggers; the preview pandemic window follows the sample duration.
+
 ## 2026-10-05
 
 ### Changed

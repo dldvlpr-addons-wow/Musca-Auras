@@ -2712,6 +2712,8 @@ do
             = WeakAuras.GetSpellCooldownUnified(effectiveSpellId, GetRuneDuration());
       if charges == false then
         spellDetail.secret = true
+        spellDetail.charges, spellDetail.chargesMax, spellDetail.count
+          = Private.SpellCooldownState.ReadCharges(effectiveSpellId)
         self:UpdateSecretReady(effectiveSpellId)
         return
       end
@@ -2750,7 +2752,7 @@ do
 
               -- Check whether we need to emit the SPELL_CHARGES_CHANGED or SPELL_COOLDOWN_READY events
               local chargesChanged = oldSpellDetail.charges ~= newSpellDetail.charges or oldSpellDetail.count ~= newSpellDetail.count
-                or oldSpellDetail.chargesMax ~= newSpellDetail.maxCharges
+                or oldSpellDetail.chargesMax ~= newSpellDetail.chargesMax
               local oldCharge = oldSpellDetail.charges or oldSpellDetail.count or 0
               local newCharge = newSpellDetail.charges or newSpellDetail.count or 0
               local chargesDifference = newCharge - oldCharge
@@ -2779,7 +2781,7 @@ do
               if nowReady then
                 Private.ScanEventsByID("SPELL_COOLDOWN_READY", userSpellId, newEffectiveSpellId)
               end
-              if chargesChanged ~= 0 then
+              if chargesChanged then
                 Private.ScanEventsByID("SPELL_CHARGES_CHANGED", userSpellId, newEffectiveSpellId, chargesDifference, newCharge)
               end
             end
@@ -2831,8 +2833,9 @@ do
       local spellDetail = self.data[effectiveSpellId]
 
       local secretChanged = false
+      local wasSecret = spellDetail.secret
       if charges == false then
-        charges, maxCharges, spellCount = spellDetail.charges, spellDetail.chargesMax, spellDetail.count
+        charges, maxCharges, spellCount = Private.SpellCooldownState.ReadCharges(effectiveSpellId)
         startTime, duration, unifiedModRate = KnownCooldown(self.spellCds, effectiveSpellId)
         startTimeCooldown, durationCooldown, modRate = KnownCooldown(self.spellCdsOnlyCooldown, effectiveSpellId)
         startTimeCharges, durationCharges, modRateCharges = KnownCooldown(self.spellCdsCharges, effectiveSpellId)
@@ -2850,7 +2853,13 @@ do
 
       local chargesChanged = spellDetail.charges ~= charges or spellDetail.count ~= spellCount
                             or spellDetail.chargesMax ~= maxCharges
-      local chargesDifference = (charges or spellCount or 0) - (spellDetail.charges or spellDetail.count or 0)
+      -- Unreadable secret charges are not a charge gain or loss.
+      local oldCharge = spellDetail.charges or spellDetail.count
+      local newCharge = charges or spellCount
+      local chargesDifference = 0
+      if (oldCharge and newCharge) or not (wasSecret or spellDetail.secret) then
+        chargesDifference = (newCharge or 0) - (oldCharge or 0)
+      end
       spellDetail.charges = charges
       spellDetail.chargesMax = maxCharges
       spellDetail.count = spellCount
@@ -2949,21 +2958,14 @@ do
       return spellDetail.charges, spellDetail.chargesMax, spellDetail.count, spellDetail.chargeGainTime, spellDetail.chargeLostTime
     end,
 
-    GetSpellCooldownDurationObject = function(self, effectiveSpellId, showgcd, ignoreSpellKnown, track)
+    -- Returns the timer to display, then the same timer without the GCD.
+    GetSpellCooldownDurationObject = function(self, effectiveSpellId, showgcd, ignoreSpellKnown, track, showLossOfControl)
       local spellDetail = self.data[effectiveSpellId]
       if not (spellDetail and spellDetail.secret) or (not spellDetail.known and not ignoreSpellKnown) then
         return
       end
       local useCharges = track == "charges" or (track ~= "cooldown" and (spellDetail.chargesMax or 0) > 1)
-      local durationObject
-      if useCharges then
-        durationObject = C_Spell.GetSpellChargeDuration and C_Spell.GetSpellChargeDuration(effectiveSpellId)
-      else
-        durationObject = C_Spell.GetSpellCooldownDuration and C_Spell.GetSpellCooldownDuration(effectiveSpellId, not showgcd)
-      end
-      if Private.IsDurationObject(durationObject) then
-        return durationObject
-      end
+      return Private.SpellCooldownState.GetDisplayDurations(effectiveSpellId, useCharges, showgcd, showLossOfControl)
     end,
 
     GetSpellCooldown = function(self, effectiveSpellId, ignoreRuneCD, showgcd, ignoreSpellKnown, track)
@@ -3048,14 +3050,14 @@ do
       cdReadyFrame:RegisterEvent("RUNE_TYPE_UPDATE");
     end
     cdReadyFrame.HandleEvent = function(self, event, ...)
-      if HandleSecretCooldownEvent(event, ...) then
-        return
-      end
       if (event == "PLAYER_ENTERING_WORLD") then
         cdReadyFrame.inWorld = GetTime()
       end
       if (event == "PLAYER_LEAVING_WORLD") then
         cdReadyFrame.inWorld = nil
+      end
+      if HandleSecretCooldownEvent(cdReadyFrame.inWorld, event, ...) then
+        return
       end
       if not cdReadyFrame.inWorld then
         return
@@ -3324,8 +3326,9 @@ do
   ---@param showgcd boolean?
   ---@param ignoreSpellKnown boolean?
   ---@param track string? "auto", "charges" or "cooldown"
-  function WeakAuras.GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track)
-    return SpellDetails:GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track)
+  ---@param showLossOfControl boolean?
+  function WeakAuras.GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track, showLossOfControl)
+    return SpellDetails:GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track, showLossOfControl)
   end
 
   ---@param id string
@@ -3505,6 +3508,9 @@ do
   ---@param id string
   ---@param runeDuration? number
   function WeakAuras.GetSpellCooldownUnified(id, runeDuration)
+    if Private.SpellCooldownState.IsCooldownSecret(id) then
+      return false
+    end
     local startTimeCooldown, durationCooldown, enabled, modRate
     local spellCooldownInfo = C_Spell.GetSpellCooldown(id);
     if spellCooldownInfo then
@@ -5331,6 +5337,9 @@ function GenericTrigger.GetTriggerConditions(data, triggernum)
           if v.conditionSecretTest then
             result[v.name].secretTest = v.conditionSecretTest
             result[v.name].secretInverted = v.conditionSecretInverted
+          end
+          if v.conditionSecretSelect then
+            result[v.name].secretSelect = v.conditionSecretSelect
           end
           if v.conditionRecheckTime then
             result[v.name].recheckTime = v.conditionRecheckTime

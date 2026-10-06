@@ -73,6 +73,7 @@ BuffTriggerRestrictedAuras.lua
 BuffTriggerNativeFilter.lua
 BuffTrigger2.lua
 GenericTriggerRestricted.lua
+SpellCooldownState.lua
 SecretSpellCooldown.lua
 GenericTrigger.lua
 BossMods.lua

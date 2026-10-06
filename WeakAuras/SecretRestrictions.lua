@@ -1,3 +1,5 @@
+-- Secret value and addon restriction helpers: Private.IsSecret, Private.IsRestricted,
+-- WeakAuras.IsRestricted, API availability flags. Loaded early; used by triggers, conditions and displays.
 local _, Private = ...
 
 Private.hasCombatLog = not (C_DamageMeter or issecretvalue or (C_CombatLog and C_CombatLog.SetFilteredEventsEnabled))
@@ -53,12 +55,18 @@ function Private.IsRestricted(kind, ...)
   return result
 end
 
-function WeakAuras.IsRestricted()
-  local auras, cooldowns = Private.IsRestricted("auras"), Private.IsRestricted("cooldowns")
-  if auras == nil and cooldowns == nil then
-    return InCombatLockdown()
+-- A query the client has but cannot answer (error or secret result) counts as restricted.
+-- A query the client lacks counts as unrestricted, so combat alone decides there.
+local function IsKindRestricted(kind)
+  if type(C_Secrets and C_Secrets[restrictionQueries[kind]]) ~= "function" then
+    return false
   end
-  return auras or cooldowns or false
+  return Private.IsRestricted(kind) ~= false
+end
+
+-- Single restriction predicate of the addon: combat, or auras or cooldowns turned secret.
+function WeakAuras.IsRestricted()
+  return InCombatLockdown() or IsKindRestricted("auras") or IsKindRestricted("cooldowns")
 end
 
 WeakAuras.IsSecretStateActive = WeakAuras.IsRestricted

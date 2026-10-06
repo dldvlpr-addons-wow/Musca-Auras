@@ -1,3 +1,6 @@
+-- Talent tree data from talentsforever.com (https://talentsforever.com/data.json, generated 2026-09-26),
+-- licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changed: final talent of each of the
+-- 27 trees and its beta spell IDs only. See SpecializationData-LICENSE.txt.
 if not WeakAuras.IsLibsOK() then return end
 ---@type string
 local AddonName = ...
