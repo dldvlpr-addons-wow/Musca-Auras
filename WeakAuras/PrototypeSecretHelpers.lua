@@ -53,6 +53,12 @@ Private.ExecEnv.GetSpellDisplayCount = function(spellId)
   if ok and type(text) == "string" then return text end
 end
 
+Private.ExecEnv.IsSpellImportant = function(spellId)
+  if not spellId or not C_Spell.IsSpellImportant then return nil end
+  local ok, value = pcall(C_Spell.IsSpellImportant, spellId)
+  if ok then return value end
+end
+
 local thresholdCurves = {}
 Private.ExecEnv.ThresholdAlpha = function(kind, unit, powerType, threshold, above)
   if not threshold or threshold <= 0

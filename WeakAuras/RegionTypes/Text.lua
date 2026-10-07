@@ -137,21 +137,22 @@ local function modify(parent, region, data)
   fontObject:SetJustifyH(data.justify);
   Private.ApplyTextFont(text, fontObject, fontPath, data.fontSize, outline,
     data.shadowColor, data.shadowXOffset, data.shadowYOffset)
-  text:SetText("")
+  text:SetText("000")
 
   text:ClearAllPoints();
   text:SetPoint("CENTER", UIParent, "CENTER");
 
   region.width = text:GetWidth();
   region.height = text:GetStringHeight();
-  if Private.IsSecret(region.width) then
+  if Private.IsSecret(region.width) or region.width <= 0 then
     region.width = 200
   end
-  if Private.IsSecret(region.height) then
+  if Private.IsSecret(region.height) or region.height <= 0 then
     region.height = 30
   end
   region:SetWidth(region.width);
   region:SetHeight(region.height);
+  text:SetText("")
 
   local tooltipType = Private.CanHaveTooltip(data);
   if(tooltipType and data.useTooltip) then

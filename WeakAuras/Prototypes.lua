@@ -10159,13 +10159,7 @@ Private.event_prototypes = {
         else
           interruptible = not interruptible
         end
-        local important
-        if spellId and C_Spell.IsSpellImportant then
-          local ok, value = pcall(C_Spell.IsSpellImportant, spellId)
-          if ok then
-            important = value
-          end
-        end
+        local important = Private.ExecEnv.IsSpellImportant(spellId)
         if Private.ExecEnv.IsSecret(important) then
           secretFlagImportant = important
           important = nil
