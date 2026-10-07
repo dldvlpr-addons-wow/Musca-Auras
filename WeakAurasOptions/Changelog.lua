@@ -10,12 +10,20 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.6.0',
-  dateString = '2026-10-06',
+  versionString = '1.6.1',
+  dateString = '2026-10-07',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Modern Aura Group: Grid mode, off by default
-- Restart the game after the update]==],  commitText = [==[1.6.0 (2026-10-06):
+- Cast trigger: no more "Forbidden function or table: pcall"
+- Text displays with %power or %health are visible again]==],  commitText = [==[1.6.1 (2026-10-07):
+
+Fixes:
+
+- A Text display that shows only %power, %health or another value hidden by the game is no longer invisible
+- The Cast trigger no longer reports "Forbidden function or table: pcall"
+- %unit without a trigger number is colored by class by default. For an aura saved before this fix, set Color to Class in the text options
+
+1.6.0 (2026-10-06):
 
 New:
 

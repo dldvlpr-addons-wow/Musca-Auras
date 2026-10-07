@@ -1,3 +1,14 @@
+# Musca Auras 1.6.1 (2026-10-07)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixes
+
+- A Text display that shows only `%power`, `%health` or another value hidden by the game is no longer invisible.
+- The Cast trigger no longer reports "Forbidden function or table: pcall".
+- `%unit` without a trigger number is colored by class by default. For an aura saved before this fix, set Color to
+  Class in the text options.
+
 # Musca Auras 1.6.0 (2026-10-06)
 
 > **Heads-up:** tested in game on WoW Forever with a Shaman: spell cooldowns, Aura (Modern) buffs and debuffs, totems,

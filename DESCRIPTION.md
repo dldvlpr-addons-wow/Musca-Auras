@@ -5,12 +5,12 @@ Icons, bars, texts and timers that keep working on the modern engine, even in co
 
 ***
 
-## <span style="color: #ff6b35;">⚠️ Heads-up: 1.6.0</span>
+## <span style="color: #ff6b35;">⚠️ Heads-up: 1.6.1</span>
 
 *   <span style="color: #ffd100;"><strong>Restart the game after the update:</strong></span> a new file is not loaded by a `/reload`.
 *   <span style="color: #3c3;"><strong>Tested in game on WoW Forever:</strong></span> spell cooldowns, Aura (Modern) buffs and debuffs, totems (out of combat), weapon enchants, health, power, swing and cast bars, `/reload` in combat.
 *   <span style="color: #ff9800;"><strong>Not tested in game yet:</strong></span> Grid mode, more than 40 nameplates.
-*   <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.5.0?</strong></span> Install **1.5.0** again from the **Files** tab of the CurseForge page.
+*   <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.6.0?</strong></span> Install **1.6.0** again from the **Files** tab of the CurseForge page.
 *   <span style="color: #3c3;"><strong>Your auras are kept.</strong></span> The saved data format did not change.
 *   <span style="color: #0cf;"><strong>Please report it</strong></span> on GitHub or CurseForge, with the text of the error.
 

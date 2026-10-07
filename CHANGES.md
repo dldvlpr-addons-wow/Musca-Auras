@@ -14,6 +14,20 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-07
+
+Released as 1.6.1.
+
+### Fixed
+- `WeakAuras/RegionTypes/Text.lua`: a Text region shown only through native secret text (`%power`, `%health`...)
+  no longer keeps zero-sized bounds; its first size is measured on a sample number, with fallback dimensions.
+- `WeakAuras/Prototypes.lua`, `WeakAuras/PrototypeSecretHelpers.lua`: the Cast trigger no longer reports
+  "Forbidden function or table: pcall"; its generated code calls `C_Spell.IsSpellImportant` through
+  `Private.ExecEnv.IsSpellImportant` instead of `pcall` inside the aura sandbox.
+- `WeakAuras/WeakAuras.lua`: a text placeholder typed without a trigger number (`%unit`) gets its formatter
+  arguments, so `%unit` defaults to class colors. Auras saved before this fix keep their format; set Color to
+  Class in the text options.
+
 ## 2026-10-06
 
 Released as 1.6.0. Tested in game on WoW Forever with a Shaman: spell cooldowns, Aura (Modern), totems, weapon

@@ -5827,6 +5827,9 @@ function Private.DefaultFormatterFor(stateMetaData, trigger, sym)
       if perTriggerData[sym] then
         if not formatter then
           formatter = perTriggerData[sym].formatter
+          for arg, value in pairs(perTriggerData[sym].formatterArgs or {}) do
+            args[arg] = value
+          end
         else
           if formatter ~= perTriggerData[sym].formatter then
             return "none"
