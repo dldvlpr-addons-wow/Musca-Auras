@@ -46,6 +46,12 @@ This version brings a large batch of patches and bug fixes, and one new layout o
 *   **Manual icon:** an empty path now shows the aura icon.
 *   **Conditions:** no more Lua error on auras without triggers; the pandemic window of the preview follows the sample duration.
 
+<span style="color: #3c3;"><strong>Fixed in 1.6.1</strong></span>
+
+*   **Text displays** that show only `%power`, `%health` or another value hidden by the game are visible again.
+*   **Cast trigger:** no more "Forbidden function or table: pcall" error.
+*   **`%unit`** without a trigger number is colored by class by default. For an aura saved before 1.6.1, set Color to Class in the text options.
+
 <span style="color: #0cf;"><strong>Performance</strong></span>
 
 *   Fewer updates for Modern Aura Groups, conditions, nameplates and the Cooldown Manager trigger.

@@ -1,10 +1,148 @@
-# Tests en jeu : Musca Auras
+# Suivi des bugs et des tests : Musca Auras
 
-Rien de ce qui a été codé n'a été testé en jeu. Ce fichier donne l'ordre des tests, ce qu'il faut voir, et le prompt
-à donner à Claude à la fin.
+Fichier interne unique (non publié, exclu par `.pkgmeta`). Il remplace `BUGS-A-TRAITER.txt` et `TESTS-EN-JEU.md`
+(fusionnés le 2026-10-08) et ajoute les constats de l'audit `wow-api` du même jour.
+
+1. Bugs à traiter : signalements reçus et tests KO, avec leur état.
+2. Audit `wow-api` du 2026-10-08 : écarts entre le code et le source Blizzard de Forever 70245.
+3. Tests en jeu : l'ordre des tests, ce qu'il faut voir, les résultats déjà notés.
+4. Résultats reçus, puis le prompt à donner à Claude à la fin.
 
 Pour chaque test, note **OK**, **KO** (avec le texte exact de l'erreur ou ce que tu vois) ou **non testé**.
 Les tests marqués 🔴 sont bloquants : s'ils échouent, note-le et passe quand même aux suivants.
+
+---
+
+# 1. Bugs à traiter
+
+### B1. Throw Weapon absent (signalé, ouvert)
+Signalement : « The Throw Weapon item type is missing in both the trigger type and in the "Load" conditionals. »
+
+Constat dans le code : `WeakAuras/Types.lua:4484-4488` n'exclut pas le type 16 (Thrown) sur Forever, seul Glaives (9)
+l'est. La liste vient de `C_Item.GetItemSubClassInfo(2, i)` (`Types.lua:4490-4494`) et sert au trigger
+(`Prototypes.lua:9394-9397`) comme au chargement (`Prototypes.lua:2223-2229`), d'où l'absence aux deux endroits.
+Cause probable, non vérifiée : `C_Item.GetItemSubClassInfo(2, 16)` renvoie nil sur Forever. Test : étape 12.1.
+
+### B2. Masque : icônes géantes en jeu (signalé avec un correctif, ouvert)
+Signalement court : « using any masque skin, any WA you make looks normal when you have the options menu open and
+making the aura, as soon as it triggers in game the icon is like gigantic ».
+
+Rapport détaillé (ForeverAuras 0.70.3-BETA.1, Masque 12.1.1-Alpha), résumé :
+- Symptôme : une icône skinnée par Masque est plus grande que la largeur et la hauteur de l'aura. Ça arrive dès qu'un
+  nouveau bouton d'aura apparaît en combat, et après un relog pour toutes les icônes skinnées. Changer la taille dans
+  les options corrige jusqu'au prochain nouveau bouton.
+- Cause : Masque recalcule l'échelle du skin depuis `Frame:GetSize()` à chaque passe (`_mcfg:ForceUpdate()` puis
+  `SetFrameSize()` sans argument, `Core/Core.lua` de Masque). Une taille donnée par `Group:SetFrameSize()` ne sert que
+  si `GetSize()` est secret. Dans `SecretAuraAppearance.lua`, `SkinWithMasque` skinne la base depuis le callback
+  `initializeFrame` du conteneur, avant que Blizzard pose le bouton à `elementWidth`/`elementHeight` et le restreigne.
+  `GetSize()` renvoie alors la taille d'avant la mise en page. Masque la garde en cache, puis `GetSize()` devient
+  secret et Masque ne la remet plus à jour. `RegionTypes/Icon.lua`, `UpdateSize`, a le même défaut pour les régions
+  Icon dans une géométrie secrète.
+- Correctif proposé : fixer la taille configurée dans la config Masque du bouton (`_MSQ_CFG.FrameWidth` et
+  `FrameHeight`) et remplacer le `SetFrameSize` du bouton : sans argument (ForceUpdate de Masque), il garde la taille
+  fixée ; avec arguments (`Group:SetFrameSize`), il la met à jour. Une fonction `Private.MasquePinSize(button, width,
+  height)`, appelée dans `SkinWithMasque` avant `SetFrameSize`/`ReSkin`, et dans `Icon.lua`, `UpdateSize`, avant le
+  `ReSkin` de `UpdateTexCoords`. Taille fixée : `Display.Dimensions(data)` (chemin natif), `region.width * |scalex|`
+  (chemin Icon).
+- Testé par l'auteur du rapport : la taille tient en entrant en combat avec de nouveaux buffs et après un relog.
+- Note de l'auteur : le défaut est surtout chez Masque ; le correctif reste sans effet si Masque change.
+- Vérifié dans Musca Auras (2026-10-08) : le rapport vise ForeverAuras, mais le même chemin existe ici sous d'autres
+  noms. `SkinWithMasque` y correspond à `AttachToMasque` (`SecretAuraAppearance.lua:105-126`), appelée par
+  `Display.StyleMasque` (`:128`). Elle passe `Display.Dimensions(data)` à `group:SetFrameSize` puis `ReSkin`, sans
+  fixer la taille dans `_MSQ_CFG`. `Icon.lua`, `UpdateSize` (`:348`) puis `UpdateTexCoords` (`:361`) : même
+  exposition. Le bug a donc toutes les chances de se produire aussi dans Musca Auras.
+- Test : étape 12.6.
+
+Texte d'origine du rapport détaillé :
+
+```text
+Version: ForeverAuras 0.70.3-BETA.1, Masque 12.1.1-Alpha
+
+Symptom
+Icons with a Masque skin applied are drawn larger than the aura's configured width/height. It happens as soon as a fresh aura button appears in combat, and after a relog for every skinned icon. Changing the width/height in the options "fixes" it until the next fresh button.
+
+Cause
+Masque computes its skin scale from Frame:GetSize() at the start of every skin pass (_mcfg:ForceUpdate() -> SetFrameSize() with no arguments in Core/Core.lua). A size supplied via Group:SetFrameSize() is kept only as a fallback for when GetSize() returns a secret — if the size is readable, Masque overwrites the supplied value with whatever it measures.
+
+In SecretAuraAppearance.lua -> SkinWithMasque, the shared base is skinned from the container's initializeFrame callback, i.e. before Blizzard has laid the button out to elementWidth/elementHeight and before it restricts the frame. GetSize() is still readable at that moment and returns the pre-layout size, so Masque caches that and scales the Icon/Cooldown regions to it. Once the button is restricted, GetSize() is secret and Masque keeps using the stale cached size. Re-styling an already laid-out button (e.g. editing the size in options) reads the correct size, which is why that appears to fix it temporarily.
+
+RegionTypes/Icon.lua -> UpdateSize has the same exposure for ordinary Icon regions inside secret geometry.
+
+Fix (patch attached)
+Pin the configured size on the button's Masque config so Masque never re-derives it from GetSize(): set _MSQ_CFG.FrameWidth/FrameHeight and replace the per-button SetFrameSize so a no-argument call (Masque's ForceUpdate) keeps the pinned size, while an explicit call (Group:SetFrameSize) still updates it. One helper, Private.MasquePinSize(button, width, height), called from:
+
+    SecretAuraAppearance.lua SkinWithMasque — before SetFrameSize/ReSkin
+    RegionTypes/Icon.lua UpdateSize — before the ReSkin in UpdateTexCoords
+
+The pinned size is Display.Dimensions(data) (native path) / region.width * |scalex| (Icon path) — the same values already passed to Masque, so intended sizing is unchanged.
+
+Tested: icons hold their configured size through entering combat with fresh buffs and through a relog.
+
+Note: The root issue is arguably Masque's — SetFrameSize() without arguments shouldn't overwrite an explicitly supplied size. The pin works with the current Masque API and would be harmless if Masque changes that later.
+```
+
+### B3. Tests KO notés à l'étape 5 (à confirmer)
+- **Equipment Durability** : KO, « un seul slot fonctionne » (étape 5).
+- **Tracking** : KO (étape 5).
+- **Load, Instance Type** : KO (étape 5). La commande 1.8 a été faite hors donjon (`GetInstanceInfo()` = 0).
+- À trancher : `CHANGES.md` (2026-10-04) dit Equipment Durability et Tracking « Tested in game on WoW Forever 70124 ».
+  Refaire ces tests pour savoir lequel est à jour, puis corriger `CHANGES.md` ou le code.
+
+### B4. Étape 8 marquée « bug » sans détail
+Le titre de l'étape 8 portait « bug » sans précision. Noter le test concerné et ce qui a été vu.
+
+---
+
+# 2. Audit `wow-api` du 2026-10-08
+
+Source : mémoire de l'agent `wow-api` (clone Blizzard Forever 1.60.1.70245, live 12.1.0.69933). Tous les TOC
+sont en Interface 16001 : seul Forever est concerné. Aucun bug bloquant.
+
+### Important (prouvé dans le source)
+- **A1. Absorbs masqués sur Forever.** `Prototypes.lua:3361-3367` (événements `UNIT_ABSORB_AMOUNT_CHANGED`,
+  `UNIT_HEAL_ABSORB_AMOUNT_CHANGED`) et `Prototypes.lua:3578-3592` (champs `absorb`, `healabsorb`) sont réservés à
+  `IsMistsOrRetail()`. Or `UnitGetTotalAbsorbs` et `UnitGetTotalHealAbsorbs` existent sur Forever
+  (`UnitDocumentation.lua:1286` et `:1302`, événements `:4090` et `:4297`). Comportement en jeu non prouvé : étape 12.2.
+
+### Risques (information non vérifiée, à tester en jeu)
+- **A2. Cooldown des icônes sans `pcall`.** `RegionTypes/Icon.lua:454-455`, `:686-688`, `:715` appellent `SetCooldown`
+  et `SetCooldownFromDurationObject`, marquées protégées dans le source Forever. `SecretAuraSingle.lua:1196` et `:1201`
+  utilisent `pcall`. Le test 2.1 (icône de cooldown en combat) est OK : pas d'erreur vue sur ce chemin.
+- **A3. Valeurs pouvant être secrètes, lues sans garde.** Rôle (`UnitGroupRolesAssigned`) : `BuffTrigger2.lua:1463`
+  (clé de table) et `:1588`, `GenericTrigger.lua:4080` et `:4090`, `WeakAuras.lua:1753`. Portée (`UnitInRange`) :
+  `BuffTrigger2.lua:189-190`. Spécialisation d'arène (`GetArenaOpponentSpec`) : `BuffTrigger2.lua:1481`. Modèle déjà
+  protégé : `ClassicEraTriggers.lua:373`. Test : étape 12.3.
+- **A4. Sortie de combat sans nouvel essai différé.** `SecretRestrictions.lua:87-100` relance la mise à jour sur
+  `PLAYER_REGEN_ENABLED` sans relecture différée. Selon des sources web, le secret se lève 0,3 à 1 s après la fin du
+  combat. Sans `ADDON_RESTRICTION_STATE_CHANGED` ensuite, les auras ne seraient pas relues. Test : étape 12.4.
+- **A5. `C_Item.IsItemInRange` sans `pcall`.** `GenericTrigger.lua:5212`. Des sources web la disent protégée en
+  combat. `IsSpellInRange` est sous `pcall` (`Prototypes.lua:35`). Test : étape 12.5.
+- **A6. Enchantement d'arme.** Les champs de `GetWeaponEnchantInfo` ne passent pas par `IsSecret`
+  (`GenericTrigger.lua:4521-4525`). Unité de `timeLeft` non documentée (le code la traite en millisecondes). Le test
+  de l'étape 3 (enchantement temporaire) est OK.
+- **A7. `WA_GetUnitAura` (code des utilisateurs).** `AuraEnvironment.lua:28-39` : aucun test de secret ; un résultat
+  vide en combat ne prouve pas que l'aura est absente.
+- **A8. `IsAuraFilteredOutByInstanceID`.** `BuffTriggerNativeFilter.lua:32-34` compare le résultat hors du `pcall`.
+  Qu'il ne soit pas secret est une supposition. Réponse attendue de la commande 1.14.
+
+### Pistes (API disponibles, non utilisées)
+- `PLAYER_PVP_FLAG_CHANGED` (Forever) : le chargement sur le flag PvP ne se rafraîchit que via `UNIT_FLAGS`
+  (`WeakAuras.lua:1987`).
+- `UnitUsesAmmo`, `C_Spell.GetItemCooldown` : présents seulement en 70245, tester leur existence avant l'appel.
+- `C_Secrets.CanCompareUnitTokens` : utile pour `Private.UnitIsUnit` (`SecretRestrictions.lua:20-33`).
+
+### Conforme
+`C_Secrets`, objets `Duration`, `SetTimerDuration`, `GetAuraDuration`, `GetAuraApplicationDisplayCount`, options des
+conteneurs d'auras et des textures de dissipation, `C_SwingTimer`, `IsSpellKnown`, `AddAuraSound`, filtre
+`IMPORTANT`, `GetTotemDuration`, `C_LossOfControl`, détection de saveur (par le TOC).
+
+### Non couvert
+Reste de `Prototypes.lua` pour les rôles ; `WeakAurasOptions/` (grep seulement). Deux écarts sans effet tant qu'il n'y
+a pas de TOC retail : `RemoveDispelTypeTexture` (`SecretAuraConditions.lua:1032`), `SetAuraGroupEnabled` sans garde.
+
+---
+
+# 3. Tests en jeu
 
 ---
 
@@ -24,19 +162,29 @@ Pour copier une erreur : ouvre BugSack, copie la première ligne et les 5 lignes
 
 Tape chaque commande et note le résultat affiché.
 
-| # | Commande | Résultat attendu |
-|---|---|---|
-| 1.1 | `/dump select(4, GetBuildInfo())` | un nombre inférieur à 20000 (16001) |
-| 1.2 | `/dump WOW_PROJECT_ID, WOW_PROJECT_MAINLINE` | noter les deux valeurs |
-| 1.3 | `/dump C_SpecializationInfo and C_SpecializationInfo.GetSpecialization()` | un numéro de spé, ou nil |
-| 1.4 | `/dump C_Secrets ~= nil, issecretvalue ~= nil` | `true, true` |
-| 1.5 | `/dump C_CooldownViewer ~= nil` | `true` |
-| 1.6 | `/dump GetInventoryItemDurability(1)` | deux nombres (si casque équipé) |
-| 1.7 | `/dump C_Minimap.GetNumTrackingTypes()` | un nombre ≥ 1 |
-| 1.8 | `/dump GetInstanceInfo()` dans un donjon | noter le 3ᵉ nombre (ID de difficulté) |
-| 1.9 | `/dump C_EncounterTimeline and C_EncounterTimeline.IsFeatureAvailable()` | noter (décide la phase E) |
-| 1.10 | `/dump C_EncounterTimeline and C_EncounterTimeline.IsFeatureEnabled()` | noter |
-| 1.11 | `/dump C_Texture.GetAtlasInfo("RaidFrame-Icon-DebuffMagic") ~= nil` | `true` |
+| # | Commande | Résultat attendu | Résultat noté |
+|---|---|---|---|
+| 1.1 | `/dump select(4, GetBuildInfo())` | un nombre inférieur à 20000 (16001) | OK : 16001 |
+| 1.2 | `/dump WOW_PROJECT_ID, WOW_PROJECT_MAINLINE` | noter les deux valeurs | 1, 1 (voir note) |
+| 1.3 | `/dump C_SpecializationInfo and C_SpecializationInfo.GetSpecialization()` | un numéro de spé, ou nil | OK : 1 |
+| 1.4 | `/dump C_Secrets ~= nil, issecretvalue ~= nil` | `true, true` | OK : true, true |
+| 1.5 | `/dump C_CooldownViewer ~= nil` | `true` | OK : true |
+| 1.6 | `/dump GetInventoryItemDurability(1)` | deux nombres (si casque équipé) | vide (casque équipé ? à confirmer, voir B3) |
+| 1.7 | `/dump C_Minimap.GetNumTrackingTypes()` | un nombre ≥ 1 | OK : 23 |
+| 1.8 | `/dump GetInstanceInfo()` dans un donjon | noter le 3ᵉ nombre (ID de difficulté) | fait hors donjon (Kalimdor, 0) : à refaire en donjon |
+| 1.9 | `/dump C_EncounterTimeline and C_EncounterTimeline.IsFeatureAvailable()` | noter (décide la phase E) | false (hors combat de boss) |
+| 1.10 | `/dump C_EncounterTimeline and C_EncounterTimeline.IsFeatureEnabled()` | noter | false (hors combat de boss) |
+| 1.11 | `/dump C_Texture.GetAtlasInfo("RaidFrame-Icon-DebuffMagic") ~= nil` | `true` | OK : true |
+| 1.12 | `/run local f=CreateFrame("Frame") print(pcall(f.RegisterEvent,f,"COMBAT_LOG_EVENT_UNFILTERED"))` | noter : `true` = journal de combat utilisable, `false` + erreur = interdit | non testé |
+| 1.13 | `/dump C_CombatLog.IsCombatLogRestricted(), CombatLogGetCurrentEventInfo ~= nil` | noter les deux valeurs | non testé |
+| 1.14 | **en combat**, avec un buff sur toi : `/run local a=C_UnitAuras.GetAuraDataByIndex("player",1,"HELPFUL") print(a and issecretvalue(C_UnitAuras.IsAuraFilteredOutByInstanceID("player",a.auraInstanceID,"RAID")))` | noter : `false` = on peut reconnaître un buff secret par ses filtres, `true` = non | non testé (répond à A8) |
+
+Notes :
+- Tape la commande seule, sans le texte de la colonne « Résultat attendu » : coller `` ` | `true, true` `` à la suite
+  donne l'erreur `` '<eof>' expected near '`' ``.
+- 1.2 : `WOW_PROJECT_ID` = 1 sur le client testé (70124). D'après le source 70245, `WOW_PROJECT_ID` vaut
+  `WOW_PROJECT_CAMELOT` (18) sur les builds récents. Sans effet sur l'addon : la saveur vient du TOC (`Init.lua:389-398`).
+- 1.9 et 1.10 : false hors combat de boss. Refaire pendant un boss (étape 10) avant de fermer la phase E.
 
 ---
 
@@ -125,11 +273,8 @@ par son ID de sort un buff posé en combat dont les données sont secrètes (com
 4. [ ] Toujours en combat, colle :
    ```
    /run local t=C_UnitAuras.GetUnitAuraInstanceIDs("player","HELPFUL") print(#t) for _,i in ipairs(t) do print(i, C_Secrets and C_Secrets.ShouldUnitAuraInstanceBeSecret and C_Secrets.ShouldUnitAuraInstanceBeSecret("player", i)) end
-   3
-25 false
-3 false
-1 false
    ```
+   Résultat déjà noté (combat non précisé) : 3 auras, ID 25, 3 et 1, toutes `false`.
    Note si l'ID d'instance vu à l'étape 3 apparaît ici, et si sa ligne dit `true` (aura secrète).
 
 Résultat utile : à l'étape 3, l'ID d'entrée est un nombre et l'ID d'instance est un nombre (pas `SECRET`), présent à
@@ -148,7 +293,7 @@ l'étape 4. Si la commande 2 ou 3 affiche une erreur, copie-la en entier.
 
 ---
 
-## Étape 8 : groupe, glow, divers (10 min) bug
+## Étape 8 : groupe, glow, divers (10 min) (marquée « bug », voir B4)
 
 - [ ] Action **Glow** (Pixel, Autocast, Proc) sur une icône : le glow est visible et bien dessiné.
 - [ ] Trigger Aura en mode groupe (party) : les membres sont trouvés, pas d'erreur de GUID en combat.
@@ -242,22 +387,86 @@ Exports à importer avec `/wa` > Import. Relance le jeu avant (nouveaux fichiers
 
 ---
 
+## Étape 12 : tests issus de l'audit du 2026-10-08 (20 min)
+
+### 12.1 Throw Weapon (B1)
+1. [ ] `/dump C_Item.GetItemSubClassInfo(2, 16)` : noter le résultat (nil, ou le nom du type).
+2. [ ] `/dump C_Item.GetItemSubClassInfo(2, 9)` et `/dump C_Item.GetItemSubClassInfo(2, 15)` : noter, pour comparer.
+3. [ ] Un guerrier ou un voleur avec une arme de jet équipée : trigger Item Type Equipped (Item Type) et Load, Item Type Equipped.
+   Le type Thrown est-il proposé ?
+
+### 12.2 Absorbs (A1)
+4. [ ] `/dump UnitGetTotalAbsorbs("player"), UnitGetTotalHealAbsorbs("player")` sans bouclier : noter (0 attendu).
+5. [ ] Avec un bouclier d'absorption sur toi (prêtre : Power Word: Shield, ou un objet) : refaire la commande 4, noter.
+   Deux nombres corrects = les absorbs peuvent être ouverts sur Forever.
+
+### 12.3 Rôle et portée en groupe, en combat (A3)
+6. [ ] En groupe, rôle choisi, **en combat** : `/dump issecretvalue(UnitGroupRolesAssigned("party1"))`. Noter.
+7. [ ] Même chose avec `/dump issecretvalue((UnitInRange("party1")))`. Noter.
+8. [ ] Une aura Aura (Legacy) en mode groupe, filtrée par rôle : en combat, pas d'erreur Lua.
+
+### 12.4 Sortie de combat (A4)
+9. [ ] Aura Icon, trigger Aura sur un buff posé **en combat**. Sors du combat sans rien toucher : l'aura se met à
+   jour (durée, stacks) dans les 2 secondes, sans changer de cible ni relancer le buff. Noter le délai vu.
+
+### 12.5 Portée d'objet en combat (A5)
+10. [ ] Trigger Cooldown Progress (Item) sur un objet utilisable à distance, condition **Item in Range** : sur une
+    cible ennemie, **en combat**, pas d'erreur `ADDON_ACTION_BLOCKED` ni d'action bloquée dans BugSack.
+
+### 12.6 Masque (B2)
+11. [ ] Masque installé, un skin appliqué. Aura Icon sur un buff posé en combat : l'icône garde la taille réglée.
+12. [ ] `/reload` puis relog : les icônes skinnées gardent leur taille.
+
+---
+
+# 4. Résultats reçus et prompt de fin
+
+## Profilage reçu (`/wa pprint`, démoniste, auras du pack Forever)
+
+```
+Total time: 39092.01ms ()
+Time inside WA: 27.32ms (0.88ms)
+Time spent inside WA: 0.07%
+
+Auras:
+Pre-pull checklist (Forever) 1.38ms, 64.82% (0.19ms)
+Immolate timer (Forever) 0.57ms, 26.87% (0.28ms)
+Low: Soul Shards 0.09ms, 4.35% (0.09ms)
+Missing: Demon Skin / Armor 0.08ms, 3.95% (0.02ms)
+
+Systems (les 5 plus chers):
+bufftrigger2 - OnUpdate 21.35ms, 78.16% (0.03ms)
+load 2.36ms, 8.64% (0.88ms)
+dynamicgroup 1.38ms, 5.06% (0.19ms)
+generictrigger UNIT_SPELLCAST_SUCCEEDED player 0.53ms, 1.95% (0.30ms)
+generictrigger PLAYER_TARGET_DIED 0.14ms, 0.52% (0.14ms)
+```
+
+Lecture : 0,07 % du temps dans l'addon, pas de problème de performance. `bufftrigger2 - OnUpdate` fait l'essentiel du
+temps de l'addon (21 ms sur 39 s).
+
 ## Prompt à donner à Claude à la fin
 
 Copie ce bloc, remplis les résultats, colle le tout dans une nouvelle conversation dans ce dossier :
 
 ```
-Voici les résultats des tests en jeu de Musca Auras, dans l'ordre de TESTS-EN-JEU.md.
-Lis TESTS-EN-JEU.md et CHANGES.md pour le contexte.
+Voici les résultats des tests en jeu de Musca Auras, dans l'ordre de SUIVI-BUGS-ET-TESTS.md.
+Lis SUIVI-BUGS-ET-TESTS.md et CHANGES.md pour le contexte.
 
-Étape 1 (valeurs) :
-1.1 = ...   1.2 = ...   1.3 = ...   1.4 = ...   1.5 = ...   1.6 = ...
-1.7 = ...   1.8 = ...   1.9 = ...   1.10 = ...  1.11 = ...
+Étape 1 (valeurs encore à noter) :
+1.6 = ...   1.8 = ...   1.12 = ...  1.13 = ...  1.14 = ...
 
 Étape 6.5 (lien Cooldown Manager, lignes affichées) :
 hors combat = ...
 en combat = ...
 commande 4 = ...
+
+Étape 10 (1.9 et 1.10 pendant un boss) = ...
+Étape 10 (profilage boss, /wa pprint, 3 lignes les plus chères) :
+- ...
+
+Étape 12 (valeurs) :
+12.1 = ...   12.2 = ...   12.3 = ...   12.4 (délai) = ...
 
 Tests KO (numéro d'étape, ce que j'ai fait, ce que j'ai vu, erreur BugSack complète) :
 - ...
@@ -265,92 +474,16 @@ Tests KO (numéro d'étape, ce que j'ai fait, ce que j'ai vu, erreur BugSack com
 Tests non faits :
 - ...
 
-Profilage (/wa pprint, 3 lignes les plus chères) :
-- ...
-
 Ce que je veux :
-1. Corrige les tests KO, du plus grave au moins grave (🔴 d'abord), sans rien ajouter d'autre.
-2. Si 1.9 et 1.10 sont true, code le trigger natif « Encounter Timeline » de la phase E, sinon ferme la phase E.
+1. Corrige les tests KO et les bugs de la section 1, du plus grave au moins grave (🔴 d'abord), sans rien ajouter
+   d'autre.
+2. Si 1.9 et 1.10 sont true pendant un boss, code le trigger natif « Encounter Timeline » de la phase E, sinon ferme
+   la phase E.
 2b. Si l'étape 6.5 montre en combat un ID d'instance lisible, relie les auras secrètes du trigger Aura aux entrées du
     Cooldown Manager pour les reconnaître par ID de sort, avec une aide hors combat qui range les buffs voulus dans
     Tracked Buffs. Sinon, note la limite dans TUTORIAL.md.
+2c. Pour chaque constat de l'audit (section 2) que l'étape 12 confirme, corrige-le ; sinon, note-le comme écarté.
 3. Utilise wow-api pour toute API non vérifiée et relecteur avant de dire terminé.
-4. Mets à jour CHANGES.md et coche dans TESTS-EN-JEU.md ce qui est corrigé.
+4. Mets à jour CHANGES.md et coche dans SUIVI-BUGS-ET-TESTS.md ce qui est corrigé.
 5. Donne-moi à la fin la liste des tests à refaire en jeu.
 ```
-
-
-Dump: value=select(4, GetBuildInfo())
-[1]=16001,
-[2]="",
-[3]=" "
-Dump: value=WOW_PROJECT_ID, WOW_PROJECT_MAINLINE
-[1]=1,
-[2]=1
-Dump: value=C_SpecializationInfo and C_SpecializationInfo.GetSpecialization()
-[1]=1
-Dump: value=C_Secrets ~= nil, issecretvalue ~= nil` | `true, true
-Dump: ERROR: [string "return C_Secrets ~= nil, issecretvalue ~= nil` | `true, true"]:1: '<eof>' expected near '`'
-Dump: value=C_Secrets ~= nil, issecretvalue ~= nil` | `true, true`
-Dump: ERROR: [string "return C_Secrets ~= nil, issecretvalue ~= nil` | `true, true`"]:1: '<eof>' expected near '`'
-Dump: value=C_Secrets ~= nil, issecretvalue ~= nil
-[1]=true,
-[2]=true
-Dump: value=C_CooldownViewer ~= nil
-[1]=true
-Dump: value=GetInventoryItemDurability(1)
-empty result
-Dump: value=C_Minimap.GetNumTrackingTypes()
-[1]=23
-Dump: value=GetInstanceInfo()
-[1]="Kalimdor",
-[2]="none",
-[3]=0,
-[4]="",
-[5]=0,
-[6]=0,
-[7]=false,
-[8]=1,
-[9]=0,
-[11]=false
-Dump: value=C_EncounterTimeline and C_EncounterTimeline.IsFeatureAvailable()
-[1]=false
-Dump: value=C_EncounterTimeline and C_EncounterTimeline.IsFeatureEnabled()
-[1]=false
-Dump: value=C_Texture.GetAtlasInfo("RaidFrame-Icon-DebuffMagic") ~= nil
-[1]=true
-
-Total time: 39092.01ms ()
-Time inside WA: 27.32ms (0.88ms)
-Time spent inside WA: 0.07%
-
-Note: Not every aspect of each aura can be tracked.
-You can ask on our discord https://discord.gg/weakauras for help interpreting this output.
-
-Auras:
-Total time attributed to auras: 
-Pre-pull checklist (Forever) 1.38ms, 64.82% (0.19ms)
-Immolate timer (Forever) 0.57ms, 26.87% (0.28ms)
-Low: Soul Shards 0.09ms, 4.35% (0.09ms)
-Missing: Demon Skin / Armor 0.08ms, 3.95% (0.02ms)
-
-Systems:
-bufftrigger2 - OnUpdate 21.35ms, 78.16% (0.03ms)
-load 2.36ms, 8.64% (0.88ms)
-dynamicgroup 1.38ms, 5.06% (0.19ms)
-generictrigger UNIT_SPELLCAST_SUCCEEDED player 0.53ms, 1.95% (0.30ms)
-generictrigger PLAYER_TARGET_DIED 0.14ms, 0.52% (0.14ms)
-generictrigger BAG_UPDATE_DELAYED 0.11ms, 0.39% (0.11ms)
-bufftrigger2 - PLAYER_SOFT_ENEMY_CHANGED 0.09ms, 0.33% (0.04ms)
-bufftrigger2 - PLAYER_TARGET_CHANGED 0.08ms, 0.31% (0.03ms)
-bufftrigger2 - UNIT_FLAGS 0.06ms, 0.24% (0.01ms)
-bufftrigger2 - NAME_PLATE_UNIT_REMOVED 0.04ms, 0.16% (0.02ms)
-bufftrigger2 - NAME_PLATE_UNIT_ADDED 0.04ms, 0.16% (0.03ms)
-bufftrigger2 - UNIT_AURA 0.04ms, 0.16% (0.01ms)
-sound 0.03ms, 0.12% (0.00ms)
-generictrigger NAME_PLATE_UNIT_REMOVED 0.03ms, 0.11% (0.01ms)
-bufftrigger2 - PLAYER_ENTERING_WORLD 0.02ms, 0.09% (0.02ms)
-generictrigger NAME_PLATE_UNIT_ADDED 0.02ms, 0.06% (0.01ms)
-generictrigger WA_RESTRICTION_CHANGED 0.01ms, 0.02% (0.00ms)
-
-LibGetFrame:

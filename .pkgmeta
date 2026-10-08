@@ -14,7 +14,9 @@ ignore:
   - LICENSE
   - TakenDamage_Forever.txt
   - TUTORIAL.md
-  - TESTS-EN-JEU.md
+  - SUIVI-BUGS-ET-TESTS.md
   - FEATURES-A-VENIR.md
   - GUIDE.md
   - "*.zip"
+  - Tests
+  - Classes
