@@ -5,7 +5,7 @@ std = "lua51"
 only = { "011", "1" }
 -- Fields of standard tables: WoW adds its own (string.split, table.wipe...)
 ignore = { "14." }
-exclude_files = { "**/Libs/**", ".claude/**", "**/.claude/**" }
+exclude_files = { "**/Libs/**", ".claude/**", "**/.claude/**", "Tests/**" }
 
 -- Every global the addons read or write, sorted
 globals = {

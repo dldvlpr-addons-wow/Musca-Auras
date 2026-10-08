@@ -1359,6 +1359,7 @@ local function enrichDatabase()
   end
 end
 
+TemplatePrivate.ApplyForeverFixes(templates)
 enrichDatabase();
 
 itemInfoReceived:SetScript("OnEvent", function()
