@@ -7,6 +7,9 @@ name: Release
 # CurseForge needs the CF_API_KEY repository secret. The upload is done here, not by the packager, so the file is
 # tagged with the WoW Forever game version read from "## Interface" (16001 -> 1.60.1) and never with a retail one.
 # Wago is skipped until the .toc files carry "## X-Wago-ID" and the WAGO_API_TOKEN secret exists.
+# Discord: DISCORD_RELEASE_WEBHOOK gets a short announcement, DISCORD_CHANGELOG_WEBHOOK the changelog section.
+# Both must be repository secrets: a variable would print the webhook URL in the public log. A missing one is
+# skipped, and a failed post only leaves a warning since the release is already out.
 
 on:
   push:
@@ -78,3 +81,30 @@ jobs:
           curl -sS --fail-with-body -H "X-Api-Token: $CF_API_KEY" \
             --form-string "metadata=$metadata" -F "file=@${zip[0]}" \
             "$api/projects/$CF_PROJECT_ID/upload-file"
+
+      - name: Announce on Discord
+        env:
+          RELEASE_WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          CHANGELOG_WEBHOOK: ${{ secrets.DISCORD_CHANGELOG_WEBHOOK }}
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          title="Musca Auras $version"
+          url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          post() { curl -sS --fail-with-body -H "Content-Type: application/json" -d @- "$1"; }
+
+          if [ -n "$RELEASE_WEBHOOK" ]; then
+            jq -n --arg content "**$title** is out: $url" '{content: $content}' | post "$RELEASE_WEBHOOK" \
+              || echo "::warning::Discord release announcement failed"
+          else
+            echo "::warning::DISCORD_RELEASE_WEBHOOK is missing, release announcement skipped"
+          fi
+
+          if [ -n "$CHANGELOG_WEBHOOK" ]; then
+            notes=$(awk '/^# /{n++} n==1' WeakAuras/CHANGELOG.md | tail -n +2)
+            jq -n --arg title "$title" --arg url "$url" --arg notes "$notes" \
+              '{embeds: [{title: $title, url: $url, description: $notes[:4000]}]}' | post "$CHANGELOG_WEBHOOK" \
+              || echo "::warning::Discord changelog post failed"
+          else
+            echo "::warning::DISCORD_CHANGELOG_WEBHOOK is missing, changelog post skipped"
+          fi
