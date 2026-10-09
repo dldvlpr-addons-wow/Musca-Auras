@@ -228,6 +228,18 @@ local configForLS = {
 local tooltipLoading;
 local receivedData;
 
+-- Text explaining why addon whispers cannot leave right now, nil when they can.
+-- The client drops them silently, so both the requester and the sender check first.
+local function GetWhisperBlock()
+  local chatInfo = C_ChatInfo
+  if chatInfo.InChatMessagingLockdown and chatInfo.InChatMessagingLockdown() then
+    return L["Addon whispers are paused for now. Try this link again in a moment."]
+  end
+  if chatInfo.AreOutgoingAddonChatMessagesRestricted and chatInfo.AreOutgoingAddonChatMessagesRestricted() then
+    return L["Addon whispers are off on this realm. Use an import string to share this aura."]
+  end
+end
+
 hooksecurefunc("SetItemRef", function(link, text)
   if(link == "garrmission:weakauras") then
     local _, _, characterName, displayName = text:find("|Hgarrmission:weakauras|h|cFF8800FF%[([^%s]+) |r|cFF8800FF%- (.*)%]|h");
@@ -241,10 +253,14 @@ hooksecurefunc("SetItemRef", function(link, text)
         end
       else
         characterName = characterName:gsub("%.", "")
+        local whisperBlock = GetWhisperBlock()
         ShowTooltip({
           {2, "WeakAuras", displayName, 0.5, 0, 1, 1, 1, 1},
-          {1, L["Requesting display information from %s ..."]:format(characterName), 1, 0.82, 0}
+          {1, whisperBlock or L["Requesting display information from %s ..."]:format(characterName), 1, 0.82, 0}
         });
+        if whisperBlock then
+          return
+        end
         tooltipLoading = true;
         receivedData = false;
         RequestDisplay(characterName, displayName);
@@ -775,7 +791,8 @@ local function HandleComm(prefix, message, distribution, sender)
       ItemRefTooltip:Hide()
       ImportNow(data, children, nil, nil, sender)
     elseif(received.m == "dR") then
-      if(Private.linked and Private.linked[received.d] and Private.linked[received.d] > GetTime() - linkValidityDuration) then
+      -- A blocked reply would be lost anyway; the requester's own timeout reports it
+      if(not GetWhisperBlock() and Private.linked and Private.linked[received.d] and Private.linked[received.d] > GetTime() - linkValidityDuration) then
         TransmitDisplay(received.d, sender, received.v);
       end
     elseif(received.m == "dE") then

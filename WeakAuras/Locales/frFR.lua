@@ -1639,6 +1639,8 @@ L["Reputation (%)"] = "Reputation (%)"
 L["Requested display does not exist"] = "L'affichage demandé n'existe pas"
 L["Requested display not authorized"] = "L'affichage demandé n'est pas autorisé"
 L["Requesting display information from %s ..."] = "Demande des informations de l'affichage depuis %s ..."
+L["Addon whispers are paused for now. Try this link again in a moment."] = "Les chuchotements d'addon sont suspendus pour l'instant. Réessayez ce lien dans un moment."
+L["Addon whispers are off on this realm. Use an import string to share this aura."] = "Les chuchotements d'addon sont désactivés sur ce royaume. Partagez cette aura par une chaîne d'import."
 L["Require Valid Target"] = "Exige une cible valide"
 --[[Translation missing --]]
 L["Requires syncing the specialization via LibSpecialization."] = "Requires syncing the specialization via LibSpecialization."
