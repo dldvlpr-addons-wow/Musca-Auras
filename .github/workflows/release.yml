@@ -6,7 +6,8 @@ name: Release
 # that section becomes the CurseForge changelog.
 # CurseForge needs the CF_API_KEY repository secret. The upload is done here, not by the packager, so the file is
 # tagged with the WoW Forever game version read from "## Interface" (16001 -> 1.60.1) and never with a retail one.
-# Wago: the packager uploads with the "## X-Wago-ID" of WeakAuras.toc; skipped while the WAGO_API_TOKEN secret is missing.
+# Wago: the packager uploads with the "## X-Wago-ID" of WeakAuras.toc; skipped while the WAGO_API_TOKEN secret is missing,
+# and a rejected token does not stop the CurseForge upload.
 # Discord: DISCORD_RELEASE_WEBHOOK gets a short announcement, DISCORD_CHANGELOG_WEBHOOK the changelog section.
 # Both must be repository secrets: a variable would print the webhook URL in the public log. A missing one is
 # skipped, and a failed post only leaves a warning since the release is already out.
@@ -38,7 +39,10 @@ jobs:
           esac
           [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API_KEY secret is missing"; exit 1; }
 
+      # A rejected Wago token (401) makes the packager exit 1 after the zip and the GitHub release are made;
+      # keep going so CurseForge and Discord are not skipped. The next step still fails if no zip was built.
       - uses: BigWigsMods/packager@v2
+        continue-on-error: true
         env:
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
