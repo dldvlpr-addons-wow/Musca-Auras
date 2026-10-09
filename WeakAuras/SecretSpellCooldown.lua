@@ -179,14 +179,16 @@ function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
       end
       StopRecheck(effectiveSpellId)
     end
-    local changed = detail.secretReady ~= ready
+    local secretGCDOnly = gcdHold or nil
+    local changed = detail.secretReady ~= ready or detail.secretGCDOnly ~= secretGCDOnly
     detail.secretReady = ready
+    detail.secretGCDOnly = secretGCDOnly
     return changed
   end
 
   function SpellDetails:ClearSecretReady(effectiveSpellId)
     local detail = self.data[effectiveSpellId]
-    detail.secretReady, detail.notReadySince, detail.notReadyWand, detail.gcdHoldOnly = nil, nil, nil, nil
+    detail.secretReady, detail.notReadySince, detail.notReadyWand, detail.gcdHoldOnly, detail.secretGCDOnly = nil, nil, nil, nil, nil
     ForgetSecretSpell(effectiveSpellId)
   end
 
