@@ -180,6 +180,7 @@ local function ApplyWandHold(spellID, duration)
   end
   return duration, false
 end
+SpellCooldownState.ApplyWandHold = ApplyWandHold
 
 -- Durations
 local emptyDuration

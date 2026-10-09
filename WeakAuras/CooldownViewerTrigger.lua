@@ -564,6 +564,19 @@ local function fillSpellState(state, identity, frame, event, opts)
   end
   local onCooldown, flagsKnown, onGCD = trackCooldownFlags(spellID, event)
   local realDuration = onGCD == true and blankDuration() or C_Spell.GetSpellCooldownDuration(spellID, true)
+  -- While Shoot runs, other spells report the Shoot timer: show the timer copied before the shot
+  local wandHeld = false
+  if onGCD ~= true then
+    realDuration, wandHeld = Private.SpellCooldownState.ApplyWandHold(spellID, realDuration)
+    if wandHeld then
+      local remaining = realDuration and Private.SpellCooldownState.ReadableRemaining(realDuration)
+      if remaining then
+        onCooldown = remaining > 0
+      else
+        onCooldown = nil
+      end
+    end
+  end
   local textDuration = realDuration
   local native = Private.CDMGetNativeCooldown(frame, identity.spellID)
   state.cdmNativeRevision = native and native.revision
@@ -596,6 +609,9 @@ local function fillSpellState(state, identity, frame, event, opts)
   elseif flagsKnown and not state.cdmGCDOnly then
     shownDuration = opts.showGCD and C_Spell.GetSpellCooldownDuration(spellID) or realDuration
     state.cdmNativePaused = false
+  end
+  if wandHeld then
+    shownDuration, state.cdmGCDOnly, state.cdmNativePaused = realDuration, false, false
   end
   local charges = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(spellID)
   if charges then
@@ -1260,8 +1276,14 @@ buffArgs[#buffArgs + 1] = remainingCondition
 
 local INTERNAL_EVENTS = {"WA_CDM_REFRESH", "WA_CDM_LAYOUT_CHANGED"}
 
+-- Starts the cooldown handler, which feeds the Shoot hold of SpellCooldownState
+local function watchSpellCasts()
+  WeakAuras.WatchGCD()
+end
+
 local function newPrototype(displayName, eventsFunction, args)
   return {
+    loadFunc = eventsFunction == spellEvents and watchSpellCasts or nil,
     type = "cdm",
     name = displayName,
     statesParameter = "full",
