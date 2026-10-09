@@ -7,7 +7,7 @@ name: Release
 # CurseForge needs the CF_API_KEY repository secret. The upload is done here, not by the packager, so the file is
 # tagged with the WoW Forever game version read from "## Interface" (16001 -> 1.60.1) and never with a retail one.
 # Wago: the packager uploads with the "## X-Wago-ID" of WeakAuras.toc; skipped while the WAGO_API_TOKEN secret is missing.
-# Discord: DISCORD_RELEASE_WEBHOOK gets a short announcement, DISCORD_CHANGELOG_WEBHOOK the changelog section.
+# Discord: DISCORD_RELEASE_WEBHOOK gets a short announcement, DISCORD_CHANGELOG_WEBHOOK the changelog section, with the CurseForge and Wago links only.
 # Both must be repository secrets: a variable would print the webhook URL in the public log. A missing one is
 # skipped, and a failed post only leaves a warning since the release is already out.
 
@@ -90,19 +90,19 @@ jobs:
           set -euo pipefail
           version="${TAG#v}"
           title="Musca Auras $version"
-          url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          url="https://www.curseforge.com/wow/addons/musca-auras"
           links=$'CurseForge: <https://www.curseforge.com/wow/addons/musca-auras>\nWago: <https://addons.wago.io/addons/musca-auras>'
           post() { curl -sS --fail-with-body -H "Content-Type: application/json" -d @- "$1"; }
 
           if [ -n "$RELEASE_WEBHOOK" ]; then
-            jq -n --arg content "**$title** is out: $url"$'\n'"$links" '{content: $content}' | post "$RELEASE_WEBHOOK" \
+            jq -n --arg content "**$title** is out."$'\n'"$links" '{content: $content}' | post "$RELEASE_WEBHOOK" \
               || echo "::warning::Discord release announcement failed"
           else
             echo "::warning::DISCORD_RELEASE_WEBHOOK is missing, release announcement skipped"
           fi
 
           if [ -n "$CHANGELOG_WEBHOOK" ]; then
-            notes=$(awk '/^# /{n++} n==1' WeakAuras/CHANGELOG.md | tail -n +2)
+            notes=$(awk '/^# /{n++} n==1' WeakAuras/CHANGELOG.md | tail -n +2 | grep -v 'github\.com' || true)
             jq -n --arg title "$title" --arg url "$url" --arg notes "$notes" --arg links "$links" \
               '{embeds: [{title: $title, url: $url, description: ($notes[:3800] + "\n\n" + $links)}]}' \
               | post "$CHANGELOG_WEBHOOK" \

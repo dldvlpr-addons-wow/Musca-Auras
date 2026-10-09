@@ -1,3 +1,15 @@
+# Musca Auras 1.7.0 (2026-10-09)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixes
+
+- Spell cooldowns in combat: a global cooldown alone no longer counts as a cooldown. A Not on Cooldown trigger with
+  Show Global Cooldown unchecked stays shown during the GCD, and with Show Global Cooldown checked, On Cooldown no
+  longer shows on every GCD.
+- An aura rebuilt while it is loaded, for example a group child after a growth change, no longer stays hidden until
+  `/reload`. Not tested in game yet.
+
 # Musca Auras 1.6.2 (2026-10-09)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
