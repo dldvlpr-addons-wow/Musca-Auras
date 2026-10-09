@@ -4760,13 +4760,21 @@ do
     end
   end
 
+  -- Milliseconds per frame for the normal pool. Under addon restrictions (combat, encounter,
+  -- challenge mode, PvP match) the frame time belongs to the fight, so deferred work slows down.
+  local NORMAL_BUDGET, NORMAL_BUDGET_RESTRICTED = 20, 4
+  local normalBudget = NORMAL_BUDGET
+  Private.callbacks:RegisterCallback("RestrictionChanged", function(_, isRestricted)
+    normalBudget = isRestricted and NORMAL_BUDGET_RESTRICTED or NORMAL_BUDGET
+  end)
+
   -- Setup frame
   threads.frame:Hide();
   threads.frame:SetScript("OnUpdate", function()
     local start = debugprofilestop();
     local urgentLimit, urgentDefaultEstimate = Private.GetUrgentThreadBudget()
     runThreadPool(threads.pools.urgent, start + urgentLimit, urgentDefaultEstimate)
-    runThreadPool(threads.pools.normal, start + 20, 1)
+    runThreadPool(threads.pools.normal, start + normalBudget, 1)
     runThreadPool(threads.pools.background, start + 2, 0.5)
   end);
   threads.frame:RegisterEvent("PLAYER_REGEN_ENABLED")
