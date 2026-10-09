@@ -3354,6 +3354,12 @@ function pAdd(data, simpleChange)
       loadEvents["GROUP"] = loadEvents["GROUP"] or {}
       loadEvents["GROUP"][id] = true
     else -- Non group aura
+      local wasLoaded = not paused and loaded[id]
+      if wasLoaded then
+        Private.UnloadDisplays({[id] = true})
+        loaded[id] = nil
+      end
+
       -- Make sure that we don't have a controlledChildren member.
       data.controlledChildren = nil
       local visible
@@ -3452,6 +3458,16 @@ function pAdd(data, simpleChange)
 
       if not(paused) then
         Private.ScanForLoads({[id] = true});
+        if wasLoaded and not loaded[id] then
+          if Private.regions[id] and Private.regions[id].region then
+            Private.BlizzardAuraDisplay.Release(Private.regions[id].region)
+          end
+          local parentsToCheck = {}
+          for parent in Private.TraverseParents(data) do
+            parentsToCheck[parent.id] = true
+          end
+          Private.ScanForLoadsGroup(parentsToCheck)
+        end
       end
     end
 

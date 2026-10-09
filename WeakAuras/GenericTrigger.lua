@@ -2989,7 +2989,7 @@ do
 
       local spellDetail = self.data[effectiveSpellId]
       if spellDetail and spellDetail.secret and spellDetail.secretReady ~= nil and not paused then
-        if spellDetail.secretReady then
+        if spellDetail.secretReady or spellDetail.secretGCDOnly then
           startTime, duration = 0, 0
         elseif startTime + duration <= GetTime() then
           startTime, duration, modRate = spellDetail.notReadySince or GetTime(), SECRET_UNKNOWN_DURATION, 1.0
