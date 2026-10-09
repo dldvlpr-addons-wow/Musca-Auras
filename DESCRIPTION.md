@@ -56,6 +56,9 @@ This version brings a large batch of patches and bug fixes, and one new layout o
 
 *   **Swing Timer:** Target In Range and Out of Range work again with no swing in progress.
 *   **`%p` texts** follow the Old Blizzard (`3m`, `10s`) and Modern Blizzard (`3m 7s`) time formats.
+*   **Cooldown Manager spell triggers** no longer show the wand Shoot timer while you shoot.
+*   **Aura links:** a message tells you when addon whispers are blocked.
+*   **Templates** use the WoW Forever spell IDs.
 *   **Masque:** an Icon keeps its size once it shows in game. Not tested in game yet.
 
 <span style="color: #0cf;"><strong>Performance</strong></span>

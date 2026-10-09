@@ -21,6 +21,10 @@ Fixes:
 
 - Swing Timer with Target In Range or Out of Range: the aura shows with no swing in progress, so Out of Range works when you stand away from the target
 - The native %p duration text follows the Old Blizzard (3m, 10s) and Modern Blizzard (3m 7s) time formats instead of always showing 3:07
+- Cooldown Manager spell triggers no longer show the wand Shoot timer while you shoot
+- Aura links: no more silent failure when addon whispers are blocked, a message tells you why
+- Templates: class spells use the WoW Forever spell IDs
+- Smoother frame rate in combat while the game restricts addons
 - With a Masque skin, an Icon keeps its size once it shows in game (not tested in game yet)
 
 Changes:

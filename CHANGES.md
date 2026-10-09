@@ -26,6 +26,14 @@ Released as 1.6.2.
 - `WeakAuras/DurationText.lua`, `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/SecretAuraSingle.lua`,
   `WeakAuras/CDMAuraProgress.lua`: native `%p` duration text follows the Old Blizzard (`3m`, `10s`) and Modern
   Blizzard (`3m 7s`, `1h 3m`) time formats instead of always showing `3:07`.
+- `WeakAuras/CooldownViewerTrigger.lua`, `WeakAuras/SpellCooldownState.lua`: while Shoot (wand) runs, Cooldown
+  Manager spell triggers show the timer copied before the shot instead of the Shoot timer.
+- `WeakAuras/Transmission.lua`, `WeakAuras/Locales/enUS.lua`, `WeakAuras/Locales/frFR.lua`: aura link requests
+  are not whispered while addon chat is blocked; the player gets a message instead of a silent failure.
+- `WeakAuras/WeakAuras.lua`: lower per-frame budget for normal threads while addon restrictions are active.
+- `WeakAurasTemplates/TriggerTemplatesDataForever.lua` (new), `WeakAurasTemplates/WeakAurasTemplates.toc`,
+  `WeakAurasTemplates/TriggerTemplatesDataClassicEra.lua`: class templates use WoW Forever spell IDs; IDs missing
+  from the client are removed, Forever spells are added when known.
 
 ### Changed
 - `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the options window title reads "Musca Auras" and the Musca
