@@ -102,6 +102,25 @@ local function DetachFromMasque(native)
   native.masqueData = nil
 end
 
+function Private.MasquePinSize(button, width, height)
+  local config = button and button._MSQ_CFG
+  if not config or not width or not height then return end
+  config.FrameWidth, config.FrameHeight = width, height
+  local owner = config.SetFrameSize and config or button
+  if owner.SetFrameSize and not owner.waPinnedSetFrameSize then
+    local original = owner.SetFrameSize
+    owner.waPinnedSetFrameSize = original
+    owner.SetFrameSize = function(self, frameWidth, frameHeight, ...)
+      if frameWidth == nil then
+        frameWidth, frameHeight = config.FrameWidth, config.FrameHeight
+      else
+        config.FrameWidth, config.FrameHeight = frameWidth, frameHeight
+      end
+      return original(self, frameWidth, frameHeight, ...)
+    end
+  end
+end
+
 local function AttachToMasque(native, data, baseFrame)
   local groupKey = data.id:lower():gsub(" ", "_")
   local group = Masque:Group("WeakAuras", groupKey, data.uid)
@@ -118,6 +137,7 @@ local function AttachToMasque(native, data, baseFrame)
   end
   native.masqueData = data
   local width, height = Display.Dimensions(data)
+  Private.MasquePinSize(baseFrame, width, height)
   if group.SetFrameSize then
     group:SetFrameSize(width, height, baseFrame)
   end
@@ -420,7 +440,7 @@ local function BindDurationText(button, text, config, prefix, data, baseColor, p
     local floorMode = config[prefix .. "p_time_legacy_floor"] and 0 or 99
     local threshold = config[prefix .. "p_time_dynamic_threshold"] or 3
     local precision = config[prefix .. "p_time_precision"] or 1
-    options = {textFormatter = Private.GetDurationTextFormatter(floorMode, threshold, precision, format == -2)}
+    options = {textFormatter = Private.GetDurationTextFormatter(floorMode, threshold, precision, format == -2, format)}
   end
   local color = Display.DurationColorCondition(data, baseColor, property, window)
   if color then

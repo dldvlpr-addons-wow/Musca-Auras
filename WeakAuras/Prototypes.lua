@@ -6928,6 +6928,7 @@ Private.event_prototypes = {
       local ret = [=[
         local inverse = %s;
         local hand = %q;
+        local rangeFilter = %s;
         local triggerRemaining = %s
         local duration, expirationTime, name, icon = WeakAuras.GetSwingTimerInfo(hand)
         local inRange = WeakAuras.IsTargetInSwingRange and WeakAuras.IsTargetInSwingRange(hand)
@@ -6941,6 +6942,7 @@ Private.event_prototypes = {
       return ret:format(
         (trigger.use_inverse and "true" or "false"),
         trigger.hand or "main",
+        ((trigger.use_inRange and Private.hasNativeSwingTimer) and "true" or "false"),
         trigger.use_remaining and tonumber(trigger.remaining or 0) or "nil",
         trigger.remaining_operator or "<"
       );
@@ -7026,7 +7028,7 @@ Private.event_prototypes = {
       },
       {
         hidden = true,
-        test = "(inverse and duration == 0) or (not inverse and duration > 0)"
+        test = "(inverse and duration == 0) or (not inverse and (duration > 0 or rangeFilter))"
       },
       {
         hidden = true,

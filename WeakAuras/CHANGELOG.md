@@ -1,3 +1,20 @@
+# Musca Auras 1.6.2 (2026-10-09)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixes
+
+- Swing Timer with Target In Range or Out of Range: the aura shows with no swing in progress, so Out of Range works
+  when you stand away from the target.
+- The native `%p` duration text follows the Old Blizzard (`3m`, `10s`) and Modern Blizzard (`3m 7s`) time formats
+  instead of always showing `3:07`.
+- With a Masque skin, an Icon keeps its size once it shows in game. Not tested in game yet.
+
+## Changes
+
+- The options window title reads Musca Auras.
+- Shorter in-game guide.
+
 # Musca Auras 1.6.1 (2026-10-07)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
