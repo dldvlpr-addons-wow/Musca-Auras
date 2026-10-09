@@ -107,8 +107,9 @@ local function DurationFormatSignature(config, index)
   local threshold = config[prefix .. "time_dynamic_threshold"] or 3
   local precision = config[prefix .. "time_precision"] or 1
   local dynamic = timeFormat == -2
-  local formatter = Private.GetDurationTextFormatter(floorValue, threshold, precision, dynamic)
-  return floorValue .. ":" .. threshold .. ":" .. precision .. ":" .. tostring(dynamic), {textFormatter = formatter}
+  local formatter = Private.GetDurationTextFormatter(floorValue, threshold, precision, dynamic, timeFormat)
+  return floorValue .. ":" .. threshold .. ":" .. precision .. ":" .. tostring(dynamic) .. ":" .. timeFormat,
+    {textFormatter = formatter}
 end
 
 local function AttachLinkedTextSource(native, kind, config, index)

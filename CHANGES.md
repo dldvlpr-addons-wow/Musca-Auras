@@ -14,6 +14,25 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-09
+
+Released as 1.6.2.
+
+### Fixed
+- `WeakAuras/Prototypes.lua`: the Swing Timer trigger with Target In Range or Out of Range now shows with no swing
+  in progress, so Out of Range works when the player stands away from the target.
+- `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/RegionTypes/Icon.lua`: with a Masque skin, an Icon keeps its set
+  size once it shows in game; the size given to Masque is pinned on each reskin.
+- `WeakAuras/DurationText.lua`, `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/SecretAuraSingle.lua`,
+  `WeakAuras/CDMAuraProgress.lua`: native `%p` duration text follows the Old Blizzard (`3m`, `10s`) and Modern
+  Blizzard (`3m 7s`, `1h 3m`) time formats instead of always showing `3:07`.
+
+### Changed
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the options window title reads "Musca Auras" and the Musca
+  Auras version instead of "WeakAuras" and the WeakAuras version.
+- `WeakAuras/ForeverTutorial.lua`: removed the last section of the in-game guide.
+- `WeakAuras/WeakAuras.toc`: added the Wago project ID (`## X-Wago-ID`).
+
 ## 2026-10-07
 
 Released as 1.6.1.

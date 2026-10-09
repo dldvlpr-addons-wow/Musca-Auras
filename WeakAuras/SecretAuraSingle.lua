@@ -1161,7 +1161,7 @@ local function styleCountdownNumbers(cooldown, nativeView, countdown)
       countdown[COUNTDOWN_PREFIX .. "legacy_floor"] and 0 or 99,
       countdown[COUNTDOWN_PREFIX .. "dynamic_threshold"] or 3,
       countdown[COUNTDOWN_PREFIX .. "precision"] or 1,
-      format == -2))
+      format == -2, format))
   end
 end
 

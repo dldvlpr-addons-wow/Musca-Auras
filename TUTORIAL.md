@@ -52,7 +52,8 @@ What that means for your auras, tested in game on Forever unless marked otherwis
   A recast by someone else is not seen.
 - **A buff or debuff applied for the first time in combat** is only seen when combat ends.
 - **Logic on secret data keeps its last state.** A condition such as "Health < 50%" keeps the state it had when
-  combat started, then updates when combat ends. Not tested again since the last fix.
+  combat started, then updates when combat ends. The health of a target that is not a player is secret even out of
+  combat: such a condition on the Target unit never changes. Use "Show only below (%)" on the Health trigger instead.
 
 ### The combat log is closed
 

@@ -6,7 +6,7 @@ name: Release
 # that section becomes the CurseForge changelog.
 # CurseForge needs the CF_API_KEY repository secret. The upload is done here, not by the packager, so the file is
 # tagged with the WoW Forever game version read from "## Interface" (16001 -> 1.60.1) and never with a retail one.
-# Wago is skipped until the .toc files carry "## X-Wago-ID" and the WAGO_API_TOKEN secret exists.
+# Wago: the packager uploads with the "## X-Wago-ID" of WeakAuras.toc; skipped while the WAGO_API_TOKEN secret is missing.
 # Discord: DISCORD_RELEASE_WEBHOOK gets a short announcement, DISCORD_CHANGELOG_WEBHOOK the changelog section.
 # Both must be repository secrets: a variable would print the webhook URL in the public log. A missing one is
 # skipped, and a failed post only leaves a warning since the release is already out.
@@ -91,10 +91,11 @@ jobs:
           version="${TAG#v}"
           title="Musca Auras $version"
           url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          links=$'CurseForge: <https://www.curseforge.com/wow/addons/musca-auras>\nWago: <https://addons.wago.io/addons/musca-auras>'
           post() { curl -sS --fail-with-body -H "Content-Type: application/json" -d @- "$1"; }
 
           if [ -n "$RELEASE_WEBHOOK" ]; then
-            jq -n --arg content "**$title** is out: $url" '{content: $content}' | post "$RELEASE_WEBHOOK" \
+            jq -n --arg content "**$title** is out: $url"$'\n'"$links" '{content: $content}' | post "$RELEASE_WEBHOOK" \
               || echo "::warning::Discord release announcement failed"
           else
             echo "::warning::DISCORD_RELEASE_WEBHOOK is missing, release announcement skipped"
@@ -102,8 +103,9 @@ jobs:
 
           if [ -n "$CHANGELOG_WEBHOOK" ]; then
             notes=$(awk '/^# /{n++} n==1' WeakAuras/CHANGELOG.md | tail -n +2)
-            jq -n --arg title "$title" --arg url "$url" --arg notes "$notes" \
-              '{embeds: [{title: $title, url: $url, description: $notes[:4000]}]}' | post "$CHANGELOG_WEBHOOK" \
+            jq -n --arg title "$title" --arg url "$url" --arg notes "$notes" --arg links "$links" \
+              '{embeds: [{title: $title, url: $url, description: ($notes[:3800] + "\n\n" + $links)}]}' \
+              | post "$CHANGELOG_WEBHOOK" \
               || echo "::warning::Discord changelog post failed"
           else
             echo "::warning::DISCORD_CHANGELOG_WEBHOOK is missing, changelog post skipped"

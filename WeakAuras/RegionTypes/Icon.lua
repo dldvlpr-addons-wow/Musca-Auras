@@ -378,6 +378,7 @@ local function modify(parent, region, data)
     end
 
     if region.MSQGroup then
+      Private.MasquePinSize(button, region.width * math.abs(region.scalex), region.height * math.abs(region.scaley))
       region.MSQGroup:ReSkin(button)
     end
 

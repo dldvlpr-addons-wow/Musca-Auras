@@ -3,6 +3,7 @@ local _, Private = ...
 
 local formatterCache = {}
 local MINUTE = 60
+local HOUR = 3600
 local EPSILON = 0.000001
 
 local function IsGcdTextSuppressed(state)
@@ -33,20 +34,40 @@ function Private.UsesDurationText(state)
   return state.progressType == "durationObject" and Private.IsDurationObject(state.durationObject)
 end
 
-local function WholeSecondRule(from, direction)
-  return {threshold = from, format = "%d", step = 1, rounding = direction}
+local function WholeSecondRule(from, direction, suffix)
+  return {threshold = from, format = "%d" .. suffix, step = 1, rounding = direction}
 end
 
-local function BuildBreakpoints(format, threshold, precision, secondsOnly)
+local function LongRule(from, direction, format, components)
+  return {threshold = from, format = format, step = 1, rounding = direction, components = components}
+end
+
+local function LongRules(timeFormat, minuteStart, direction)
+  if timeFormat == 1 then
+    return {
+      LongRule(minuteStart, direction, "%dm", {{div = MINUTE}}),
+      LongRule(math.max(HOUR, minuteStart), direction, "%dh", {{div = HOUR}}),
+    }
+  elseif timeFormat == 2 then
+    return {
+      LongRule(minuteStart, direction, "%dm %ds", {{div = MINUTE}, {mod = MINUTE}}),
+      LongRule(math.max(HOUR, minuteStart), direction, "%dh %dm", {{div = HOUR}, {div = MINUTE, mod = MINUTE}}),
+    }
+  end
+  return {LongRule(minuteStart, direction, "%d:%02d", {{div = MINUTE}, {mod = MINUTE}})}
+end
+
+local function BuildBreakpoints(format, threshold, precision, secondsOnly, timeFormat)
   local modes = Enum.NumericRuleFormatRounding
   local direction = format == 99 and modes.Up or modes.Down
   local rules = {{threshold = 0, format = ""}}
+  local suffix = (timeFormat == 1 or timeFormat == 2) and not secondsOnly and "s" or ""
 
   if threshold > 0 then
     rules[2] = {threshold = EPSILON, format = "%." .. precision .. "f"}
-    rules[3] = WholeSecondRule(threshold, direction)
+    rules[3] = WholeSecondRule(threshold, direction, suffix)
   else
-    rules[2] = WholeSecondRule(EPSILON, direction)
+    rules[2] = WholeSecondRule(EPSILON, direction, suffix)
   end
 
   if not secondsOnly then
@@ -54,25 +75,21 @@ local function BuildBreakpoints(format, threshold, precision, secondsOnly)
     if minuteStart == threshold then
       rules[#rules] = nil
     end
-    rules[#rules + 1] = {
-      threshold = minuteStart,
-      format = "%d:%02d",
-      step = 1,
-      rounding = direction,
-      components = {{div = MINUTE}, {mod = MINUTE}},
-    }
+    for _, rule in ipairs(LongRules(timeFormat, minuteStart, direction)) do
+      rules[#rules + 1] = rule
+    end
   end
   return rules
 end
 
-function Private.GetDurationTextFormatter(format, threshold, precision, secondsOnly)
-  local cacheKey = table.concat({format, threshold, precision, tostring(secondsOnly == true)}, ":")
+function Private.GetDurationTextFormatter(format, threshold, precision, secondsOnly, timeFormat)
+  local cacheKey = table.concat({format, threshold, precision, tostring(secondsOnly == true), tostring(timeFormat)}, ":")
   local cached = formatterCache[cacheKey]
   if cached then
     return cached
   end
   cached = C_StringUtil.CreateNumericRuleFormatter()
-  cached:SetBreakpoints(BuildBreakpoints(format, threshold, precision, secondsOnly))
+  cached:SetBreakpoints(BuildBreakpoints(format, threshold, precision, secondsOnly, timeFormat))
   formatterCache[cacheKey] = cached
   return cached
 end
