@@ -348,7 +348,7 @@ Valeur du DB2 gardée dans les tableaux.
 - Insect Swarm (talent 5570) : fichier = arbre Équilibre ; DB2 Talent.csv = Restauration (écart).
 - Natural Shapeshifter : fichier = Restauration ; DB2 = Équilibre (écart).
 - Nombre de rangs fichier ≠ DB2 : Improved Moonfire (2 vs 5), Overgrowth (2 vs 4), Feral Instinct (3 vs 5), Thick Hide (3 vs 5), Shredding Attacks (3 vs 2), Sharpened Claws (2 vs 3), Subtlety (3 vs 5) ; peut venir d'un correctif serveur (écarts).
-- Tiger's Fury : fichier = absent de Forever ; DB2 SkillLineAbility Feral Combat = 5217 et 417045 (écart).
+- Tiger's Fury : absent en jeu (confirmé sur Forever). DB2 SkillLineAbility Feral Combat = 5217 et 417045, AcquireMethod 3 (jamais appris) : lignes présentes, sort non attribué.
 - Omen of Clarity, Natural Weapons, Improved Thorns, Feral Aggression, Improved Enrage, Improved Mark of the Wild, Nature's Grasp (talent) : donnés absents de Forever, présents dans le DB2 (écart ; présence ≠ actif).
 - Aucun ID de sort de la table « Sorts de base » ne diffère du DB2 (nom et ID vérifiés) ; aucun absent du DB2.
 - Omen of Clarity : passif niveau 20 sur endgametools (201 sorts) mais absent de la liste wow-forever.gg (212 sorts) et marqué absent de Forever par wowforevertalents.com. Même cas pour Nature's Grasp : sorts présents, talent « absent ».

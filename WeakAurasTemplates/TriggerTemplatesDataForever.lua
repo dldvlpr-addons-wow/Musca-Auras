@@ -142,8 +142,15 @@ local fixes = {
     },
   },
   DRUID = {
+    remove = {
+      [3] = {
+        [5217] = true, -- Tiger's Fury, SkillLineAbility AcquireMethod 3 (never learned)
+        [16979] = true, -- Feral Charge (Bear) talent, AcquireMethod 3; replaced by 1238122
+      },
+    },
     add = {
       [3] = {
+        { spell = 1238122, type = "ability", requiresTarget = true, usable = true }, -- Feral Charge (Bear and Cat Form per web guides)
         { spell = 407995, type = "ability", requiresTarget = true, form = 1 }, -- Primal Bite
         { spell = 1322605, type = "ability" }, -- Shifting Power
         { spell = 437138, type = "ability" }, -- Revive
