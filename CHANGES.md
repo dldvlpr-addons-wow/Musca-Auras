@@ -16,6 +16,24 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 
 ## 2026-10-09
 
+Released as 1.7.0. Tested in game on WoW Forever with a Shaman: Not on Cooldown and On Cooldown spell triggers with
+Show Global Cooldown unchecked, in combat.
+
+### Fixed
+- `WeakAuras/WeakAuras.lua`: a full `WeakAuras.Add` on a loaded aura outside the editor (for example the rebuild of
+  a group child after a growth change) unloads the old aura and loads the new one, so its icon no longer stays hidden
+  until `/reload`.
+- `WeakAuras/SecretSpellCooldown.lua`, `WeakAuras/GenericTrigger.lua`: a secret spell cooldown held only by the
+  global cooldown is flagged as GCD-only and counts as ready, as with readable cooldowns. A `Not on Cooldown` trigger
+  with `Show Global Cooldown` unchecked stays active during the GCD instead of reading a one-hour cooldown. With
+  `Show Global Cooldown` checked, `On Cooldown` no longer shows on every GCD.
+
+### Changed
+- `.github/workflows/release.yml`: the Discord announcement and changelog post link to CurseForge and Wago only;
+  the GitHub release link and the GitHub lines of the changelog section are left out.
+
+## 2026-10-09
+
 Released as 1.6.2.
 
 ### Fixed

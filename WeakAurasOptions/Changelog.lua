@@ -10,12 +10,19 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.6.2',
+  versionString = '1.7.0',
   dateString = '2026-10-09',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Swing Timer: Out of Range works again
-- %p follows the Old Blizzard and Modern Blizzard time formats]==],  commitText = [==[1.6.2 (2026-10-09):
+- Spell cooldowns: the global cooldown alone no longer counts as a cooldown in combat
+- An aura rebuilt while loaded no longer stays hidden until /reload]==],  commitText = [==[1.7.0 (2026-10-09):
+
+Fixes:
+
+- Spell cooldowns in combat: a global cooldown alone no longer counts as a cooldown. A Not on Cooldown trigger with Show Global Cooldown unchecked stays shown during the GCD, and with Show Global Cooldown checked, On Cooldown no longer shows on every GCD
+- An aura rebuilt while it is loaded, for example a group child after a growth change, no longer stays hidden until /reload
+
+1.6.2 (2026-10-09):
 
 Fixes:
 
