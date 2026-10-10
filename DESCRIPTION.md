@@ -5,12 +5,12 @@ Icons, bars, texts and timers that keep working on the modern engine, even in co
 
 ***
 
-## <span style="color: #ff6b35;">⚠️ Heads-up: 1.7.0</span>
+## <span style="color: #ff6b35;">⚠️ Heads-up: 1.7.1</span>
 
 *   <span style="color: #ffd100;"><strong>Restart the game after the update:</strong></span> a new file is not loaded by a `/reload`.
-*   <span style="color: #3c3;"><strong>Tested in game on WoW Forever:</strong></span> spell cooldowns, Aura (Modern) buffs and debuffs, totems (out of combat), weapon enchants, health, power, swing and cast bars, `/reload` in combat, Swing Timer range, `%p` time formats, spell cooldowns during the global cooldown in combat.
+*   <span style="color: #3c3;"><strong>Tested in game on WoW Forever:</strong></span> spell cooldowns, Aura (Modern) buffs and debuffs, totems (out of combat), weapon enchants, health, power, swing and cast bars, `/reload` in combat, Swing Timer range, `%p` time formats, spell cooldowns during the global cooldown in combat, Cooldown Manager auras in combat (bar, swipe, `%p`, clones, exact spell ID, dispel border).
 *   <span style="color: #ff9800;"><strong>Not tested in game yet:</strong></span> Grid mode, more than 40 nameplates, Masque skins, rebuilt auras.
-*   <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.6.2?</strong></span> Install **1.6.2** again from the **Files** tab of the CurseForge page.
+*   <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.7.0?</strong></span> Install **1.7.0** again from the **Files** tab of the CurseForge page.
 *   <span style="color: #3c3;"><strong>Your auras are kept.</strong></span> The saved data format did not change.
 *   <span style="color: #0cf;"><strong>Please report it</strong></span> on GitHub or CurseForge, with the text of the error.
 
@@ -65,6 +65,15 @@ This version brings a large batch of patches and bug fixes, and one new layout o
 
 *   **Spell cooldowns in combat:** the global cooldown alone no longer counts as a cooldown. Not on Cooldown with Show Global Cooldown unchecked stays shown during the GCD.
 *   **Rebuilt auras:** an aura rebuilt while loaded, for example a group child after a growth change, no longer stays hidden until `/reload`. Not tested in game yet.
+
+<span style="color: #3c3;"><strong>Fixed in 1.7.1</strong></span>
+
+*   **Cooldown Manager auras in combat:** the bar no longer stays full or frozen; the swipe and `%p` text keep the aura timing, also on a recast or a first cast in combat.
+*   **`%p` Cooldown Manager text** follows the selected time format and comes back after combat.
+*   **No more `ADDON_ACTION_BLOCKED`** when a Cooldown Manager aura is placed or ends in combat.
+*   **Exact spell ID** Cooldown Manager triggers stay shown in combat and follow a rank change.
+*   **Login:** no more Lua error from the native Cooldown Manager bar.
+*   **Texts:** two or more texts on an aura keep their order.
 
 <span style="color: #0cf;"><strong>Performance</strong></span>
 
