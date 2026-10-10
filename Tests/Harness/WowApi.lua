@@ -263,6 +263,9 @@ function WowApi.Install(target)
     RegisterCVar = function(name, value) WowApi.cvars[name] = WowApi.cvars[name] or (value ~= nil and tostring(value) or nil) end,
   }
   target.SetCVar = function() return true end
+  target.C_StringUtil = {
+    CreateNumericRuleFormatter = function() return { SetBreakpoints = function() end } end,
+  }
 
   target.SlashCmdList = {}
   target.StaticPopupDialogs = {}

@@ -1972,6 +1972,7 @@ end
 Private.callbacks:RegisterCallback("RestrictionChanged", function()
   Private.StartProfileSystem("load");
   Private.ScanForLoads(nil, "WA_RESTRICTION_CHANGED")
+  Private.PrepareContainerSpares()
   Private.StopProfileSystem("load");
 end)
 
@@ -3527,14 +3528,14 @@ function Private.SetRegion(data, cloneId)
             tinsert(clonePool[region.regionType], region);
             region:Hide();
           end
-          if(clonePool[data.regionType] and clonePool[data.regionType][1]) then
-            clones[id][cloneId] = tremove(clonePool[data.regionType]);
-          else
-            local clone = regionTypes[data.regionType].create(WeakAurasFrame, data);
+          local clone = clonePool[data.regionType]
+            and Private.CDMAuraProgress.TakeClone(clonePool[data.regionType], data, loaded);
+          if not clone then
+            clone = regionTypes[data.regionType].create(WeakAurasFrame, data);
             clone.regionType = data.regionType;
             clone:Hide();
-            clones[id][cloneId] = clone;
           end
+          clones[id][cloneId] = clone;
           region = clones[id][cloneId];
         end
       else
@@ -3585,13 +3586,27 @@ function Private.SetRegion(data, cloneId)
       data.animation.main.duration_type = data.animation.main.duration_type or "seconds"
       data.animation.finish.duration_type = data.animation.finish.duration_type or "seconds"
 
-      if(cloneId) then
-        clonePool[regionType] = clonePool[regionType] or {};
-      end
+      clonePool[regionType] = clonePool[regionType] or {};
+      Private.CDMAuraProgress.AddSpareClone(clonePool[regionType], regionType, data,
+        function() return regionTypes[regionType].create(WeakAurasFrame, data) end, parent)
       if(anim_cancelled) then
         Private.Animate("display", data.uid, "main", data.animation.main, region, false, nil, true, cloneId);
       end
       return region;
+    end
+  end
+end
+
+function Private.PrepareContainerSpares()
+  if WeakAuras.IsRestricted() then return end
+  for id, data in pairs(db and db.displays or {}) do
+    local regionType = data.regionType
+    if loaded[id] ~= nil and regionTypes[regionType] then
+      clonePool[regionType] = clonePool[regionType] or {}
+      local parent = WeakAurasFrame
+      if data.parent then parent = Private.regions[data.parent] and Private.regions[data.parent].region end
+      Private.CDMAuraProgress.AddSpareClone(clonePool[regionType], regionType, data,
+        function() return regionTypes[regionType].create(WeakAurasFrame, data) end, parent)
     end
   end
 end
@@ -3706,13 +3721,36 @@ function Private.SetAllStatesHiddenExcept(id, triggernum, list)
   end
 end
 
+local pendingProtectedReleases = {}
+local releaseFrame = CreateFrame("Frame")
+releaseFrame:SetScript("OnEvent", function(self)
+  self:UnregisterEvent("PLAYER_REGEN_ENABLED")
+  local pending = pendingProtectedReleases
+  pendingProtectedReleases = {}
+  for _, entry in ipairs(pending) do
+    local region = entry.region
+    region:Hide()
+    region:SetAlpha(region.GetRegionAlpha and region:GetRegionAlpha() or 1)
+    clonePool[entry.regionType] = clonePool[entry.regionType] or {}
+    tinsert(clonePool[entry.regionType], region)
+  end
+end)
+
 function Private.ReleaseClone(id, cloneId, regionType)
   if (not clones[id]) then
     return;
   end
   local region = clones[id][cloneId];
   clones[id][cloneId] = nil;
-  if region:IsProtected() then
+  if region:IsProtected() and Private.CDMAuraProgress.HasContainer(region) then
+    if InCombatLockdown() then
+      region:SetAlpha(0)
+      pendingProtectedReleases[#pendingProtectedReleases + 1] = { region = region, regionType = regionType }
+      releaseFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+    else
+      clonePool[regionType][#clonePool[regionType] + 1] = region;
+    end
+  elseif region:IsProtected() then
     WeakAuras.prettyPrint(L["Error '%s' created a secure clone. We advise deleting the aura. For more information:\nhttps://github.com/WeakAuras/WeakAuras2/wiki/Protected-Frames"]:format(id))
   else
     clonePool[regionType][#clonePool[regionType] + 1] = region;
@@ -6346,27 +6384,30 @@ local function tryAnchorAgain()
   postPonedAnchors = {};
   anchorTimer = nil;
 
-  for id in pairs(delayed) do
-    local data = WeakAuras.GetData(id);
-    local region = WeakAuras.GetRegion(id);
-    if (data and region) then
-      local parent = WeakAurasFrame;
-      local parentData
-      if data.parent then
-        parentData = WeakAuras.GetData(data.parent)
-        if parentData and Private.EnsureRegion(data.parent) then
-          parent = Private.regions[data.parent].region
+  for id, cloneIds in pairs(delayed) do
+    for cloneId in pairs(cloneIds) do
+      local data = WeakAuras.GetData(id);
+      local region = WeakAuras.GetRegion(id, cloneId);
+      if (data and region) then
+        local parent = WeakAurasFrame;
+        local parentData
+        if data.parent then
+          parentData = WeakAuras.GetData(data.parent)
+          if parentData and Private.EnsureRegion(data.parent) then
+            parent = Private.regions[data.parent].region
+          end
         end
-      end
-      if not parentData or parentData.regionType ~= "dynamicgroup" then
-        Private.AnchorFrame(data, region, parent)
+        if not parentData or parentData.regionType ~= "dynamicgroup" then
+          Private.AnchorFrame(data, region, parent)
+        end
       end
     end
   end
 end
 
-local function postponeAnchor(id)
-  postPonedAnchors[id] = true;
+local function postponeAnchor(id, cloneId)
+  postPonedAnchors[id] = postPonedAnchors[id] or {};
+  postPonedAnchors[id][cloneId or ""] = true;
   if (not anchorTimer) then
     anchorTimer = timer:ScheduleTimer(tryAnchorAgain, 1);
   end
@@ -6505,6 +6546,10 @@ function Private.AnchorFrame(data, region, parent, force)
       anchorFrameDeferred[data.id] = true
     end
   else
+    if InCombatLockdown() and region:IsProtected() then
+      postponeAnchor(data.id, region.cloneId)
+      return
+    end
     local flowPreview = data.regionType == "group" and Private.BlizzardAuraDisplay.FlowPreviewFrame
       and Private.BlizzardAuraDisplay.FlowPreviewFrame(data)
     if flowPreview then

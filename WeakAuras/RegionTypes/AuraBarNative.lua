@@ -280,13 +280,24 @@ local barFuncs = {
     return nativeBar
   end,
 
+  ["NativeBarLocked"] = function(self)
+    return self.nativeBar ~= nil and self.nativeBars ~= nil and self.nativeBar == self.nativeBars.cdm
+      and WeakAuras.IsRestricted()
+  end,
+
+  ["ReleaseNativeBar"] = function(self)
+    if self.nativeBar and self.nativeBar ~= self.nativeBars.cdm then
+      self.nativeBar:Hide()
+    end
+  end,
+
   ["ShowNativeBar"] = function(self, nativeBar)
     if self.nativeBar ~= nativeBar then
-      if self.nativeBar then
-        self.nativeBar:Hide()
-      end
+      self:ReleaseNativeBar()
       self.nativeBar = nativeBar
-      nativeBar:Show()
+      if nativeBar ~= self.nativeBars.cdm or not WeakAuras.IsRestricted() then
+        nativeBar:Show()
+      end
       self:AnchorMaskToNativeBar()
       self:UpdateAdditionalBars()
     end
@@ -294,7 +305,10 @@ local barFuncs = {
 
   ["HideNativeBar"] = function(self)
     if self.nativeBar then
-      self.nativeBar:Hide()
+      self:ReleaseNativeBar()
+      if self.nativeBar == self.nativeBars.cdm and not WeakAuras.IsRestricted() then
+        self.nativeBar:Hide()
+      end
       self.nativeBar = nil
       self:UpdateAnchors()
       self:UpdateAdditionalBars()
@@ -336,7 +350,30 @@ local barFuncs = {
     end
   end,
 
+  ["StyleCdmBar"] = function(self)
+    local nativeBar = self.nativeBars and self.nativeBars.cdm
+    if not nativeBar or WeakAuras.IsRestricted() then return end
+    local orientation = nativeOrientation[self.orientation] or nativeOrientation.HORIZONTAL
+    local texture = self:GetStatusBarTexture()
+    local color = self.cdmColor or {self.fg:GetVertexColor()}
+    pcall(function()
+      nativeBar:SetOrientation(orientation[1])
+      nativeBar:SetReverseFill(orientation[2])
+      if texture then nativeBar:SetStatusBarTexture(texture) end
+      nativeBar:SetStatusBarColor(unpack(color))
+    end)
+  end,
+
   ["AnchorMaskToNativeBar"] = function(self)
+    if self.nativeBars and self.nativeBar == self.nativeBars.cdm then
+      self.fgMask:ClearAllPoints()
+      self.fgMask:SetPoint("TOPLEFT", self, "TOPLEFT")
+      self.fgMask:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT")
+      self.fg:Hide()
+      self.spark:Hide()
+      self:StyleCdmBar()
+      return
+    end
     local orientation = nativeOrientation[self.orientation] or nativeOrientation.HORIZONTAL
     local reverse = orientation[2]
     local inverse = self.nativeInverse and self.nativeBars and self.nativeBar == self.nativeBars.value

@@ -127,7 +127,18 @@ end
 function Methods:GetName() return State[self].name end
 function Methods:GetDebugName() return State[self].name or tostring(self) end
 function Methods:GetParent() return State[self].parent end
+local function Blocked(object, method)
+  if not (rawget(_G, "InCombatLockdown") and _G.InCombatLockdown() and object:IsProtected()) then return false end
+  Frames.onForbidden("ADDON_ACTION_BLOCKED: Frame:" .. method .. "()")
+  return true
+end
+
+function Frames.SetProtected(object, protected)
+  State[object].protected = protected
+end
+
 function Methods:SetParent(parent)
+  if Blocked(self, "SetParent") then return end
   if State[self].parent then
     for _, list in ipairs({ State[State[self].parent].children or {}, State[State[self].parent].regions or {} }) do
       for index = #list, 1, -1 do
@@ -344,18 +355,23 @@ function Methods:GetTexCoord()
 end
 
 function Methods:SetPoint(point, relativeTo, relativePoint, x, y)
+  if Blocked(self, "SetPoint") then return end
   if type(relativeTo) == "number" then
     relativeTo, relativePoint, x, y = nil, nil, relativeTo, relativePoint
   end
   State[self].points[#State[self].points + 1] = { point, relativeTo or State[self].parent, relativePoint or point, x or 0, y or 0 }
 end
 function Methods:SetAllPoints(relativeTo)
+  if Blocked(self, "SetAllPoints") then return end
   State[self].points = {
     { "TOPLEFT", relativeTo or State[self].parent, "TOPLEFT", 0, 0 },
     { "BOTTOMRIGHT", relativeTo or State[self].parent, "BOTTOMRIGHT", 0, 0 },
   }
 end
-function Methods:ClearAllPoints() State[self].points = {} end
+function Methods:ClearAllPoints()
+  if Blocked(self, "ClearAllPoints") then return end
+  State[self].points = {}
+end
 function Methods:ClearPoint(point)
   for index = #State[self].points, 1, -1 do
     if State[self].points[index][1] == point then table.remove(State[self].points, index) end
@@ -399,7 +415,13 @@ function Methods:GetFrameStrata() return State[self].strata end
 function Methods:SetDrawLayer(layer, subLevel) State[self].layer, State[self].subLevel = layer, subLevel end
 function Methods:GetDrawLayer() return State[self].layer or "ARTWORK", State[self].subLevel or 0 end
 function Methods:IsForbidden() return false end
-function Methods:IsProtected() return false end
+function Methods:IsProtected()
+  if State[self].protected then return true end
+  for _, child in ipairs(State[self].children or {}) do
+    if child:IsProtected() then return true end
+  end
+  return false
+end
 function Methods:GetID() return State[self].id or 0 end
 function Methods:SetID(id) State[self].id = id end
 function Methods:IsMouseOver() return false end

@@ -948,7 +948,8 @@ end
 function Private.regionPrototype.modifyFinish(parent, region, data)
   -- Sync subRegions
   if region.subRegions then
-    for index, subRegion in pairs(region.subRegions) do
+    for index = #region.subRegions, 1, -1 do
+      local subRegion = region.subRegions[index]
       Private.subRegionTypes[subRegion.type].release(subRegion)
     end
 

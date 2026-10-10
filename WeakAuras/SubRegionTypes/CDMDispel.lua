@@ -1,9 +1,86 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local SUBSCRIBED_EVENTS = {"Update", "UpdateProgress"}
+local supportedParents = {
+  icon = true,
+  aurabar = true,
+  progresstexture = true,
+}
 
-local function getDefaults()
+local trackedEvents = { "Update", "UpdateProgress" }
+
+local function supports(parentType)
+  return supportedParents[parentType] == true
+end
+
+local function setVisible(self, isVisible)
+  self.visible = isVisible
+  self:SetShown(isVisible and true or false)
+  if self.Update then
+    self.Update()
+  end
+end
+
+local function create()
+  local region = CreateFrame("Frame", nil, UIParent)
+  local preview = region:CreateTexture(nil, "OVERLAY", nil, 1)
+  preview:SetAllPoints(region)
+  preview:Hide()
+  region.preview = preview
+  region.SetVisible = setVisible
+  return region
+end
+
+local function modify(parent, region, parentData, data)
+  region:SetParent(parent)
+  region.parent = parent
+
+  region.Anchor = function()
+    region:ClearAllPoints()
+    local xOffset = data.xOffset or 0
+    local yOffset = data.yOffset or 0
+    local mode = data.anchor_mode or "point"
+    if data.anchor_mode == "point" then
+      region:SetSize(data.width or 24, data.height or 24)
+      parent:AnchorSubRegion(region, "point", data.anchor_point, data.self_point, xOffset, yOffset)
+    elseif mode == "area" then
+      parent:AnchorSubRegion(region, "area", data.anchor_area or data.anchor_point, nil, xOffset, yOffset)
+    else
+      parent:AnchorSubRegion(region, mode, data.anchor_point, nil, xOffset, yOffset)
+    end
+  end
+  region.Anchor()
+
+  local refresh = function()
+    Private.CDMAuraProgress.UpdateIndicator(parent, region, data)
+  end
+  region.Update = refresh
+  region.UpdateProgress = refresh
+
+  for _, eventName in ipairs(trackedEvents) do
+    parent.subRegionEvents:AddSubscriber(eventName, region)
+  end
+
+  Private.CDMAuraProgress.ModifyIndicator(parent, region, parentData, data)
+  region:SetVisible(data.dispelVisible ~= false)
+end
+
+local function onAcquire(region)
+  region:Show()
+end
+
+local function onRelease(region)
+  local parent = region.parent
+  if parent then
+    for _, eventName in ipairs(trackedEvents) do
+      parent.subRegionEvents:RemoveSubscriber(eventName, region)
+    end
+  end
+  Private.CDMAuraProgress.ReleaseIndicator(region, true)
+  region:Hide()
+end
+
+local function default()
   return {
     dispelVisible = true,
     dispelStyle = "Icon",
@@ -18,69 +95,6 @@ local function getDefaults()
   }
 end
 
-local function isSupported(parentType)
-  return parentType == "icon" or parentType == "aurabar" or parentType == "progresstexture"
-end
-
-local function createRegion()
-  local region = CreateFrame("Frame", nil, UIParent)
-  local preview = region:CreateTexture(nil, "OVERLAY", nil, 1)
-  preview:SetAllPoints(region)
-  preview:Hide()
-  region.preview = preview
-
-  function region:SetVisible(isVisible)
-    self.visible = isVisible
-    self:SetShown(isVisible)
-    if self.Update then self:Update() end
-  end
-
-  return region
-end
-
-local function modifyRegion(parent, region, parentData, data)
-  region:SetParent(parent)
-  region.parent = parent
-
-  function region.Anchor()
-    local mode = data.anchor_mode or "point"
-    region:ClearAllPoints()
-    if data.anchor_mode == "point" then
-      region:SetSize(data.width or 24, data.height or 24)
-    end
-    local target = mode == "area" and data.anchor_area or data.anchor_point
-    local ownPoint = data.anchor_mode == "point" and data.self_point or nil
-    parent:AnchorSubRegion(region, mode, target, ownPoint, data.xOffset or 0, data.yOffset or 0)
-  end
-  region:Anchor()
-
-  region.Update = function()
-    Private.CDMAuraProgress.UpdateIndicator(parent, region, data)
-  end
-  region.UpdateProgress = region.Update
-  for _, eventName in ipairs(SUBSCRIBED_EVENTS) do
-    parent.subRegionEvents:AddSubscriber(eventName, region)
-  end
-
-  Private.CDMAuraProgress.ModifyIndicator(parent, region, parentData, data)
-  region:SetVisible(data.dispelVisible ~= false)
-end
-
-local function releaseRegion(region)
-  local parent = region.parent
-  if parent then
-    for _, eventName in ipairs(SUBSCRIBED_EVENTS) do
-      parent.subRegionEvents:RemoveSubscriber(eventName, region)
-    end
-  end
-  Private.CDMAuraProgress.ReleaseIndicator(region, true)
-  region:Hide()
-end
-
-local function showRegion(region)
-  region:Show()
-end
-
 local properties = {
   dispelVisible = {
     display = "Visibility",
@@ -90,5 +104,5 @@ local properties = {
   },
 }
 
-WeakAuras.RegisterSubRegionType("subcdmdispel", "CDM Dispel Type Icon", isSupported,
-  createRegion, modifyRegion, showRegion, releaseRegion, getDefaults, nil, properties)
+WeakAuras.RegisterSubRegionType("subcdmdispel", "CDM Dispel Type Icon", supports, create, modify,
+  onAcquire, onRelease, default, nil, properties)
