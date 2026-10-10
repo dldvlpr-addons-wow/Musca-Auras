@@ -299,11 +299,13 @@ local barPrototype = {
     self.fg:SetTexCoord(TLx, TLy, BLx, BLy, TRx, TRy, BRx, BRy)
 
     -- Set alignment
-    self.fgMask:ClearAllPoints()
-    self.fgMask:SetPoint(self.align1, self, self.align1)
-    self.fgMask:SetPoint(self.align2, self, self.align2)
-    if self.nativeBar then
-      self:AnchorMaskToNativeBar()
+    if not self:NativeBarLocked() then
+      self.fgMask:ClearAllPoints()
+      self.fgMask:SetPoint(self.align1, self, self.align1)
+      self.fgMask:SetPoint(self.align2, self, self.align2)
+      if self.nativeBar then
+        self:AnchorMaskToNativeBar()
+      end
     end
 
     self.spark:SetPoint("CENTER", self.fgMask, self.alignSpark, self.spark.sparkOffsetX or 0, self.spark.sparkOffsetY or 0);
@@ -605,6 +607,7 @@ local barPrototype = {
     for index, extraTexture in ipairs(self.extraTextures) do
       Private.SetTextureOrAtlas(extraTexture, texture, extraTextureWrapMode, extraTextureWrapMode)
     end
+    self:StyleCdmBar()
   end,
 
   ["GetStatusBarTexture"] = function(self)
@@ -614,6 +617,8 @@ local barPrototype = {
   -- Set bar color
   ["SetForegroundColor"] = function(self, r, g, b, a)
     self.fg:SetVertexColor(r, g, b, a);
+    self.cdmColor = nil
+    self:StyleCdmBar()
   end,
 
   ["SetForegroundGradient"] = function(self, orientation, r1, g1, b1, a1, r2, g2, b2, a2)
@@ -623,6 +628,8 @@ local barPrototype = {
       self.fg:SetGradient(orientation, CreateColor(r1, g1, b1, a1),
                                        CreateColor(r2, g2, b2, a2))
     end
+    self.cdmColor = {r1, g1, b1, a1}
+    self:StyleCdmBar()
   end,
 
   -- Set background color
@@ -931,7 +938,7 @@ local funcs = {
   UpdateValue = function(self)
     if type(self.secretValue) == "number" and canDrawDurationObject then
       self.bar:SetSecretValue(self.secretValue, self.secretTotal, self.inverseDirection, self.smoothProgress)
-    else
+    elseif not self.cdmNativeProgress then
       local progress = 0;
       if (self.total ~= 0) then
         progress = self.value / self.total;
@@ -988,6 +995,8 @@ local funcs = {
     self.bar:SetAdditionalBarsInverse(not self.bar:GetAdditionalBarsInverse())
     if type(self.secretValue) == "number" then
       self:UpdateValue()
+    elseif self.cdmNativeProgress then
+      Private.CDMAuraProgress.Update(self)
     elseif self.bar.nativeBar then
       self:UpdateTime()
     end

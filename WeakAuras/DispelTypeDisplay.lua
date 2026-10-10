@@ -1,44 +1,50 @@
 if not WeakAuras.IsLibsOK() then return end
-local _, Private = ...
+local Private = select(2, ...)
 
 local EDGE_COUNT = 4
-local WHITE_TEXTURE = "Interface\\Buttons\\WHITE8X8"
-
-local EDGE_LAYOUT = {
-  {points = {{"TOPLEFT", -1, 1}, {"TOPRIGHT", 1, 1}}, resize = "SetHeight"},
-  {points = {{"BOTTOMLEFT", -1, -1}, {"BOTTOMRIGHT", 1, -1}}, resize = "SetHeight"},
-  {points = {{"TOPLEFT", -1, 1}, {"BOTTOMLEFT", -1, -1}}, resize = "SetWidth"},
-  {points = {{"TOPRIGHT", 1, 1}, {"BOTTOMRIGHT", 1, -1}}, resize = "SetWidth"},
-}
+local EDGE_TEXTURE = "Interface\\Buttons\\WHITE8X8"
+local DEFAULT_THICKNESS = 2
+local MAX_THICKNESS = 32
+local MIN_THICKNESS = 1
 
 local DispelTypeDisplay = {}
 Private.DispelTypeDisplay = DispelTypeDisplay
 
+local EDGE_CORNERS = {
+  { { "TOPLEFT", -1, 1 }, { "TOPRIGHT", 1, 1 }, "SetHeight" },
+  { { "BOTTOMLEFT", -1, -1 }, { "BOTTOMRIGHT", 1, -1 }, "SetHeight" },
+  { { "TOPLEFT", -1, 1 }, { "BOTTOMLEFT", -1, -1 }, "SetWidth" },
+  { { "TOPRIGHT", 1, 1 }, { "BOTTOMRIGHT", 1, -1 }, "SetWidth" },
+}
+
 function DispelTypeDisplay.CreateEdges(owner)
-  local created = {}
-  for slot = 1, EDGE_COUNT do
+  local edges = {}
+  for index = 1, EDGE_COUNT do
     local texture = owner:CreateTexture(nil, "OVERLAY", nil, 0)
-    texture:SetTexture(WHITE_TEXTURE)
+    texture:SetTexture(EDGE_TEXTURE)
     texture:Hide()
-    created[slot] = texture
+    edges[index] = texture
   end
-  return created
+  return edges
 end
 
 function DispelTypeDisplay.Layout(edges, target, data)
-  local thickness = math.min(32, tonumber(data.dispelBorderSize) or 2)
-  thickness = math.max(1, thickness)
+  local thickness = tonumber(data.dispelBorderSize) or DEFAULT_THICKNESS
+  thickness = math.max(MIN_THICKNESS, math.min(MAX_THICKNESS, thickness))
   local spread = tonumber(data.dispelBorderOffset) or 0
+
   for _, texture in ipairs(edges) do
     texture:ClearAllPoints()
   end
-  for slot, layout in ipairs(EDGE_LAYOUT) do
-    local texture = edges[slot]
-    for _, anchor in ipairs(layout.points) do
-      local point, signX, signY = anchor[1], anchor[2], anchor[3]
-      texture:SetPoint(point, target, point, signX * spread, signY * spread)
+
+  for index = 1, EDGE_COUNT do
+    local texture = edges[index]
+    local layout = EDGE_CORNERS[index]
+    for pointIndex = 1, 2 do
+      local corner = layout[pointIndex]
+      texture:SetPoint(corner[1], target, corner[1], corner[2] * spread, corner[3] * spread)
     end
-    texture[layout.resize](texture, thickness)
+    texture[layout[3]](texture, thickness)
   end
 end
 
@@ -50,66 +56,66 @@ function DispelTypeDisplay.Hide(edges)
 end
 
 function DispelTypeDisplay.Bind(button, edges)
-  local textureStyle = Enum.CustomAuraButtonDispelTypeTextureStyle.PreserveAsset
-  if textureStyle == nil then return end
-  local options = {showWhenHelpful = true, showWhenHarmful = true, style = textureStyle}
+  local styles = Enum and Enum.CustomAuraButtonDispelTypeTextureStyle
+  local preserveAsset = styles and styles.PreserveAsset
+  if preserveAsset == nil then return end
   for _, texture in ipairs(edges) do
-    button:AddDispelTypeTexture(texture, options)
+    button:AddDispelTypeTexture(texture, {
+      showWhenHelpful = true,
+      showWhenHarmful = true,
+      style = preserveAsset,
+    })
   end
 end
 
-local function legacyStyleOf(element)
-  if element.type ~= "subcdmdispel" then return nil end
-  local style = element.dispelStyle
-  if style == "Border" or style == "BorderWithIcon" then return style end
-  return nil
-end
-
-local function convertToBorder(border, data)
-  border.type = "subcdmdispelborder"
-  border.dispelStyle = nil
-  border.dispelBorderSize = border.dispelBorderSize or 2
-  border.dispelBorderOffset = border.dispelBorderOffset or 0
-  if border.anchor_mode ~= "area" then
-    border.xOffset = 0
-    border.yOffset = 0
+local function convertToBorder(subRegion, data)
+  subRegion.type = "subcdmdispelborder"
+  subRegion.dispelStyle = nil
+  subRegion.dispelBorderSize = subRegion.dispelBorderSize or DEFAULT_THICKNESS
+  subRegion.dispelBorderOffset = subRegion.dispelBorderOffset or 0
+  if subRegion.anchor_mode ~= "area" then
+    subRegion.xOffset = 0
+    subRegion.yOffset = 0
   end
-  border.anchor_mode = "area"
-  local defaultArea = data.regionType == "aurabar" and "bar" or "ALL"
-  border.anchor_area = border.anchor_area or defaultArea
+  subRegion.anchor_mode = "area"
+  subRegion.anchor_area = subRegion.anchor_area or (data.regionType == "aurabar" and "bar" or "ALL")
 end
 
-local function duplicateConditionChanges(data, fromProperty, toProperty)
-  for _, condition in ipairs(data.conditions or {}) do
-    local changes = condition.changes or {}
-    local known = #changes
-    for position = 1, known do
-      local change = changes[position]
-      if change.property == fromProperty then
-        local clone = CopyTable(change)
-        clone.property = toProperty
-        changes[#changes + 1] = clone
+local function duplicateConditionChanges(conditions, fromIndex, toIndex)
+  if not conditions then return end
+  local fromProperty = "sub." .. fromIndex .. ".dispelVisible"
+  local toProperty = "sub." .. toIndex .. ".dispelVisible"
+  for _, condition in ipairs(conditions) do
+    local changes = condition.changes
+    if changes then
+      for changeIndex = 1, #changes do
+        local change = changes[changeIndex]
+        if change.property == fromProperty then
+          local duplicate = CopyTable(change)
+          duplicate.property = toProperty
+          changes[#changes + 1] = duplicate
+        end
       end
     end
   end
 end
 
 function DispelTypeDisplay.Migrate(data)
-  local list = data.subRegions or {}
-  local original = #list
-  for position = 1, original do
-    local element = list[position]
-    local style = legacyStyleOf(element)
-    if style == "Border" then
-      convertToBorder(element, data)
-    elseif style == "BorderWithIcon" then
-      local border = CopyTable(element)
-      convertToBorder(border, data)
-      element.dispelStyle = "Icon"
-      list[#list + 1] = border
-      duplicateConditionChanges(data,
-        "sub." .. position .. ".dispelVisible",
-        "sub." .. #list .. ".dispelVisible")
+  local subRegions = data.subRegions
+  if not subRegions then return end
+  for index = 1, #subRegions do
+    local subRegion = subRegions[index]
+    if subRegion.type == "subcdmdispel" then
+      local style = subRegion.dispelStyle
+      if style == "Border" then
+        convertToBorder(subRegion, data)
+      elseif style == "BorderWithIcon" then
+        local borderCopy = CopyTable(subRegion)
+        convertToBorder(borderCopy, data)
+        subRegions[#subRegions + 1] = borderCopy
+        subRegion.dispelStyle = "Icon"
+        duplicateConditionChanges(data.conditions, index, #subRegions)
+      end
     end
   end
 end

@@ -214,7 +214,7 @@ local function onRelease(subRegion)
 end
 
 local function modify(parent, region, parentData, data, first)
-  region:SetParent(parent)
+  if region:GetParent() ~= parent then region:SetParent(parent) end
   local text = region.text;
   local fontObject = region.fontObject
 
