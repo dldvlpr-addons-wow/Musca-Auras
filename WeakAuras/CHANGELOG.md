@@ -1,3 +1,21 @@
+# Musca Auras 1.7.1 (2026-10-10)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixes
+
+- Cooldown Manager aura triggers in combat: the bar no longer stays full or frozen, and the icon swipe and `%p` text
+  keep the aura timing, also on a recast and on an aura cast for the first time in combat.
+- The `%p` Cooldown Manager text follows the selected time format and comes back after combat.
+- No more `ADDON_ACTION_BLOCKED` when a Cooldown Manager aura is placed or ends in combat.
+- An exact spell ID Cooldown Manager trigger stays shown in combat and follows a rank change.
+- No more Lua error at login from the native Cooldown Manager bar.
+- Two or more texts on an aura keep their order.
+
+## Changes
+
+- The Cooldown Manager and dispel type files were rewritten. Nothing changes for your auras.
+
 # Musca Auras 1.7.0 (2026-10-09)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

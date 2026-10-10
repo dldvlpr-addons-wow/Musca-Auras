@@ -14,6 +14,45 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-10
+
+Released as 1.7.1. Tested in game on WoW Forever with a Shaman (Lightning Shield, Flame Shock) on Cooldown Manager
+aura triggers, in and out of combat: icon swipe, draining bar and `%p` duration text keep the aura timing in combat,
+show the full duration on a recast in combat, and follow the aura after combat. Older auras keep working. After the
+rewrite of the Cooldown Manager files: the dispel border shows, an exact spell ID trigger keeps its icon in combat
+and follows a rank change, and a Cooldown Manager clone that ends in combat (Flame Shock next to Lightning Shield)
+hides without error.
+
+### Fixed
+- `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/RegionTypes/AuraBarNative.lua`, `WeakAuras/RegionTypes/AuraBar.lua`:
+  a Cooldown Manager aura bar no longer stays full or frozen in combat; the native bar is not hidden or shown again
+  while restricted, and follows the bar texture and color. The native bar styling no longer raises an error at login.
+- `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/WeakAuras.lua`: clones for Cooldown Manager auras are prepared out of
+  combat, so an aura cast for the first time in combat shows its timer instead of the last known state. This also
+  covers textures and icons without a cooldown that use a `%p` Cooldown Manager text.
+- `WeakAuras/CDMAuraProgress.lua`: the `%p` timer text follows the selected time format and is rebuilt after combat.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/SubRegionTypes/SubText.lua`: a region or
+  clone holding a protected Blizzard aura container is anchored after combat instead of calling `SetParent` in
+  combat (`ADDON_ACTION_BLOCKED`); spare clones are anchored when prepared out of combat, and a text already on the
+  right parent is not parented again.
+- `WeakAuras/CooldownViewerCatalog.lua`: after combat, an exact spell ID Cooldown Manager trigger reads the player
+  aura by spell ID when the Cooldown Manager frame still holds a secret spell ID. In combat, the trigger keeps the
+  last spell ID read on that frame, updated when the player casts another rank, so the aura stays shown.
+- `WeakAuras/RegionTypes/RegionPrototype.lua`: subregions are released in reverse order, so two or more texts keep
+  their order when a region is reused.
+- `WeakAuras/CDMAuraProgress.lua`: a spare clone that gets no aura container goes back to the clone pool instead of
+  being lost, and the next spare reuses a pooled clone instead of creating a new frame each time; a reused clone or
+  spare first drops what an Aura (Modern) aura left on it (hidden parts, native display state).
+- `WeakAuras/WeakAuras.lua`: a released clone holding a Blizzard aura container goes back to the clone pool; in combat
+  it is faded out and pooled after combat, instead of being dropped with a secure clone warning.
+
+### Changed
+- `WeakAuras/DurationText.lua`, `WeakAuras/SubRegionTypes/CDMDispel.lua`,
+  `WeakAuras/SubRegionTypes/CDMDispelBorder.lua`, `WeakAuras/DispelTypeDisplay.lua`, `WeakAuras/CDMAuraProgress.lua`,
+  `WeakAuras/CooldownViewerCatalog.lua`: rewritten without ForeverAuras code.
+- `Tests/`: headless scenarios for Cooldown Manager timing in combat, native fallback, protected anchors and
+  protected clone release; the harness provides `C_StringUtil.CreateNumericRuleFormatter`.
+
 ## 2026-10-09
 
 Released as 1.7.0. Tested in game on WoW Forever with a Shaman: Not on Cooldown and On Cooldown spell triggers with
