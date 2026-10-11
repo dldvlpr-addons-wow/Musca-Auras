@@ -220,7 +220,7 @@ Sources : wowforevertalents.com/mage (effets) et wow-forever.gg/talents/mage (st
 | Arcane Impact | 3 : 11242, 12467, 12469 | crit Arcane +2 à +6 % |
 | Arcane Blast | 1 : 400574 (rang 1) ; absent de Talent (DB2), 400574 vient de SkillLineAbility (Arcane) | 57-66 dégâts ; cumuls jusqu'à 4 |
 | Arcane Shielding | 2 : 11252, 12605 | Mana Shield -17 / -33 % perte, Mage Armor résistances +25 / +50 % |
-| Improved Counterspell | 2 : 11255, 12598 | silence 2 / 4 s |
+| Improved Counterspell | 2 : 11255 (un sort à 2 rangs ; 12598 absent de Wowhead Forever) | silence 2 / 4 s, aura 18469 |
 | Arcane Meditation | 3 : 18462, 18463, 18464 | régén. mana en incantation 17 à 50 % |
 | Missile Barrage | 1 : absent de Talent (DB2) ; sorts de même nom : voir « Buffs, debuffs et procs » | proc Arcane Missiles gratuit (40 % Arcane Blast, 20 % Fireball/Frostbolt/Frostfire Bolt) |
 | Presence of Mind | 1 : 12043 | prochain sort < 10 s instantané, recharge 3 min |

@@ -1,4 +1,4 @@
-local ROOT = "Test - Correctifs CDM"
+local ROOT = "Test - CDM Fixes"
 
 local function Text(text, point, size)
   return {
@@ -28,7 +28,7 @@ local function Base(id, uid, parent, regionType, trigger)
   }
 end
 
-local texture = Base("Correctifs CDM : texture %p", "mcCdmFixTexture1", ROOT, "texture",
+local texture = Base("CDM Fixes: texture %p", "mcCdmFixTexture1", ROOT, "texture",
   { type = "cdm", event = "Blizzard CDM Buff", cdmSpells = { multi = { [200311] = true } }, cdmBuffShow = "active" })
 texture.texture, texture.width, texture.height = "Interface\\Icons\\Spell_Nature_LightningShield", 64, 64
 texture.color, texture.desaturate, texture.blendMode = {1, 1, 1, 1}, false, "BLEND"
@@ -36,7 +36,7 @@ texture.textureWrapMode, texture.rotation, texture.mirror, texture.rotate = "CLA
 texture.anchorPoint, texture.selfPoint, texture.xOffset, texture.yOffset = "TOP", "TOP", 100, -50
 texture.subRegions = { Text("%p", "CENTER", 16), Text("Texture", "BOTTOM", 10) }
 
-local exact = Base("Correctifs CDM : ID exact 324", "mcCdmFixExact001", ROOT, "icon",
+local exact = Base("CDM Fixes: exact ID 324", "mcCdmFixExact001", ROOT, "icon",
   { type = "cdm", event = "Blizzard CDM Buff", cdmUseExactIDs = true, cdmExactIDs = { "324" },
     cdmBuffShow = "active" })
 exact.width, exact.height, exact.xOffset, exact.yOffset = 64, 64, -100, -50

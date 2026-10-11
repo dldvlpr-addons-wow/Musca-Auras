@@ -2091,6 +2091,16 @@ function Private.Resume()
     Private.ScanForLoadsGroup(loadEvents["GROUP"])
   end
 
+  for id, regionEntry in pairs(Private.regions) do
+    local region = regionEntry.region
+    if region and region.secretAuraSamples then
+      Private.BlizzardAuraDisplay.HidePreview(region)
+    end
+    if not loaded[id] and region and region.blizzardAuraDisplay then
+      Private.BlizzardAuraDisplay.Release(region)
+    end
+  end
+
   Private.ResumeAllDynamicGroups(suspended)
 end
 
@@ -2239,6 +2249,7 @@ function WeakAuras.Delete(data)
   end
 
   if Private.regions[id] and Private.regions[id].region then
+    Private.BlizzardAuraDisplay.Release(Private.regions[id].region, true)
     Private.regions[id].region:Collapse()
     Private.CancelAnimation(Private.regions[id].region, true, true, true, true, true, true)
 
@@ -6503,7 +6514,10 @@ local function GetAnchorFrame(data, region, parent)
       if Private.regions[frame_name] and Private.regions[frame_name].region then
         return Private.regions[frame_name].region;
       end
-      postponeAnchor(id);
+      postponeAnchor(id, region.cloneId);
+      if data.anchorFrameParent ~= false and WeakAuras.GetData(frame_name) and not WeakAuras.IsOptionsOpen() then
+        return HiddenFrames
+      end
     else
       if (Private.GetSanitizedGlobal(anchorFrameFrame)) then
         return Private.GetSanitizedGlobal(anchorFrameFrame);

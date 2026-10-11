@@ -1,21 +1,33 @@
-# Pack chaman (Forever) — notes de reprise
+# Pack chaman (Musca) — notes de reprise
 
 État au 2026-10-07 : premier jet importé et fonctionnel en jeu. Pas encore de retour aura par aura.
 
 ## Fichiers
 
-- `PackChaman.lua` : générateur. Il renvoie la table d'export (groupe racine, deux groupes dynamiques, barre de mana, texte « MANA BAS »).
+Depuis le 2026-10-10, le pack est une table de données passée au générateur commun `../PackBuilder.lua`, comme les 8 autres classes. Le groupe racine s'appelle « Chaman (Musca) » au lieu de « Chaman (Forever) » : supprimer l'ancien groupe en jeu avant l'import.
+
+- `PackChaman.lua` : données du pack (sorts, auras, rappels).
 - `PackChaman.txt` : chaîne d'import `!WA:2!` actuelle.
-- `VerificationPackChaman.lua` : scénario du banc. Il charge le pack et vérifie que les 5 auras « Aura (Modern) » passent la validation du moteur. Le banc n'émule pas `AuraContainer` : leur affichage se vérifie en jeu seulement.
+- `../VerificationPack.lua` : scénario commun du banc. Il vérifie ids et uids uniques, parents, chargement de chaque aura pour la classe, et la validation moteur des auras « Aura (Modern) ». Le banc n'émule pas `AuraContainer` : leur affichage se vérifie en jeu seulement.
 - `../AuraTool.lua` : encodeur et décodeur de chaînes `!WA:2!`.
 
 Commandes, depuis la racine du dépôt :
 
 ```
+PACK=Tests/Packs/Chaman/PackChaman.lua lua Tests/run.lua --scenario Tests/Packs/VerificationPack.lua
 lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Chaman/PackChaman.lua > Tests/Packs/Chaman/PackChaman.txt
-lua Tests/run.lua --scenario Tests/Packs/Chaman/VerificationPackChaman.lua
 lua Tests/Packs/AuraTool.lua . decode <fichier contenant une chaîne>
 ```
+
+## Contenu actuel (30 auras)
+
+- Rotation : Earth Shock, Flame Shock, Frost Shock, Stormstrike, Chain Lightning, Fire Nova.
+- Cooldowns : Nature's Swiftness, Mana Tide Totem, Grounding Totem.
+- Buffs : Lightning Shield (charges), Clearcasting, Flurry. Débuff cible : Flame Shock.
+- Totems et enchantement main droite, barre de mana, règle des 5 s.
+- Rappels hors combat : Lightning Shield, enchantement d'arme, MANA BAS.
+
+Les sections ci-dessous gardent l'historique du premier jet.
 
 Le banc n'a pas de grimoire : les icônes de recharge n'y sont pas testables.
 

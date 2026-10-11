@@ -658,6 +658,7 @@ L["Enchant Removed"] = "Enchantement retiré"
 L["Enchanted"] = "Enchanté"
 L["Encounter ID(s)"] = "ID de la Rencontre"
 L["Energize"] = "Gain d'énergie"
+L["Energy Tick"] = "Tick d'énergie"
 L["Enrage"] = "Enrager"
 --[[Translation missing --]]
 L["Enter a name or a spellId"] = "Enter a name or a spellId"

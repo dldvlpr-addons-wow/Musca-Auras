@@ -1083,9 +1083,20 @@ local function ApplyGlowStyle(displayState, auraData, unitGlowFrame)
   glowFrame.registered = listEntry.group
 end
 
+local function RefreshShownAnimations(displayState)
+  local button = displayState.button
+  if displayState.preview or not button or not button.SetDispelTypeText then
+    return
+  end
+  displayState.updateProbe = displayState.updateProbe or button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  displayState.updateProbe:SetAlpha(0)
+  button:SetDispelTypeText(displayState.updateProbe, {showWhenHarmful = false})
+end
+
 local function ApplyNativeStyle(displayState, auraData, auraRegion)
   Display.StyleAppearance(displayState, Display.PrepareConditionAppearance(auraData), ResolveElement, ApplyTextStyle, ApplyGlowStyle)
   Display.ApplyConditionAppearance(displayState, auraRegion, auraData)
+  RefreshShownAnimations(displayState)
 end
 Display.StyleNative = ApplyNativeStyle
 
@@ -1172,6 +1183,7 @@ local function SetupUnitGlow(displayInstance, auraRegion, auraData)
   if glowState then
     glowState.container:SetEnabled(false)
     ApplyGlowStyle(glowState, auraData, true)
+    RefreshShownAnimations(glowState)
   else
     glowState = {container = CreateFrame("AuraContainer", nil, auraRegion, "CustomAuraContainerTemplate")}
     displayInstance.unitGlow = glowState
@@ -1653,7 +1665,19 @@ local function MakeDisplayState(auraRegion, auraData)
   return displayState
 end
 
+local function StopMainGlow(displayState)
+  local glowFrame = displayState and displayState.glow
+  if not glowFrame then return end
+  glowFrame.proc.group:Stop()
+  glowFrame.pulse.group:Stop()
+end
+
 local function RetireInstance(displayInstance)
+  for _, buttonState in ipairs(displayInstance.buttons) do
+    for _, shared in pairs(buttonState.sharedElements or {}) do Display.ClearElementGlow(shared) end
+    StopMainGlow(buttonState)
+  end
+  StopMainGlow(displayInstance.unitGlow)
   displayInstance.container:SetEnabled(false)
   displayInstance.container:Hide()
   Display.RefreshSingle(displayInstance, nil, false)

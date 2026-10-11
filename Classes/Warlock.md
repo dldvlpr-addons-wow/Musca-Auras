@@ -310,7 +310,7 @@ Seuls les IDs lus sur une page sont listés. Pour tous les DoTs/malédictions, l
 | Shadow Trance (proc Nightfall) | 17941 | proc / buff joueur, 10 s, -99% temps d'incantation Shadow Bolt | wowhead.com/forever/spell=17941 |
 | Shadow Vulnerability (Improved Shadow Bolt) | 17794 | debuff cible, 12 s, +5% dégâts du lanceur (valeur page) | wowhead.com/forever/spell=17794 |
 | Demon Armor r5 | 11735 (= ID du sort) | buff joueur, 30 min | wowhead forever, aussi wow-forever.gg ; l'ID d'aura des autres rangs n'est pas vérifié |
-| Soul Link | 19028 (= ID du talent/sort) | buff joueur ; effet « Dummy » côté serveur | wowhead.com/forever/spell=19028 ; DB2 : 19028 sans effet APPLY_AURA ; autre sort du même nom dans SpellName : 25228 (candidat d'aura, non confirmé) |
+| Soul Link | 25228 (aura posée ; 19028 = ID du talent/sort, effet « Dummy » côté serveur, sans APPLY_AURA au DB2) | buff joueur, 30 % des dégâts partagés, +3 % de dégâts | wowhead.com/forever/spell=25228 ; wowhead.com/forever/spell=19028 |
 | Bane of Doom Effect | 18662 | invocation du Garde funeste après 1 min | wowhead, wow-forever.gg |
 | Corruption r1-7 / Immolate r1-8 / Bane of Agony r1-6 / Siphon Life r1-4 | identiques aux IDs de sort ci-dessus | debuff cible (DoT) | DB2 : le sort porte lui-même l'effet APPLY_AURA, aucun sort déclenché |
 | Curse of the Elements r1-4, Weakness, Recklessness, Tongues, Exhaustion (18223) | identiques aux IDs de sort | debuff cible (malédiction) | DB2 : effet APPLY_AURA porté par le sort lui-même |
@@ -326,11 +326,11 @@ Seuls les IDs lus sur une page sont listés. Pour tous les DoTs/malédictions, l
 
 - **IDs des talents** : issus du DB2 Talent.csv ; talents absents de Talent.csv : voir candidats dans les tableaux.
 - **Summon Felsteed / Summon Dreadsteed** : IDs DB2 5784 / 23161 (ligne Mounts, pas classe). Summon Incubus 713 présent dans le DB2.
-- **Auras** (sources web) : seuls Shadow Trance (17941), Shadow Vulnerability (17794), Demon Armor r5 (11735) et Soul Link (19028) lus sur Wowhead. Shadow Vulnerability : une page wowhead `spell=17800` a renvoyé 404 (ID non lu). Aucun ID d'aura distinct de DoT/malédiction vérifié.
+- **Auras** (sources web) : seuls Shadow Trance (17941), Shadow Vulnerability (17794), Demon Armor r5 (11735), Soul Link (19028) et son aura 25228 lus sur Wowhead. Shadow Vulnerability : une page wowhead `spell=17800` a renvoyé 404 (ID non lu). Aucun ID d'aura distinct de DoT/malédiction vérifié.
 - **Divergences** : Siphon Life et Conflagrate listés « talent » rang 1 mais avec niveau 38/32 sur wowforevertalents ; niveau de Conflagrate r3 absent ; niveaux endgametools inutilisables (x10, parfois décalés) ; Create Healthstone r1 niveau 10 (wowforevertalents) contre 1 (foreverchanges, dans le texte de page) ; Create Soulstone/Subjugate/Death Coil durées et valeurs de dégâts divergent selon les sources, non reprises ; Fear r1 10 s (wowforevertalents/endgametools) contre « up to 20 s » (foreverchanges, rang 3 seulement).
 - Pyroclasm : voir Écarts avec le DB2 client.
 - Coût Life Tap, dégâts : non repris (valeurs « selon stats »).
-- Wowhead `/forever/spells` et filtres de classe : listes non chargées (JS), donc aucune validation croisée des IDs de la liste wow-forever.gg hors les 4 pages auras lues + Corruption 25311.
+- Wowhead `/forever/spells` et filtres de classe : listes non chargées (JS), donc aucune validation croisée des IDs de la liste wow-forever.gg hors les 5 pages auras lues (dont 25228) + Corruption 25311.
 
 ### Écarts avec le DB2 client
 

@@ -269,10 +269,10 @@ function Disp.TriggerStatus(auraData, auraTrigger)
   if Disp.InDynamicGroup(auraData) then
     notes[#notes + 1] = "In a Dynamic Group it keeps a fixed position; a Modern Aura Group is recommended."
   end
-  local lateEdge = Disp.LateGlowSpec(auraData, auraTrigger)
+  local lateEdge, _, _, _, elapsed = Disp.LateGlowSpec(auraData, auraTrigger)
   if lateEdge then
     local total = Disp.LateGlowTotal(auraTrigger)
-    if not (total and total > lateEdge) then notes[#notes + 1] = "Glow starts once the aura's duration is known." end
+    if not (total and (elapsed or total > lateEdge)) then notes[#notes + 1] = "Glow starts once the aura's duration is known." end
   end
   local text = GREEN .. "Works in combat.|r"
   for _, note in ipairs(notes) do text = text .. " " .. ORANGE .. note .. "|r" end
@@ -282,7 +282,8 @@ end
 local function needsIconForGlow(auraData)
   for _, condition in ipairs(auraData.conditions or {}) do
     local check = condition.check
-    if check and check.variable == "faAuraRemaining" and Disp.NativeConditionKind(auraData, check) then
+    if check and (check.variable == "faAuraRemaining" or check.variable == "faAuraElapsed")
+      and Disp.NativeConditionKind(auraData, check) then
       for _, change in ipairs(condition.changes or {}) do
         if Disp.IsGlowProperty(auraData, change.property) then return true end
       end
@@ -298,7 +299,7 @@ function Disp.ValidateSingle(auraData, auraTrigger)
   end
   local fallbackIssue = Disp.FallbackProblem(auraData)
   if fallbackIssue then return fallbackIssue end
-  if auraData.regionType ~= "icon" and needsIconForGlow(auraData) then return "A Remaining Time glow needs an Icon display." end
+  if auraData.regionType ~= "icon" and needsIconForGlow(auraData) then return "A Remaining Time or Elapsed Time glow needs an Icon display." end
   if not Disp.IsSingle(auraTrigger, auraData) then return end
   if not Disp.IsSingleUnit(auraTrigger) then
     return "Aura(s) Missing, Always and Remaining Time watch one unit: choose Player, Target, Focus, Pet, Target of Target, Target of Focus or a Specific Unit."
@@ -969,12 +970,13 @@ function Disp.LateGlowSpec(auraData, auraTrigger)
   end
   for _, condition in ipairs(auraData.conditions or {}) do
     local check = condition.check
-    if not condition.linked and check and check.variable == "faAuraRemaining" and check.op == "<"
+    local elapsed = check and check.variable == "faAuraElapsed"
+    if not condition.linked and check and (elapsed or check.variable == "faAuraRemaining") and check.op == "<"
       and Disp.NativeConditionKind(auraData, check) and tonumber(check.value) and tonumber(check.value) > 0 then
       for _, change in ipairs(condition.changes or {}) do
         if change.value == true and Disp.IsGlowProperty(auraData, change.property) then
           local index = tonumber(change.property:match("^sub%.(%d+)%."))
-          return tonumber(check.value), auraData.subRegions[index], index, false
+          return tonumber(check.value), auraData.subRegions[index], index, false, elapsed
         end
       end
     end
@@ -989,10 +991,11 @@ end
 function Disp.TimedGlowHolder(nativeView, auraData, index, frame)
   if nativeView.preview then return end
   local auraTrigger = Disp.GetTrigger(auraData)
-  local edge, subElement, glowIndex, above = Disp.LateGlowSpec(auraData, auraTrigger)
+  local edge, subElement, glowIndex, above, elapsed = Disp.LateGlowSpec(auraData, auraTrigger)
   if not edge or glowIndex ~= index then return end
   local total = Disp.LateGlowTotal(auraTrigger)
-  if not total or total <= edge then return false end
+  if not total or not elapsed and total <= edge then return false end
+  if elapsed then edge, above = total - math.min(edge, total), true end
   local late = nativeView.lateGlow
   if not late then
     late = {}
@@ -1438,6 +1441,7 @@ local function disableMissing(singleState)
   missingDisplay.container:Hide()
   pcall(missingDisplay.container.SetAuraGroupEnabled, missingDisplay.container, MISSING_GROUP_NAME, false)
   missingDisplay.clip:Hide()
+  if missingDisplay.native then Disp.StopSampleAnimations(missingDisplay.native) end
   missingDisplay.boundUnit = nil
 end
 

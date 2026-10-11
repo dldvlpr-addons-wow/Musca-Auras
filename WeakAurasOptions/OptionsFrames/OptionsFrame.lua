@@ -1411,6 +1411,19 @@ function OptionsPrivate.CreateFrame()
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
 
+    local playerClass = select(2, UnitClass("player"))
+    local classPack = OptionsPrivate.classPacks[playerClass]
+    if classPack then
+      local classPackButton = AceGUI:Create("WeakAurasNewButton")
+      classPackButton:SetTitle(L["Class Pack"])
+      classPackButton:SetDescription(L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"])
+      classPackButton:SetIcon("Interface\\Icons\\ClassIcon_" .. playerClass)
+      classPackButton:SetClick(function()
+        WeakAuras.Import(classPack)
+      end)
+      containerScroll:AddChild(classPackButton)
+    end
+
     if C_AddOns.GetAddOnEnableState("WeakAurasTemplates") ~= Enum.AddOnEnableState.None then
       local simpleLabel = AceGUI:Create("Label")
       simpleLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")

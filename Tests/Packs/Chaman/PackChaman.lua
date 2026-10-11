@@ -1,182 +1,84 @@
-local ROOT = "Chaman (Forever)"
-local ROTATION = "Chaman - Rotation"
-local BUFFS = "Chaman - Buffs"
-
-local RED = {1, 0.3, 0.3, 1}
-
-local function Text(text, point, size)
-  return {
-    type = "subtext", text_text = text, text_color = {1, 1, 1, 1}, text_font = "Friz Quadrata TT",
-    text_fontSize = size or 14, text_fontType = "OUTLINE", text_visible = true, text_justify = "CENTER",
-    text_selfPoint = "AUTO", anchor_point = point, anchorXOffset = 0, anchorYOffset = 0,
-    text_shadowColor = {0, 0, 0, 1}, text_shadowXOffset = 0, text_shadowYOffset = 0, rotateText = "NONE",
-    text_automaticWidth = "Auto", text_fixedWidth = 64, text_wordWrap = "WordWrap",
-  }
-end
-
-local function Animation()
-  local step = { duration_type = "seconds", easeStrength = 3, easeType = "none", type = "none" }
-  return { start = step, main = step, finish = step }
-end
-
-local function Load(options)
-  local load = { use_class = true, class = { single = "SHAMAN", multi = {} },
-    size = { multi = {} }, spec = { multi = {} }, talent = { multi = {} } }
-  if options.outOfCombat then load.use_combat = false end
-  if options.known then load.use_spellknown = true load.spellknown = options.known end
-  return load
-end
-
-local function Base(id, uid, parent, regionType, trigger, options)
-  return {
-    id = id, uid = uid, parent = parent, regionType = regionType, internalVersion = 91, tocversion = 16001,
-    triggers = { { trigger = trigger, untrigger = {} }, activeTriggerMode = -10 },
-    load = Load(options), conditions = options.conditions or {}, config = {}, authorOptions = {},
-    actions = { start = {}, finish = {}, init = {} }, animation = Animation(),
-    subRegions = options.subRegions or {},
-    information = { forceEvents = true, ignoreOptionsEventErrors = true, showNilIsFalse = true },
-  }
-end
-
-local function Icon(id, uid, parent, trigger, options)
-  options = options or {}
-  local data = Base(id, uid, parent, "icon", trigger, options)
-  data.width, data.height = options.size or 44, options.size or 44
-  data.iconSource, data.displayIcon = -1, options.icon
-  data.cooldown, data.cooldownTextDisabled = true, false
-  data.desaturate, data.color, data.zoom = false, {1, 1, 1, 1}, 0.1
-  return data
-end
-
-local function Ids(ids)
-  local list = {}
-  for index, spellId in ipairs(ids) do list[index] = tostring(spellId) end
-  return list
-end
-
-local function Buff(ids, showOn, unit, kind)
-  return { type = "secretAura", unit = unit or "player", debuffType = kind or "HELPFUL",
-    useExactSpellId = true, auraspellids = Ids(ids), secretUseSpellIDs = true,
-    nativeFilters = { PLAYER = true }, secretShowOn = showOn }
-end
-
-local function Cooldown(spellId)
-  return { type = "spell", event = "Cooldown Progress (Spell)", spellName = spellId,
-    use_exact_spellName = false, genericShowOn = "showAlways", use_genericShowOn = true,
-    use_desaturateOnCooldown = true, desaturateOnCooldown = true,
-    unit = "player", names = {}, spellIds = {}, subeventPrefix = "SPELL", subeventSuffix = "_CAST_START",
-    debuffType = "HELPFUL" }
-end
-
-local function Totem(slot)
-  return { type = "spell", event = "Totem", use_totemType = true, totemType = slot,
-    unit = "player", names = {}, spellIds = {}, subeventPrefix = "SPELL", subeventSuffix = "_CAST_START",
-    debuffType = "HELPFUL" }
-end
-
-local function WeaponEnchant(showOn)
-  return { type = "item", event = "Weapon Enchant", weapon = "main", use_weapon = true,
-    showOn = showOn, use_showOn = true,
-    unit = "player", names = {}, spellIds = {}, subeventPrefix = "SPELL", subeventSuffix = "_CAST_START",
-    debuffType = "HELPFUL" }
-end
-
-local function Mana(threshold)
-  local trigger = { type = "unit", event = "Power", unit = "player", use_unit = true,
-    use_powertype = true, powertype = 0,
-    names = {}, spellIds = {}, subeventPrefix = "SPELL", subeventSuffix = "_CAST_START", debuffType = "HELPFUL" }
-  if threshold then trigger.use_nativeThreshold = true trigger.nativeThreshold = tostring(threshold) end
-  return trigger
-end
-
-local function Condition(variable, value, property, change, op)
-  return { check = { trigger = 1, variable = variable, value = value, op = op },
-    changes = { { property = property, value = change } } }
-end
-
-local outOfRange = Condition("spellInRange", 0, "color", RED)
-local noMana = Condition("insufficientResources", 1, "color", {0.4, 0.5, 1, 1})
-
-local function Spell(id, uid, spellId, icon, known)
-  return Icon(id, uid, ROTATION, Cooldown(spellId),
-    { icon = icon, known = known, conditions = { noMana, outOfRange } })
-end
+local Pack = dofile("Tests/Packs/PackBuilder.lua")
 
 local lightningShield = { 324, 325, 905, 945, 8134, 10431, 10432 }
-local flameShock = { 8050, 8052, 8053, 10447, 10448, 29228 }
-local flurry = { 16257, 12966, 17687 }
-local timer = Text("%p", "CENTER", 14)
-local missing = Text("!", "CENTER", 22)
+local waterShield = { 408510, 408511, 409941 }
 
-local rotation = {
-  Icon("Horion de flammes (cible)", "mcShamPkFlameSh", ROTATION, Buff(flameShock, "showOnActive", "target", "HARMFUL"),
-    { icon = 135813, subRegions = { timer },
-      conditions = { Condition("faAuraRemaining", 4, "sub.1.text_color", RED, "<") } }),
-  Spell("Horion de terre", "mcShamPkEShock", 8042, 136026),
-  Spell("Frappe-tempête", "mcShamPkStorm", 17364, 135963, 17364),
-  Spell("Chaîne d'éclairs", "mcShamPkChain", 421, 136015, 421),
-  Spell("Nova de feu", "mcShamPkNova", 408341, 135824, 408341),
-  Spell("Totem de glèbe", "mcShamPkGround", 8177, 136039, 8177),
-  Spell("Rapidité de la nature", "mcShamPkNSwift", 16188, 136076, 16188),
-  Spell("Totem de vague de mana", "mcShamPkManaTide", 16190, 135861, 16190),
-  Icon("Idées claires", "mcShamPkClear", ROTATION, Buff({ 16246 }, "showOnActive"), { icon = 136170 }),
-  Icon("Rafale", "mcShamPkFlurry", ROTATION, Buff(flurry, "showOnActive"),
-    { icon = 132152, subRegions = { Text("%s", "INNER_BOTTOMRIGHT", 13) } }),
-}
-
-local buffs = {
-  Icon("Bouclier de foudre", "mcShamPkLShield", BUFFS, Buff(lightningShield, "showOnActive"),
-    { size = 34, subRegions = { Text("%s", "INNER_BOTTOMRIGHT", 12), timer },
-      conditions = { Condition("faAuraRemaining", 60, "sub.2.text_color", RED, "<") } }),
-  Icon("Manque : Bouclier de foudre", "mcShamPkLSMiss", BUFFS, Buff(lightningShield, "showOnMissing"),
-    { size = 34, icon = 136051, outOfCombat = true, subRegions = { missing } }),
-  Icon("Arme enchantée", "mcShamPkWeapon", BUFFS, WeaponEnchant("showOnActive"), { size = 34 }),
-  Icon("Manque : enchantement d'arme", "mcShamPkWeapMiss", BUFFS, WeaponEnchant("showOnMissing"),
-    { size = 34, icon = 136086, outOfCombat = true, subRegions = { missing } }),
-  Icon("Totem de feu", "mcShamPkFireTot", BUFFS, Totem(1), { size = 34, subRegions = { timer } }),
-  Icon("Totem de terre", "mcShamPkEarthTot", BUFFS, Totem(2), { size = 34, subRegions = { timer } }),
-  Icon("Totem d'eau", "mcShamPkWaterTot", BUFFS, Totem(3), { size = 34, subRegions = { timer } }),
-  Icon("Totem d'air", "mcShamPkAirTot", BUFFS, Totem(4), { size = 34, subRegions = { timer } }),
-}
-
-local manaBar = Base("Chaman - Mana", "mcShamPkManaBar", ROOT, "aurabar", Mana(), {
-  subRegions = { { type = "subbackground" }, { type = "subforeground" }, Text("%p", "INNER_RIGHT", 12) },
+return Pack.Build({
+  class = "SHAMAN", name = "Shaman", prefix = "mcShamV2",
+  rotation = {
+    { name = "Lava Burst", spell = 408490 },
+    { name = "Stormstrike", spell = 17364 },
+    { name = "Lava Lash", spell = 408507 },
+    { name = "Earth Shock", spell = 8042 },
+    { name = "Chain Lightning", spell = 421 },
+    { name = "Frost Shock", spell = 8056 },
+    { name = "Fire Nova", spell = 408341 },
+    { name = "Molten Blast", spell = 425339 },
+    { name = "Rage of the Farseer", spell = 425336 },
+    { name = "Healing Wave", spell = 331, known = 16182 },
+    { name = "Lesser Healing Wave", spell = 8004, known = 16182 },
+    { name = "Chain Heal", spell = 1064, known = 16182 },
+    { name = "Riptide", spell = 408521 },
+    { name = "Healing Rain", spell = 415236 },
+  },
+  cooldowns = {
+    { name = "Nature's Swiftness", spell = 16188, aura = { 16188 } },
+    { name = "Mana Tide Totem", spell = 16190 },
+    { name = "Grounding Totem", spell = 8177 },
+    { name = "Earthbind Totem", spell = 2484 },
+    { name = "Stoneclaw Totem", spell = 5730 },
+    { name = "Totemic Projection", spell = 437009 },
+    { name = "Decoy Totem", spell = 425874 },
+    { name = "Purge", spell = 370 },
+    { name = "Reincarnation", spell = 21169, known = 20608 },
+    { name = "Astral Recall", spell = 556 },
+  },
+  buffs = {
+    { name = "Mana Tide active", totem = 16190, slot = 3, known = 16190, texture = "Interface\\Icons\\Spell_Frost_SummonWaterElemental" },
+    { name = "Clearcasting", aura = { 16246 }, known = 16164, flash = 2 },
+    { name = "Flurry", aura = { 16257, 12966, 17687 }, known = 16256, stacks = true },
+    { name = "Earth Shield (target)", aura = { 408514, 408519 }, known = 408514, unit = "target", stacks = true, warn = 10 },
+  },
+  debuffs = {
+    { name = "Flame Shock", aura = { 8050, 8052, 8053, 10447, 10448, 29228 }, known = 8050, missing = true },
+    { name = "Stormstrike", aura = { 17364, 410156 }, known = 17364 },
+  },
+  segments = { name = "Maelstrom Weapon", aura = { 408498, 408505, 409946, 408501 }, count = 5, known = 17364, flash = 2 },
+  upkeep = {
+    { name = "Lightning Shield", aura = lightningShield, known = 324, unknown = 408510, stacks = true, warn = 60, flash = 2 },
+    { name = "Water Shield", aura = waterShield, known = 408510, stacks = true, warn = 60 },
+  },
+  totems = true,
+  totemBuffs = {
+    { 8182, 10476, 10477 },
+    { 8072, 8156, 8157, 10403, 10404, 10405, 8076, 8162, 8163, 10441, 25362 },
+    { 5677, 10491, 10493, 10494, 24853, 5672, 6371, 6372, 10460, 10461, 8185, 10534, 10535 },
+    { 8836, 10626, 25360, 8515, 10609, 10612, 8516, 10608, 10610, 15108, 15109, 15110, 10596, 10598, 10599 },
+  },
+  castBar = true,
+  enchants = { "main", "off" },
+  power = { { label = "Mana", type = 0 } },
+  swing = { "main", "off" },
+  swingKnown = 17364,
+  fiveSecondRule = {
+    331, 332, 547, 913, 939, 959, 8005, 10395, 10396, 25357,
+    8004, 8008, 8010, 10466, 10467, 10468,
+    1064, 10622, 10623,
+    403, 529, 548, 915, 943, 6041, 10391, 10392, 15207, 15208,
+    408439, 408440, 408441, 408442, 408443, 408472, 408473, 408474, 408475, 408476, 408477,
+    421, 930, 2860, 10605, 408479, 408480, 408481, 408482, 408483, 408484,
+    8042, 8044, 8045, 8046, 10412, 10413, 10414,
+    8050, 8052, 8053, 10447, 10448, 29228,
+    8056, 8058, 10472, 10473,
+    408341, 408342, 408343, 408344, 408345,
+    408490, 1238299, 1238300, 425339, 408521, 1239242, 1239243, 415236, 408514,
+  },
+  reminders = {
+    { name = "Lightning Shield", aura = lightningShield, known = 324, unknown = 408510, icon = true },
+    { name = "Water Shield", aura = waterShield, known = 408510, icon = true },
+    { name = "weapon enchant", enchant = "main", known = 8017, icon = true, texture = "Interface\\Icons\\Spell_Nature_RockBiter" },
+    { name = "off-hand enchant", enchant = "off", offhand = true, known = 8017, icon = true, texture = "Interface\\Icons\\Spell_Nature_RockBiter" },
+    { name = "Ankh", item = 17030, below = 5, known = 20608, icon = true, texture = "Interface\\Icons\\INV_Jewelry_Talisman_06" },
+    { name = "LOW MANA", lowPower = 0, below = 20 },
+  },
 })
-manaBar.width, manaBar.height = 280, 14
-manaBar.barColor, manaBar.backgroundColor = {0, 0.44, 0.87, 1}, {0, 0, 0, 0.5}
-manaBar.texture, manaBar.orientation, manaBar.icon = "Blizzard", "HORIZONTAL", false
-manaBar.xOffset, manaBar.yOffset, manaBar.anchorPoint, manaBar.selfPoint = 0, 30, "CENTER", "CENTER"
-
-local lowMana = Base("Chaman - Mana bas", "mcShamPkLowMana", ROOT, "text", Mana(20), {})
-lowMana.displayText, lowMana.font, lowMana.fontSize, lowMana.outline = "MANA BAS", "Friz Quadrata TT", 20, "OUTLINE"
-lowMana.color, lowMana.justify = {0.4, 0.6, 1, 1}, "CENTER"
-lowMana.xOffset, lowMana.yOffset, lowMana.anchorPoint, lowMana.selfPoint = 0, 60, "CENTER", "CENTER"
-
-local function DynamicGroup(id, uid, children, yOffset)
-  local names = {}
-  for index, child in ipairs(children) do names[index] = child.id end
-  local data = Base(id, uid, ROOT, "dynamicgroup",
-    { type = "aura2", unit = "player", debuffType = "HELPFUL", names = {} }, {})
-  data.controlledChildren, data.grow, data.align, data.space, data.stagger, data.sort =
-    names, "RIGHT", "CENTER", 4, 0, "none"
-  data.anchorPoint, data.selfPoint, data.xOffset, data.yOffset = "CENTER", "CENTER", 0, yOffset
-  return data
-end
-
-local rotationGroup = DynamicGroup(ROTATION, "mcShamPkRotation", rotation, 0)
-local buffsGroup = DynamicGroup(BUFFS, "mcShamPkBuffs", buffs, -44)
-
-local root = Base(ROOT, "mcShamPkRoot0001", nil, "group",
-  { type = "aura2", unit = "player", debuffType = "HELPFUL", names = {} }, {})
-root.controlledChildren = { ROTATION, BUFFS, manaBar.id, lowMana.id }
-root.anchorFrameType, root.anchorPoint, root.selfPoint, root.xOffset, root.yOffset =
-  "SCREEN", "CENTER", "CENTER", 0, -180
-
-local children = { rotationGroup }
-for _, child in ipairs(rotation) do children[#children + 1] = child end
-children[#children + 1] = buffsGroup
-for _, child in ipairs(buffs) do children[#children + 1] = child end
-children[#children + 1] = manaBar
-children[#children + 1] = lowMana
-
-return { m = "d", s = "5.22.0", v = 2000, d = root, c = children }

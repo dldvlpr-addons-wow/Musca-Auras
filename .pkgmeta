@@ -15,6 +15,13 @@ ignore:
   - TakenDamage_Forever.txt
   - TUTORIAL.md
   - SUIVI-BUGS-ET-TESTS.md
+  - PROCHAINE-ETAPE.md
+  - RECHERCHE-AURAS-CLASSES.md
+  - PLAN-AURAS-CLASSES.md
+  - ANALYSE-AURAS-FOJJI.md
+  - ANALYSE-AURAS-LUXTHOS.md
+  - ANALYSE-AURAS-WAGO.md
+  - PLAN-AURAS-V2.md
   - FEATURES-A-VENIR.md
   - GUIDE.md
   - "*.zip"

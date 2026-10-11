@@ -7039,6 +7039,56 @@ Private.event_prototypes = {
     progressType = "timed",
     statesParameter = "one"
   },
+  ["Energy Tick"] = {
+    type = "unit",
+    events = {},
+    internal_events = {
+      "ENERGY_TICK_UPDATE"
+    },
+    force_events = "ENERGY_TICK_UPDATE",
+    name = L["Energy Tick"],
+    loadFunc = function()
+      WeakAuras.InitEnergyTick()
+    end,
+    init = function()
+      return [=[
+        local duration, expirationTime = WeakAuras.GetEnergyTickInfo()
+        if duration > 0 then
+          Private.ExecEnv.ScheduleScan(expirationTime, "ENERGY_TICK_UPDATE")
+        end
+      ]=]
+    end,
+    args = {
+      {
+        name = "duration",
+        hidden = true,
+        init = "duration",
+        test = "true",
+        store = true
+      },
+      {
+        name = "expirationTime",
+        init = "expirationTime",
+        hidden = true,
+        test = "true",
+        store = true
+      },
+      {
+        name = "progressType",
+        hidden = true,
+        init = "'timed'",
+        test = "true",
+        store = true
+      },
+      {
+        hidden = true,
+        test = "duration > 0"
+      }
+    },
+    automaticrequired = true,
+    progressType = "timed",
+    statesParameter = "one"
+  },
   ["Action Usable"] = {
     type = "spell",
     events = function()

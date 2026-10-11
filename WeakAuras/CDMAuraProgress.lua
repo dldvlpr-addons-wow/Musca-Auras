@@ -354,6 +354,16 @@ local function anchorSpare(clone, data, parent)
   clone:SetOffsetRelative(0, 0)
   clone:SetOffsetAnim(0, 0)
   runGuarded(function()
+    local target = data.anchorFrameType == "SELECTFRAME" and data.anchorFrameFrame and data.anchorFrameFrame:match("^WeakAuras:(.+)$")
+    if target and target ~= data.id and WeakAuras.GetData(target) and not WeakAuras.GetRegion(target) then
+      local targetRegion = Private.EnsureRegion(target)
+      if targetRegion and targetRegion.blizzardAuraDisplay and not Private.loaded[target]
+        and not WeakAuras.IsOptionsOpen() then
+        Private.BlizzardAuraDisplay.Release(targetRegion)
+      end
+    end
+  end)
+  runGuarded(function()
     Private.AnchorFrame(data, clone, parent)
   end)
 end
