@@ -76,6 +76,7 @@ ConditionOptions.lua
 AuthorOptions.lua
 
 Changelog.lua
+ClassPacks.lua
 
 OptionsFrames\OptionsFrame.lua
 

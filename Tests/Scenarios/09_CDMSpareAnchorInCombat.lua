@@ -43,6 +43,32 @@ return function(test)
       width = 64, height = 64, anchorPoint = "TOP", selfPoint = "TOP",
       anchorFrameType = "SCREEN", xOffset = 100, yOffset = -50,
     },
+    Skills = {
+      id = "Skills", uid = "Skills", regionType = "dynamicgroup", internalVersion = 91,
+      controlledChildren = { "Dependency", "PositionTarget" }, load = {}, triggers = {}, conditions = {},
+      actions = { start = {}, finish = {}, init = {} }, subRegions = {},
+      anchorPoint = "CENTER", selfPoint = "CENTER", anchorFrameType = "SCREEN", xOffset = 0, yOffset = 0,
+    },
+    Dependency = {
+      id = "Dependency", uid = "Dependency", parent = "Skills", regionType = "icon", internalVersion = 91,
+      triggers = { { trigger = { type = "aura2", unit = "player", debuffType = "HELPFUL",
+        useExactSpellId = true, auraspellids = { "324" }, matchesShowOn = "showOnActive" }, untrigger = {} },
+        activeTriggerMode = -10 },
+      load = { use_never = true }, conditions = {}, actions = { start = {}, finish = {}, init = {} },
+      animation = { start = { type = "none" }, main = { type = "none" }, finish = { type = "none" } },
+      subRegions = {}, width = 64, height = 64, anchorPoint = "CENTER", selfPoint = "CENTER",
+      anchorFrameType = "SCREEN", xOffset = 0, yOffset = 0,
+    },
+    PositionTarget = {
+      id = "PositionTarget", uid = "PositionTarget", parent = "Skills", regionType = "icon", internalVersion = 91,
+      triggers = { { trigger = { type = "aura2", unit = "player", debuffType = "HELPFUL",
+        useExactSpellId = true, auraspellids = { "324" }, matchesShowOn = "showOnActive" }, untrigger = {} },
+        activeTriggerMode = -10 },
+      load = { use_never = true }, conditions = {}, actions = { start = {}, finish = {}, init = {} },
+      animation = { start = { type = "none" }, main = { type = "none" }, finish = { type = "none" } },
+      subRegions = {}, width = 64, height = 64, anchorPoint = "CENTER", selfPoint = "CENTER",
+      anchorFrameType = "SCREEN", xOffset = 0, yOffset = 0,
+    },
   } })
   test.Environment.Advance(1)
   assert(private.EnsureRegion("Spare"), "region not created")
@@ -102,6 +128,27 @@ return function(test)
   progress.AddSpareClone({ reserve }, "texture", WeakAuras.GetData("Spare"), Create, nil)
   progress.HasContainer = savedHasContainer
   assert(reserveState.active == false, "existing spare kept Aura (Modern) display active")
+
+  local spareData = WeakAuras.GetData("Spare")
+  spareData.anchorFrameType, spareData.anchorFrameFrame = "SELECTFRAME", "WeakAuras:Dependency"
+  assert(not WeakAuras.GetRegion("Dependency"), "never loaded dynamic group child has a region")
+  local anchoredSpare = Create()
+  anchoredSpare.cdmProgressData = spareData
+  progress.HasContainer = function(region) return region == anchoredSpare end
+  progress.AddSpareClone({ anchoredSpare }, "texture", spareData, Create, WeakAurasFrame)
+  progress.HasContainer = savedHasContainer
+  local dependency = WeakAuras.GetRegion("Dependency")
+  assert(dependency and anchoredSpare:GetParent() == dependency, "spare not parented to its missing anchor target")
+
+  spareData.anchorFrameFrame, spareData.anchorFrameParent = "WeakAuras:PositionTarget", false
+  assert(not WeakAuras.GetRegion("PositionTarget"), "never loaded dynamic group child has a region")
+  progress.HasContainer = function(region) return region == anchoredSpare end
+  progress.AddSpareClone({ anchoredSpare }, "texture", spareData, Create, WeakAurasFrame)
+  progress.HasContainer = savedHasContainer
+  local positionTarget = WeakAuras.GetRegion("PositionTarget")
+  local _, positionRelativeTo = anchoredSpare:GetPoint(1)
+  assert(positionTarget and positionRelativeTo == positionTarget, "position only spare not anchored to its missing target")
+  spareData.anchorFrameType, spareData.anchorFrameFrame, spareData.anchorFrameParent = "SCREEN", nil, nil
 
   CreateFrame = savedCreateFrame
   C_StringUtil = savedStringUtil

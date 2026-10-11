@@ -1,4 +1,4 @@
-local ROOT = "Test - Clones CDM"
+local ROOT = "Test - CDM Clones"
 
 local function Text(text, point, size)
   return {
@@ -28,7 +28,7 @@ local function Base(id, uid, parent, regionType, trigger)
   }
 end
 
-local icon = Base("Clones CDM : icône", "mcCdmClonesIcon1", ROOT, "icon",
+local icon = Base("CDM Clones: icon", "mcCdmClonesIcon1", ROOT, "icon",
   { type = "cdm", event = "Blizzard CDM Buff", cdmSpells = { multi = { [200311] = true, [200329] = true } }, cdmBuffShow = "active" })
 icon.width, icon.height = 48, 48
 icon.iconSource, icon.displayIcon = -1, 136051

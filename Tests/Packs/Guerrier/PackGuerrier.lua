@@ -1,0 +1,67 @@
+local Pack = dofile("Tests/Packs/PackBuilder.lua")
+
+local battleShout = { 6673, 5242, 6192, 11549, 11550, 11551, 25289 }
+
+return Pack.Build({
+  class = "WARRIOR", name = "Warrior", prefix = "mcWarrV1",
+  rotation = {
+    { name = "Mortal Strike", spell = 12294 },
+    { name = "Bloodthirst", spell = 23881 },
+    { name = "Shield Slam", spell = 23922 },
+    { name = "Whirlwind", spell = 1680 },
+    { name = "Slam", spell = 1240193 },
+    { name = "Sunder Armor", spell = 7386 },
+    { name = "Thunder Clap", spell = 6343 },
+  },
+  procs = {
+    { name = "Overpower", usable = 7384 },
+    { name = "Revenge", usable = 6572 },
+    { name = "Execute", usable = 5308 },
+    { name = "Victory Rush", usable = 402927 },
+    { name = "Heroic Strike", queued = 78 },
+    { name = "Cleave", queued = 845 },
+  },
+  cooldowns = {
+    { name = "Recklessness", spell = 1719 },
+    { name = "Death Wish", spell = 12328 },
+    { name = "Shield Wall", spell = 871 },
+    { name = "Last Stand", spell = 12975 },
+    { name = "Retaliation", spell = 20230 },
+    { name = "Berserker Rage", spell = 18499 },
+    { name = "Bloodrage", spell = 2687 },
+    { name = "Pummel", spell = 6552 },
+    { name = "Shield Bash", spell = 72 },
+    { name = "Charge", spell = 100 },
+    { name = "Intercept", spell = 20252 },
+    { name = "Intimidating Shout", spell = 5246 },
+    { name = "Sweeping Strikes", spell = 12292 },
+  },
+  buffs = {
+    { name = "Battle Shout", aura = battleShout },
+    { name = "Enrage", aura = { 12880 }, known = 12317 },
+    { name = "Flurry", aura = { 12966 }, known = 12319 },
+    { name = "Shield Block", aura = { 2565 } },
+    { name = "Sweeping Strikes (active)", aura = { 12292 } },
+    { name = "Death Wish (active)", aura = { 12328 } },
+    { name = "Recklessness (active)", aura = { 1719 } },
+    { name = "Berserker Rage (active)", aura = { 18499 } },
+    { name = "Bloodrage (active)", aura = { 29131 } },
+    { name = "Last Stand (active)", aura = { 12976 } },
+    { name = "Shield Wall (active)", aura = { 871 } },
+    { name = "Retaliation (active)", aura = { 20230 } },
+  },
+  debuffs = {
+    { name = "Rend", aura = { 772, 6546, 6547, 6548, 11572, 11573, 11574 } },
+    { name = "Sunder Armor", aura = { 7386, 7405, 8380, 11596, 11597 } },
+    { name = "Thunder Clap", aura = { 6343, 8198, 8204, 8205, 11580, 11581 } },
+    { name = "Demoralizing Shout", aura = { 1160, 6190, 11554, 11555, 11556 } },
+    { name = "Hamstring", aura = { 1715, 7372, 7373, 23694 } },
+    { name = "Deep Wounds", aura = { 12162 }, known = 12834 },
+    { name = "Mortal Strike", aura = { 12294, 21551, 21552, 21553 }, known = 12294 },
+  },
+  power = { { label = "Rage", type = 1 } },
+  swing = { "main", "off" },
+  reminders = {
+    { name = "Battle Shout", aura = battleShout },
+  },
+})

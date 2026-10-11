@@ -473,23 +473,21 @@ function Units.Install(target, fire, wowApi)
   target.GetNumGroupMembers = function() return 0 end
   target.GetNumSubgroupMembers = function() return 0 end
   target.UnitHealth = function(token)
-    local value = Read(token, "health")
-    return value and Secret.Wrap(value)
+    return Secret.Wrap(Read(token, "health") or 0)
   end
   target.UnitHealthMax = function(token)
-    local value = Read(token, "healthMax")
-    if value and not Read(token, "isPlayerControlled") then
+    local value = Read(token, "healthMax") or 0
+    if Units.Get(token) and not Read(token, "isPlayerControlled") then
       return Secret.Wrap(value)
     end
     return value
   end
   target.UnitPower = function(token)
-    local value = Read(token, "power")
-    return value and Secret.Wrap(value)
+    return Secret.Wrap(Read(token, "power") or 0)
   end
   target.UnitPowerMax = function(token)
-    local value = Read(token, "powerMax")
-    if value and not Read(token, "isPlayerControlled") then
+    local value = Read(token, "powerMax") or 0
+    if Units.Get(token) and not Read(token, "isPlayerControlled") then
       return Secret.Wrap(value)
     end
     return value

@@ -25,8 +25,9 @@ local MESSAGES = {
   missingRegion = "Aura Missing works on Icon, Bar, Progress Texture and Text displays.",
   missingShowOn = "Aura Missing needs the trigger's Show On set to Aura(s) Missing or Always.",
   remainingGlow = "A Remaining Time glow condition must use < and turn the glow on.",
+  elapsedGlow = "An Elapsed Time glow condition must use < and turn the glow on.",
   pandemicGlow = "An In Pandemic Window glow condition must turn the glow on.",
-  lateGlow = "A Glow can follow Remaining Time or the pandemic window, not both.",
+  lateGlow = "A Glow can follow one Remaining Time or Elapsed Time condition, or the pandemic window, not several.",
   timeBasis = "Use one time basis per countdown text: seconds, percentage, elapsed, total, start, or end.",
   property = "Choose a supported property for this Aura (Modern) condition.",
   foreignTrigger = "Use another trigger or a global condition. Aura (Modern) does not expose aura state to conditions.",
@@ -257,7 +258,7 @@ end
 
 function AuraDisplay.NativeConditionAllowsProperty(auraData, conditionCheck, propertyPath)
   local variableKind = AuraDisplay.NativeConditionKind(auraData, conditionCheck)
-  local glowKind = variableKind == "faAuraRemaining" or variableKind == "faAuraPandemic"
+  local glowKind = variableKind == "faAuraRemaining" or variableKind == "faAuraElapsed" or variableKind == "faAuraPandemic"
   if glowKind and IsGlowPath(auraData, propertyPath) then return true end
   if durationDefinitions[variableKind] then
     local target, channel = TextProperty(auraData, propertyPath, "duration")
@@ -735,10 +736,21 @@ local function ConditionHeaderProblem(auraData, position, conditionEntry, variab
   if showOn ~= "showOnMissing" and showOn ~= "showAlways" then return MESSAGES.missingShowOn end
 end
 
+local function LateGlowConflict(auraData, propertyChange)
+  local _, _, lateGlowIndex = AuraDisplay.LateGlowSpec(auraData, AuraDisplay.GetTrigger(auraData))
+  if lateGlowIndex and propertyChange.property ~= "sub." .. lateGlowIndex .. ".glow" then return MESSAGES.lateGlow end
+end
+
 local GLOW_CHECKS = {
   faAuraRemaining = function(auraData, conditionEntry, propertyChange)
     if not IsGlowPath(auraData, propertyChange.property) then return end
     if conditionEntry.check.op ~= "<" or propertyChange.value ~= true then return MESSAGES.remainingGlow end
+    return LateGlowConflict(auraData, propertyChange)
+  end,
+  faAuraElapsed = function(auraData, conditionEntry, propertyChange)
+    if not IsGlowPath(auraData, propertyChange.property) then return end
+    if conditionEntry.check.op ~= "<" or propertyChange.value ~= true then return MESSAGES.elapsedGlow end
+    return LateGlowConflict(auraData, propertyChange)
   end,
   faAuraPandemic = function(auraData, _, propertyChange)
     if not IsGlowPath(auraData, propertyChange.property) then return end
@@ -1025,6 +1037,9 @@ local function ClearIndicatorState(nativeDisplay, auraData, auraButton)
   nativeDisplay.conditionHosts = hosts
   for _, indicatorFrame in pairs(nativeDisplay.conditionHosts) do
     local pulse = indicatorFrame.pulse
+    local owner = indicatorFrame.pulseOwner
+    if owner then pcall(owner.RemoveAuraShownAnimation, owner, pulse) end
+    indicatorFrame.pulseOwner = nil
     if pulse then pulse:Stop() end
     indicatorFrame:SetAlpha(1)
   end
@@ -1114,7 +1129,7 @@ local function EnsurePulse(indicatorFrame)
   fadeIn:SetToAlpha(1)
 end
 
-local function StartPulse(indicatorFrame, highlight)
+local function StartPulse(indicatorFrame, highlight, auraButton)
   local period = tonumber(highlight.faAuraHighlightPulse) or 1
   if period == period then
     period = math.max(PULSE_BOUNDS.min, math.min(PULSE_BOUNDS.max, period))
@@ -1125,6 +1140,10 @@ local function StartPulse(indicatorFrame, highlight)
   local half = period / 2
   indicatorFrame.fadeOut:SetDuration(half)
   indicatorFrame.fadeIn:SetDuration(half)
+  if not indicatorFrame.pulseOwner and auraButton.AddAuraShownAnimation then
+    auraButton:AddAuraShownAnimation(indicatorFrame.pulse)
+    indicatorFrame.pulseOwner = auraButton
+  end
   indicatorFrame.pulse:Play()
 end
 
@@ -1221,10 +1240,10 @@ local function DrawIndicator(nativeDisplay, auraData, auraButton, position, vari
   local highlightStyle = highlight.faAuraHighlightStyle or "border"
   if highlightStyle == "pulseBorder" then
     highlightStyle = "border"
-    StartPulse(indicatorFrame, highlight)
+    StartPulse(indicatorFrame, highlight, auraButton)
   elseif highlightStyle == "pulseGlow" then
     highlightStyle = "glow"
-    StartPulse(indicatorFrame, highlight)
+    StartPulse(indicatorFrame, highlight, auraButton)
   end
   local red, green, blue, alpha = ClampedColor(highlight.faAuraHighlightColor, HIGHLIGHT_COLOR):GetRGBA()
   local thickness = IndicatorSize(highlight, highlightStyle, auraData)

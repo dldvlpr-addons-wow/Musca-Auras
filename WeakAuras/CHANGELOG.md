@@ -1,3 +1,23 @@
+# Musca Auras 1.8.0 (2026-10-11)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Energy Tick trigger: a bar to the next 2 second energy tick.
+- Class Pack button at the top of the New Aura panel: imports the ready-made auras of your class.
+
+## Fixes
+
+- No more frame rate drop after opening `/wa` and clicking an aura. Closing the options stops the auras that are not
+  loaded and the glows and pulses of the preview.
+- Glows and Pulsing border conditions stop on empty native aura buttons, and when the Missing display is disabled.
+- A glow condition on elapsed time ("elapsed < N") works.
+- An aura anchored to another aura with Set Parent to Anchor no longer shows at its group's origin while the target
+  aura is not created yet.
+- A Cooldown Manager clone taken in combat follows the aura it is anchored to.
+- No more LibSharedMedia error at login about the Cartoon Hop sound. The sound is removed, its file never shipped.
+
 # Musca Auras 1.7.1 (2026-10-10)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

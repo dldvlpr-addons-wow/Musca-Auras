@@ -163,11 +163,23 @@ local function CreateSample(region)
   return native
 end
 
+function Display.StopSampleAnimations(sample)
+  for _, shared in pairs(sample.sharedElements or {}) do
+    Display.ClearElementGlow(shared)
+  end
+  for _, host in pairs(sample.conditionHosts or {}) do
+    if host.pulse then
+      host.pulse:Stop()
+    end
+  end
+end
+
 function Display.HidePreview(region)
   region.secretAuraSamplesActive = false
   local samples = region.secretAuraSamples or {}
   for _, sample in ipairs(samples) do
     sample.button:Hide()
+    Display.StopSampleAnimations(sample)
   end
 end
 

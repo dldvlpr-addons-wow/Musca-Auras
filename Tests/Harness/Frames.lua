@@ -349,6 +349,9 @@ function Methods:GetVertexColor() return unpack(State[self].vertexColor) end
 function Methods:SetDesaturated(value) State[self].desaturated = value end
 function Methods:IsDesaturated() return State[self].desaturated end
 function Methods:SetTexCoord(...) State[self].texCoord = { ... } end
+function Methods:SetBackdrop(backdrop) State[self].backdrop = backdrop end
+function Methods:SetBackdropColor(r, g, b, a) State[self].backdropColor = { r, g, b, a or 1 } end
+function Methods:SetBackdropBorderColor(r, g, b, a) State[self].backdropBorderColor = { r, g, b, a or 1 } end
 function Methods:GetTexCoord()
   if State[self].texCoord then return unpack(State[self].texCoord) end
   return 0, 0, 0, 1, 1, 0, 1, 1
