@@ -14,6 +14,52 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-12
+
+### Added
+- `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/ClassPacks.lua`, `Tests/Packs/EmbedClassPacks.lua`: public
+  `WeakAuras.ImportClassPack()`, so another addon can import the player's class pack. It loads the options, opens
+  the import window of the built-in pack, and returns false in combat, before login ends, when the database needs a repair, when the options cannot load,
+  when the class has no pack, or when the import fails.
+  `WeakAuras.GetClassPack(class)` returns a pack string once the options are loaded.
+
+### Changed
+- `Tests/Packs/PackBuilder.lua`, the nine `Tests/Packs/<Class>/Pack<Class>.txt`, `WeakAurasOptions/ClassPacks.lua`:
+  class packs use a compact HUD 334 px wide: reminders, procs and effects above, a thin resource bar, a main row
+  (grid of 8, 40x30) and a utility row (grid of 9, 34x26), then the bars, upkeep and totem rows. The rows below the
+  utility row are offset from its real bottom, so a second line of spells pushes them down.
+- `Tests/Packs/PackBuilder.lua`: the uid of each class pack aura is a hash of its id, no longer its creation order.
+  A new import updates the auras already in place and keeps their position, size and user options. The uids change
+  once: delete the "<Class> (Musca)" group in game before this import.
+- `Tests/Packs/PackBuilder.lua`, `Tests/Packs/Chaman/PackChaman.lua`, `Tests/Packs/Chasseur/PackChasseur.lua`,
+  `Tests/Packs/Demoniste/PackDemoniste.lua`, `Tests/Packs/Druide/PackDruide.lua`, `Tests/Packs/Pretre/PackPretre.lua`,
+  `Tests/Packs/Voleur/PackVoleur.lua`: damage over time debuffs glow when they can be refreshed, other debuffs
+  (Sunder Armor, Judgements, curses) no longer glow, and a damage over time debuff tracked while missing loads in
+  combat only.
+- `Tests/Packs/Guerrier/PackGuerrier.lua`: a stance spell shows only in its stance.
+- `Tests/Packs/VerificationPack.lua`, `Tests/Harness/WowApi.lua`: the pack check also tests the anchors between
+  groups. The harness has `GetInventoryItemCooldown` and `GetInventoryItemCount`.
+
+### Fixed
+- `WeakAuras/GenericTrigger.lua`: an equipment slot that is empty when the aura loads stays in the cooldown scan. A
+  trinket equipped later shows its cooldown without a `/reload`. An empty slot no longer sends
+  `ITEM_SLOT_COOLDOWN_ITEM_CHANGED` on every cooldown update.
+- `Tests/Packs/PackBuilder.lua`, the nine `Tests/Packs/<Class>/Pack<Class>.txt`, `WeakAurasOptions/ClassPacks.lua`:
+  class pack icons that have a `%p` timer text hide the native cooldown numbers. With the `countdownForCooldowns`
+  CVar on, these icons showed two timers. Spell cooldown icons, which have no timer text, keep the native numbers.
+- `WeakAuras/Modernize.lua`: the same fix for class pack icons already imported, on every class, without a new
+  import. An icon with a class pack uid (`mc<Class>V<hex>`) and a centered `%p` text gets `cooldownTextDisabled`
+  each time the aura is loaded or edited, so the native numbers cannot be turned back on for these icons.
+- `WeakAuras/SubRegionTypes/SubTextNative.lua`: a secret value text also accepts placeholders with a trigger number
+  (`%1.percentpower`, `%2.health`, `%1.maxpower`...). Each one reads the secret value, total and percent of its own
+  trigger. Before, these texts stayed empty while the value was secret, which is always the case for the player's
+  power on WoW Forever. A text that mixes a secret value with a readable one (`%1.percenthealth% / %2.percentpower%`
+  out of combat) shows both: the readable value, total or percent of the trigger is printed as a whole number next to
+  the secret one. A text with no secret value keeps the usual placeholder formatting. Any other placeholder in the
+  same text (`%n`, `%1.name`, `%c`...) is filled by the usual placeholder formatting, so it no longer empties the
+  whole text (`WeakAuras/RegionTypes/Text.lua` and `WeakAuras/SubRegionTypes/SubText.lua` pass their formatters).
+  A `\n` typed in such a text starts a new line, as in the usual formatting.
+
 ## 2026-10-11
 
 Released as 1.8.0. Tested in game on WoW Forever: the frame rate stays the same after opening `/wa`, clicking

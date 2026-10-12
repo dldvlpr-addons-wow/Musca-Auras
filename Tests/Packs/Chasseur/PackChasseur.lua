@@ -40,7 +40,7 @@ return Pack.Build({
     { name = "Deterrence (active)", aura = { 19263 } },
   },
   debuffs = {
-    { name = "Serpent Sting", aura = { 1978, 13549, 13550, 13551, 13552, 13553, 13554, 13555, 25295 } },
+    { name = "Serpent Sting", aura = { 1978, 13549, 13550, 13551, 13552, 13553, 13554, 13555, 25295 }, dot = true },
     { name = "Hunter's Mark", aura = { 1130, 14323, 14324, 14325 } },
     { name = "Black Arrow", aura = { 3674, 14296 }, known = 3674 },
     { name = "Wing Clip", aura = { 2974, 14267, 14268 } },

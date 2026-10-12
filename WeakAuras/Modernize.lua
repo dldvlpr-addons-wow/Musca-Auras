@@ -2519,6 +2519,16 @@ function Private.Modernize(data, oldSnapshot)
     Private.MigrateCDMCooldownTrigger(trigger)
   end
 
+  if data.regionType == "icon" and data.cooldownTextDisabled == false and type(data.uid) == "string"
+     and data.uid:match("^mc%a+V%x+$") then
+    for _, subRegionData in ipairs(data.subRegions or {}) do
+      if subRegionData.type == "subtext" and subRegionData.text_text == "%p"
+         and subRegionData.anchor_point == "CENTER" then
+        data.cooldownTextDisabled = true
+      end
+    end
+  end
+
   data.internalVersion = max(data.internalVersion or 0, WeakAuras.InternalVersion())
 end
 

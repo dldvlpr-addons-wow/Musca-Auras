@@ -226,6 +226,8 @@ function WowApi.Install(target)
   target.LOCALIZED_CLASS_NAMES_MALE, target.LOCALIZED_CLASS_NAMES_FEMALE = target.LocalizedClassList(), target.LocalizedClassList()
   target.GetInventoryItemTexture = function() return nil end
   target.GetInventoryItemID = function() return nil end
+  target.GetInventoryItemCooldown = function() return 0, 0, 1 end
+  target.GetInventoryItemCount = function() return 1 end
   target.ChatFrame_AddMessageEventFilter = function() end
   target.ChatFrame_RemoveMessageEventFilter = function() end
   target.GetNumShapeshiftForms = function() return 0 end

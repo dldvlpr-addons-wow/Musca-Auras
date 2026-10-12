@@ -3805,7 +3805,7 @@ do
     end
 
     local newItemId = GetInventoryItemID("player", id);
-    if (itemId ~= newItemId) then
+    if (itemId ~= (newItemId or 0)) then
       if not WeakAuras.IsPaused() then
         Private.ScanEventsByID("ITEM_SLOT_COOLDOWN_ITEM_CHANGED", id)
       end
@@ -3939,7 +3939,7 @@ do
     if not id or id == 0 then return end
 
     if not(itemSlots[id]) then
-      itemSlots[id] = GetInventoryItemID("player", id)
+      itemSlots[id] = GetInventoryItemID("player", id) or 0
       local startTime, duration, enable = GetInventoryItemCooldown("player", id);
       if Private.IsSecret(startTime, duration, enable) then
         startTime, duration, enable = 0, 0, 1

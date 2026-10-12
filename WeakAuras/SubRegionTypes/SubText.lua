@@ -354,7 +354,7 @@ local function modify(parent, region, parentData, data, first)
             return
           end
         end
-        if UpdateNativeText(region, parent, region.text_text or "") then
+        if UpdateNativeText(region, parent, region.text_text or "", self.subTextFormatters) then
           return
         end
         local textStr = region.text_text or ""

@@ -22,6 +22,7 @@ ignore:
   - ANALYSE-AURAS-LUXTHOS.md
   - ANALYSE-AURAS-WAGO.md
   - PLAN-AURAS-V2.md
+  - LISTE-AURAS-UTILITAIRES.md
   - FEATURES-A-VENIR.md
   - GUIDE.md
   - "*.zip"

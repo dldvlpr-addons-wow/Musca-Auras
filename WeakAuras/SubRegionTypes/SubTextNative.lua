@@ -62,7 +62,7 @@ local secretValuePlaceholders = {
   percenthealth = "percent", percentpower = "percent",
 }
 
-local function UpdateNativeText(holder, parent, textStr)
+local function UpdateNativeText(holder, parent, textStr, formatters)
   if textStr == "%p" and canBindDurationText and holder.durationTextBinding ~= false and parent.durationObject
      and pcall(BindDurationText, holder, parent.durationObject)
   then
@@ -74,16 +74,33 @@ local function UpdateNativeText(holder, parent, textStr)
     holder.text:SetText(secretStacks)
     return true
   end
-  if type(parent.secretValue) == "number" and textStr:find("%%[%w%.]") and not textStr:find("{", 1, true) then
-    local values, unknown = {}, false
+  if textStr:find("%%[%w%.]") and not textStr:find("{", 1, true) then
+    local values, unknown, anySecret = {}, false, false
     local formatString = textStr:gsub("%%%%", ""):gsub("%%([%w%.]+)", function(placeholder)
+      local symbol = placeholder
+      local state, value, total = parent.state, parent.secretValue, parent.secretTotal
+      local triggerNum, key = placeholder:match("^(%d+)%.(%a+)$")
+      if triggerNum then
+        state = parent.states and parent.states[tonumber(triggerNum)]
+        value, total = state and state.secretValue, state and state.secretTotal
+        placeholder = key
+      end
       local kind = secretValuePlaceholders[placeholder]
       if not kind then
-        unknown = true
-        return ""
+        if not formatters then
+          unknown = true
+          return ""
+        end
+        values[#values + 1] = Private.ReplacePlaceHolders("%" .. symbol, parent, nil, false, formatters)
+        return ""
       end
       if kind == "percent" then
-        local percent = parent.state and parent.state.secretPercentText
+        local percent = state and state.secretPercentText
+        if type(percent) == "number" then
+          anySecret = true
+        else
+          percent = state and state[placeholder]
+        end
         if type(percent) ~= "number" then
           unknown = true
           return ""
@@ -91,10 +108,24 @@ local function UpdateNativeText(holder, parent, textStr)
         values[#values + 1] = percent
         return ""
       end
-      values[#values + 1] = kind == "value" and parent.secretValue or parent.secretTotal
+      local secret, field, secretField = total, "total", "secretTotal"
+      if kind == "value" then
+        secret, field, secretField = value, "value", "secretValue"
+      end
+      if type(secret) == "number" then
+        anySecret = true
+      elseif state and state.progressType == "static" and state[secretField] == nil then
+        secret = state[field]
+      end
+      if type(secret) ~= "number" then
+        unknown = true
+        return ""
+      end
+      values[#values + 1] = secret
       return ""
     end)
-    if not unknown then
+    if not unknown and anySecret then
+      formatString = formatString:gsub("\\n", "\n")
       formatString = formatString:gsub("%%", "%%%%"):gsub("", "%%%%"):gsub("", "%%s"):gsub("", "%%.0f")
       holder.text:SetText(string.format(formatString, unpack(values)))
       return true

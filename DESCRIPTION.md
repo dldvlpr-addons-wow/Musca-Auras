@@ -6,13 +6,23 @@ Icons, bars, texts and timers that keep working on the modern engine, even in co
 
 ---
 
+## <span style="color: #ff6b35;">🆕 NEW: a full UI pack for your class</span>
+
+Open `/wa`, click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel, and the ready-made auras of your class are imported in one click. Available for all nine classes: Druid, Hunter, Mage, Paladin, Priest, Rogue, Shaman, Warlock and Warrior.
+
+### <span style="color: #3c3;">Also in 1.8.0</span>
+
+- <span style="color: #ffd100;"><strong>Energy Tick trigger:</strong></span> a bar to the next 2 second energy tick.
+- <span style="color: #ffd100;"><strong>Smoother frame rate:</strong></span> no more drop after opening `/wa` and clicking an aura.
+- <span style="color: #ffd100;"><strong>Glows and anchors:</strong></span> glow conditions on elapsed time work, and an aura anchored to another aura follows its target, in combat too.
+
+---
+
 ## <span style="color: #ff6b35;">⚠️ Heads-up: 1.8.0</span>
 
 - <span style="color: #ffd100;"><strong>Restart the game after the update:</strong></span> a new file is not loaded by a `/reload`.
-- <span style="color: #3c3;"><strong>Tested in game on WoW Forever:</strong></span> spell cooldowns, Aura (Modern) buffs and debuffs, totems (out of combat), weapon enchants, health, power, swing and cast bars, `/reload` in combat, Swing Timer range, `%p` time formats, spell cooldowns during the global cooldown in combat, Cooldown Manager auras in combat (bar, swipe, `%p`, clones, exact spell ID, dispel border).
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.7.1?</strong></span> Install **1.7.1** again from the **Files** tab of the CurseForge page.
 - <span style="color: #3c3;"><strong>Your auras are kept.</strong></span> The saved data format did not change.
-- <span style="color: #0cf;"><strong>Please report it</strong></span> on GitHub or CurseForge, with the text of the error.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.7.1?</strong></span> Install **1.7.1** again from the **Files** tab, and report it on GitHub or CurseForge with the text of the error.
 
 ---
 
@@ -22,115 +32,39 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 - <span style="color: #ffd100;"><strong>Same addon, same habits.</strong></span> `/wa` opens the options, and your saved auras load as they are.
 - <span style="color: #ffd100;"><strong>No Lua error storm in combat.</strong></span> When the game hides a value, the aura keeps its last state and updates when the data is readable again.
-- <span style="color: #ffd100;"><strong>The game draws what addons cannot read.</strong></span> Cooldown swipes, timer bars, health and power bars, progress textures, texts, buffs and debuffs keep moving in combat.
-- <span style="color: #ffd100;"><strong>Compatible with auras made elsewhere.</strong></span> Auras from Wago, from the regular WeakAuras or from another WeakAuras build import the usual way. See below what to expect.
-
----
-
-## <span style="color: #0cf;">✨ What's new</span>
-
-### <span style="color: #3c3;">1.8.0: Class Packs and Energy Tick</span>
-
-- **Class Pack button** at the top of the New Aura panel: imports the ready-made auras of your class.
-- **Energy Tick trigger:** a bar to the next 2 second energy tick.
-- **Frame rate:** no more drop after opening `/wa` and clicking an aura.
-- **Glows:** a glow condition on elapsed time works, and glows stop on empty aura buttons.
-- **Anchors:** an aura anchored with Set Parent to Anchor, or a Cooldown Manager clone taken in combat, follows its target.
-- **Login:** no more LibSharedMedia error about the Cartoon Hop sound.
-
-### <span style="color: #3c3;">1.7.1: Cooldown Manager auras in combat</span>
-
-- **Bar, swipe and `%p` text** keep the aura timing in combat: the bar no longer stays full or frozen, also on a recast or a first cast in combat.
-- **`%p` Cooldown Manager text** follows the selected time format and comes back after combat.
-- **No more `ADDON_ACTION_BLOCKED`** when a Cooldown Manager aura is placed or ends in combat.
-- **Exact spell ID** Cooldown Manager triggers stay shown in combat and follow a rank change.
-- **Login:** no more Lua error from the native Cooldown Manager bar.
-- **Texts:** two or more texts on an aura keep their order.
-
-### <span style="color: #3c3;">1.7.0</span>
-
-- **Spell cooldowns in combat:** the global cooldown alone no longer counts as a cooldown. Not on Cooldown with Show Global Cooldown unchecked stays shown during the GCD.
+- <span style="color: #ffd100;"><strong>The game draws what addons cannot read.</strong></span> Cooldown swipes, timer bars, health and power bars, texts, buffs and debuffs keep moving in combat.
 
 ---
 
 ## <span style="color: #0cf;">🧰 Built for WoW Forever</span>
 
-- **Aura (Modern) trigger:** buffs and debuffs drawn by the game's own aura widgets, so duration and stacks keep moving in combat. With the **Modern Aura Group** to lay out Icons and Progress Bars, in rows or in a grid on the screen, the unit frames or the nameplates (no 40 nameplate limit), `%1.p` / `%1.s` texts, and an Include Pets option for group, party and raid.
-- **Low energy, mana or health alerts in combat:** the Health and Power triggers have a **Show only below (%)** option, or **Show at or above the value instead**. The game itself hides the aura on the other side of the value. Example: an icon that shows at or above 80 energy.
-- **Conditions in combat:** Interruptible, Important, Spell Usable, Insufficient Resources, Spell in Range and remaining time lower or greater than a value keep working in combat. The game applies the alpha, color and desaturation they set.
-- **Blizzard Cooldown Manager trigger:** cooldowns, buffs, debuffs and items shown by the game's Cooldown Manager, drawn natively, with swipe, bar and `%p` text that keep the aura timing in combat, exact spell IDs and a dispel type border. "Hide Blizzard's CDM" keeps the triggers working while the Blizzard frame is hidden.
-- **Cooldown Progress (Spell) trigger:** Desaturate while on cooldown, Hide GCD Text, and a `%s` text that shows the charges of a spell.
-- **Spell Cast Succeeded trigger:** Hide when target dies, Hide when target changes. DoT timers from your own cast, with no custom code.
-- **Cast trigger:** Important filter and condition, and the spell name of a mob's cast with `%n` in combat.
-- **Load conditions:** Specialization (deduced from the talents you learned), Secret Restrictions Active, Enabled BossMod ID (BigWigs).
-- **Also:** Spell in Range trigger, new Character Stats (Bonus Healing, Ranged Attack Power, Spell and Ranged Haste, Expertise), Ignore out of checking range for group members, color picker palette, and warnings in the trigger options for values the game hides in combat.
+- <span style="color: #ffd100;"><strong>Aura (Modern) trigger and Modern Aura Group:</strong></span> buffs and debuffs drawn by the game itself, duration and stacks keep moving in combat, on the screen, the unit frames or the nameplates.
+- <span style="color: #ffd100;"><strong>Blizzard Cooldown Manager trigger:</strong></span> cooldowns, buffs and debuffs with swipe, bar and `%p` text that keep the aura timing in combat.
+- <span style="color: #ffd100;"><strong>Health and Power alerts in combat:</strong></span> Show only below (%), for example an icon at 80 energy or more.
+- <span style="color: #ffd100;"><strong>Conditions in combat:</strong></span> Interruptible, Spell Usable, Insufficient Resources, Spell in Range and remaining time.
+- <span style="color: #ffd100;"><strong>DoT timers from your own cast,</strong></span> with no custom code.
+- <span style="color: #ffd100;"><strong>In-game guide:</strong></span> click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window, or type `/wa tutorial`.
 
 ---
 
-## <span style="color: #0cf;">📖 Learn everything, in game</span>
+## <span style="color: #0cf;">🎯 Limits</span>
 
-Click the <span style="color: #ffd100;"><strong>Guide</strong></span> button at the top of the `/wa` window, or type `/wa tutorial`. The guide covers:
+### <span style="color: #ff9800;">⚠ Works, with limits</span>
 
-- how an aura works, tab by tab;
-- what changed on WoW Forever, and what works in combat;
-- step-by-step recipes: DoT timer from your own cast, one timer per mob on its nameplate, pre-pull checklist, boss timeline, custom code;
-- <span style="color: #ffd100;"><strong>ready-made auras to import in one click</strong></span>.
+- With the classic Aura trigger, buffs and debuffs are frozen in combat. Use Aura (Modern).
+- In combat, conditions only change alpha, color and desaturation.
+- Spells must be entered by ID: every rank has its own ID.
+
+### <span style="color: #f44336;">✖ Does not work</span>
+
+- Combat log triggers never fire: the game forbids the combat log to addons.
+- Other players' casts, enemy names and IDs in instances are hidden.
 
 ---
 
 ## <span style="color: #0cf;">🌐 Auras made elsewhere</span>
 
-<span style="color: #4caf50;"><strong>Auras from Wago, from the regular WeakAuras or from another WeakAuras build work in Musca Auras.</strong></span> Import them the usual way.
-
-<span style="color: #ff9800;"><strong>Some of them can have bugs.</strong></span> They were made for another version of the game, and the engine change on WoW Forever affects them:
-
-- triggers that read the combat log never fire: the game forbids the combat log to addons;
-- values the game hides in combat (buffs, cooldowns, health, power, casts of enemies) are frozen or drawn natively, so a threshold or a custom check on them can stop working in combat;
-- spells typed by name can miss: every rank has its own ID, type spell IDs instead;
-- custom code that calls removed functions (`GetSpellInfo`, `UnitBuff`…) shows an error: update it to `C_Spell`, `C_UnitAuras`, `C_Item`.
-
-If an imported aura misbehaves, the guide shows how to rebuild the part that breaks. Report anything that looks like a Musca Auras bug on GitHub.
-
----
-
-## <span style="color: #0cf;">🎯 What you can use</span>
-
-### <span style="color: #4caf50;">✔ Tested in game, works in combat</span>
-
-- Spell cooldowns: swipe and number, with an "On Global Cooldown" condition, Desaturate while on cooldown, Hide GCD Text and Cooldown Ready.
-- Global Cooldown trigger.
-- Buffs on yourself and debuffs on your target with the Aura (Modern) trigger, with the remaining time condition, the native ring and the Modern Aura Group.
-- Blizzard Cooldown Manager trigger: cooldowns and buffs, with swipe, bar and `%p` text, one icon per buff, exact spell IDs and the dispel type border.
-- Health bar of your target and power bar of yourself, as bars, progress textures or a `%p / %t` text.
-- Show only below (%) on your energy.
-- Cast bar of your target, its Interruptible color, and its spell name with `%n`.
-- Conditions: Spell in Range, Insufficient Resources, remaining time lower than a value.
-- Swing timer, main hand.
-- Range Check trigger.
-- Your own casts (`UNIT_SPELLCAST_SUCCEEDED:player`) with an exact spell ID, `PLAYER_TARGET_DIED`, Hide when target changes.
-- `/reload` in combat.
-
-### <span style="color: #4caf50;">✔ Tested in game</span>
-
-- Totem trigger (one aura per totem slot), temporary weapon enchants, Elapsed Time filter, Bag Space, Equipment Durability, Role, Tracking, Character Stats (hidden in combat), Secret Restrictions Active load condition, `/wa cdm`.
-
-### <span style="color: #ff9800;">⚠ Works, with limits</span>
-
-- With the classic Aura trigger, buffs and debuffs are hidden in combat: stacks stay frozen, and a buff applied for the first time in combat only shows when combat ends. Use Aura (Modern) for combat.
-- Aura (Modern) needs the spell ID of the aura itself, which can differ from the spell you cast.
-- The Modern Aura Group only lays out Aura (Modern) displays. Put other triggers (totems, weapon enchants, cooldowns) in a Dynamic Group.
-- Conditions in combat: only alpha, color and desaturation follow them; sounds, glows and other changes wait for the end of combat. Conditions on percentages, such as target health, or on stacks keep the value from before combat.
-- Show only below (%) uses a percent of the maximum, and replaces the alpha of the aura.
-- Spells must be entered by ID: the options do not suggest spells by name.
-- Nameplate anchoring only works with the default Blizzard nameplates.
-
-### <span style="color: #f44336;">✖ Does not work</span>
-
-- Combat log triggers: the game forbids the combat log to addons.
-- Other players' casts, enemy names and IDs in instances.
-- The Native Filter of the classic Aura trigger shows nothing at the moment.
-
----
+<span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log or on removed functions (`GetSpellInfo`, `UnitBuff`…) need to be updated.</strong></span>
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
 
@@ -138,9 +72,7 @@ If an imported aura misbehaves, the guide shows how to rebuild the part that bre
 
 ## <span style="color: #0cf;">🐞 Support</span>
 
-Found a bug, or an aura that should work and does not? [Open an issue on GitHub](https://github.com/dldvlpr-addons-wow/Musca-Auras/issues).
-
-Discord: coming soon.
+<span style="color: #ffd100;"><strong>Found a bug?</strong></span> [Open an issue on GitHub](https://github.com/dldvlpr-addons-wow/Musca-Auras/issues).
 
 ---
 
