@@ -37,7 +37,7 @@ return Pack.Build({
     { name = "Spirit Tap", aura = { 15271 } },
   },
   debuffs = {
-    { name = "Shadow Word: Pain", aura = shadowWordPain },
+    { name = "Shadow Word: Pain", aura = shadowWordPain, dot = true },
     { name = "Vampiric Embrace", aura = { 15286 }, known = 15286 },
     { name = "Devouring Plague", aura = devouringPlague },
     { name = "Shadow Weaving", aura = { 15258 } },

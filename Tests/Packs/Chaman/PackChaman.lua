@@ -40,7 +40,7 @@ return Pack.Build({
     { name = "Earth Shield (target)", aura = { 408514, 408519 }, known = 408514, unit = "target", stacks = true, warn = 10 },
   },
   debuffs = {
-    { name = "Flame Shock", aura = { 8050, 8052, 8053, 10447, 10448, 29228 }, known = 8050, missing = true },
+    { name = "Flame Shock", aura = { 8050, 8052, 8053, 10447, 10448, 29228 }, known = 8050, missing = true, dot = true },
     { name = "Stormstrike", aura = { 17364, 410156 }, known = 17364 },
   },
   segments = { name = "Maelstrom Weapon", aura = { 408498, 408505, 409946, 408501 }, count = 5, known = 17364, flash = 2 },

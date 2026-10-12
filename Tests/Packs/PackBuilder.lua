@@ -2,6 +2,7 @@ local Pack = {}
 
 local RED = {1, 0.3, 0.3, 1}
 local BLUE = {0.4, 0.5, 1, 1}
+local FULL = {0.7, 0.3, 1, 1}
 local POWER_COLORS = {
   [0] = {0, 0.44, 0.87, 1}, [1] = {0.78, 0.25, 0.25, 1}, [2] = {1, 0.5, 0.25, 1},
   [3] = {1, 0.96, 0.41, 1}, [4] = {1, 0.82, 0, 1},
@@ -15,6 +16,12 @@ local BORDER = { type = "subborder", border_visible = true, border_size = 1, bor
 local GLOW = { type = "subglow", glow = true, glowType = "Pixel", useGlowColor = false, glowColor = {1, 1, 1, 1},
   glowLines = 8, glowFrequency = 0.25, glowDuration = 1, glowLength = 10, glowThickness = 1, glowScale = 1,
   glowBorder = false, glowXOffset = 0, glowYOffset = 0 }
+
+-- HUD width: 8 main icons of 40 with 2 px gaps. Bars and resource pips use it too.
+local WIDTH = 334
+local SIZES = {
+  reminder = {34, 28}, proc = {30, 22}, aura = {30, 22}, main = {40, 30}, utility = {34, 26}, totem = {30, 22},
+}
 
 local TOTEM_ICONS = {
   "Interface\\Icons\\Spell_Fire_SearingTotem", "Interface\\Icons\\Spell_Nature_StoneSkinTotem",
@@ -103,18 +110,24 @@ end
 function Pack.Build(spec)
   local name, prefix = spec.name, spec.prefix
   local root = name .. " (Musca)"
-  local counter = 0
-  local children, groups = {}, {}
+  local children, groups, uids = {}, {}, {}
 
-  local function Uid()
-    counter = counter + 1
-    return string.format("%s%03d", prefix, counter)
+  -- Derived from the aura id, not from the creation order: a reimport matches the auras already installed
+  -- and updates them in place, even after rows are added or reordered.
+  local function Uid(id)
+    local hash = 5381
+    for index = 1, #id do hash = (hash * 33 + id:byte(index)) % 2147483647 end
+    local uid = string.format("%s%08x", prefix, hash)
+    assert(not uids[uid], id .. ": uid collides with " .. tostring(uids[uid]))
+    uids[uid] = id
+    return uid
   end
 
   local function Load(options)
     local load = { use_class = true, class = { single = spec.class, multi = {} },
       size = { multi = {} }, spec = { multi = {} }, talent = { multi = {} } }
     if options.outOfCombat then load.use_combat = false end
+    if options.inCombat then load.use_combat = true end
     if options.known then load.use_spellknown = true load.spellknown = options.known end
     if options.unknown then load.use_not_spellknown = true load.not_spellknown = options.unknown end
     if options.level then load.use_level, load.level, load.level_operator = true, { tostring(options.level) }, { ">=" } end
@@ -137,7 +150,7 @@ function Pack.Build(spec)
     if #required > 0 then triggers.disjunctive, triggers.activeTriggerMode = "all", 1 end
     if trigger.type == "secretAura" and #required > 0 then triggers.secretFallback = "none" end
     return {
-      id = id, uid = Uid(), parent = parent, regionType = regionType, internalVersion = 91, tocversion = 16001,
+      id = id, uid = Uid(id), parent = parent, regionType = regionType, internalVersion = 91, tocversion = 16001,
       triggers = triggers, load = Load(options), conditions = options.conditions or {}, config = {},
       authorOptions = {}, actions = { start = {}, finish = {}, init = {} }, animation = Animation(),
       subRegions = options.subRegions or {},
@@ -145,21 +158,30 @@ function Pack.Build(spec)
     }
   end
 
-  local function Group(label, regionType, yOffset, grow)
+  local function Group(label, regionType, yOffset, grow, columns)
     local group = Base(name .. " - " .. label, root, regionType,
       { type = "aura2", unit = "player", debuffType = "HELPFUL", names = {} }, {})
     group.controlledChildren, group.anchorPoint, group.selfPoint = {}, "CENTER", "CENTER"
     group.xOffset, group.yOffset = 0, yOffset
     if grow == "GRID" then
-      group.grow, group.gridType, group.gridWidth, group.rowSpace, group.columnSpace = "GRID", "HD", 8, 4, 4
+      group.grow, group.gridType, group.gridWidth, group.rowSpace, group.columnSpace = "GRID", "HD", columns, 2, 2
       group.selfPoint, group.sort, group.useLimit = "TOP", "none", false
     elseif regionType == "dynamicgroup" then
-      group.grow, group.align, group.space, group.stagger, group.sort = grow or "RIGHT", "CENTER", 4, 0, "none"
+      group.grow, group.align, group.space, group.stagger, group.sort = grow or "HORIZONTAL", "CENTER", 3, 0, "none"
     elseif grow ~= "FIXED" then
-      group.blizzardFlow, group.blizzardFlowGrowth, group.blizzardFlowSpacing = true, grow or "RIGHT", 2
+      group.blizzardFlow, group.blizzardFlowGrowth, group.blizzardFlowSpacing = true, grow or "CENTER_HORIZONTAL", 3
     end
     groups[#groups + 1] = { group = group, members = {} }
     return groups[#groups]
+  end
+
+  -- Hangs a row under another one: the row follows when the target grows a second line.
+  -- A target without members is not exported, so the row keeps its fixed place.
+  local function Below(holder, target, yOffset)
+    if #target.members == 0 then return end
+    local group = holder.group
+    group.anchorFrameType, group.anchorFrameFrame = "SELECTFRAME", "WeakAuras:" .. target.group.id
+    group.anchorFrameParent, group.anchorPoint, group.selfPoint, group.yOffset = false, "BOTTOM", "TOP", yOffset
   end
 
   local function Add(holder, data)
@@ -169,7 +191,9 @@ function Pack.Build(spec)
     return data
   end
 
-  local timer = Text("%p", "CENTER", 13)
+  -- Timers read at a glance: large, centred, outlined. The main row gets the largest.
+  local timer = Text("%p", "CENTER", 15)
+  local mainTimer = Text("%p", "CENTER", 18)
   local outOfRange = Condition("spellInRange", 0, "color", RED)
   local noMana = Condition("insufficientResources", 1, "color", BLUE)
   local idle = { check = { trigger = -2, variable = "AND", checks = {
@@ -195,7 +219,17 @@ function Pack.Build(spec)
       conditions[#conditions + 1] = missing
     end
     if trigger.type == "secretAura" and trigger.secretShowOn ~= "showOnMissing" then
-      if options.glow ~= false or options.flash then
+      if options.pandemic then
+        -- Off by default: lit by the refresh window, and by a missing DoT when the icon allows it.
+        local glow = {}
+        for key, value in pairs(GLOW) do glow[key] = value end
+        glow.glow = false
+        subRegions[#subRegions + 1] = glow
+        conditions[#conditions + 1] = Condition("faAuraPandemic", nil, "sub." .. #subRegions .. ".glow", true)
+        if options.missing then
+          conditions[#conditions + 1] = Condition("faAuraMissing", nil, "sub." .. #subRegions .. ".glow", true)
+        end
+      elseif options.glow ~= false or options.flash then
         subRegions[#subRegions + 1] = GLOW
         if options.flash then
           conditions[#conditions + 1] = Condition("faAuraElapsed", options.flash, "sub." .. #subRegions .. ".glow", true, "<")
@@ -211,9 +245,12 @@ function Pack.Build(spec)
     if options.idle then conditions[#conditions + 1] = idle end
     options.subRegions, options.conditions = subRegions, conditions
     local data = Base(name .. " - " .. label, nil, "icon", trigger, options)
-    data.width, data.height = options.size, options.size
+    data.width, data.height, data.keepAspectRatio = options.size[1], options.size[2], true
     data.iconSource, data.displayIcon = -1, options.texture
     data.cooldown, data.cooldownTextDisabled = true, false
+    for _, subRegion in ipairs(subRegions) do
+      if subRegion == timer or subRegion == mainTimer then data.cooldownTextDisabled = true end
+    end
     data.desaturate, data.color, data.zoom = false, {1, 1, 1, 1}, 0.3
     return Add(holder, data)
   end
@@ -225,7 +262,8 @@ function Pack.Build(spec)
         entry.name .. ": unit without fallback")
       assert(not (entry.kind == "HARMFUL" and (unit == "player" or unit == "pet")), entry.name .. ": debuff on self")
       return Icon(holder, entry.name, AuraTrigger(entry.aura, "showAlways", entry.unit, entry.kind),
-        Requirements(entry, { size = size, fallback = CooldownTrigger(entry.spell), subRegions = { timer }, idle = true }))
+        Requirements(entry, { size = size, fallback = CooldownTrigger(entry.spell),
+        subRegions = { size == SIZES.main and mainTimer or timer }, idle = true }))
     end
     return Icon(holder, entry.name, CooldownTrigger(entry.spell),
       Requirements(entry, { size = size, conditions = { noMana, outOfRange }, idle = true }))
@@ -234,13 +272,20 @@ function Pack.Build(spec)
   local function AuraIcon(holder, label, entry, unit, kind, warn, noGlow)
     local subRegions = { timer }
     if entry.stacks then subRegions[2] = Text("%s", "INNER_BOTTOMRIGHT", 12) end
-    local options = Requirements(entry, { size = 32, subRegions = subRegions, missing = entry.missing,
+    local options = Requirements(entry, { size = SIZES.aura, subRegions = subRegions, missing = entry.missing,
       glow = not noGlow and entry.glow })
     options.warn = options.warn or warn
+    -- A DoT glows when it can be refreshed. A tracked missing DoT loads in combat only:
+    -- native aura conditions cannot be combined with the combat state.
+    options.pandemic = kind == "HARMFUL" and not noGlow and entry.dot
+    assert(not entry.missing or options.pandemic, label .. ": a tracked missing debuff must be a DoT")
+    -- Other debuffs (Sunder Armor, Judgements, curses) do not glow.
+    if kind == "HARMFUL" and not options.pandemic and entry.glow == nil then options.glow = false end
+    options.inCombat = options.pandemic and entry.missing
     if entry.totem then
       local data = Icon(holder, label, TotemTrigger({ use_totemType = true, totemType = entry.slot,
         use_totemName = true, totemName = tostring(entry.totem) }), options)
-      data.xOffset = -36
+      data.xOffset = -(SIZES.totem[1] + 2)
       return data
     end
     return Icon(holder, label, AuraTrigger(entry.aura, entry.missing and "showAlways" or "showOnActive", unit, kind),
@@ -249,7 +294,7 @@ function Pack.Build(spec)
 
   local function TotemIcon(holder, slot)
     local data = Icon(holder, "Totem " .. slot, TotemTrigger({ use_totemType = true, totemType = slot }),
-      { size = 32, subRegions = { timer } })
+      { size = SIZES.totem, subRegions = { timer } })
     data.triggers[2] = { trigger = TotemTrigger({ use_totemType = true, totemType = slot, use_inverse = true }),
       untrigger = {} }
     data.triggers.disjunctive, data.triggers.activeTriggerMode = "any", 1
@@ -265,7 +310,7 @@ function Pack.Build(spec)
       subRegions = { { type = "subbackground" }, { type = "subforeground" },
         Text(text or "%p", "INNER_RIGHT", 11), Text(options.title or label, "INNER_LEFT", 11) },
     })
-    data.width, data.height = 390, height
+    data.width, data.height = WIDTH, height
     data.barColor, data.backgroundColor = color, {0, 0, 0, 0.5}
     data.texture, data.orientation, data.icon = "Blizzard", "HORIZONTAL", false
     return Add(holder, data)
@@ -273,14 +318,14 @@ function Pack.Build(spec)
 
   local function Label(holder, label, trigger, text, color, options)
     local data = Base(name .. " - " .. label, nil, "text", trigger, options)
-    data.displayText, data.font, data.fontSize, data.outline = text, "Friz Quadrata TT", 16, "OUTLINE"
+    data.displayText, data.font, data.fontSize, data.outline = text, "Friz Quadrata TT", 30, "OUTLINE"
     data.color, data.justify = color or {1, 0.82, 0, 1}, "CENTER"
     return Add(holder, data)
   end
 
-  local reminders = Group("Reminders", "dynamicgroup", 150, "UP")
+  local reminders = Group("Reminders", "dynamicgroup", 120, "UP")
   for _, entry in ipairs(spec.reminders or {}) do
-    local options = Requirements(entry, { size = 32, outOfCombat = not entry.lowPower, notResting = not entry.lowPower })
+    local options = Requirements(entry, { size = SIZES.reminder, outOfCombat = not entry.lowPower, notResting = not entry.lowPower })
     local label, trigger, text, color = "Missing " .. entry.name, nil, "Missing: " .. entry.name, nil
     if entry.aura then
       trigger = AuraTrigger(entry.aura, "showOnMissing")
@@ -300,18 +345,18 @@ function Pack.Build(spec)
     if entry.icon then Icon(reminders, label, trigger, options) else Label(reminders, label, trigger, text, color, options) end
   end
 
-  local procs = Group("Procs", "dynamicgroup", 96)
+  local procs = Group("Procs", "dynamicgroup", 92)
   for _, entry in ipairs(spec.procs or {}) do
     if entry.usable then
       Icon(procs, entry.name, Generic({ type = "spell", event = "Action Usable", spellName = entry.usable,
-        use_exact_spellName = false }), Requirements(entry, { size = 32, known = entry.usable }))
+        use_exact_spellName = false }), Requirements(entry, { size = SIZES.proc, known = entry.usable }))
     elseif entry.queued then
       Icon(procs, entry.name, Generic({ type = "spell", event = "Queued Action", spellName = entry.queued,
-        use_exact_spellName = false }), Requirements(entry, { size = 32, known = entry.queued }))
+        use_exact_spellName = false }), Requirements(entry, { size = SIZES.proc, known = entry.queued }))
     end
   end
 
-  local effects = Group("Effects", "group", 60)
+  local effects = Group("Effects", "group", 66)
   for _, entry in ipairs(spec.debuffs or {}) do
     AuraIcon(effects, entry.name .. " (target)", entry, "target", "HARMFUL", 3)
   end
@@ -319,90 +364,143 @@ function Pack.Build(spec)
     AuraIcon(effects, entry.name, entry, entry.unit, entry.kind)
   end
 
-  local segments = Group("Segments", "group", 32)
+  local function Pip(count)
+    local width = (WIDTH - (count - 1) * 3) / count
+    return width, function(index) return (index - (count + 1) / 2) * (width + 3) end
+  end
+
+  local segments = Group("Segments", "group", 46)
   if spec.segments then
+    local width = Pip(spec.segments.count)
     for count = 1, spec.segments.count do
       local trigger = AuraTrigger(spec.segments.aura, "showOnActive")
       trigger.secretUseStacks, trigger.secretStacksOperator, trigger.secretStacks = true, ">=", count
-      Icon(segments, spec.segments.name .. " " .. count, trigger,
-        Requirements(spec.segments, { size = 16, glow = false }))
+      local segment = Icon(segments, spec.segments.name .. " " .. count, trigger,
+        Requirements(spec.segments, { size = { width, 6 }, glow = false }))
+      -- Native stack conditions only colour text: the last segment carries the "full" colour.
+      if count == spec.segments.count then segment.color = FULL end
     end
   end
 
-  local main = Group("Main", "dynamicgroup", 22, "GRID")
-  for _, entry in ipairs(spec.rotation or {}) do
-    SpellIcon(main, entry, 44)
-  end
-
-  local points = Group("Points", "group", -84, "FIXED")
-  local resource = Group("Bars", "dynamicgroup", -98, "DOWN")
+  local points = Group("Points", "group", 36, "FIXED")
+  local resource = Group("Resource", "dynamicgroup", 20, "DOWN")
   for _, power in ipairs(spec.power or {}) do
-    for point = 1, power.segments or 0 do
-      local data = Base(name .. " - " .. power.label .. " " .. point, nil, "texture",
-        PowerTrigger(power.type, (point - 0.5) * 100 / power.segments, true), { gate = power.gate })
-      data.texture, data.color, data.blendMode = "Interface\\Buttons\\WHITE8X8", SEGMENT_COLORS[point], "BLEND"
-      data.width, data.height, data.yOffset = 74, 10, 0
-      data.xOffset = (point - (power.segments + 1) / 2) * 79
-      Add(points, data)
-    end
-    if not power.segments then
-      Bar(resource, power.label, PowerTrigger(power.type, nil, nil, power.unit), { gate = power.gate },
-        POWER_COLORS[power.type] or POWER_COLORS[0], "%p", 18)
+    if power.segments then
+      local width, column = Pip(power.segments)
+      for point = 1, power.segments do
+        local data = Base(name .. " - " .. power.label .. " " .. point, nil, "texture",
+          PowerTrigger(power.type, (point - 0.5) * 100 / power.segments, true), { gate = power.gate })
+        data.texture, data.color, data.blendMode = "Interface\\Buttons\\WHITE8X8", SEGMENT_COLORS[point], "BLEND"
+        data.width, data.height, data.xOffset, data.yOffset = width, 6, column(point), 0
+        Add(points, data)
+      end
+    else
+      local bar = Bar(resource, power.label, PowerTrigger(power.type, nil, nil, power.unit), { gate = power.gate },
+        POWER_COLORS[power.type] or POWER_COLORS[0], "%p", 12)
+      if power.type == 0 and not power.gate then
+        -- The native threshold drives the alpha of its whole aura, not a trigger state: a red copy laid
+        -- over the mana bar is opaque below the value and transparent above, in combat too.
+        local warning = Group(power.label .. " warning", "group", 0, "FIXED")
+        warning.group.anchorFrameType, warning.group.anchorFrameFrame = "SELECTFRAME", "WeakAuras:" .. bar.id
+        warning.group.anchorFrameParent = false
+        local red = Bar(warning, power.label .. " low", PowerTrigger(0, spec.manaWarning or 30, nil, power.unit),
+          { title = power.label }, RED, "%p", 12)
+        red.frameStrata = 5
+      end
     end
   end
   if spec.energyTick then
     Bar(resource, "Energy tick", Generic({ type = "unit", event = "Energy Tick" }), { gate = 3, title = "" },
-      POWER_COLORS[3], "", 6)
-  end
-  if spec.castBar then
-    Bar(resource, "Cast", Generic({ type = "unit", event = "Cast", unit = "player", use_unit = true }),
-      { title = "%n", conditions = { Condition("interruptible", 0, "barColor", {0.5, 0.5, 0.5, 1}) } },
-      RED, "%p", 16)
+      POWER_COLORS[3], "", 4)
   end
 
-  local secondary = resource
+  local main = Group("Main", "dynamicgroup", 4, "GRID", 8)
+  for _, entry in ipairs(spec.rotation or {}) do
+    SpellIcon(main, entry, SIZES.main)
+  end
+
+  local utility = Group("Utility", "dynamicgroup", -30, "GRID", 9)
+  for _, entry in ipairs(spec.cooldowns or {}) do
+    SpellIcon(utility, entry, SIZES.utility)
+  end
+  -- "Is useable" leaves out an empty slot and a passive trinket: neither has a cooldown to show.
+  for _, slot in ipairs({ 13, 14 }) do
+    Icon(utility, "Trinket " .. (slot - 12), Generic({ type = "item", event = "Cooldown Progress (Equipment Slot)",
+      itemSlot = slot, use_itemSlot = true, genericShowOn = "showAlways", use_genericShowOn = true,
+      use_testForCooldown = true }),
+      { size = SIZES.utility, idle = true })
+  end
+  -- Racials load on the spell being known: each race sees its own, no race filter needed.
+  -- "Known" falls back on the spell name: one Berserking entry covers its three resource variants.
+  for _, racial in ipairs({
+    { "Perception", 20600 }, { "Stoneform", 20594 }, { "Shadowmeld", 20580 }, { "Escape Artist", 20589 },
+    { "Blood Fury", 20572 }, { "Will of the Forsaken", 7744 }, { "Cannibalize", 20577 }, { "War Stomp", 20549 },
+    { "Berserking", 26297 },
+  }) do
+    SpellIcon(utility, { name = racial[1], spell = racial[2], known = racial[2] }, SIZES.utility)
+  end
+
+  local bars = Group("Bars", "dynamicgroup", -96, "DOWN")
+  if spec.castBar then
+    Bar(bars, "Cast", Generic({ type = "unit", event = "Cast", unit = "player", use_unit = true }),
+      { title = "%n", conditions = { Condition("interruptible", 0, "barColor", {0.5, 0.5, 0.5, 1}) } },
+      RED, "%p", 20)
+  end
   if spec.pet then
-    Bar(secondary, "Pet", Generic({ type = "unit", event = "Health", unit = "pet", use_unit = true }), {},
+    Bar(bars, "Pet", Generic({ type = "unit", event = "Health", unit = "pet", use_unit = true }), {},
       {0.2, 0.8, 0.2, 1}, "%p", 10)
   end
   for _, hand in ipairs(spec.swing or {}) do
-    Bar(secondary, "Swing " .. hand, Generic({ type = "unit", event = "Swing Timer", hand = hand, use_hand = true }),
+    Bar(bars, "Swing " .. hand, Generic({ type = "unit", event = "Swing Timer", hand = hand, use_hand = true }),
       { known = spec.swingKnown, offhand = hand == "off" }, {0.8, 0.8, 0.8, 1}, "%p", 10)
   end
   if spec.fiveSecondRule then
     local trigger = Generic({ type = "event", event = "Spell Cast Succeeded", use_unit = true,
       use_spellNames = true, spellNames = Ids(spec.fiveSecondRule), duration = "5" })
-    Bar(secondary, "5 sec rule", trigger, {}, {0.6, 0.6, 1, 1}, "%p", 10)
+    Bar(bars, "5 sec rule", trigger, {}, {0.6, 0.6, 1, 1}, "%p", 10)
   end
 
-  local utility = Group("Utility", "dynamicgroup", -190)
-  for _, entry in ipairs(spec.cooldowns or {}) do
-    SpellIcon(utility, entry, 32)
-  end
-
-  local totems = Group("Totems", "group", -270, "FIXED")
-  for slot = 1, spec.totems and 4 or 0 do
-    TotemIcon(totems, slot).xOffset = (slot - 2.5) * 36
-    local buffs = spec.totemBuffs and spec.totemBuffs[slot]
-    if buffs then
-      local trigger = AuraTrigger(buffs, "showOnActive")
-      trigger.nativeFilters = nil
-      local glow = Icon(totems, "Totem " .. slot .. " buff", trigger, { size = 32 })
-      table.remove(glow.subRegions, 1)
-      glow.blizzardAuraDisplay = { maxIcons = 1 }
-      glow.xOffset, glow.color, glow.cooldown = (slot - 2.5) * 36, {1, 1, 1, 0}, false
-    end
-  end
-
-  local upkeep = Group("Upkeep", "dynamicgroup", -230)
+  local upkeep = Group("Upkeep", "dynamicgroup", -176)
   for _, entry in ipairs(spec.upkeep or {}) do
     AuraIcon(upkeep, entry.name, entry, entry.unit, entry.kind, nil, true)
   end
   for _, weapon in ipairs(spec.enchants or {}) do
     Icon(upkeep, "Enchant " .. weapon, Generic({ type = "item", event = "Weapon Enchant", weapon = weapon,
       use_weapon = true, showOn = "showOnActive", use_showOn = true }),
-      { size = 32, subRegions = { timer }, offhand = weapon == "off" })
+      { size = SIZES.aura, subRegions = { timer }, offhand = weapon == "off" })
   end
+
+  local totems = Group("Totems", "group", -204, "FIXED")
+  local totemColumn = SIZES.totem[1] + 2
+  for slot = 1, spec.totems and 4 or 0 do
+    TotemIcon(totems, slot).xOffset = (slot - 2.5) * totemColumn
+    local buffs = spec.totemBuffs and spec.totemBuffs[slot]
+    if buffs then
+      local trigger = AuraTrigger(buffs, "showOnActive")
+      trigger.nativeFilters = nil
+      local glow = Icon(totems, "Totem " .. slot .. " buff", trigger, { size = SIZES.totem })
+      table.remove(glow.subRegions, 1)
+      glow.blizzardAuraDisplay = { maxIcons = 1 }
+      glow.xOffset, glow.color, glow.cooldown = (slot - 2.5) * totemColumn, {1, 1, 1, 0}, false
+    end
+  end
+
+  -- Overflow: past 8 known spells the main grid opens a second line, and every row below moves down with it.
+  -- Resource bars grow down from their top, so a druid's mana bar under the form bar pushes the main grid too.
+  resource.group.selfPoint, resource.group.yOffset = "TOP", 26
+  Below(main, resource, -10)
+  Below(utility, main, -4)
+  local offset = -6
+  if #upkeep.members > 0 then
+    Below(upkeep, utility, offset)
+    offset = offset - SIZES.aura[2] - 4
+  end
+  if #totems.members > 0 then
+    -- A plain group always anchors by its center.
+    Below(totems, utility, offset - SIZES.totem[2] / 2)
+    offset = offset - SIZES.totem[2] - 4
+  end
+  Below(bars, utility, offset)
 
   local rootData = Base(root, nil, "group", { type = "aura2", unit = "player", debuffType = "HELPFUL", names = {} }, {})
   rootData.controlledChildren = {}

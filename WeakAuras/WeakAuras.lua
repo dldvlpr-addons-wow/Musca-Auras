@@ -176,6 +176,19 @@ function WeakAuras.OpenOptions(msg)
   end
 end
 
+function WeakAuras.ImportClassPack()
+  if InCombatLockdown() or Private.NeedToRepairDatabase()
+    or not (WeakAuras.IsLoginFinished() and Private.LoadOptions()) then
+    return false
+  end
+  local classPack = WeakAuras.GetClassPack and WeakAuras.GetClassPack(select(2, UnitClass("player")))
+  if not classPack then
+    return false
+  end
+  local _, failure = WeakAuras.Import(classPack)
+  return failure == nil
+end
+
 function Private.PrintHelp()
   print(L["Usage:"])
   print(L["/wa help - Show this message"])

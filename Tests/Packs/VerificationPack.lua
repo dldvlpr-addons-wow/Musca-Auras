@@ -24,6 +24,16 @@ return function(test)
       assert(issue == nil, child.id .. ": " .. tostring(issue))
     end
   end
+  -- A child of a dynamic group is created on demand: an anchor to it is retried every second.
+  test.Environment.Advance(1.1)
+  for _, child in ipairs(transmit.c) do
+    if child.anchorFrameType == "SELECTFRAME" then
+      local region, target = WeakAuras.GetRegion(child.id), WeakAuras.GetRegion(child.anchorFrameFrame:sub(11))
+      local _, relativeTo = region:GetPoint(1)
+      assert(target and relativeTo == target, child.id .. ": not anchored to " .. child.anchorFrameFrame)
+      assert(region:GetParent() ~= target, child.id .. ": parented to its anchor")
+    end
+  end
   test.Units.SetCombat(true)
   test.Environment.Advance(0.5)
   test.Units.SetCombat(false)

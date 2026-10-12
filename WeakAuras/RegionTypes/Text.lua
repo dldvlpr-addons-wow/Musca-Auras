@@ -294,7 +294,7 @@ local function modify(parent, region, data)
     local UpdateText
     if self.displayText and Private.ContainsAnyPlaceHolders(self.displayText) then
       UpdateText = function()
-        if Private.UpdateNativeText and Private.UpdateNativeText(self, self, self.displayText) then
+        if Private.UpdateNativeText and Private.UpdateNativeText(self, self, self.displayText, formatters) then
           return
         end
         local textStr = Private.ReplacePlaceHolders(self.displayText, self, nil, false, formatters);

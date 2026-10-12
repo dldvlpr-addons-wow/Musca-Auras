@@ -17,3 +17,4 @@ for _, class in ipairs(classes) do
   io.write(("  %s = %q,\n"):format(class, text))
 end
 io.write("}\n")
+io.write("\nfunction WeakAuras.GetClassPack(class)\n  return OptionsPrivate.classPacks[class]\nend\n")

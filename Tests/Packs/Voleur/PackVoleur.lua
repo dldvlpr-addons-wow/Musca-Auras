@@ -36,7 +36,7 @@ return Pack.Build({
     { name = "Vanish", aura = { 1856, 1857, 11327, 11329 } },
   },
   debuffs = {
-    { name = "Rupture", aura = { 1943, 8639, 8640, 11273, 11274, 11275 } },
+    { name = "Rupture", aura = { 1943, 8639, 8640, 11273, 11274, 11275 }, dot = true },
     { name = "Garrote", aura = { 703, 8631, 8632, 8633, 11289, 11290 } },
     { name = "Expose Armor", aura = { 8647, 8649, 8650, 11197, 11198 } },
     { name = "Kidney Shot", aura = { 408, 8643 } },

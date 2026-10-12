@@ -6,6 +6,10 @@
 
 Depuis le 2026-10-10, le pack est une table de données passée au générateur commun `../PackBuilder.lua`, comme les 8 autres classes. Le groupe racine s'appelle « Chaman (Musca) » au lieu de « Chaman (Forever) » : supprimer l'ancien groupe en jeu avant l'import.
 
+Depuis le 2026-10-12, `PackBuilder.lua` dispose le HUD au gabarit Quazii : largeur commune de 334 px ; rappels, procs et effets au-dessus ; ressource fine ; rangée principale (grille de 8, 40x30) puis utilitaires (grille de 9, 34x26) ; entretien, totems, barres de cast, swing et règle des 5 s en dessous. À partir de la ressource, chaque rangée est ancrée au bas réel de la précédente : une 2e ligne (débordement au-delà de 8 sorts principaux connus, 2e barre de ressource du druide) pousse le reste. Les uid changent, car l'ordre de création des groupes a changé : supprimer le groupe « <Classe> (Musca) » en jeu avant de réimporter.
+
+Toujours le 2026-10-12, l'uid de chaque aura est un hachage de son id : il ne dépend plus de l'ordre de création. Supprimer une dernière fois le groupe en jeu avant ce réimport. Ensuite, un réimport (bouton Class Pack ou page « HUD de classe » de l'assistant AeonUI) met le groupe à jour en place et garde la position, la taille et les options utilisateur.
+
 - `PackChaman.lua` : données du pack (sorts, auras, rappels).
 - `PackChaman.txt` : chaîne d'import `!WA:2!` actuelle.
 - `../VerificationPack.lua` : scénario commun du banc. Il vérifie ids et uids uniques, parents, chargement de chaque aura pour la classe, et la validation moteur des auras « Aura (Modern) ». Le banc n'émule pas `AuraContainer` : leur affichage se vérifie en jeu seulement.
