@@ -1,3 +1,26 @@
+# Musca Auras 1.8.1 (2026-10-12)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Class packs use a compact HUD: reminders and procs above, a thin resource bar, a main row and a utility row, then
+  the bars.
+- A new class pack import updates the auras already in place and keeps their position, size and options.
+- Damage over time debuffs glow when they can be refreshed. Warrior stance spells show only in their stance.
+- `WeakAuras.ImportClassPack()` lets another addon open the class pack import.
+
+## Fixes
+
+- An equipped trinket shows its cooldown without a `/reload`, even when its slot was empty when the aura loaded.
+- Texts with a trigger number (`%1.percentpower`, `%2.health`...) show the player's power and health percent, also
+  mixed with names or readable values.
+- Class pack icons with a timer text no longer show two timers when the `countdownForCooldowns` CVar is on.
+
+## Before you import the new class pack
+
+- Delete the "<Class> (Musca)" group first: the aura uids change once.
+
 # Musca Auras 1.8.0 (2026-10-11)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
