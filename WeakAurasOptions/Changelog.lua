@@ -10,13 +10,30 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.8.0',
-  dateString = '2026-10-11',
+  versionString = '1.8.1',
+  dateString = '2026-10-12',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Class Pack button: the ready-made auras of your class in one click
-- Energy Tick trigger
-- No more frame rate drop after opening /wa and clicking an aura]==],  commitText = [==[1.8.0 (2026-10-11):
+- Class packs: a compact HUD, and a new import keeps the position of your auras
+- %1.percentpower and other texts with a trigger number work
+- Trinket cooldowns show without a /reload]==],  commitText = [==[1.8.1 (2026-10-12):
+
+New:
+
+- Class packs use a compact HUD: reminders and procs above, a thin resource bar, a main row and a utility row, then the bars
+- A new class pack import updates the auras already in place and keeps their position, size and options
+- Damage over time debuffs glow when they can be refreshed. Warrior stance spells show only in their stance
+- WeakAuras.ImportClassPack() lets another addon open the class pack import
+
+Fixes:
+
+- An equipped trinket shows its cooldown without a /reload, even when its slot was empty when the aura loaded
+- Texts with a trigger number (%1.percentpower, %2.health...) show the player's power and health percent, also mixed with names or readable values
+- Class pack icons with a timer text no longer show two timers when the countdownForCooldowns CVar is on
+
+Before importing the new class pack, delete the "<Class> (Musca)" group: the aura uids change once.
+
+1.8.0 (2026-10-11):
 
 New:
 

@@ -10,6 +10,12 @@ Icons, bars, texts and timers that keep working on the modern engine, even in co
 
 Open `/wa`, click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel, and the ready-made auras of your class are imported in one click. Available for all nine classes: Druid, Hunter, Mage, Paladin, Priest, Rogue, Shaman, Warlock and Warrior.
 
+### <span style="color: #3c3;">New in 1.8.1</span>
+
+- <span style="color: #ffd100;"><strong>Compact class HUD:</strong></span> the class packs fit in one compact HUD, and a new import keeps the position, size and options of your auras.
+- <span style="color: #ffd100;"><strong>Power and health percent:</strong></span> `%1.percentpower`, `%2.health` and other texts with a trigger number work, also mixed with names.
+- <span style="color: #ffd100;"><strong>Trinket cooldowns:</strong></span> a trinket equipped after login shows its cooldown without a `/reload`.
+
 ### <span style="color: #3c3;">Also in 1.8.0</span>
 
 - <span style="color: #ffd100;"><strong>Energy Tick trigger:</strong></span> a bar to the next 2 second energy tick.
@@ -18,11 +24,11 @@ Open `/wa`, click <span style="color: #ffd100;"><strong>Class Pack</strong></spa
 
 ---
 
-## <span style="color: #ff6b35;">⚠️ Heads-up: 1.8.0</span>
+## <span style="color: #ff6b35;">⚠️ Heads-up: 1.8.1</span>
 
-- <span style="color: #ffd100;"><strong>Restart the game after the update:</strong></span> a new file is not loaded by a `/reload`.
+- <span style="color: #ffd100;"><strong>Already imported a class pack?</strong></span> Delete the "&lt;Class&gt; (Musca)" group before you import it again: the aura ids change once.
 - <span style="color: #3c3;"><strong>Your auras are kept.</strong></span> The saved data format did not change.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.7.1?</strong></span> Install **1.7.1** again from the **Files** tab, and report it on GitHub or CurseForge with the text of the error.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.8.0?</strong></span> Install **1.8.0** again from the **Files** tab, and report it on GitHub or CurseForge with the text of the error.
 
 ---
 

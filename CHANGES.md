@@ -16,6 +16,9 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 
 ## 2026-10-12
 
+Released as 1.8.1. Tested in game on WoW Forever: `%1.percenthealth% / %2.percentpower%` and `%1.unit %1.percentpower%`
+show the percents, and an equipment slot trigger follows its item.
+
 ### Added
 - `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/ClassPacks.lua`, `Tests/Packs/EmbedClassPacks.lua`: public
   `WeakAuras.ImportClassPack()`, so another addon can import the player's class pack. It loads the options, opens
