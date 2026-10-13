@@ -453,14 +453,13 @@ local function modify(parent, region, data)
       if reverseChanged and cooldown:IsShown() then
         -- WORKAROUND SetReverse not applying until next frame
         cooldown:SetCooldown(0, 0)
-        cooldown:SetCooldownFromDurationObject(cooldown.durationObject, true)
+        Private.ApplyCooldownDuration(cooldown, cooldown.durationObject)
       end
-    elseif (cooldown.expirationTime and cooldown.duration and cooldown:IsShown()) then
+    elseif (Private.IsReadableNumber(cooldown.expirationTime, cooldown.duration) and cooldown:IsShown()) then
       -- WORKAROUND SetReverse not applying until next frame
       cooldown:SetCooldown(0, 0)
-      cooldown:SetCooldown(cooldown.expirationTime - cooldown.duration,
-                           cooldown.duration,
-                           cooldown.useCooldownModRate and cooldown.modRate or nil)
+      Private.ApplyCooldown(cooldown, cooldown.expirationTime, cooldown.duration,
+                            cooldown.useCooldownModRate and cooldown.modRate or nil)
     end
   end
 
@@ -658,10 +657,13 @@ local function modify(parent, region, data)
       end
       cooldown.value = self.value
       cooldown.total = self.total
-      if (self.value >= 0 and self.value <= self.total) then
+      if Private.IsReadableNumber(self.value, self.total) and self.value >= 0 and self.value <= self.total then
         cooldown:Show()
-        cooldown:SetCooldown(GetTime() - (self.total - self.value), self.total)
-        cooldown:Pause()
+        if Private.ApplyCooldown(cooldown, GetTime() + self.value, self.total) then
+          cooldown:Pause()
+        else
+          cooldown:Hide()
+        end
       else
         cooldown:Hide();
       end
@@ -686,20 +688,26 @@ local function modify(parent, region, data)
         cooldown.inverse = self.inverse
         cooldown:Show()
         region:UpdateEffectiveInverse()
-        cooldown:SetCooldownFromDurationObject(self.durationObject, true)
+        if not Private.ApplyCooldownDuration(cooldown, self.durationObject) then
+          cooldown:Hide()
+          return
+        end
         if self.cdmProgressState and self.cdmProgressState.cdmNativePaused then cooldown:Pause() end
         return
       end
       cooldown.durationObject = nil
-      if (self.duration > 0 and self.expirationTime > GetTime() and self.expirationTime ~= math.huge) then
+      if (Private.IsReadableNumber(self.duration, self.expirationTime)
+          and self.duration > 0 and self.expirationTime > GetTime() and self.expirationTime ~= math.huge) then
         cooldown:Show();
         cooldown.expirationTime = self.expirationTime
         cooldown.duration = self.duration
         cooldown.modRate = self.modRate
         cooldown.inverse = self.inverse
         region:UpdateEffectiveInverse()
-        cooldown:SetCooldown(self.expirationTime - self.duration, self.duration,
-                             cooldown.useCooldownModRate and self.modRate or nil)
+        if not Private.ApplyCooldown(cooldown, self.expirationTime, self.duration,
+                                     cooldown.useCooldownModRate and self.modRate or nil) then
+          cooldown:Hide()
+        end
       else
         cooldown.expirationTime = self.expirationTime
         cooldown.duration = self.duration
@@ -713,14 +721,20 @@ local function modify(parent, region, data)
       if self:UpdateCooldownDrawState() then cooldown:Hide(); return end
       if cooldown.durationObject then
         cooldown:Show()
-        cooldown:SetCooldownFromDurationObject(cooldown.durationObject, true)
-        cooldown:Resume()
-      elseif (cooldown.duration and cooldown.duration > 0.01 and cooldown.duration ~= math.huge and cooldown.expirationTime ~= math.huge) then
+        if Private.ApplyCooldownDuration(cooldown, cooldown.durationObject) then
+          cooldown:Resume()
+        else
+          cooldown:Hide()
+        end
+      elseif (Private.IsReadableNumber(cooldown.duration, cooldown.expirationTime) and cooldown.duration > 0.01
+              and cooldown.duration ~= math.huge and cooldown.expirationTime ~= math.huge) then
         cooldown:Show();
-        cooldown:SetCooldown(cooldown.expirationTime - cooldown.duration,
-                             cooldown.duration,
-                             cooldown.useCooldownModRate and cooldown.modRate or nil);
-        cooldown:Resume()
+        if Private.ApplyCooldown(cooldown, cooldown.expirationTime, cooldown.duration,
+                                 cooldown.useCooldownModRate and cooldown.modRate or nil) then
+          cooldown:Resume()
+        else
+          cooldown:Hide()
+        end
       end
     end
 

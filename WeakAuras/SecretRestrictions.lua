@@ -95,7 +95,7 @@ do
   end
   frame:SetScript("OnEvent", function(_, event)
     Update()
-    if event ~= "PLAYER_REGEN_ENABLED" and event ~= "PLAYER_ENTERING_WORLD" then
+    if event ~= "PLAYER_ENTERING_WORLD" then
       C_Timer.After(0, Update)
     end
   end)
@@ -113,5 +113,34 @@ function Private.IsDurationObject(value)
   return ok and type(method) == "function"
 end
 
+function Private.ReadableOrNil(value)
+  if Private.IsSecret(value) then
+    return nil
+  end
+  return value
+end
+
+function Private.IsReadableNumber(...)
+  for i = 1, select("#", ...) do
+    local value = select(i, ...)
+    if type(value) ~= "number" or Private.IsSecret(value) then
+      return false
+    end
+  end
+  return true
+end
+
+function Private.ApplyCooldown(cooldown, expirationTime, duration, modRate)
+  if not Private.IsReadableNumber(expirationTime, duration) then
+    return false
+  end
+  return (pcall(cooldown.SetCooldown, cooldown, expirationTime - duration, duration, modRate))
+end
+
+function Private.ApplyCooldownDuration(cooldown, durationObject)
+  return (pcall(cooldown.SetCooldownFromDurationObject, cooldown, durationObject, true))
+end
+
 Private.ExecEnv.IsSecret = Private.IsSecret
+Private.ExecEnv.ReadableOrNil = Private.ReadableOrNil
 Private.ExecEnv.UnitIsUnit = Private.UnitIsUnit

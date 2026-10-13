@@ -122,13 +122,7 @@ function OptionsPrivate.CreateFrame()
   frame:SetFrameStrata("DIALOG")
   -- Workaround classic issue
 
-  local serverDate = C_DateAndTime.GetCurrentCalendarTime()
-  if serverDate.month == 6
-  then
-    WeakAurasOptionsPortrait:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_256_round_pride.tga]])
-  else
-    WeakAurasOptionsPortrait:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_256_round.tga]])
-  end
+  WeakAurasOptionsPortrait:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
 
   frame.window = "default"
 
@@ -532,8 +526,8 @@ function OptionsPrivate.CreateFrame()
   local thanksListCJ = lineWrapDiscordList(OptionsPrivate.Private.DiscordListCJ)
   local thanksListK = lineWrapDiscordList(OptionsPrivate.Private.DiscordListK)
 
-  local discordButton = addFooter(L["Discord"], [[Interface\AddOns\WeakAuras\Media\Textures\discord.tga]], "Coming soon",
-            "The Musca Auras Discord server is coming soon.")
+  local discordButton = addFooter(L["Discord"], [[Interface\AddOns\WeakAuras\Media\Textures\discord.tga]], "https://discord.gg/EyYpyMq2km",
+            "Join the Musca Auras Discord server.")
   discordButton:SetParent(tipFrame)
   discordButton:SetPoint("LEFT", tipFrame, "LEFT")
 

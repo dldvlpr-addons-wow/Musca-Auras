@@ -10,13 +10,32 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.8.1',
-  dateString = '2026-10-12',
+  versionString = '1.9.0',
+  dateString = '2026-10-13',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Class packs: a compact HUD, and a new import keeps the position of your auras
-- %1.percentpower and other texts with a trigger number work
-- Trinket cooldowns show without a /reload]==],  commitText = [==[1.8.1 (2026-10-12):
+- Aura (Modern): type a spell name, it becomes the IDs of all its ranks
+- Import report: auras that will not work on WoW Forever are listed before the import
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.9.0 (2026-10-13):
+
+New:
+
+- Aura (Modern) spell lists accept a spell name: it becomes the IDs of all its ranks
+- The first login popup has an "Install <class> HUD" button that imports the class pack
+- Before an import, a compatibility report lists the auras that use the combat log, values hidden in combat or functions missing from WoW Forever, with the known fix
+- A custom code that fails to compile or to run shows "Error in custom code" on the aura
+- A new Icon, Progress Bar, Progress Texture or Text aura starts with an Aura (Modern) trigger
+- The options window shows the Musca Auras logo, and its Discord button gives the invite link: https://discord.gg/EyYpyMq2km
+
+Fixes:
+
+- Range, group role, weapon enchant and cooldown swipe checks skip the values the game hides in combat
+- Custom code can no longer quit the game, manage the guild or read the debug library
+- A class pack import asked in combat waits for the end of combat
+
+Restart the game after the update: the new logo is not loaded by a /reload.
+
+1.8.1 (2026-10-12):
 
 New:
 

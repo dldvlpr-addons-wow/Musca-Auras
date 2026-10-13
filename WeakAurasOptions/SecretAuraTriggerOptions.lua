@@ -231,6 +231,49 @@ local function positiveSpellId(_, value)
   return true
 end
 
+local familiesByName
+local function spellIdsForName(name)
+  if type(name) ~= "string" then
+    return nil
+  end
+  name = name:match("^%s*(.-)%s*$")
+  if name == "" or tonumber(name) then
+    return nil
+  end
+  if not familiesByName then
+    familiesByName = {}
+    for _, family in ipairs(OptionsPrivate.Private.AuraSpellFamilies) do
+      local familyName = OptionsPrivate.Private.ExecEnv.GetSpellName(family[1])
+      if familyName then
+        local key = familyName:lower()
+        local ids = familiesByName[key] or {}
+        for _, id in ipairs(family) do
+          ids[#ids + 1] = id
+        end
+        familiesByName[key] = ids
+      end
+    end
+  end
+  local ids = familiesByName[name:lower()]
+  if ids then
+    return ids
+  end
+  local spellId = C_Spell.GetSpellIDForSpellIdentifier and C_Spell.GetSpellIDForSpellIdentifier(name)
+  if spellId then
+    return OptionsPrivate.Private.GetAuraSpellRanks(spellId)
+  end
+end
+
+local function spellIdOrName(info, value)
+  if value == "" or tonumber(value) then
+    return positiveSpellId(info, value)
+  end
+  if spellIdsForName(value) then
+    return true
+  end
+  return "Unknown spell name. Enter its Spell ID, or its exact name as shown in the game."
+end
+
 local function addSpellIdList(options, ctx, spec)
   local trigger, width = ctx.trigger, ctx.width
   local isEnabled = spec.isEnabled
@@ -249,7 +292,41 @@ local function addSpellIdList(options, ctx, spec)
     nil,
     false, function() return isEnabled(trigger) end)
   for position = 1, entryCount do
-    options[spec.prefix .. position].validate = positiveSpellId
+    local input = options[spec.prefix .. position]
+    local storeEntry = input.set
+    input.validate = spellIdOrName
+    input.set = function(info, value)
+      local ids = spellIdsForName(value)
+      if not ids then
+        return storeEntry(info, value)
+      end
+      local entries = trigger[spec.storageKey] or {}
+      trigger[spec.storageKey] = entries
+      local present = {}
+      for index, entry in ipairs(entries) do
+        if index ~= position then
+          local id = tonumber(entry)
+          if id then
+            present[id] = true
+          end
+        end
+      end
+      local added = {}
+      for _, id in ipairs(ids) do
+        if not present[id] then
+          present[id] = true
+          added[#added + 1] = id
+        end
+      end
+      if #added == 0 then
+        return storeEntry(info, "")
+      end
+      entries[position] = tostring(added[1])
+      for index = 2, #added do
+        entries[#entries + 1] = tostring(added[index])
+      end
+      storeEntry(info, tostring(added[1]))
+    end
   end
 end
 
@@ -259,10 +336,10 @@ local function addSpellSelection(options, ctx)
 
   addSpellIdList(options, ctx, {
     toggleKey = "useRankSpellIDs", prefix = "rankspellid", storageKey = "auraRankSpellIDs",
-    title = "Spell ID(s) (All Ranks)", inputName = "Spell ID", order = 4.95,
+    title = "Spell ID(s) (All Ranks)", inputName = "Spell ID or Name", order = 4.95,
     isEnabled = display.UsesRankSpellIDs, flagKey = "secretUseRankSpellIDs",
   })
-  options.useRankSpellIDs.desc = "Enter a Spell ID to track all ranks of that spell."
+  options.useRankSpellIDs.desc = "Enter a Spell ID or a spell name to track all ranks of that spell. A name is replaced by the IDs of all its ranks."
 
   local function unsupportedRanks()
     local unsupported = {}
@@ -285,12 +362,12 @@ local function addSpellSelection(options, ctx)
 
   addSpellIdList(options, ctx, {
     toggleKey = "useSpellIDs", prefix = "spellid", storageKey = "auraspellids",
-    title = "Exact Spell ID(s)", inputName = "Exact Spell ID", order = 6,
+    title = "Exact Spell ID(s)", inputName = "Exact Spell ID or Name", order = 6,
     isEnabled = display.UsesSpellIDs, flagKey = "secretUseSpellIDs",
   })
   addSpellIdList(options, ctx, {
     toggleKey = "useExcludedSpellIDs", prefix = "ignorespellid", storageKey = "excludedAuraSpellIDs",
-    title = "Ignored Exact Spell ID(s)", inputName = "Ignored Spell ID", order = 7,
+    title = "Ignored Exact Spell ID(s)", inputName = "Ignored Spell ID or Name", order = 7,
     isEnabled = display.UsesExcludedSpellIDs, flagKey = "secretUseExcludedSpellIDs",
   })
 end

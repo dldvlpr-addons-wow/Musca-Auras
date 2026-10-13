@@ -212,6 +212,13 @@ local function NewDuration()
     return Value(math.min(1, (Clock.now - duration.startTime) / duration.total))
   end
   function methods:IsZero() return Value(duration.total <= 0) end
+  function methods:EvaluateRemainingDuration(curve)
+    local result = curve:Evaluate(math.max(0, duration.startTime + duration.total - Clock.now))
+    return Value(result)
+  end
+  function methods:EvaluateElapsedDuration(curve)
+    return Value(curve:Evaluate(math.min(duration.total, Clock.now - duration.startTime)))
+  end
   function methods:HasExpired() return Value(duration.startTime + duration.total <= Clock.now) end
   function methods:IsActive() return Value(duration.total > 0 and duration.startTime + duration.total > Clock.now) end
   function methods:HasStarted() return Value(duration.startTime <= Clock.now) end
@@ -370,13 +377,21 @@ function Units.Install(target, fire, wowApi)
     local points = {}
     local curve = {}
     function curve:AddPoint(x, y) points[#points + 1] = { x = x, y = y } table.sort(points, function(a, b) return a.x < b.x end) end
+    local curveType
     function curve:ClearPoints() points = {} end
     function curve:GetPointCount() return #points end
-    function curve:SetType() end
+    function curve:SetType(kind) curveType = kind end
     function curve:Evaluate(x)
       local secret = Secret.IsSecret(x)
       x = Secret.Reveal(x)
       local result
+      if curveType == (Enum.LuaCurveType and Enum.LuaCurveType.Step) and not isColor and #points > 0 then
+        result = points[1].y
+        for _, point in ipairs(points) do
+          if x >= point.x then result = point.y end
+        end
+        return secret and Secret.Wrap(result) or result
+      end
       for index, point in ipairs(points) do
         if x <= point.x or index == #points then
           result = point.y

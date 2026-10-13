@@ -606,6 +606,9 @@ if not WeakAuras.ToggleOptions then
         end
       end)
 
+      OptionsPrivate.Private.callbacks:RegisterCallback("Add", function(_, _, _, data)
+        OptionsPrivate.TriggerSecretWarnings.UpdateAuraWarning(data)
+      end)
       OptionsPrivate.Private.callbacks:RegisterCallback("ScanForLoads", AfterScanForLoads)
       OptionsPrivate.Private.callbacks:RegisterCallback("AboutToDelete", OnAboutToDelete)
       OptionsPrivate.Private.callbacks:RegisterCallback("RenameFirst", OnRename)
@@ -644,6 +647,7 @@ local function EnsureDisplayButton(data)
     if(displayButtons[id]) then
       displayButtons[id]:SetData(data);
       displayButtons[id]:Initialize();
+      OptionsPrivate.TriggerSecretWarnings.UpdateAuraWarning(data)
       displayButtons[id]:UpdateWarning()
     else
       print("|cFF8800FFWeakAuras|r: Error creating button for", id);
@@ -1980,7 +1984,8 @@ function WeakAuras.NewAura(sourceData, regionType, targetId)
   AddDefaultSubRegions(data)
 
   if not sourceData or not sourceData.triggers then
-    data.triggers[1].trigger.auraTracking = "readable"
+    local supportsModern = OptionsPrivate.Private.BlizzardAuraDisplay.SupportsRegionType(regionType)
+    data.triggers[1].trigger.auraTracking = supportsModern and "native" or "readable"
     OptionsPrivate.AuraEditor.Resolve(data, 1)
   end
 

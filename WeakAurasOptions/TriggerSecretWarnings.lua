@@ -3,7 +3,8 @@ local _, OptionsPrivate = ...
 
 local Warnings = {}
 OptionsPrivate.TriggerSecretWarnings = Warnings
-Warnings.text = "|cffff0000Secret detected. Some features may be restricted in combat.|r"
+Warnings.message = "Secret detected. Some features may be restricted in combat."
+Warnings.text = "|cffff0000" .. Warnings.message .. "|r"
 
 local MAX_SPELL_ID = 2147483647
 local STAGGER_POWER_TYPE = 99
@@ -260,6 +261,26 @@ function Warnings.GetScope(data, triggernum)
   return message
     or identityScope(trigger, fields)
     or liveStateScope(data, triggernum, fields)
+end
+
+function Warnings.UpdateAuraWarning(data)
+  local Private = OptionsPrivate.Private
+  if not (Private and data and data.uid and data.triggers) then return end
+  local secret = false
+  for triggernum, triggerData in ipairs(data.triggers) do
+    local trigger = triggerData.trigger
+    if type(trigger) == "table" then
+      local ok, found = pcall(function()
+        return Warnings.HasSecretAuraSpell(trigger) or Warnings.GetScope(data, triggernum) ~= nil
+      end)
+      if ok and found then
+        secret = true
+        break
+      end
+    end
+  end
+  Private.AuraWarnings.UpdateWarning(data.uid, "SecretTrigger", secret and "warning" or nil,
+                                     secret and Warnings.message or nil)
 end
 
 function Warnings.GetText(data, triggernum)

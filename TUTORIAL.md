@@ -62,7 +62,8 @@ Triggers that use the combat log (`CLEU`, "Combat Log") never fire. For damage t
 
 ### Other changes
 
-- **Spells by ID.** Name search in the options may not find spells. Type the spell ID.
+- **Spells by name or ID.** In the spell lists of an Aura (Modern) trigger, type a spell name in the game
+  language: it becomes the IDs of all its ranks. Elsewhere, name search may not find spells: type the spell ID.
   Get the ID of your rank out of combat: `/dump C_Spell.GetSpellInfo("Corruption")`.
   Classic spells have one ID per rank.
 - **Talent load options** are empty. Use the **Class and Specialization** load option instead.

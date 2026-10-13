@@ -5,14 +5,78 @@ a Classic client running on the modern 12.x engine (interface 16001).
 
 Original work: The WeakAuras Team, GPL-2.0 (see `WeakAuras/LICENSE`).
 Modifications: dldvlpr, GPL-2.0.
-Portions taken from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever: the talent data reader and
-the talent picker widget, see 2026-09-30; the secret value handling, load options and options panels listed on
-2026-10-03. Specialization data in `WeakAuras/PlayerSpecialization.lua` comes from talentsforever.com under
-CC-BY 4.0, see `WeakAuras/SpecializationData-LICENSE.txt`, and the spell rank data in `WeakAuras/SecretAuraRanks.lua`
+Portions derived from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever, and still in this fork:
+the talent data reader and the talent picker widget, see 2026-09-30; the secret value handling, Aura (Modern),
+Cooldown Viewer triggers, load options and options panels listed on 2026-10-03. The rewrites of 2026-10-12 changed
+local names and equivalent expressions only: those files remain derived from ForeverAuras code.
+Specialization data in `WeakAuras/PlayerSpecialization.lua` comes from talentsforever.com under CC-BY 4.0, see `WeakAuras/SpecializationData-LICENSE.txt`, and the spell rank data in `WeakAuras/SecretAuraRanks.lua`
 too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 `WeakAuras/RegionTypes/AuraBarNative.lua` contains code from M33kAuras (m33shoq, GPL-2.0).
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
+
+## 2026-10-13
+
+Released as 1.9.0. Tested in game on WoW Forever 1.60.1.70338, except the aura link sent to another player and the
+options window logo and Discord link (not tested in game yet). Headless test bench: 17 scenarios, 0 failed.
+
+### Added
+- `WeakAurasOptions/SecretAuraTriggerOptions.lua`, `WeakAuras/SecretAuraRanks.lua`: the spell lists of Aura (Modern)
+  accept a spell name. A name is replaced by the IDs of all its ranks, found in the rank families (names read in the
+  game language) or, for a spell the character knows, by `C_Spell.GetSpellIDForSpellIdentifier`. `README.md`,
+  `DESCRIPTION.md`, `GUIDE.md`, `TUTORIAL.md`, the in-game guide (`WeakAuras/ForeverTutorial.lua`) and the first
+  login popup (`WeakAuras/WeakAuras.lua`) no longer say that spells must be entered by ID.
+- `Tests/Scenarios/17_SpellNameInput.lua`: scenario for the spell name input.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/Locales/enUS.lua`, `WeakAuras/Locales/frFR.lua`: third button
+  "Install <class> HUD" on the first login popup, which calls `WeakAuras.ImportClassPack()`.
+- `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/VersionCheck.lua`: popup `WEAKAURAS_ACTION_BLOCKED`. The class pack
+  import asked in combat waits for the end of combat and says so; an import asked before login ends says to try
+  again; a version mismatch between WeakAuras and WeakAurasOptions opens a popup that names the 5 folders to replace.
+- `WeakAuras/AuraEnvironment.lua`, `WeakAuras/WeakAuras.lua`: a custom code that fails to compile or to run shows the
+  error as an aura warning ("Error in custom code"); a run failure was silent before. The check made while typing in
+  the code editor sets no warning. The warning is cleared when the aura is saved, except on a simple change.
+- `WeakAuras/Transmission.lua`: a received display message is checked before it is handled, and the cache purge
+  runs at most once every 60 s.
+- `WeakAurasOptions/TriggerSecretWarnings.lua`, `WeakAurasOptions/WeakAurasOptions.lua`: the secret trigger warning
+  also shows in the aura list.
+- `WeakAurasOptions/AuraDisplayOptions.lua`: a grey line under each display group of an Aura (Modern) that has
+  greyed out options, with the reason.
+- `WeakAurasOptions/CommonOptions.lua`: a description under the trigger type of an Aura trigger, which tells
+  Aura (Modern) and Aura apart with the limits of each.
+- `WeakAurasOptions/OptionsFrames/Update.lua`: a compatibility report before the import confirmation, aura by aura:
+  combat log triggers, auras that turn secret in combat, checks on values that turn secret in combat, and calls in
+  custom code to functions absent from WoW Forever, with the known fix when there is one.
+- `Tests/Scenarios/12_SecretRestrictionsHelpers.lua` to `Tests/Scenarios/16_ForeverAurasImport.lua`,
+  `Tests/Harness/Units.lua`: scenarios for the secret value helpers, `SpellCooldownState`, secret conditions, Cooldown
+  Viewer triggers and the ForeverAuras import; the mock Duration gains `EvaluateRemainingDuration` and
+  `EvaluateElapsedDuration`, and step curves are evaluated as steps.
+
+### Changed
+- `WeakAuras/AuraEnvironment.lua`: the custom code sandbox also blocks `getmetatable`, `ConsoleExec`, `Logout`,
+  `Quit`, `ForceQuit`, the guild management and guild bank functions, and the `debug`, `C_GuildInfo`, `C_Club`,
+  `C_AccountStore` and `C_CatalogShop` tables. `collectgarbage` only accepts "count". Still allowed on purpose:
+  `SetCVar` and `C_CVar` (nameplate and camera auras), `ReloadUI` (reload buttons), `SendAddonMessage` and
+  `C_ChatInfo` (group sync), `InviteUnit` (auto invite), `string.dump` (`loadstring` is blocked).
+- `WeakAuras/SecretRestrictions.lua`: shared helpers `Private.ReadableOrNil`, `Private.IsReadableNumber`,
+  `Private.ApplyCooldown` and `Private.ApplyCooldownDuration`; the restriction state is read again one frame after
+  the end of combat.
+- `WeakAuras/RegionTypes/Icon.lua`: the cooldown swipe goes through these helpers and hides instead of raising an
+  error when a time is secret.
+- `WeakAuras/BuffTrigger2.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/Prototypes.lua`, `WeakAuras/WeakAuras.lua`:
+  range, group role, arena specialization, item range and weapon enchant checks skip secret values; weapon enchants
+  are read again at the end of combat. `Private.ExecEnv.ReadableOrNil` is shared with generated trigger code.
+- `WeakAuras/AuraEnvironment.lua`: `WA_GetUnitAura` skips an aura whose name or spell ID is secret.
+- `WeakAuras/BuffTriggerNativeFilter.lua`: a secret filter answer counts as not filtered out.
+- `WeakAuras/BuffTrigger2.lua`, `WeakAuras/AuraEnvironment.lua`, `WeakAuras/Prototypes.lua`: no longer rely on the
+  `Blizzard_Deprecated` shims `UnitAura` and `GetSpellInfo`.
+- `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAurasOptions/WeakAurasOptions.lua`: a new Icon, Progress Bar, Progress
+  Texture or Text aura starts with an Aura (Modern) trigger on a player buff; other region types keep Aura.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAuras/Media/Textures/logo_musca_round.tga`: the options
+  window shows the Musca Auras logo at the top left, all year round, and its Discord button gives the invite link
+  https://discord.gg/EyYpyMq2km instead of "Coming soon".
+- `README.md`, `DESCRIPTION.md`: Discord invite link https://discord.gg/EyYpyMq2km; `DESCRIPTION.md` describes 1.9.0.
+- `.pkgmeta`: the package leaves out the working documents, `Tests`, `Classes` and `Wago`.
+- `CHANGES.md`: the header says which code derived from ForeverAuras is still in this fork.
 
 ## 2026-10-12
 
@@ -25,6 +89,10 @@ show the percents, and an equipment slot trigger follows its item.
   the import window of the built-in pack, and returns false in combat, before login ends, when the database needs a repair, when the options cannot load,
   when the class has no pack, or when the import fails.
   `WeakAuras.GetClassPack(class)` returns a pack string once the options are loaded.
+- `Tests/Packs/PackBuilder.lua`, `Tests/Packs/Chasseur/PackChasseur.lua`, `Tests/Packs/Guerrier/PackGuerrier.lua`,
+  their `.txt` strings, `WeakAurasOptions/ClassPacks.lua`: the hunter pack shows "Missing: Pet" out of combat and
+  out of rest areas when no living pet is out, except on a taxi or in a vehicle. The warrior pack shows the icon of
+  the current stance on the effects row, left of the HUD.
 
 ### Changed
 - `Tests/Packs/PackBuilder.lua`, the nine `Tests/Packs/<Class>/Pack<Class>.txt`, `WeakAurasOptions/ClassPacks.lua`:
@@ -409,7 +477,8 @@ nameplates, exports shared between players.
   - `WeakAuras/Prototypes.lua`: Bag Space and Equipment Durability give no value while the game keeps it secret.
 
 ### Changed
-- Rewritten in this fork's own way, same behavior, from the files taken from ForeverAuras on 2026-10-03:
+- Rewritten in this fork's own way (names and expressions only, still derived from ForeverAuras), same behavior,
+  from the files taken from ForeverAuras on 2026-10-03:
   `WeakAuras/TextStyle.lua`, `WeakAuras/DurationText.lua`, `WeakAuras/ProgressTextureNative.lua`,
   `WeakAuras/CDMBackground.lua`, `WeakAuras/DispelTypeDisplay.lua`, `WeakAuras/SubRegionTypes/CDMDispel.lua`,
   `WeakAuras/SubRegionTypes/CDMDispelBorder.lua`, `WeakAurasOptions/ColorPalette.lua`,

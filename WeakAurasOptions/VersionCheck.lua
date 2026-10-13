@@ -15,5 +15,6 @@ if optionsVersion ~= coreVersion then
   end
   WeakAuras.ToggleOptions = function()
     WeakAuras.prettyPrint(warning)
+    StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", warning .. "\n\n" .. L["Replace the 5 folders WeakAuras, WeakAurasArchive, WeakAurasModelPaths, WeakAurasOptions and WeakAurasTemplates with the same version, then restart the game."])
   end
 end

@@ -31,7 +31,7 @@ function Private.CreateNativeFilter(newAPI)
     end
     local ok, filteredOut = pcall(C_UnitAuras.IsAuraFilteredOutByInstanceID, matchData.unit, matchData.auraInstanceID,
                                   matchData.filter .. "|" .. nativeFilter)
-    return ok and filteredOut == false
+    return ok and not Private.IsSecret(filteredOut) and filteredOut == false
   end
 
   return NativeFilterString, PassesNativeFilter

@@ -4139,7 +4139,7 @@ function WeakAuras.WatchUnitChange(unit)
           watchUnitChange.unitRaidRole[unit] = newRaidRole
         end
         local oldRole = watchUnitChange.unitRoles[unit]
-        local newRole = UnitGroupRolesAssigned and UnitGroupRolesAssigned(unit)
+        local newRole = UnitGroupRolesAssigned and Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
         if oldRole ~= newRole then
           eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
           watchUnitChange.unitRoles[unit] = newRole
@@ -4149,7 +4149,7 @@ function WeakAuras.WatchUnitChange(unit)
     if WeakAuras.IsCataOrMistsOrRetail() then
       function roleUpdate(unit, eventsToSend)
         local oldRole = watchUnitChange.unitRoles[unit]
-        local newRole = UnitGroupRolesAssigned and UnitGroupRolesAssigned(unit)
+        local newRole = UnitGroupRolesAssigned and Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
         if oldRole ~= newRole then
           eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
           watchUnitChange.unitRoles[unit] = newRole
@@ -4522,6 +4522,7 @@ do
     if not(tenchFrame) then
       tenchFrame = CreateFrame("Frame");
       tenchFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
+      tenchFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
       if WeakAuras.IsRetail() then
         tenchFrame:RegisterEvent("WEAPON_ENCHANT_CHANGED")
       end
@@ -4581,7 +4582,7 @@ do
           local ok, enchants = pcall(C_Item.GetWeaponEnchantInfo, weaponSlot)
           if ok and type(enchants) == "table" then
             for _, enchant in ipairs(enchants) do
-              if enchant.hasEnchant then
+              if Private.IsSecret(enchant.hasEnchant) or enchant.hasEnchant then
                 return true, enchant.timeLeft, enchant.charges, enchant.enchantID
               end
             end
@@ -4600,8 +4601,14 @@ do
 
       local function tenchUpdate()
         Private.StartProfileSystem("generictrigger temporary enchant");
-        local _, mh_rem, oh_rem, rw_rem
-        _, mh_rem, mh_charges, mh_EnchantID, _, oh_rem, oh_charges, oh_EnchantID, _, rw_rem, rw_charges, rw_EnchantID = GetWeaponEnchantInfo();
+        local _, mh_rem, mh_charges_new, mh_EnchantID_new, _, oh_rem, oh_charges_new, oh_EnchantID_new, _, rw_rem, rw_charges_new, rw_EnchantID_new = GetWeaponEnchantInfo();
+        if Private.IsSecret(mh_rem, mh_charges_new, mh_EnchantID_new, oh_rem, oh_charges_new, oh_EnchantID_new,
+                            rw_rem, rw_charges_new, rw_EnchantID_new) then
+          Private.StopProfileSystem("generictrigger temporary enchant");
+          return
+        end
+        mh_charges, mh_EnchantID, oh_charges, oh_EnchantID = mh_charges_new, mh_EnchantID_new, oh_charges_new, oh_EnchantID_new
+        rw_charges, rw_EnchantID = rw_charges_new, rw_EnchantID_new
         local time = GetTime();
         local mh_exp_new = mh_rem and (time + (mh_rem / 1000));
         local oh_exp_new = oh_rem and (time + (oh_rem / 1000));
@@ -5271,7 +5278,11 @@ local commonConditions = {
       if InCombatLockdown() and not UnitCanAttack('player', 'target') then
         return false
       end
-      return C_Item.IsItemInRange(state.itemId, 'target') == (needle == 1)
+      local ok, inRange = pcall(C_Item.IsItemInRange, state.itemId, 'target')
+      if not ok or Private.IsSecret(inRange) then
+        return false
+      end
+      return inRange == (needle == 1)
     end,
     events = Private.AddTargetConditionEvents({
       "WA_SPELL_RANGECHECK",

@@ -110,9 +110,11 @@ while data is secret.
 - Works, with a delay: "turn red when health is below 30%". In combat the color keeps its last state.
 - Always readable: your own casts, your cooldowns ready or not, combo points, your items, your bags, where you are.
 
-### Spells by ID
+### Spells by ID or name
 
-Name search in the options may not find every spell. Type the spell ID, and add every rank.
+In the spell lists of Aura (Modern), type a spell ID or a spell name as shown in the game. A name is replaced by
+the IDs of all its ranks. A name is found when the spell has a rank list in the addon, or when your character knows it;
+otherwise type the spell ID, and add every rank.
 
 ---
 

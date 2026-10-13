@@ -92,7 +92,7 @@ end
 local tinsert, wipe = table.insert, wipe
 local pairs, next, type = pairs, next, type
 local UnitAura = UnitAura
-if UnitAura == nil then
+if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
   UnitAura = function(unitToken, index, filter)
     local auraData = C_UnitAuras.GetAuraDataByIndex(unitToken, index, filter)
     if not auraData then
@@ -187,6 +187,9 @@ end
 
 local function UnitInRangeFixed(unit)
   local inRange, checked = UnitInRange(unit)
+  if Private.IsSecret(inRange, checked) then
+    return true
+  end
   return inRange or not checked
 end
 
@@ -1460,7 +1463,7 @@ local function TriggerInfoApplies(triggerInfo, unit)
     return false
   end
 
-  if triggerInfo.groupRole and not triggerInfo.groupRole[UnitGroupRolesAssigned(controllingUnit) or ""] then
+  if triggerInfo.groupRole and not triggerInfo.groupRole[Private.ReadableOrNil(UnitGroupRolesAssigned(controllingUnit)) or ""] then
     return false
   end
 
@@ -1478,7 +1481,7 @@ local function TriggerInfoApplies(triggerInfo, unit)
   if triggerInfo.arenaSpec and unit:sub(1, 5) == "arena" then
     -- GetArenaOpponentSpec doesn't use unit ids!
     local i = tonumber(unit:sub(6))
-    if not triggerInfo.arenaSpec[GetArenaOpponentSpec(i)] then
+    if not triggerInfo.arenaSpec[Private.ReadableOrNil(GetArenaOpponentSpec(i)) or ""] then
       return false
     end
   end
@@ -1585,7 +1588,7 @@ end
 
 local function roleForTriggerInfo(triggerInfo, unit)
   if triggerInfo.fetchRole then
-    return UnitGroupRolesAssigned(unit)
+    return Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
   end
 end
 
