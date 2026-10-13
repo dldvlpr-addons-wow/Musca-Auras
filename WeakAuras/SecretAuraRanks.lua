@@ -550,6 +550,7 @@ for _, family in ipairs(families) do
 end
 table.sort(catalog)
 Private.AuraSpellCatalogIDs = catalog
+Private.AuraSpellFamilies = families
 
 function Private.AuraSpellRankSupported(id)
   return byID[id] ~= nil

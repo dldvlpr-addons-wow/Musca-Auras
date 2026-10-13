@@ -273,10 +273,19 @@ local function restrictDisplayGroup(data, display, groupKey, group)
     group.__duplicate = nil
   end
   if detached or groupKey == "secretAura" or groupKey == "position" then return end
+  local hasUnavailable, lastOrder = false, 0
   for key, option in pairs(group) do
     if type(option) == "table" and option.type then
       restrictDisplayOption(data, isBorderGroup, key, option)
+      if option.disabled == true then hasUnavailable = true end
+      if type(option.order) == "number" and option.order > lastOrder then lastOrder = option.order end
     end
+  end
+  if hasUnavailable then
+    group.secretUnavailableNote = {
+      type = "description", order = lastOrder + 1, width = WeakAuras.doubleWidth, fontSize = "medium",
+      name = "|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r",
+    }
   end
 end
 

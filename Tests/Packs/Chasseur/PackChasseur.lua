@@ -54,6 +54,7 @@ return Pack.Build({
   fiveSecondRule = { 3044, 2643, 19434, 1978, 1130 },
   reminders = {
     { name = "Aspect", aura = aspects },
+    { name = "Pet", pet = true, known = 883 },
     { name = "Trueshot Aura", aura = trueshotAura, known = 1299346 },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },

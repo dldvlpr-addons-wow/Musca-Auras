@@ -1,3 +1,27 @@
+# Musca Auras 1.9.0 (2026-10-13)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Aura (Modern) spell lists accept a spell name: it becomes the IDs of all its ranks.
+- The first login popup has an `Install <class> HUD` button that imports the class pack.
+- Before an import, a compatibility report lists the auras that use the combat log, values hidden in combat or
+  functions missing from WoW Forever, with the known fix.
+- A custom code that fails to compile or to run shows "Error in custom code" on the aura.
+- A new Icon, Progress Bar, Progress Texture or Text aura starts with an Aura (Modern) trigger.
+- The options window shows the Musca Auras logo, and its Discord button gives the invite link.
+
+## Fixes
+
+- Range, group role, weapon enchant and cooldown swipe checks skip the values the game hides in combat.
+- Custom code can no longer quit the game, manage the guild or read the debug library.
+- A class pack import asked in combat waits for the end of combat.
+
+## After the update
+
+- Restart the game: the new logo is not loaded by a `/reload`.
+
 # Musca Auras 1.8.1 (2026-10-12)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

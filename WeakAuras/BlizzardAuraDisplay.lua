@@ -228,8 +228,12 @@ function Display.UsesNameplates(auraData)
   return (triggerConfig and triggerConfig.unit == "nameplate") or auraData.anchorFrameType == "NAMEPLATE"
 end
 
+function Display.SupportsRegionType(regionType)
+  return SUPPORTED_REGION_TYPES[regionType] == true
+end
+
 function Display.Eligible(auraData)
-  return auraData and (SUPPORTED_REGION_TYPES[auraData.regionType] == true) and Display.GetTrigger(auraData) ~= nil
+  return auraData and Display.SupportsRegionType(auraData.regionType) and Display.GetTrigger(auraData) ~= nil
 end
 
 function Display.Enabled(auraData)

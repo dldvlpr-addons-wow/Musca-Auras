@@ -61,6 +61,7 @@ return Pack.Build({
     { name = "Mortal Strike", aura = { 12294, 21551, 21552, 21553 }, known = 12294 },
   },
   power = { { label = "Rage", type = 1 } },
+  stance = 2457,
   swing = { "main", "off" },
   reminders = {
     { name = "Battle Shout", aura = battleShout },

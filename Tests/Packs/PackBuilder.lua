@@ -1,5 +1,9 @@
 local Pack = {}
 
+-- PACK_TARGET=ForeverAuras builds the same pack for the ForeverAuras addon: no native threshold, Energy Tick or
+-- desaturation on cooldown there, and the swing timer weapon is a number.
+local FOREVER_AURAS = os.getenv("PACK_TARGET") == "ForeverAuras"
+
 local RED = {1, 0.3, 0.3, 1}
 local BLUE = {0.4, 0.5, 1, 1}
 local FULL = {0.7, 0.3, 1, 1}
@@ -62,9 +66,11 @@ local function Generic(fields)
 end
 
 local function CooldownTrigger(spellId)
-  return Generic({ type = "spell", event = "Cooldown Progress (Spell)", spellName = spellId,
+  local trigger = Generic({ type = "spell", event = "Cooldown Progress (Spell)", spellName = spellId,
     use_exact_spellName = false, genericShowOn = "showAlways", use_genericShowOn = true,
     use_desaturateOnCooldown = true, desaturateOnCooldown = true })
+  if FOREVER_AURAS then trigger.use_desaturateOnCooldown, trigger.desaturateOnCooldown = nil, nil end
+  return trigger
 end
 
 local function AuraTrigger(ids, showOn, unit, kind)
@@ -109,7 +115,7 @@ end
 
 function Pack.Build(spec)
   local name, prefix = spec.name, spec.prefix
-  local root = name .. " (Musca)"
+  local root = name .. (FOREVER_AURAS and " HUD" or " (Musca)")
   local children, groups, uids = {}, {}, {}
 
   -- Derived from the aura id, not from the creation order: a reimport matches the auras already installed
@@ -149,9 +155,19 @@ function Pack.Build(spec)
     for index, extra in ipairs(required) do triggers[index + 1] = { trigger = extra, untrigger = {} } end
     if #required > 0 then triggers.disjunctive, triggers.activeTriggerMode = "all", 1 end
     if trigger.type == "secretAura" and #required > 0 then triggers.secretFallback = "none" end
+    local conditions = options.conditions or {}
+    if FOREVER_AURAS and trigger.use_nativeThreshold then
+      -- ForeverAuras reads an alpha condition on the power percent in combat through a curve.
+      local copy = {}
+      for index, condition in ipairs(conditions) do copy[index] = condition end
+      conditions = copy
+      conditions[#conditions + 1] = Condition("percentpower", trigger.nativeThreshold, "alpha", 0,
+        trigger.use_nativeThresholdAbove and "<" or ">=")
+      trigger.use_nativeThreshold, trigger.nativeThreshold, trigger.use_nativeThresholdAbove = nil, nil, nil
+    end
     return {
       id = id, uid = Uid(id), parent = parent, regionType = regionType, internalVersion = 91, tocversion = 16001,
-      triggers = triggers, load = Load(options), conditions = options.conditions or {}, config = {},
+      triggers = triggers, load = Load(options), conditions = conditions, config = {},
       authorOptions = {}, actions = { start = {}, finish = {}, init = {} }, animation = Animation(),
       subRegions = options.subRegions or {},
       information = { forceEvents = true, ignoreOptionsEventErrors = true, showNilIsFalse = true },
@@ -231,7 +247,8 @@ function Pack.Build(spec)
         end
       elseif options.glow ~= false or options.flash then
         subRegions[#subRegions + 1] = GLOW
-        if options.flash then
+        -- ForeverAuras rejects an Elapsed Time condition on a glow: the glow stays on while the aura is up.
+        if options.flash and not FOREVER_AURAS then
           conditions[#conditions + 1] = Condition("faAuraElapsed", options.flash, "sub." .. #subRegions .. ".glow", true, "<")
         end
         if options.fallback or options.missing then
@@ -243,6 +260,9 @@ function Pack.Build(spec)
       end
     end
     if options.idle then conditions[#conditions + 1] = idle end
+    if FOREVER_AURAS and trigger.event == "Cooldown Progress (Spell)" then
+      conditions[#conditions + 1] = Condition("onCooldown", 1, "desaturate", true)
+    end
     options.subRegions, options.conditions = subRegions, conditions
     local data = Base(name .. " - " .. label, nil, "icon", trigger, options)
     data.width, data.height, data.keepAspectRatio = options.size[1], options.size[2], true
@@ -338,6 +358,8 @@ function Pack.Build(spec)
       trigger = Generic({ type = "item", event = "Item Count", itemName = entry.item, use_itemName = true,
         use_count = true, count = tostring(entry.below), count_operator = "<" })
       if entry.icon then options.subRegions = { Text("%s", "INNER_BOTTOMRIGHT", 12) } end
+    elseif entry.pet then
+      trigger = Generic({ type = "unit", event = "Conditions", use_HasPet = false, use_vehicle = false })
     elseif entry.lowPower then
       label, text, color = entry.name, entry.name, BLUE
       trigger = PowerTrigger(entry.lowPower, entry.below)
@@ -362,6 +384,11 @@ function Pack.Build(spec)
   end
   for _, entry in ipairs(spec.buffs or {}) do
     AuraIcon(effects, entry.name, entry, entry.unit, entry.kind)
+  end
+  if spec.stance then
+    local stance = Icon(effects, "Stance", Generic({ type = "unit", event = "Stance/Form/Aura" }),
+      { size = SIZES.aura, known = spec.stance })
+    stance.xOffset = -(WIDTH + SIZES.aura[1]) / 2 - 2
   end
 
   local function Pip(count)
@@ -409,7 +436,7 @@ function Pack.Build(spec)
       end
     end
   end
-  if spec.energyTick then
+  if spec.energyTick and not FOREVER_AURAS then
     Bar(resource, "Energy tick", Generic({ type = "unit", event = "Energy Tick" }), { gate = 3, title = "" },
       POWER_COLORS[3], "", 4)
   end
@@ -451,7 +478,9 @@ function Pack.Build(spec)
       {0.2, 0.8, 0.2, 1}, "%p", 10)
   end
   for _, hand in ipairs(spec.swing or {}) do
-    Bar(bars, "Swing " .. hand, Generic({ type = "unit", event = "Swing Timer", hand = hand, use_hand = true }),
+    local swing = FOREVER_AURAS and { type = "unit", event = "Swing Timer", swingType = ({ main = 0, off = 1, ranged = 2 })[hand] }
+      or { type = "unit", event = "Swing Timer", hand = hand, use_hand = true }
+    Bar(bars, "Swing " .. hand, Generic(swing),
       { known = spec.swingKnown, offhand = hand == "off" }, {0.8, 0.8, 0.8, 1}, "%p", 10)
   end
   if spec.fiveSecondRule then

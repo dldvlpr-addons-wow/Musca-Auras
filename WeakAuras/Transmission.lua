@@ -283,6 +283,7 @@ hooksecurefunc("SetItemRef", function(link, text)
 end);
 
 local compressedTablesCache = {}
+local lastCachePurge = 0
 
 -- Export cipher: Copyright (C) 2026 dldvlpr (Musca Auras), GPL-2.0. Keep this notice in copies.
 -- Musca exports keep the !WA:2! prefix but encrypt the compressed bytes with a stream cipher, so ForeverAuras and
@@ -356,9 +357,12 @@ function TableToString(inTable, forChat, encrypt)
     }
   end
   -- remove cache items after 5 minutes
-  for k, v in pairs(compressedTablesCache) do
-    if v.lastAccess < (time() - 300) then
-      compressedTablesCache[k] = nil
+  if time() - lastCachePurge >= 60 then
+    lastCachePurge = time()
+    for k, v in pairs(compressedTablesCache) do
+      if v.lastAccess < (time() - 300) then
+        compressedTablesCache[k] = nil
+      end
     end
   end
   local encrypted = encrypt and Encrypt(compressed) or compressed
@@ -751,6 +755,23 @@ local function HandleProgressComm(prefix, message, distribution, sender)
   end
 end
 
+local function IsValidDisplayMessage(received)
+  if type(received.d) ~= "table" or type(received.v) ~= "number" then
+    return false
+  end
+  if received.c ~= nil then
+    if type(received.c) ~= "table" then
+      return false
+    end
+    for _, child in ipairs(received.c) do
+      if type(child) ~= "table" then
+        return false
+      end
+    end
+  end
+  return true
+end
+
 local function HandleComm(prefix, message, distribution, sender)
   local linkValidityDuration = 60 * 5
   local safeSender = safeSenders[sender]
@@ -771,6 +792,13 @@ local function HandleComm(prefix, message, distribution, sender)
   if(received and type(received) == "table" and received.m) then
     if(received.m == "d") then
       tooltipLoading = nil;
+      if not IsValidDisplayMessage(received) then
+        ShowTooltip({
+          {1, "WeakAuras", 0.5333, 0, 1},
+          {1, L["Transmission error"], 1, 0, 0}
+        });
+        return
+      end
       local data, children, version = received.d, received.c, received.v
       WeakAuras.PreAdd(data)
       if children then

@@ -94,6 +94,7 @@ WeakAuras.timer = timer
 
 local loginQueue = {}
 local queueshowooc
+local queueClassPackImport
 
 function WeakAuras.InternalVersion()
   return internalVersion;
@@ -177,8 +178,21 @@ function WeakAuras.OpenOptions(msg)
 end
 
 function WeakAuras.ImportClassPack()
-  if InCombatLockdown() or Private.NeedToRepairDatabase()
-    or not (WeakAuras.IsLoginFinished() and Private.LoadOptions()) then
+  if InCombatLockdown() then
+    queueClassPackImport = true
+    Private.frames["Addon Initialization Handler"]:RegisterEvent("PLAYER_REGEN_ENABLED")
+    StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", L["The class pack can't be imported during combat. The import will start when combat ends."])
+    return false
+  end
+  if Private.NeedToRepairDatabase() then
+    StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "downgrade"})
+    return false
+  end
+  if not WeakAuras.IsLoginFinished() then
+    StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", L["Musca Auras is still loading. Try again in a few seconds."])
+    return false
+  end
+  if not Private.LoadOptions() then
     return false
   end
   local classPack = WeakAuras.GetClassPack and WeakAuras.GetClassPack(select(2, UnitClass("player")))
@@ -1457,6 +1471,7 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
     if dbIsValid then
       Private.Login(takeNewSnapshots)
       if not db.foreverDisclaimerSeen then
+        StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"].button3 = L["Install %s HUD"]:format(UnitClass("player"))
         StaticPopup_Show("WEAKAURAS_FOREVER_DISCLAIMER")
       end
     else
@@ -1498,8 +1513,12 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
         if (queueshowooc) then
           WeakAuras.OpenOptions(queueshowooc)
           queueshowooc = nil
-          Private.frames["Addon Initialization Handler"]:UnregisterEvent("PLAYER_REGEN_ENABLED")
         end
+        if queueClassPackImport then
+          queueClassPackImport = nil
+          WeakAuras.ImportClassPack()
+        end
+        Private.frames["Addon Initialization Handler"]:UnregisterEvent("PLAYER_REGEN_ENABLED")
       end
     end
     if WeakAuras.IsLoginFinished() then
@@ -1763,7 +1782,7 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
     end
     role = "NONE"
     if WeakAuras.IsClassicOrTBCOrWrath() then
-      role = UnitGroupRolesAssigned("player")
+      role = Private.ReadableOrNil(UnitGroupRolesAssigned("player")) or "NONE"
       if WeakAuras.IsWrathClassic() and role == "NONE" then
         role = GetTalentGroupRole(GetActiveTalentGroup()) or "NONE"
       end
@@ -2544,7 +2563,8 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
     .. "- During combat, the game can hide combat data (buffs, casts, cooldowns) from addons. "
     .. "Buff and debuff triggers then keep their last state and update when combat ends.\n"
     .. "- The swing timer does not reset on melee hits.\n"
-    .. "- Talent load options are empty. Type spell IDs instead of spell names.\n"
+    .. "- Talent load options are empty.\n"
+    .. "- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs.\n"
     .. "- The \"Chat Message\" action may not send in instances or during combat.\n\n"
     .. "Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about WeakAuras here.\n\n"
     .. "Report other problems on the addon page.",
@@ -2555,9 +2575,20 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
       Private.ShowForeverTutorial()
     end
   end,
+  OnAlt = function()
+    WeakAuras.ImportClassPack()
+  end,
   OnShow = function()
     db.foreverDisclaimerSeen = true
   end,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+}
+
+StaticPopupDialogs["WEAKAURAS_ACTION_BLOCKED"] = {
+  text = "%s",
+  button1 = OKAY,
   timeout = 0,
   whileDead = true,
   hideOnEscape = true,
@@ -3331,6 +3362,10 @@ function pAdd(data, simpleChange)
   end
   if UIDtoID[data.uid] and UIDtoID[data.uid] ~= id then
     print("Improper? arguments to WeakAuras.Add - uid is assigned to a id. Uid:", data.uid, "assigned too:", UIDtoID[data.uid], "assigning now to", data.id)
+  end
+
+  if not simpleChange then
+    Private.AuraWarnings.UpdateWarning(data.uid, "CustomCodeError", nil)
   end
 
   if not Private.BlizzardAuraDisplay.Enabled(data) then

@@ -12,7 +12,7 @@ local LibSerialize = LibStub("LibSerialize")
 local LibDeflate = LibStub:GetLibrary("LibDeflate")
 
 local UnitAura = UnitAura
-if UnitAura == nil then
+if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
   --- Deprecated in 10.2.5
   UnitAura = function(unitToken, index, filter)
 		local auraData = C_UnitAuras.GetAuraDataByIndex(unitToken, index, filter)
@@ -31,8 +31,8 @@ local WA_GetUnitAura = function(unit, spell, filter)
   end
   for i = 1, 255 do
     local name, _, _, _, _, _, _, _, _, spellId = UnitAura(unit, i, filter)
-    if not name then return end
-    if spell == spellId or spell == name then
+    if not Private.IsSecret(name) and not name then return end
+    if not Private.IsSecret(name, spellId) and (spell == spellId or spell == name) then
       return UnitAura(unit, i, filter)
     end
   end
@@ -200,6 +200,22 @@ local blockedFunctions = {
   GetEditBoxMetatable = true,
   GetFontStringMetatable = true,
   GetFrameMetatable = true,
+  getmetatable = true,
+  ConsoleExec = true,
+  Logout = true,
+  Quit = true,
+  ForceQuit = true,
+  GuildInvite = true,
+  GuildPromote = true,
+  GuildDemote = true,
+  GuildSetLeader = true,
+  GuildSetMOTD = true,
+  GuildLeave = true,
+  SetGuildInfoText = true,
+  DepositGuildBankMoney = true,
+  WithdrawGuildBankMoney = true,
+  PickupGuildBankMoney = true,
+  SetGuildBankWithdrawGoldLimit = true,
 }
 
 local blockedTables = {
@@ -213,7 +229,12 @@ local blockedTables = {
   WeakAurasOptions = true,
   WeakAurasOptionsSaved = true,
   ItemRackUser = true,
-  ItemRackEvents = true
+  ItemRackEvents = true,
+  debug = true,
+  C_GuildInfo = true,
+  C_Club = true,
+  C_AccountStore = true,
+  C_CatalogShop = true,
 }
 
 local aura_environments = {}
@@ -557,7 +578,13 @@ local overridden = {
   WA_Utf8Sub = WA_Utf8Sub,
   ActionButton_ShowOverlayGlow = WeakAuras.ShowOverlayGlow,
   ActionButton_HideOverlayGlow = WeakAuras.HideOverlayGlow,
-  WeakAuras = FakeWeakAuras
+  WeakAuras = FakeWeakAuras,
+  collectgarbage = function(option)
+    if option == "count" then
+      return collectgarbage("count")
+    end
+    blocked("collectgarbage")
+  end
 }
 
 -- WORKAROUND API which return Mixin'd values need those mixin "rawgettable" in caller's fenv #5071
@@ -690,6 +717,19 @@ local function firstLine(string)
   return string
 end
 
+local function ReportLoadError(id, errorString, silent)
+  if silent then
+    return
+  end
+  print(string.format(L["Error in Aura '%s'"], id), errorString)
+  local data = WeakAuras.GetData(id)
+  local uid = data and data.uid or (Private.UIDtoID(id) and id)
+  if uid then
+    Private.AuraWarnings.UpdateWarning(uid, "CustomCodeError", "error",
+      string.format(L["Error in custom code: %s"], tostring(errorString)))
+  end
+end
+
 local function CreateFunctionCache(exec_env)
   local cache = {
     funcs = setmetatable({}, {__mode = "v"})
@@ -700,18 +740,18 @@ local function CreateFunctionCache(exec_env)
     else
       local loadedFunction, errorString = loadstring(string, firstLine(string))
       if errorString then
-        if not silent then
-          print(string.format(L["Error in Aura '%s'"], id), errorString)
-        end
+        ReportLoadError(id, errorString, silent)
         return nil, errorString
       elseif loadedFunction then
         --- @cast loadedFunction -nil
         setfenv(loadedFunction, exec_env)
-        local success, func = pcall(assert(loadedFunction))
+        local success, func = pcall(loadedFunction)
         if success then
           self.funcs[string] = func
           return func
         end
+        ReportLoadError(id, func, silent)
+        return nil, func
       end
     end
   end

@@ -64,6 +64,51 @@ local function checkAnimation(codes, id, a)
   addCode(codes, L["%s - Color Animation"]:format(id), a.colorFunc, a.colorType == "custom" and a.use_color)
 end
 
+local removedFunctions = {
+  "UnitAura", "UnitBuff", "UnitDebuff", "GetSpellInfo", "GetSpellCooldown", "GetSpellCharges", "GetSpellTexture",
+  "IsUsableSpell", "IsSpellOverlayed", "CombatLogGetCurrentEventInfo", "GetTalentInfo", "GetNumTalentTabs",
+  "GetSpecialization", "GetItemCooldown", "GetContainerItemInfo",
+}
+
+local function usesCombatLog(trigger)
+  if trigger.event == "Combat Log" then return true end
+  return trigger.type == "custom" and type(trigger.events) == "string"
+    and trigger.events:find("COMBAT_LOG_EVENT", 1, true) ~= nil
+end
+
+local function compatibilityReport(auras, codes)
+  local lines = {}
+  local warnings = OptionsPrivate.TriggerSecretWarnings
+  for _, aura in ipairs(auras) do
+    local probe = setmetatable({id = ""}, {__index = aura})
+    for triggernum, triggerData in ipairs(type(aura.triggers) == "table" and aura.triggers or {}) do
+      local trigger = type(triggerData) == "table" and triggerData.trigger
+      if type(trigger) == "table" then
+        if usesCombatLog(trigger) then
+          tinsert(lines, L["%s: uses the combat log, which addons cannot read on WoW Forever. Use a custom trigger on the UNIT_COMBAT:player event instead."]:format(aura.id))
+        else
+          local ok, secretAura = pcall(warnings.HasSecretAuraSpell, trigger)
+          local scopeOk, scope = pcall(warnings.GetScope, probe, triggernum)
+          if ok and secretAura then
+            tinsert(lines, L["%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."]:format(aura.id))
+          elseif scopeOk and scope then
+            tinsert(lines, L["%s: %s may not work in combat (secret values)."]:format(aura.id, (scope:gsub(":$", ""))))
+          end
+        end
+      end
+    end
+  end
+  for _, code in ipairs(codes) do
+    local source = " " .. code.code
+    for _, name in ipairs(removedFunctions) do
+      if _G[name] == nil and source:find("[^%w_%.:]" .. name .. "%s*%(") then
+        tinsert(lines, L["%s calls %s, which does not exist on WoW Forever."]:format(code.text, name))
+      end
+    end
+  end
+  return lines
+end
+
 local function scamCheck(codes, data)
   for i, v in ipairs(data.triggers) do
     checkTrigger(codes, L["%s - %i. Trigger"]:format(data.id, i), v.trigger, v.untrigger);
@@ -1570,6 +1615,17 @@ local methods = {
       flavorWarning:SetText(L["This aura was created with a different version (%s) of World of Warcraft.\nIt might not work correctly!"]:format(OptionsPrivate.Private.TocToExpansion[importBuild] or L["Unknown"]))
       flavorWarning:SetColor(1, 0, 0)
       self:AddChild(flavorWarning)
+    end
+
+    local compatibilityLines = compatibilityReport({data, unpack(children or {})}, scamCheckResult)
+    if #compatibilityLines > 0 then
+      self:AddChild(AceGUI:Create("WeakAurasSpacer"))
+      local compatibilityText = AceGUI:Create("Label")
+      compatibilityText:SetFontObject(GameFontHighlight)
+      compatibilityText:SetFullWidth(true)
+      compatibilityText:SetText(L["Compatibility with WoW Forever:"] .. "\n" .. table.concat(compatibilityLines, "\n"))
+      compatibilityText:SetColor(1, 0.82, 0)
+      self:AddChild(compatibilityText)
     end
 
     if (#scamCheckResult > 0) then
