@@ -6,6 +6,7 @@ local innerFire = { 588, 602, 1006, 7128, 10951, 10952 }
 local fortitude = { 1243, 1244, 1245, 2791, 10937, 10938, 21562, 21564 }
 local shadowWordPain = { 589, 594, 970, 992, 2767, 10892, 10893, 10894 }
 local devouringPlague = { 2944, 19276, 19277, 19278, 19279, 19280 }
+local divineSpirit = { 14752, 14818, 14819, 27841 }
 
 return Pack.Build({
   class = "PRIEST", name = "Priest", prefix = "mcPrieV1",
@@ -27,6 +28,7 @@ return Pack.Build({
     { name = "Desperate Prayer", spell = 13908 },
   },
   buffs = {
+    { name = "Weakened Soul", aura = { 6788 }, kind = "HARMFUL", known = 17 },
     { name = "Power Word: Shield", aura = shield },
     { name = "Renew", aura = renew },
     { name = "Inner Fire", aura = innerFire },
@@ -35,18 +37,20 @@ return Pack.Build({
     { name = "Power Infusion (active)", aura = { 10060 } },
     { name = "Fear Ward (active)", aura = { 6346 } },
     { name = "Spirit Tap", aura = { 15271 } },
+    { name = "Divine Spirit", aura = divineSpirit, known = 14752 },
   },
   debuffs = {
     { name = "Shadow Word: Pain", aura = shadowWordPain, dot = true },
     { name = "Vampiric Embrace", aura = { 15286 }, known = 15286 },
-    { name = "Devouring Plague", aura = devouringPlague },
+    { name = "Devouring Plague", aura = devouringPlague, dot = true },
     { name = "Shadow Weaving", aura = { 15258 } },
   },
   power = { { label = "Mana", type = 0 } },
   fiveSecondRule = { 8092, 589, 585, 14914, 15407, 2061, 2060, 2054, 2050, 139, 17, 596 },
+  castBar = true,
   reminders = {
-    { name = "Power Word: Fortitude", aura = fortitude },
-    { name = "Inner Fire", aura = innerFire },
+    { name = "Power Word: Fortitude", aura = fortitude, known = 1243 },
+    { name = "Inner Fire", aura = innerFire, known = 588 },
     { name = "Shadowform", aura = { 15473 }, known = 15473 },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },

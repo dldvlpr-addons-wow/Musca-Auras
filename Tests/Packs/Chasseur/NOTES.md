@@ -5,7 +5,7 @@ IDs issus de `Classes/Hunter.md` (DB2 1.60.1.70245). Préfixe d'uid `mcHuntV1`.
 ## Contenu
 - Rotation : Aimed Shot, Multi-Shot, Arcane Shot, Concussive Shot.
 - Procs : Raptor Strike (Queued Action), Mongoose Bite et Counterattack (Action Usable).
-- Cooldowns : Rapid Fire, Bestial Wrath, Intimidation, Feign Death, Freezing Trap, Frost Trap, Immolation Trap, Explosive Trap, Scatter Shot, Disengage, Deterrence.
+- Cooldowns : Rapid Fire, Bestial Wrath, Intimidation, Feign Death, Freezing Trap, Frost Trap, Immolation Trap, Explosive Trap, Scatter Shot, Disengage, Deterrence, Flare (1543), Tranquilizing Shot (19801), Distracting Shot (20736). Chaque sort ne se charge que s'il est appris (rang 1 suffit).
 - Buffs : Rapid Fire (actif), Quick Shots, Aspect of the Hawk (7 rangs), Deterrence (actif).
 - Debuffs cible : Serpent Sting, Hunter's Mark, Black Arrow, Wing Clip, Concussive Shot, Scorpid Sting, Viper Sting.
 - Barres : mana, familier (vie), swing à distance (Auto Shot), règle des 5 s (Arcane Shot, Multi-Shot, Aimed Shot, Serpent Sting, Hunter's Mark).
@@ -20,14 +20,15 @@ IDs issus de `Classes/Hunter.md` (DB2 1.60.1.70245). Préfixe d'uid `mcHuntV1`.
 - Counterattack : rang 1 = 19306 (rang 2 = 1242634, atypique).
 
 ## Sorts écartés
+- Kill Command, Readiness, Silencing Shot, Misdirection, Lock and Load, Snake Trap (Quazii Cata) : absents de `Classes/Hunter.md`.
 - Serpent Sting, Hunter's Mark, Wing Clip, Scorpid Sting, Viper Sting : sans recharge, suivis en debuff seulement.
 - Raptor Strike : proc Queued Action, pas d'icône de rotation.
-- Kill Command, Readiness : absents du fichier.
 - Wyvern Sting : seulement des candidats (24335, 24336, 26180, 26233, 1215753, talent 19386), « absent de Forever » selon une source.
 - Bestial Wrath : buff porté par le familier, non suivi en aura joueur ; le cooldown suffit.
 - Munitions faibles : aucun ID d'objet dans le fichier.
 
 ## À tester en jeu
+- Flare, Tranquilizing Shot, Distracting Shot : absents sous le niveau d'apprentissage (32, 60, 12), présents ensuite avec leur recharge.
 - Swing « ranged » : doit suivre Auto Shot.
 - Queued Action : Raptor Strike s'affiche entre l'activation et le coup suivant.
 - Action Usable : Mongoose Bite et Counterattack n'apparaissent que lorsqu'ils sont utilisables.

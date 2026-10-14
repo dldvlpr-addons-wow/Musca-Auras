@@ -414,9 +414,7 @@ UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:S
 Supports multiple entries, separated by commas
 Can use \ to escape -.]=] ] = [=[필터 형식: '이름', '이름-서버', '-서버'. 여러 항목을 지원하며, 각 항목은 쉼표로 구분합니다.
 -는 앞에 \를 사용해 이스케이프 처리하면 입력할 수 있습니다.]=]
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = [=[여러 속성 중 해제가 되는 버프/디버프만 걸러냅니다
-출혈은 LibDispel을 통해서 분류됩니다]=]
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "여러 속성 중 해제가 되는 버프/디버프만 걸러냅니다"
 	L["Find Auras"] = "위크오라 구하기"
 	L["Finish"] = "종료"
 	L["Finishing..."] = "완료중..."

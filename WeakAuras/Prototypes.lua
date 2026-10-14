@@ -1622,10 +1622,11 @@ Private.load_prototype = {
       type = "multiselect",
       values = "forever_spec_types",
       test = "Private.ExecEnv.IsForeverSpecialization(%s)",
-      events = {"SPELLS_CHANGED", "PLAYER_TALENT_UPDATE", "PLAYER_ENTERING_WORLD"},
+      events = {"SPELLS_CHANGED", "PLAYER_TALENT_UPDATE", "CHARACTER_POINTS_CHANGED", "WA_TALENT_UPDATE",
+                "PLAYER_ENTERING_WORLD"},
       sorted = true,
       sortOrder = Private.forever_specs_sorted,
-      desc = L["Matches a specialization when you have learned its final talent, such as Combustion for Fire Mage. Any rank counts. No match before learning that talent or after unlearning it. Select multiple specializations to match any of them. Feral Combat includes both cat and bear builds. Your assigned Role is checked separately."],
+      desc = L["Matches the talent tree where you have spent the most points. Two trees with the same points both match. No match without any talent point. Select multiple specializations to match any of them. Feral Combat includes both cat and bear builds. Your assigned Role is checked separately."],
     },
     {
       name = "talent",
@@ -7033,56 +7034,6 @@ Private.event_prototypes = {
       {
         hidden = true,
         test = "remainingCheck"
-      }
-    },
-    automaticrequired = true,
-    progressType = "timed",
-    statesParameter = "one"
-  },
-  ["Energy Tick"] = {
-    type = "unit",
-    events = {},
-    internal_events = {
-      "ENERGY_TICK_UPDATE"
-    },
-    force_events = "ENERGY_TICK_UPDATE",
-    name = L["Energy Tick"],
-    loadFunc = function()
-      WeakAuras.InitEnergyTick()
-    end,
-    init = function()
-      return [=[
-        local duration, expirationTime = WeakAuras.GetEnergyTickInfo()
-        if duration > 0 then
-          Private.ExecEnv.ScheduleScan(expirationTime, "ENERGY_TICK_UPDATE")
-        end
-      ]=]
-    end,
-    args = {
-      {
-        name = "duration",
-        hidden = true,
-        init = "duration",
-        test = "true",
-        store = true
-      },
-      {
-        name = "expirationTime",
-        init = "expirationTime",
-        hidden = true,
-        test = "true",
-        store = true
-      },
-      {
-        name = "progressType",
-        hidden = true,
-        init = "'timed'",
-        test = "true",
-        store = true
-      },
-      {
-        hidden = true,
-        test = "duration > 0"
       }
     },
     automaticrequired = true,

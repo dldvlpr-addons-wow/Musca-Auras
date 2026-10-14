@@ -3,13 +3,20 @@ local Pack = dofile("Tests/Packs/PackBuilder.lua")
 return Pack.Build({
   class = "ROGUE", name = "Rogue", prefix = "mcRogueV1",
   rotation = {
+    { name = "Sinister Strike", spell = 1752 },
+    { name = "Backstab", spell = 53 },
+    { name = "Mutilate", spell = 1310707 },
+    { name = "Hemorrhage", spell = 16511 },
+    { name = "Ambush", spell = 8676 },
+    { name = "Eviscerate", spell = 2098 },
     { name = "Ghostly Strike", spell = 14278 },
-    { name = "Kidney Shot", spell = 408 },
-    { name = "Gouge", spell = 1776 },
   },
   cooldowns = {
     { name = "Kick", spell = 1766 },
     { name = "Blind", spell = 2094 },
+    { name = "Feint", spell = 1966 },
+    { name = "Kidney Shot", spell = 408 },
+    { name = "Gouge", spell = 1776 },
     { name = "Vanish (cooldown)", spell = 1856 },
     { name = "Sprint (cooldown)", spell = 2983 },
     { name = "Evasion (cooldown)", spell = 5277 },
@@ -25,7 +32,7 @@ return Pack.Build({
     { name = "Riposte", usable = 14251 },
   },
   buffs = {
-    { name = "Slice and Dice", aura = { 5171, 6774 } },
+    { name = "Slice and Dice", aura = { 5171, 6774 }, warn = 3 },
     { name = "Blade Flurry", aura = { 13877 }, known = 13877 },
     { name = "Adrenaline Rush", aura = { 13750 }, known = 13750 },
     { name = "Cold Blood", aura = { 14177 }, known = 14177 },
@@ -53,8 +60,9 @@ return Pack.Build({
   enchants = { "main", "off" },
   swing = { "main", "off" },
   power = { { label = "Energy", type = 3 }, { label = "Combo Points", type = 4, segments = 5 } },
+  castBar = true,
   reminders = {
-    { name = "main-hand poison", enchant = "main" },
-    { name = "off-hand poison", enchant = "off" },
+    { name = "main-hand poison", enchant = "main", known = 8681 },
+    { name = "off-hand poison", enchant = "off", offhand = true, known = 8681 },
   },
 })

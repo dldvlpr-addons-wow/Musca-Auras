@@ -379,8 +379,7 @@ Off Screen]=] ] = "Aura está fuera de la pantalla"
 
 Supports multiple entries, separated by commas
 Can use \ to escape -.]=] ] = "Formatos de filtro: 'Nombre', 'Nombre-Reino', '-Reino'. Admite varias entradas, separadas por comas Puedes utilizar \\ para escapar -."
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = "Filtrar solo los perjuicios/beneficios de tipo clasificable como Sangrado mediante LibDispel"
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "Filtrar solo los perjuicios/beneficios disipables de los tipos indicados"
 	L["Find Auras"] = "Encontrar auras"
 	L["Finish"] = "Finalizar"
 	L["Finishing..."] = "Finalizando..."

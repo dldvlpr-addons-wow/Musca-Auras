@@ -3,8 +3,8 @@
 Fichiers : `PackVoleur.lua` (données), `PackVoleur.txt` (chaîne encodée). Préfixe d'uid `mcRogueV1`. IDs tirés de `Classes/Rogue.md` (DB2 1.60.1.70245).
 
 ## Contenu
-- Rotation : Ghostly Strike, Kidney Shot, Gouge.
-- Cooldowns : Kick, Blind, Vanish, Sprint, Evasion, Adrenaline Rush, Blade Flurry, Cold Blood, Preparation, Premeditation, Distract, Stealth. Les doublons de nom avec un buff portent le suffixe « (recharge) » (identifiants uniques exigés).
+- Rotation : Sinister Strike, Backstab, Mutilate, Hemorrhage, Ambush, Eviscerate, Ghostly Strike.
+- Cooldowns : Kick, Blind, Feint, Kidney Shot, Gouge, Vanish, Sprint, Evasion, Adrenaline Rush, Blade Flurry, Cold Blood, Preparation, Premeditation, Distract, Stealth. Les doublons de nom avec un buff portent le suffixe « (cooldown) » (identifiants uniques exigés).
 - Procs : Riposte (Action Usable).
 - Buffs : Slice and Dice, Blade Flurry, Adrenaline Rush, Cold Blood, Premeditation, Evasion, Sprint, Stealth, Vanish.
 - Debuffs cible : Rupture, Garrote, Expose Armor, Kidney Shot, Cheap Shot, Gouge, Blind, Sap, Hemorrhage, Deadly / Wound / Crippling / Mind-numbing Poison.
@@ -19,7 +19,7 @@ Fichiers : `PackVoleur.lua` (données), `PackVoleur.txt` (chaîne encodée). Pr�
 - Riposte : 14251 (autres sorts de même nom 5237, 6187, 6569 non utilisés).
 
 ## Sorts écartés
-- Sinister Strike, Backstab, Eviscerate, Mutilate, Hemorrhage (sans recharge) : absents de la rotation. Cheap Shot : pas en cooldown. Surprise Attack : absent du fichier. Shiv : absent du fichier.
+- Cheap Shot : pas en cooldown. Surprise Attack : absent du fichier. Shiv : absent du fichier.
 - Rappel de stock de poisons : aucun ID d'objet dans le fichier, non fait.
 - Règle des 5 secondes : sans objet (énergie). Le tick d'énergie n'est volontairement pas fait.
 

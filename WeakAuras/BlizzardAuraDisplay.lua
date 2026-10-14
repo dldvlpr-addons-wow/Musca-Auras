@@ -1096,6 +1096,7 @@ local function RefreshShownAnimations(displayState)
   displayState.updateProbe:SetAlpha(0)
   button:SetDispelTypeText(displayState.updateProbe, {showWhenHarmful = false})
 end
+Display.RefreshShownAnimations = RefreshShownAnimations
 
 local function ApplyNativeStyle(displayState, auraData, auraRegion)
   Display.StyleAppearance(displayState, Display.PrepareConditionAppearance(auraData), ResolveElement, ApplyTextStyle, ApplyGlowStyle)
@@ -1356,6 +1357,7 @@ local function LocateAnchor(unitId, unitFrameMap, plateMap, droppedUnit)
   if targetFrame and targetFrame:IsForbidden() then targetFrame = nil end
   return targetFrame
 end
+Display.LocateAnchor = LocateAnchor
 
 local function AttachContainer(holderFrame, auraContainer, unitId, parentFrame)
   if holderFrame.boundUnit ~= unitId or auraContainer:GetParent() ~= parentFrame then
@@ -1580,10 +1582,12 @@ local function GroupLayoutWarning(auraData)
     isGrouped and Display.dynamicGroupWarning or nil)
 end
 
-local function RunInstance(auraRegion, auraData, position, displayInstance)
+local function RunInstance(auraRegion, auraData, position, displayInstance, isStyled)
   displayInstance.data = auraData
   displayInstance.container:SetEnabled(false)
-  for _, auraButton in ipairs(displayInstance.buttons) do ApplyNativeStyle(auraButton, auraData, auraRegion) end
+  if not isStyled then
+    for _, auraButton in ipairs(displayInstance.buttons) do ApplyNativeStyle(auraButton, auraData, auraRegion) end
+  end
   ApplyLayout(displayInstance, auraRegion, auraData)
   local triggerConfig = Display.GetTrigger(auraData)
   SetupProcessing(displayInstance.container, triggerConfig)
@@ -1744,14 +1748,18 @@ function Display.Apply(auraRegion, auraData)
   local needsFlow = Display.FlowGroup(auraData) ~= nil
   if displayState.instances[1] and displayState.instances[1].flowContainer ~= needsFlow then DropInstances(displayState) end
   local slotCount = SlotCount(Display.GetTrigger(auraData))
+  Display.ClearSingleWarning(auraData)
+  local madeNow = {}
   for position = 1, slotCount do
-    if not displayState.instances[position] then displayState.instances[position] = MakeInstance(auraRegion, auraData) end
+    if not displayState.instances[position] then
+      displayState.instances[position] = MakeInstance(auraRegion, auraData)
+      madeNow[position] = true
+    end
   end
   for position = #displayState.instances, slotCount + 1, -1 do
     RetireInstance(displayState.instances[position])
     displayState.instances[position] = nil
   end
-  Display.ClearSingleWarning(auraData)
   displayState.instanceQueue, queuedInstances[auraRegion] = nil, nil
   local runNow = #displayState.instances
   if InPreview() and runNow > EDITOR_FIRST_BATCH then
@@ -1759,7 +1767,7 @@ function Display.Apply(auraRegion, auraData)
     displayState.instanceQueue = {data = auraData, nextIndex = runNow + 1}
     queuedInstances[auraRegion] = true
   end
-  for position = 1, runNow do RunInstance(auraRegion, auraData, position, displayState.instances[position]) end
+  for position = 1, runNow do RunInstance(auraRegion, auraData, position, displayState.instances[position], madeNow[position]) end
   displayState.active = true
   displayState.appliedTrigger = Display.GetSavedTrigger(auraData)
   liveRegions[auraRegion] = true

@@ -11,8 +11,8 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 
 - Proc : Hammer of Wrath (Action Usable, cible sous 20 %).
 - Rotation : Judgement, Holy Strike, Hammer of the Righteous, Consecration, Exorcism, Holy Shock, Holy Shield (talents chargés seulement si connus).
-- Cooldowns : Hammer of Justice, Divine Shield, Divine Protection, Lay on Hands, Blessing of Protection, Blessing of Freedom, Divine Favor, Repentance.
-- Buffs : un par sceau (Righteousness, Crusader, Command, Wisdom, Light, Justice, Fury), Righteous Fury, Divine Favor (actif), Holy Shield (actif) (charges), Divine Shield (actif), Vengeance (charges), Redoubt.
+- Cooldowns : Hammer of Justice, Divine Shield, Divine Protection, Lay on Hands, Blessing of Protection, Blessing of Freedom, Divine Favor, Repentance, Holy Wrath (2812), Turn Undead (2878), Divine Intervention (19752). Chaque sort ne se charge que s'il est appris (rang 1).
+- Buffs : un par sceau (Righteousness, Crusader, Command, Wisdom, Light, Justice, Fury), Righteous Fury, Divine Favor (actif), Holy Shield (actif) (charges), Divine Shield (actif), Divine Protection (actif) (498, 5573), Vengeance (charges), Redoubt.
 - Debuffs cible : Judgement of the Crusader / Light / Wisdom / Justice, Hammer of Justice (étourdissement).
 - Barres : mana, swing main (sceau twisting), règle des 5 s (soins, Holy Shock, Exorcism, Consecration, Hammer of Wrath, Judgement, sceaux, par nom).
 - Rappels hors combat : bénédiction manquante (Might, Wisdom, Kings et versions Greater, tous rangs), aura de paladin manquante (Devotion, Retribution, Concentration), Righteous Fury manquant (chargé si Holy Shield connu, donc Protection), MANA BAS sous 20 %.
@@ -28,8 +28,9 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 ## Absent ou écarté
 
 - Absents de Forever (fichier) : Crusader Strike, Divine Storm, Avenging Wrath, Blessing of Sanctuary. Aucun n'est dans le pack.
-- Écartés : Turn Undead, Lay on Hands (armure), Forbearance (debuff joueur, non suivi), sceau manquant (inutile hors combat).
-- Absents du pack : Holy Wrath, Divine Intervention, Templar's Bulwark, Swift Judgement, Blessing of Salvation/Light/Sacrifice.
+- Écartés : Lay on Hands (armure), sceau manquant (inutile hors combat).
+- Écarts Quazii écartés : runes SoD absentes du fichier (Crusader Strike, Divine Storm, Avenger's Shield, Rebuke, Hand of Reckoning, Divine Sacrifice, Horn of Lordaeron, procs SoD) ; Forbearance qui grise les bulles ; Exorcism / Holy Wrath selon le type de créature et Art of War (custom, overlay) ; texte unique de l'aura active et rappel de sceau en combat (custom, API secrète) ; texte « Not in melee range ».
+- Absents du pack : Templar's Bulwark, Swift Judgement, Blessing of Salvation/Light/Sacrifice.
 
 ## À tester en jeu
 
@@ -39,3 +40,5 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 - Rappel de bénédiction : se déclenche avec n'importe quel rang et les versions Greater.
 - Righteous Fury : n'apparaît qu'avec Holy Shield connu.
 - Règle des 5 s : se relance sur les sorts listés (correspondance par nom).
+- Holy Wrath, Turn Undead, Divine Intervention : icônes de recharge visibles seulement une fois le sort appris.
+- Divine Protection (actif) : icône pendant la bulle (ID d'aura 498 / 5573 supposé = ID du sort).

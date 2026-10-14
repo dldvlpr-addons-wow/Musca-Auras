@@ -15,9 +15,6 @@ ignore:
   - TUTORIAL.md
   - GUIDE.md
   - SUIVI-BUGS-ET-TESTS.md
-  - PROCHAINE-ETAPE.md
-  - RECHERCHE-AURAS-CLASSES.md
-  - LISTE-AURAS-UTILITAIRES.md
   - "ANALYSE-*"
   - "FICHE-*"
   - "EVOLUTIONS-*"
@@ -25,4 +22,3 @@ ignore:
   - "*.zip"
   - Tests
   - Classes
-  - Wago

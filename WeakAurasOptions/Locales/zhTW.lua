@@ -397,8 +397,7 @@ Can use \ to escape -.]=] ] = [=[過濾格式: '名字'、'名字-伺服器'、'
 
 支援輸入多個項目，使用逗號分隔。
 要將 - 當成一般文字可使用跳脫符號 \]=]
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = "只過濾被 LibDispel 分類為流血、可驅散的減益/增益效果。"
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "只過濾指定類型、可驅散的減益/增益效果。"
 	L["Find Auras"] = "尋找提醒效果"
 	L["Finish"] = "結束"
 	L["Finishing..."] = "快完成了..."

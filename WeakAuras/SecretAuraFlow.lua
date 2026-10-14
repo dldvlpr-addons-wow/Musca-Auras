@@ -137,6 +137,7 @@ local function UnitAnchor(mode, unit)
   if not frame and mode == "NAMEPLATE" then frame = C_NamePlate.GetNamePlateForUnit(unit) end
   if frame and not frame:IsForbidden() then return frame end
 end
+Display.UnitAnchor = UnitAnchor
 
 local function BackwardPoint(growth)
   local mirrored = growth.sign[1] ~= 0 and OPPOSITE[growth.start]
@@ -865,6 +866,7 @@ local function AddGridAuras(holder, key, member, position, layout)
   local sortMethod, sortDirection = Display.SortOrder(data, trigger)
   local filter, candidates, limit = Display.FilterString(trigger), Display.CandidateFilters(data), Display.MaxAuras(data)
   local kind = holder.keys[key]
+  local isStyled = not kind
   if kind then
     container:SetAuraGroupFilterString(key, filter)
     container:SetAuraGroupCandidateFilters(key, candidates)
@@ -889,7 +891,9 @@ local function AddGridAuras(holder, key, member, position, layout)
     holder.keys[key] = kind
   end
   kind.data, kind.region, kind.native, kind.wanted = data, member.region, member.native, true
-  for _, buttonState in ipairs(kind.buttons) do Display.StyleNative(buttonState, data, member.region) end
+  if not isStyled then
+    for _, buttonState in ipairs(kind.buttons) do Display.StyleNative(buttonState, data, member.region) end
+  end
   AttachGridButtons(kind, member.native.instances[position])
 end
 

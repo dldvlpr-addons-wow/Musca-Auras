@@ -27,10 +27,10 @@ return Pack.Build({
   swing = { "main" },
   fiveSecondRule = { 403, 421, 331, 8004 },
   reminders = {
-    { name = "Lightning Shield", aura = { 324 }, icon = true },
-    { name = "weapon enchant", enchant = "main", icon = true, texture = "Interface\\Icons\\Spell_Nature_RockBiter" },
-    { name = "Ankh", item = 17030, below = 1, icon = true, texture = "Interface\\Icons\\INV_Jewelry_Talisman_06" },
-    { name = "Lightning Shield text", aura = { 324 } },
+    { name = "Lightning Shield", aura = { 324 }, known = 324, icon = true },
+    { name = "weapon enchant", enchant = "main", known = 8017, icon = true, texture = "Interface\\Icons\\Spell_Nature_RockBiter" },
+    { name = "Ankh", item = 17030, below = 1, known = 20608, icon = true, texture = "Interface\\Icons\\INV_Jewelry_Talisman_06" },
+    { name = "Lightning Shield text", aura = { 324 }, known = 324 },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },
 })

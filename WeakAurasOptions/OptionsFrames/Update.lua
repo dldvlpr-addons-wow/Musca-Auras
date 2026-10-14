@@ -1752,8 +1752,6 @@ local methods = {
       if #pendingData.children > 0 then
         pendingPickData.tabToShow = "group"
       end
-      coroutine.yield(1, "update ui")
-      OptionsPrivate.SortDisplayButtons()
     elseif userChoices.mode == "update" then
       coroutine.yield(0.1, "start update")
       local onePhaseProgress = matchInfo.oldUidMap:GetTotalCount() + matchInfo.newUidMap:GetTotalCount()
@@ -1894,9 +1892,9 @@ local methods = {
       if matchInfo.oldUidMap:GetGroupRegionType(matchInfo.oldUidMap:GetRootUID()) then
         pendingPickData.tabToShow = "group"
       end
-
-      OptionsPrivate.SortDisplayButtons()
     end
+    coroutine.yield(1, "update ui")
+    OptionsPrivate.SortDisplayButtons()
     coroutine.yield(0.1, "winding down")
     OptionsPrivate.Private.SetImporting(false)
     self.viewCodeButton:SetEnabled(true)

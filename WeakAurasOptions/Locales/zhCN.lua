@@ -407,8 +407,7 @@ Can use \ to escape -.]=] ] = [=[过滤格式：'名称'，'名称-服务器'，
 
 支持多个条目，由英文逗号分隔。
 可以使用 \ 转义 - 。]=]
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = "仅过滤给定类型的可驱散的增益/减益效果的流血分类，通过 LibDispel"
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "仅过滤给定类型的可驱散增益/减益效果"
 	L["Find Auras"] = "寻找光环"
 	L["Finish"] = "结束"
 	L["Finishing..."] = "即将完成"

@@ -4,11 +4,11 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 
 ## Contenu
 - Rotation : Shadowburn, Conflagrate, Soul Fire, Death Coil.
-- Cooldowns : Howl of Terror, Fel Domination, Amplify Curse, Bane of Doom, Shadow Ward.
-- Buffs : Shadow Trance, Demon Skin / Demon Armor (tous rangs), Shadow Ward (actif), Soul Link, Amplify Curse (actif).
-- Debuffs cible : Corruption, Immolate, Bane of Agony, Bane of Doom, Curse of the Elements, Curse of Recklessness, Curse of Weakness, Curse of Tongues, Siphon Life, Shadow Vulnerability, Fear.
+- Cooldowns : Howl of Terror, Fel Domination, Amplify Curse, Bane of Doom, Shadow Ward, Inferno, et sorts de familier (Spell Lock, Seduction, Suffering : chargés seulement si le familier correspondant est invoqué).
+- Buffs : Shadow Trance, Demon Skin / Demon Armor (tous rangs), Shadow Ward (actif), Soul Link (aura 25228 ou 19028), Amplify Curse (actif), Sacrifice (Voidwalker, 6 rangs), Fel Domination (actif), Pyroclasm.
+- Debuffs cible : Corruption, Immolate, Bane of Agony, Bane of Doom, Curse of the Elements, Curse of Recklessness, Curse of Weakness, Curse of Tongues, Siphon Life, Shadow Vulnerability, Fear et Banish (les deux avec glow, contrôle).
 - Barres : mana, familier, règle des 5 s (Shadow Bolt, Immolate, Corruption, Bane of Agony, Searing Pain, Incinerate, Drain Life, Drain Soul, Fear, Soul Fire, Rain of Fire, Hellfire ; Life Tap exclu).
-- Rappels : armure manquante (Demon Skin / Demon Armor), MANA BAS.
+- Rappels : armure manquante (Demon Skin / Demon Armor), Soul Link manquant, Soul Shard à 0 (objet 6265), familier absent, MANA BAS.
 
 ## IDs à confirmer en jeu
 - Aucun ID d'aura de DoT ou de malédiction n'est vérifié séparément : repris des IDs de sort (le DB2 indique que le sort porte lui-même l'effet APPLY_AURA).
@@ -20,13 +20,22 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 - Conflagrate : rang 1 = 1293817 (fichier) ; Talent.csv donne 17962. Le chargement par sort connu dépend de ce choix.
 - Shadowburn r1 17877 et Siphon Life r1 18265 : sorts de talent, chargement par sort connu à vérifier.
 
+- Sacrifice : 7812, 19438, 19440-19443 (sorts du Marcheur du Vide) lus comme IDs d'aura ; chargé si Summon Voidwalker 697 est connu. Buffs des autres familiers sacrifiés (18789-18792) non suivis.
+- Pyroclasm : aura 1293803 (18093 = étourdissement de la cible), chargement sur le talent 18096 (Talent.csv) ; talent peut-être retiré côté serveur.
+- Spell Lock 19244, Seduction 6358, Suffering 17735 : sorts de familier, suivis en Cooldown Progress ; le « sort connu » du familier est à vérifier en jeu.
+- Banish : 710 / 18647 (sorts), aura supposée identique.
+
 ## Sorts écartés
 - Chaos Bolt, Haunt, Unstable Affliction, Curse of Shadow, Backlash, Backdraft : absents du fichier.
 - Rappel Soul Shard bas : ID d'objet Soul Shard absent du fichier.
-- Soul Link (cooldown), Spell Lock : toggle ou sort du familier.
-- Curse of Exhaustion, Banish, Death Coil (debuff), Pyroclasm, Shadow and Flame : hors décision de rotation.
+- Soul Link (cooldown) : toggle.
+- Curse of Exhaustion, Death Coil (debuff), Shadow and Flame : hors décision de rotation.
 
 ## Triggers à tester en jeu
+- Familiers : Spell Lock (Chasseur corrompu), Seduction (Succube), Suffering (Marcheur du Vide) n'apparaissent qu'avec le familier concerné, et leur recharge se met à jour.
+- Rappel Soul Link : affiché hors combat sans Soul Link actif, talent connu et familier présent seulement (masqué après Demonic Sacrifice).
+- Fear et Banish sur la cible : icône avec glow tant que le contrôle dure.
+- Sacrifice, Fel Domination (actif), Pyroclasm : visibles à l'activation.
 - Shadow Trance (proc Nightfall) visible en combat sur le buff 17941.
 - Debuffs cible : aura filtrée sur le joueur, lecture en combat (secret).
 - Armure manquante : rappel affiché hors combat quand aucun rang n'est actif.
