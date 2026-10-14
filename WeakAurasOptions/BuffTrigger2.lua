@@ -400,7 +400,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       width = WeakAuras.normalWidth,
       name = L["Debuff Type"],
       order = 11.2,
-      desc = L["Filter to only dispellable de/buffs of the given type(s)\nBleed classification via LibDispel"],
+      desc = L["Filter to only dispellable de/buffs of the given type(s)"],
       hidden = function() return not (trigger.type == "aura2" and trigger.unit ~= "multi" and CanHaveMatchCheck(trigger)) end
     },
     debuffClass = {

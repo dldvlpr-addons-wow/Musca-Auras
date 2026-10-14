@@ -1,10 +1,13 @@
 -- luacheck configuration, run from the repository root: luacheck .
--- Only syntax errors and global variables are checked: a new global read or write is either a typo or an API
--- that must be checked on WoW Forever first. Once checked, add it to the list below.
+-- A new global read or write is either a typo or an API that must be checked on WoW Forever first.
+-- Once checked, add it to the list below.
 std = "lua51"
-only = { "011", "1" }
 -- Fields of standard tables: WoW adds its own (string.split, table.wipe...)
-ignore = { "14." }
+-- The other codes have warnings in the code: remove one from the list once its warnings are fixed.
+ignore = {
+  "211", "212", "213", "214", "311", "411", "421", "422", "423", "431", "432", "433", "542", "581", "582",
+  "613", "631",
+}
 exclude_files = { "**/Libs/**", ".claude/**", "**/.claude/**", "Tests/**" }
 
 -- Every global the addons read or write, sorted
@@ -21,20 +24,20 @@ globals = {
   "AceGUIWidgetLSMlists", "AddonCompartmentFrame", "Ambiguate", "AMMOSLOT", "APIDocumentation",
   "APIDocumentation_LoadUI", "atan2", "AuraUtil", "BackdropTemplateMixin", "BACKSLOT", "BigWigs", "BigWigsLoader",
   "BINDING_HEADER_RAID_TARGET", "BINDING_HEADER_WEAKAURAS", "BINDING_NAME_WEAKAURASPRINTPROFILING",
-  "BINDING_NAME_WEAKAURASPROFILINGTOGGLE", "BINDING_NAME_WEAKAURASTOGGLE", "bit", "BNGetFriendGameAccountInfo",
-  "BNGetNumFriendGameAccounts", "BNGetNumFriends", "BreakUpLargeNumbers", "BURNING_EMBERS",
+  "BINDING_NAME_WEAKAURASPROFILINGTOGGLE", "BINDING_NAME_WEAKAURASTOGGLE", "bit", 
+  "BNGetNumFriends", "BreakUpLargeNumbers", "BURNING_EMBERS",
   "ButtonFrameTemplate_HidePortrait", "C_AddOns", "C_AssistedCombat", "C_BattleNet", "C_ChallengeMode", "C_ChatInfo",
   "C_ClassTalents", "C_CombatLog", "C_Container", "C_CooldownViewer", "C_Covenants", "C_CreatureInfo", "C_CurrencyInfo", "C_CurveUtil", "C_CVar", "CurveConstants", "C_DurationUtil",
-  "C_DamageMeter", "C_DateAndTime", "ceil", "C_EncounterJournal", "C_Engraving", "C_EquipmentSet", "C_GamePad",
+  "C_DamageMeter", "C_DateAndTime", "ceil", "C_EncounterJournal", "C_EquipmentSet", "C_GamePad",
   "C_GameRules", "C_GossipInfo", "ChatConfigFrame", "ChatConfigFrameChatTabManager", "ChatFontNormal",
   "ChatFrame_AddMessageEventFilter", "CHESTSLOT", "CHI_POWER", "C_Item", "Clamp", "ClearCursor", "C_MajorFactions",
-  "C_Map", "C_Minimap", "C_NamePlate", "CollapseFactionHeader", "ColorMixin", "CombatLogGetCurrentEventInfo",
+  "C_Map", "C_Minimap", "C_NamePlate", "CollapseFactionHeader", "ColorMixin", 
   "COMBATLOG_OBJECT_AFFILIATION_MINE", "COMBATLOG_OBJECT_AFFILIATION_OUTSIDER", "COMBATLOG_OBJECT_AFFILIATION_PARTY",
-  "COMBATLOG_OBJECT_RAIDTARGET_MASK", "CombatText_AddMessage", "COMBAT_TEXT_SCROLL_FUNCTION", "COMBO_POINTS",
+  "COMBATLOG_OBJECT_RAIDTARGET_MASK", "COMBO_POINTS",
   "COOKINGGEAR0SLOT", "COOKINGTOOLSLOT", "CopyTable", "cos", "C_PetBattles", "C_PvP", "CreateAtlasMarkup",
   "CreateColor", "CreateColorFromHexString", "CreateDataProvider", "CreateFont", "CreateFrame", "CreateFramePool",
   "CreateFromMixins", "CreateObjectPool", "CreateScrollBoxListLinearView", "CreateTextureMarkup", "CreateVector3D",
-  "C_Reputation", "CR_HIT_MELEE", "CR_HIT_RANGED", "CR_HIT_SPELL", "C_Seasons", "C_Secrets", "C_SpecializationInfo",
+  "C_Reputation", "CR_HIT_MELEE", "CR_HIT_RANGED", "CR_HIT_SPELL", "C_Secrets", "C_SpecializationInfo",
   "C_Spell", "C_SpellBook", "C_StringUtil", "C_SwingTimer", "C_Texture", "C_Timer", "C_TooltipInfo", "C_Traits", "C_UnitAuras",
   "CUSTOM_CLASS_COLORS", "DAMAGER", "date", "DBM", "DBT", "debugprofilestop", "debugstack", "DEFAULT_CHAT_FRAME",
   "DevTools_Dump", "ECLIPSE", "ElvUI", "ElvUIPlayerNamePlateAnchor", "ENABLE_AMBIENCE", "ENABLE_DIALOG",
@@ -42,32 +45,32 @@ globals = {
   "FindBaseSpellByID", "FindSpellOverrideByID", "FINGER0SLOT_UNIQUE", "FINGER1SLOT_UNIQUE", "FISHINGTOOLSLOT",
   "floor", "FONT_COLOR_CODE_CLOSE", "format", "FrameDeltaLerp", "GameFontHighlight", "GameFontHighlightLarge",
   "GameFontNormal", "GameFontNormalHuge", "GameFontNormalLarge", "GameFontNormalSmall", "GameFontNormalSmall2",
-  "GAME_LOCALE", "GameTooltip", "GetAchievementInfo", "GetActiveTalentGroup", "GetArenaOpponentSpec", "GetAtlasInfo",
+  "GAME_LOCALE", "GameTooltip", "GetAchievementInfo", "GetArenaOpponentSpec", "GetAtlasInfo",
   "GetBuildInfo", "GetCategoryList", "GetCategoryNumAchievements", "GetClassAtlas", "GetClassInfo",
   "GetCombatRatingBonus", "GetCritChance", "GetCurrencyListInfo", "GetCurrencyListSize", "GetCurrentKeyBoardFocus",
   "GetCurrentRegion", "GetCursorInfo", "GetCursorPosition", "GetCVar", "GetDifficultyInfo", "geterrorhandler",
-  "GetFactionInfo", "GetFactionInfoByID", "GetFileIDFromPath", "GetFrameCPUUsage", "GetGlyphSocketInfo",
+  "GetFactionInfo", "GetFileIDFromPath", "GetFrameCPUUsage", 
   "GetGuildInfo", "GetHaste", "GetRangedHaste", "GetHitModifier", "GetInstanceInfo", "GetInventoryItemDurability", "GetInventoryItemCooldown", "GetInventoryItemID",
   "GetInventoryItemLink", "GetInventoryItemTexture", "GetInventorySlotInfo", "GetLocale", "GetMacroInfo",
-  "GetMinimapZoneText", "GetMoney", "GetMouseFoci", "GetMouseFocus", "GetNumClasses", "GetNumFactions",
+  "GetMinimapZoneText", "GetMoney", "GetMouseFoci", "GetNumClasses", "GetNumFactions",
   "GetNumGroupMembers", "GetNumShapeshiftForms", "GetNumSpecializationsForClassID", "GetNumSubgroupMembers",
-  "GetNumTalents", "GetNumTalentTabs", "GetPhysicalScreenSize", "GetPlayerInfoByGUID", "GetPowerRegenForPowerType",
+  "GetPhysicalScreenSize", "GetPlayerInfoByGUID", "GetPowerRegenForPowerType",
   "GetPvpTalentInfoByID", "GetRaidRosterInfo", "GetRaidTargetIndex", "GetRangedCritChance", "GetRealmName",
-  "GetRealZoneText", "GetRuneCooldown", "GetRuneType", "GetScreenHeight", "GetScreenWidth", "GetShapeshiftForm",
-  "GetShapeshiftFormID", "GetShapeshiftFormInfo", "GetSpecialization", "GetSpecializationInfo",
-  "GetSpecializationInfoByID", "GetSpecializationInfoForClassID", "GetSpellBonusDamage", "GetSpellCharges",
-  "GetSpellCount", "GetSpellCritChance", "GetSpellDescription", "GetSpellHitModifier", "GetSpellInfo",
-  "GetSpellLink", "GetSpellLossOfControlCooldown", "GetSpellTexture", "GetTalentGroupRole", "GetTexCoordsByGrid",
-  "GetText", "GetTime", "GetTotemDuration", "GetUnitEmpowerHoldAtMaxTime", "GetUnitName", "GetUnitSpeed", "GetWatchedFactionInfo",
+  "GetRealZoneText", "GetRuneCooldown", "GetScreenHeight", "GetScreenWidth", "GetShapeshiftForm",
+  "GetShapeshiftFormID", "GetShapeshiftFormInfo", "GetSpecializationInfo",
+  "GetSpecializationInfoByID", "GetSpecializationInfoForClassID", "GetSpellBonusDamage", 
+  "GetSpellCritChance", "GetSpellHitModifier", 
+  "GetTexCoordsByGrid",
+  "GetText", "GetTime", "GetTotemDuration", "GetUnitEmpowerHoldAtMaxTime", "GetUnitName", "GetUnitSpeed", 
   "GetWeaponEnchantInfo", "gsub", "HANDSSLOT", "HasOverrideActionBar", "HasVehicleActionBar", "HEADSLOT", "HEALER",
   "HOLY_POWER", "hooksecurefunc", "ICON_LIST", "ICON_TAG_LIST", "InCombatLockdown", "IndentationLib", "INVSLOT_AMMO", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED",
   "INLINE_DAMAGER_ICON", "INLINE_HEALER_ICON", "INLINE_TANK_ICON", "ipairs_reverse", "IsArenaSkirmish",
   "IsControlKeyDown", "IsGuildMember", "IsInGroup", "IsInInstance", "IsInRaid", "IsMounted", "IsMouseButtonDown",
-  "IsPlayerMoving", "IsPlayerSpell", "issecretvalue", "IsShiftKeyDown", "IsSpellKnown", "IsUsableSpell", "Item",
+  "IsPlayerMoving", "IsPlayerSpell", "issecretvalue", "IsShiftKeyDown", "IsSpellKnown", "Item",
   "ItemLocationMixin", "ItemRefTooltip", "ItemTransmogInfoMixin", "KuiNameplatesCore", "KuiNameplatesPlayerAnchor",
   "LARGE_NUMBER_SEPERATOR", "LEGSSLOT", "LE_PARTY_CATEGORY_INSTANCE", "Lerp", "LE_UNIT_STAT_AGILITY", "LibStub",
   "LOWER_LEFT_VERTEX", "LOWER_RIGHT_VERTEX", "MAINASSIST", "MAINHANDSLOT", "MAINTANK", "max", "MAX_NUM_TALENTS",
-  "MAX_SPELL_SCHOOLS", "MAX_TALENT_TIERS", "MenuUtil", "MergeTable", "min", "Mixin", "MONEY", "MouseIsOver",
+  "MAX_SPELL_SCHOOLS", "MAX_TALENT_TIERS", "MenuUtil", "MergeTable", "min", "Mixin", "MONEY", 
   "NamePlateDriverFrame", "NECKSLOT", "NORMAL_FONT_COLOR", "NUM_BAG_SLOTS", "NUM_GLYPH_SLOTS", "NUM_TALENT_COLUMNS", "OKAY", "OmniCC",
   "PET_MODE_AGGRESSIVE", "PET_MODE_ASSIST", "PET_MODE_DEFENSIVE", "PET_MODE_PASSIVE", "Plater", "PLAYER_DIFFICULTY1",
   "PLAYER_DIFFICULTY2", "PLAYER_DIFFICULTY3", "PLAYER_DIFFICULTY5", "PLAYER_DIFFICULTY6",
@@ -95,11 +98,11 @@ globals = {
   "STRING_SCHOOL_SPELLSTORM", "STRING_SCHOOL_SPELLSTRIKE", "STRING_SCHOOL_STORMSTRIKE", "strlower", "strrep",
   "strsplit", "strsub", "strtrim", "TABARDSLOT", "TableHasAnyEntries", "tan", "TANK", "tAppendAll", "tCompare",
   "tContains", "tDeleteItem", "TextToSpeech_GetSelectedVoice", "TextToSpeech_Speak", "time", "tIndexOf", "tinsert",
-  "ToggleDropDownMenu", "TransmogLocationMixin", "TransmogPendingInfoMixin", "tremove", "TRINKET0SLOT_UNIQUE",
+  "ToggleDropDownMenu", "TransmogLocationMixin", "tremove", "TRINKET0SLOT_UNIQUE",
   "TRINKET1SLOT_UNIQUE", "UIDropDownMenu_AddButton", "UIDropDownMenu_CreateInfo", "UIDropDownMenu_Initialize",
   "UIDropDownMenu_JustifyText", "UIDropDownMenu_SetDisplayMode", "UIDropDownMenu_SetInitializeFunction",
   "UIDropDownMenu_SetText", "UIDropDownMenu_SetWidth", "UIErrorsFrame", "UIMenuButtonStretchMixin", "UIParent",
-  "UISpecialFrames", "UnitAffectingCombat", "UnitAttackPower", "UnitAttackSpeed", "UnitAura", "UnitCanAttack",
+  "UISpecialFrames", "UnitAffectingCombat", "UnitAttackPower", "UnitAttackSpeed", "UnitCanAttack",
   "UnitCastingDuration", "UnitCastingInfo", "UnitChannelDuration", "UnitChannelInfo", "UnitClass", "UnitDetailedThreatSituation", "UnitEffectiveLevel",
   "UnitExists", "UnitFactionGroup", "UnitFullName", "UnitGroupRolesAssigned", "UnitGUID", "UnitHasVehicleUI",
   "UnitInBattleground", "UnitInParty", "UnitInRaid", "UnitInRange", "UnitInSubgroup", "UnitInVehicle",
@@ -113,4 +116,31 @@ globals = {
   "WeakAurasProfilingMixin", "WeakAurasProfilingReport", "WeakAurasProfilingReportMixin",
   "WeakAurasProfilingResultButton_OnClick", "WeakAurasProfilingStopButton_OnClick", "WeakAurasSaved",
   "WeakAurasTimers", "wipe", "WorldFrame", "WrapTextInColorCode", "WRISTSLOT",
+}
+
+-- APIs absent from WoW Forever, kept for the files that still call them on other clients
+files["WeakAuras/WeakAuras.lua"] = {
+  read_globals = { "C_Engraving", "COMBAT_TEXT_SCROLL_FUNCTION", "CombatText_AddMessage", "GetActiveTalentGroup",
+    "GetNumTalents", "GetNumTalentTabs", "GetSpecialization", "GetTalentGroupRole" },
+}
+files["WeakAuras/Prototypes.lua"] = { read_globals = { "C_Seasons", "GetGlyphSocketInfo", "GetRuneType" } }
+files["WeakAuras/Compatibility.lua"] = {
+  read_globals = { "GetFactionInfoByID", "GetSpecialization", "GetSpellInfo", "GetSpellTexture",
+    "GetWatchedFactionInfo", "IsUsableSpell" },
+}
+files["WeakAuras/GenericTrigger.lua"] = {
+  read_globals = { "CombatLogGetCurrentEventInfo", "GetSpellCharges", "GetSpellCount", "GetSpellLossOfControlCooldown" },
+}
+files["WeakAuras/BuffTrigger2.lua"] = { read_globals = { "CombatLogGetCurrentEventInfo", "UnitAura" } }
+files["WeakAuras/Transmission.lua"] = { read_globals = { "BNGetFriendGameAccountInfo", "BNGetNumFriendGameAccounts" } }
+files["WeakAuras/Types.lua"] = { read_globals = { "GetNumTalents", "GetNumTalentTabs" } }
+files["WeakAuras/AuraEnvironment.lua"] = { read_globals = { "TransmogPendingInfoMixin", "UnitAura" } }
+files["WeakAurasTemplates/TriggerTemplates.lua"] = { read_globals = { "GetSpecialization" } }
+files["WeakAurasTemplates/TriggerTemplatesDataClassicEra.lua"] = {
+  read_globals = { "C_Seasons", "GetSpellDescription", "GetSpellInfo" },
+}
+files["WeakAurasOptions/LoadOptions.lua"] = { read_globals = { "GetSpellLink" } }
+files["WeakAurasOptions/OptionsFrames/FrameChooser.lua"] = { read_globals = { "GetMouseFocus", "MouseIsOver" } }
+files["WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasInputWithIndentation.lua"] = {
+  read_globals = { "GetSpellInfo" },
 }

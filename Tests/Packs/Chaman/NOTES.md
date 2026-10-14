@@ -23,22 +23,26 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Chaman/PackChaman.lua > Tests/
 lua Tests/Packs/AuraTool.lua . decode <fichier contenant une chaîne>
 ```
 
-## Contenu actuel (30 auras)
+## Contenu actuel (refonte Quazii, 2026-10-14)
 
-- Rotation : Earth Shock, Flame Shock, Frost Shock, Stormstrike, Chain Lightning, Fire Nova.
-- Cooldowns : Nature's Swiftness, Mana Tide Totem, Grounding Totem.
-- Buffs : Lightning Shield (charges), Clearcasting, Flurry. Débuff cible : Flame Shock.
-- Totems et enchantement main droite, barre de mana, règle des 5 s.
-- Rappels hors combat : Lightning Shield, enchantement d'arme, MANA BAS.
+- Rotation : Lava Burst, Stormstrike, Lava Lash, Earth Shock, Chain Lightning, Frost Shock, Fire Nova, Molten Blast, Rage of the Farseer, soins (Healing Wave, Lesser Healing Wave, Chain Heal si Improved Healing Wave), Riptide, Healing Rain. Chaque sort se charge seulement s'il est connu.
+- Cooldowns : Nature's Swiftness, Mana Tide Totem, Ancestral Guidance (ajout), Grounding, Earthbind, Stoneclaw, Totemic Projection, Decoy Totem, Purge, Reincarnation, Astral Recall.
+- Buffs : Mana Tide actif, Clearcasting, Flurry, Earth Shield (cible), Ancestral Fortitude sur la cible (ajout, 16177, talent 16176), Water Walking (ajout, 546). Débuffs cible : Flame Shock (brille s'il manque en combat), Stormstrike (brille tant que le débuff est posé, ajout).
+- Maelstrom Weapon en 5 segments, entretien Lightning Shield / Water Shield, 4 totems + buffs de totem, enchantements main/off, barre d'incantation, swing main + off, règle des 5 s.
+- Rappels hors combat : Lightning Shield, Water Shield, enchantements main et off, Ankh, MANA BAS.
 
-Les sections ci-dessous gardent l'historique du premier jet.
+Écarts Quazii écartés : Power Surge, Tidal Waves, Two-Handed Mastery, Feral Spirits, Elemental Devastation 29177, Eye of the Storm 29063 (IDs absents de `Classes/Shaman.md`) ; Mental Dexterity (talent, IDs candidats seulement) ; Elemental Mastery (absent du DB2) ; Earth Shield en rappel de groupe (le générateur n'a pas d'unité de groupe) ; glow de Chain Lightning / Lava Burst à 5 Maelstrom (overlay consommateur, impossible) ; Lightning Bolt (aucun cooldown, ID Quazii suspect).
+
+À confirmer en jeu : Ancestral Fortitude 16177 (Quazii utilise 16240, ID de rang du talent) ; Ancestral Guidance 409324 (cooldown par nom, rangs 409333 et 409337 non listés) ; Water Walking 546 en buff sur soi.
+
+Les sections ci-dessous gardent l'historique du premier jet (30 auras à l'époque).
 
 Le banc n'a pas de grimoire : les icônes de recharge n'y sont pas testables.
 
 ## Contenu du premier jet
 
-- Rotation : Horion de flammes sur la cible (rouge sous 4 s), Horion de terre, Frappe-tempête, Chaîne d'éclairs, Nova de feu, Totem de glèbe, Rapidité de la nature, Totem de vague de mana, Idées claires, Rafale. Recharges suivies par nom (rang indifférent), icône désaturée en recharge, bleue si mana insuffisant, rouge hors de portée. Sorts de talent chargés seulement s'ils sont connus.
-- Buffs : Bouclier de foudre (charges, rouge sous 60 s), enchantement d'arme, totems des 4 éléments, alertes « ! » hors combat si le bouclier ou l'enchantement manque.
+- Rotation : Horion de flammes sur la cible (clignote en rouge sous 3 s), Horion de terre, Frappe-tempête, Chaîne d'éclairs, Nova de feu, Totem de glèbe, Rapidité de la nature, Totem de vague de mana, Idées claires, Rafale. Recharges suivies par nom (rang indifférent), icône désaturée en recharge, bleue si mana insuffisant, rouge hors de portée. Sorts de talent chargés seulement s'ils sont connus.
+- Buffs : Bouclier de foudre (charges, clignote en rouge sous 60 s), enchantement d'arme, totems des 4 éléments, alertes « ! » hors combat si le bouclier ou l'enchantement manque.
 - Mana : barre en pourcentage, texte « MANA BAS » sous 20 % par le seuil natif (courbe `UnitPowerPercent`, marche en combat).
 
 Auras de buff et débuff (Bouclier de foudre actif et manquant, Horion de flammes sur la cible, Idées claires, Rafale) sur le trigger `secretAura` (« Aura (Modern) ») depuis le 2026-10-09 : `aura2` ne voit pas les auras secrètes en combat (tests en jeu : icônes disparues en combat, Horion de flammes jamais affiché). Le seuil de temps restant colore le texte `%p` (le moteur refuse la couleur de l'icône sur `faAuraRemaining`). Dans un groupe dynamique, ces auras gardent leur place même cachées.

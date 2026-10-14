@@ -580,7 +580,6 @@ do
     "LibSerialize",
   }
   if WeakAuras.IsRetail() then
-    tinsert(LibStubLibs, "LibSpecialization")
     AddonCompartmentFrame:RegisterAddon({
       text = AddonName,
       icon = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\icon.blp",

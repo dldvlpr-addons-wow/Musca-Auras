@@ -1,7 +1,7 @@
 local Pack = {}
 
--- PACK_TARGET=ForeverAuras builds the same pack for the ForeverAuras addon: no native threshold, Energy Tick or
--- desaturation on cooldown there, and the swing timer weapon is a number.
+-- PACK_TARGET=ForeverAuras builds the same pack for the ForeverAuras addon: no native threshold or desaturation on
+-- cooldown there, and the swing timer weapon is a number.
 local FOREVER_AURAS = os.getenv("PACK_TARGET") == "ForeverAuras"
 
 local RED = {1, 0.3, 0.3, 1}
@@ -19,6 +19,10 @@ local BORDER = { type = "subborder", border_visible = true, border_size = 1, bor
   border_edge = "Square Full White", border_offset = 0 }
 local GLOW = { type = "subglow", glow = true, glowType = "Pixel", useGlowColor = false, glowColor = {1, 1, 1, 1},
   glowLines = 8, glowFrequency = 0.25, glowDuration = 1, glowLength = 10, glowThickness = 1, glowScale = 1,
+  glowBorder = false, glowXOffset = 0, glowYOffset = 0 }
+-- Red pulse lit by the last seconds of an aura.
+local BLINK = { type = "subglow", glow = false, glowType = "Proc", useGlowColor = true, glowColor = {1, 0, 0, 1},
+  glowLines = 8, glowFrequency = 0.25, glowDuration = 0.5, glowLength = 10, glowThickness = 1, glowScale = 1,
   glowBorder = false, glowXOffset = 0, glowYOffset = 0 }
 
 -- HUD width: 8 main icons of 40 with 2 px gaps. Bars and resource pips use it too.
@@ -68,6 +72,7 @@ end
 local function CooldownTrigger(spellId)
   local trigger = Generic({ type = "spell", event = "Cooldown Progress (Spell)", spellName = spellId,
     use_exact_spellName = false, genericShowOn = "showAlways", use_genericShowOn = true,
+    use_showgcd = true, use_hidegcdtext = true,
     use_desaturateOnCooldown = true, desaturateOnCooldown = true })
   if FOREVER_AURAS then trigger.use_desaturateOnCooldown, trigger.desaturateOnCooldown = nil, nil end
   return trigger
@@ -95,7 +100,13 @@ local function GateTrigger(powerType)
   return trigger
 end
 
+-- A number is one form; a list of form indexes loads in any of them.
 local function FormTrigger(form)
+  if type(form) == "table" then
+    local multi = {}
+    for _, index in ipairs(form) do multi[index] = true end
+    return Generic({ type = "unit", event = "Stance/Form/Aura", use_form = false, form = { multi = multi } })
+  end
   return Generic({ type = "unit", event = "Stance/Form/Aura", use_form = true, form = { single = form, multi = {} } })
 end
 
@@ -145,9 +156,10 @@ function Pack.Build(spec)
     local required = {}
     if options.gate then required[#required + 1] = GateTrigger(options.gate) end
     if options.form then required[#required + 1] = FormTrigger(options.form) end
+    if options.needsPet then required[#required + 1] = Generic({ type = "unit", event = "Conditions", use_HasPet = true }) end
     if options.notResting then required[#required + 1] = Generic({ type = "unit", event = "Conditions", use_resting = false }) end
     if options.offhand then required[#required + 1] = OffhandTrigger() end
-    assert(not (#required > 0 and options.fallback), id .. ": gate, form, rest or offhand and fallback cannot be combined")
+    assert(not (#required > 0 and options.fallback), id .. ": gate, form, pet, rest or offhand and fallback cannot be combined")
     if options.fallback then
       triggers[2] = { trigger = options.fallback, untrigger = {} }
       triggers.disjunctive, triggers.activeTriggerMode = "any", 1
@@ -207,9 +219,6 @@ function Pack.Build(spec)
     return data
   end
 
-  -- Timers read at a glance: large, centred, outlined. The main row gets the largest.
-  local timer = Text("%p", "CENTER", 15)
-  local mainTimer = Text("%p", "CENTER", 18)
   local outOfRange = Condition("spellInRange", 0, "color", RED)
   local noMana = Condition("insufficientResources", 1, "color", BLUE)
   local idle = { check = { trigger = -2, variable = "AND", checks = {
@@ -220,6 +229,7 @@ function Pack.Build(spec)
     options.known = options.known or entry.known or entry.spell
     options.unknown, options.form, options.level, options.warn = entry.unknown, entry.form, entry.level, entry.warn
     options.gate, options.offhand, options.flash = options.gate or entry.gate, entry.offhand, entry.flash
+    options.needsPet = entry.needsPet
     options.texture = entry.texture
     return options
   end
@@ -235,6 +245,8 @@ function Pack.Build(spec)
       conditions[#conditions + 1] = missing
     end
     if trigger.type == "secretAura" and trigger.secretShowOn ~= "showOnMissing" then
+      -- Flash and blink both glow on a time window, and an aura holds only one such glow: the blink wins.
+      local flash = not options.warn and options.flash
       if options.pandemic then
         -- Off by default: lit by the refresh window, and by a missing DoT when the icon allows it.
         local glow = {}
@@ -245,18 +257,19 @@ function Pack.Build(spec)
         if options.missing then
           conditions[#conditions + 1] = Condition("faAuraMissing", nil, "sub." .. #subRegions .. ".glow", true)
         end
-      elseif options.glow ~= false or options.flash then
+      elseif flash or (options.glow ~= false and not options.flash) then
         subRegions[#subRegions + 1] = GLOW
         -- ForeverAuras rejects an Elapsed Time condition on a glow: the glow stays on while the aura is up.
-        if options.flash and not FOREVER_AURAS then
-          conditions[#conditions + 1] = Condition("faAuraElapsed", options.flash, "sub." .. #subRegions .. ".glow", true, "<")
+        if flash and not FOREVER_AURAS then
+          conditions[#conditions + 1] = Condition("faAuraElapsed", flash, "sub." .. #subRegions .. ".glow", true, "<")
         end
         if options.fallback or options.missing then
           conditions[#conditions + 1] = Condition("faAuraMissing", nil, "sub." .. #subRegions .. ".glow", false)
         end
       end
       if options.warn then
-        conditions[#conditions + 1] = Condition("faAuraRemaining", options.warn, "sub.1.text_color", RED, "<")
+        subRegions[#subRegions + 1] = BLINK
+        conditions[#conditions + 1] = Condition("faAuraRemaining", options.warn, "sub." .. #subRegions .. ".glow", true, "<")
       end
     end
     if options.idle then conditions[#conditions + 1] = idle end
@@ -267,10 +280,7 @@ function Pack.Build(spec)
     local data = Base(name .. " - " .. label, nil, "icon", trigger, options)
     data.width, data.height, data.keepAspectRatio = options.size[1], options.size[2], true
     data.iconSource, data.displayIcon = -1, options.texture
-    data.cooldown, data.cooldownTextDisabled = true, false
-    for _, subRegion in ipairs(subRegions) do
-      if subRegion == timer or subRegion == mainTimer then data.cooldownTextDisabled = true end
-    end
+    data.cooldown, data.cooldownTextDisabled = true, true
     data.desaturate, data.color, data.zoom = false, {1, 1, 1, 1}, 0.3
     return Add(holder, data)
   end
@@ -283,22 +293,24 @@ function Pack.Build(spec)
       assert(not (entry.kind == "HARMFUL" and (unit == "player" or unit == "pet")), entry.name .. ": debuff on self")
       return Icon(holder, entry.name, AuraTrigger(entry.aura, "showAlways", entry.unit, entry.kind),
         Requirements(entry, { size = size, fallback = CooldownTrigger(entry.spell),
-        subRegions = { size == SIZES.main and mainTimer or timer }, idle = true }))
+        idle = true }))
     end
     return Icon(holder, entry.name, CooldownTrigger(entry.spell),
       Requirements(entry, { size = size, conditions = { noMana, outOfRange }, idle = true }))
   end
 
-  local function AuraIcon(holder, label, entry, unit, kind, warn, noGlow)
-    local subRegions = { timer }
-    if entry.stacks then subRegions[2] = Text("%s", "INNER_BOTTOMRIGHT", 12) end
+  local function AuraIcon(holder, label, entry, unit, kind, noGlow)
+    local subRegions = {}
+    if entry.stacks then subRegions[1] = Text("%s", "INNER_BOTTOMRIGHT", 12) end
     local options = Requirements(entry, { size = SIZES.aura, subRegions = subRegions, missing = entry.missing,
       glow = not noGlow and entry.glow })
-    options.warn = options.warn or warn
+    -- A flash aura (a proc) blinks only when asked: it is spent before it expires.
+    options.warn = options.warn or not options.flash and 3 or nil
     -- A DoT glows when it can be refreshed. A tracked missing DoT loads in combat only:
     -- native aura conditions cannot be combined with the combat state.
     options.pandemic = kind == "HARMFUL" and not noGlow and entry.dot
     assert(not entry.missing or options.pandemic, label .. ": a tracked missing debuff must be a DoT")
+    assert(not entry.missing or options.known ~= nil or options.level, label .. ": a tracked missing DoT needs known or level")
     -- Other debuffs (Sunder Armor, Judgements, curses) do not glow.
     if kind == "HARMFUL" and not options.pandemic and entry.glow == nil then options.glow = false end
     options.inCombat = options.pandemic and entry.missing
@@ -308,13 +320,14 @@ function Pack.Build(spec)
       data.xOffset = -(SIZES.totem[1] + 2)
       return data
     end
-    return Icon(holder, label, AuraTrigger(entry.aura, entry.missing and "showAlways" or "showOnActive", unit, kind),
-      options)
+    local trigger = AuraTrigger(entry.aura, entry.missing and "showAlways" or "showOnActive", unit, kind)
+    if kind == "HARMFUL" and (unit or "player") == "player" then trigger.nativeFilters = nil end
+    return Icon(holder, label, trigger, options)
   end
 
   local function TotemIcon(holder, slot)
     local data = Icon(holder, "Totem " .. slot, TotemTrigger({ use_totemType = true, totemType = slot }),
-      { size = SIZES.totem, subRegions = { timer } })
+      { size = SIZES.totem })
     data.triggers[2] = { trigger = TotemTrigger({ use_totemType = true, totemType = slot, use_inverse = true }),
       untrigger = {} }
     data.triggers.disjunctive, data.triggers.activeTriggerMode = "any", 1
@@ -345,7 +358,8 @@ function Pack.Build(spec)
 
   local reminders = Group("Reminders", "dynamicgroup", 120, "UP")
   for _, entry in ipairs(spec.reminders or {}) do
-    local options = Requirements(entry, { size = SIZES.reminder, outOfCombat = not entry.lowPower, notResting = not entry.lowPower })
+    local options = Requirements(entry, { size = SIZES.reminder, outOfCombat = not entry.lowPower and not entry.pet, notResting = not entry.lowPower })
+    assert(entry.lowPower or options.known ~= nil or options.level, entry.name .. ": a reminder needs known or level")
     local label, trigger, text, color = "Missing " .. entry.name, nil, "Missing: " .. entry.name, nil
     if entry.aura then
       trigger = AuraTrigger(entry.aura, "showOnMissing")
@@ -371,7 +385,7 @@ function Pack.Build(spec)
   for _, entry in ipairs(spec.procs or {}) do
     if entry.usable then
       Icon(procs, entry.name, Generic({ type = "spell", event = "Action Usable", spellName = entry.usable,
-        use_exact_spellName = false }), Requirements(entry, { size = SIZES.proc, known = entry.usable }))
+        use_exact_spellName = false }), Requirements(entry, { size = SIZES.proc, known = entry.usable, subRegions = { GLOW } }))
     elseif entry.queued then
       Icon(procs, entry.name, Generic({ type = "spell", event = "Queued Action", spellName = entry.queued,
         use_exact_spellName = false }), Requirements(entry, { size = SIZES.proc, known = entry.queued }))
@@ -380,7 +394,7 @@ function Pack.Build(spec)
 
   local effects = Group("Effects", "group", 66)
   for _, entry in ipairs(spec.debuffs or {}) do
-    AuraIcon(effects, entry.name .. " (target)", entry, "target", "HARMFUL", 3)
+    AuraIcon(effects, entry.name .. " (target)", entry, "target", "HARMFUL")
   end
   for _, entry in ipairs(spec.buffs or {}) do
     AuraIcon(effects, entry.name, entry, entry.unit, entry.kind)
@@ -436,11 +450,6 @@ function Pack.Build(spec)
       end
     end
   end
-  if spec.energyTick and not FOREVER_AURAS then
-    Bar(resource, "Energy tick", Generic({ type = "unit", event = "Energy Tick" }), { gate = 3, title = "" },
-      POWER_COLORS[3], "", 4)
-  end
-
   local main = Group("Main", "dynamicgroup", 4, "GRID", 8)
   for _, entry in ipairs(spec.rotation or {}) do
     SpellIcon(main, entry, SIZES.main)
@@ -491,12 +500,12 @@ function Pack.Build(spec)
 
   local upkeep = Group("Upkeep", "dynamicgroup", -176)
   for _, entry in ipairs(spec.upkeep or {}) do
-    AuraIcon(upkeep, entry.name, entry, entry.unit, entry.kind, nil, true)
+    AuraIcon(upkeep, entry.name, entry, entry.unit, entry.kind, true)
   end
   for _, weapon in ipairs(spec.enchants or {}) do
     Icon(upkeep, "Enchant " .. weapon, Generic({ type = "item", event = "Weapon Enchant", weapon = weapon,
       use_weapon = true, showOn = "showOnActive", use_showOn = true }),
-      { size = SIZES.aura, subRegions = { timer }, offhand = weapon == "off" })
+      { size = SIZES.aura, offhand = weapon == "off" })
   end
 
   local totems = Group("Totems", "group", -204, "FIXED")

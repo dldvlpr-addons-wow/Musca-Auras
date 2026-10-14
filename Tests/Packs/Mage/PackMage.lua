@@ -1,6 +1,8 @@
 local Pack = dofile("Tests/Packs/PackBuilder.lua")
 
 local arcaneIntellect = { 1459, 1460, 1461, 10156, 10157, 23028 }
+local fireWard = { 543, 8457, 8458, 10223, 10225 }
+local frostWard = { 6143, 8461, 8462, 10177, 28609 }
 local armors = { 168, 7300, 7301, 7302, 7320, 10219, 10220, 6117, 22782, 22783 }
 
 return Pack.Build({
@@ -22,6 +24,8 @@ return Pack.Build({
     { name = "Presence of Mind", spell = 12043 },
     { name = "Cold Snap", spell = 12472 },
     { name = "Ice Barrier", spell = 11426 },
+    { name = "Fire Ward", spell = 543 },
+    { name = "Frost Ward", spell = 6143 },
   },
   buffs = {
     { name = "Clearcasting", aura = { 12536 }, known = 11213 },
@@ -31,12 +35,15 @@ return Pack.Build({
     { name = "Ice Barrier (active)", aura = { 11426, 13031, 13032, 13033 } },
     { name = "Mana Shield", aura = { 1463, 8494, 8495, 10191, 10192, 10193 } },
     { name = "Ice Block (active)", aura = { 11958 } },
+    { name = "Fire Ward (active)", aura = fireWard, known = 543 },
+    { name = "Frost Ward (active)", aura = frostWard, known = 6143 },
+    { name = "Slow Fall", aura = { 130 }, known = 130 },
     { name = "Armor", aura = armors },
     { name = "Arcane Intellect", aura = arcaneIntellect },
   },
   debuffs = {
-    { name = "Winter's Chill", aura = { 12579 }, known = 11180 },
-    { name = "Fire Vulnerability", aura = { 22959 }, known = 11095 },
+    { name = "Winter's Chill", aura = { 12579 }, known = 11180, dot = true },
+    { name = "Fire Vulnerability", aura = { 22959 }, known = 11095, stacks = true, dot = true },
     { name = "Ignite", aura = { 3261, 412538, 1234540 }, known = 11119 },
     { name = "Pyroblast", aura = { 11366, 12505, 12522, 12523, 12524, 12525, 12526, 18809 }, known = 11366 },
     { name = "Frostbolt", aura = { 116, 205, 837, 7322, 8406, 8407, 8408, 10179, 10180, 10181, 25304 } },
@@ -44,9 +51,10 @@ return Pack.Build({
   },
   power = { { label = "Mana", type = 0 } },
   fiveSecondRule = { 116, 133, 5143, 2948, 2136, 122, 120, 1449, 10, 2120, 11366, 118, 400574 },
+  castBar = true,
   reminders = {
-    { name = "Arcane Intellect", aura = arcaneIntellect },
-    { name = "armor", aura = armors },
+    { name = "Arcane Intellect", aura = arcaneIntellect, known = 1459 },
+    { name = "armor", aura = armors, known = 168 },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },
 })

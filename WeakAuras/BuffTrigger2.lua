@@ -56,35 +56,15 @@ local function Readable(value, fallback)
   return value
 end
 
-local FixDebuffClass
-if WeakAuras.IsRetail() then
-  local LibDispell = LibStub("LibDispel-1.0")
-  FixDebuffClass = function(debuffClass, spellId)
-    if debuffClass == nil then
-      local bleedList = LibDispell:GetBleedList()
-      if bleedList[spellId] then
-        debuffClass = "bleed"
-      else
-        debuffClass = "none"
-      end
-    elseif debuffClass == "" then
-      debuffClass = "enrage"
-    else
-      debuffClass = string.lower(debuffClass)
-    end
-    return debuffClass
+local function FixDebuffClass(debuffClass)
+  if debuffClass == nil then
+    debuffClass = "none"
+  elseif debuffClass == "" then
+    debuffClass = "enrage"
+  else
+    debuffClass = string.lower(debuffClass)
   end
-else
-  FixDebuffClass = function(debuffClass)
-    if debuffClass == nil then
-      debuffClass = "none"
-    elseif debuffClass == "" then
-      debuffClass = "enrage"
-    else
-      debuffClass = string.lower(debuffClass)
-    end
-    return debuffClass
-  end
+  return debuffClass
 end
 
 

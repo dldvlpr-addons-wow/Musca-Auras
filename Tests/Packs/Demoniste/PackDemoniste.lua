@@ -4,6 +4,7 @@ local armor = { 687, 696, 706, 1086, 11733, 11734, 11735 }
 local corruption = { 172, 6222, 6223, 7648, 11671, 11672, 25311 }
 local immolate = { 348, 707, 1094, 2941, 11665, 11667, 11668, 25309 }
 local agony = { 980, 1014, 6217, 11711, 11712, 11713 }
+local sacrifice = { 7812, 19438, 19440, 19441, 19442, 19443 }
 local elements = { 440892, 1311676, 1311677, 1311680 }
 
 return Pack.Build({
@@ -20,12 +21,20 @@ return Pack.Build({
     { name = "Amplify Curse", spell = 18288 },
     { name = "Bane of Doom", spell = 603 },
     { name = "Shadow Ward", spell = 6229 },
+    { name = "Inferno", spell = 1122 },
+    -- Pet abilities: they load only when the matching pet is out (the pet spells count as known).
+    { name = "Spell Lock", spell = 19244 },
+    { name = "Seduction", spell = 6358 },
+    { name = "Suffering", spell = 17735 },
   },
   buffs = {
     { name = "Shadow Trance", aura = { 17941 } },
     { name = "Demon Armor", aura = armor },
     { name = "Shadow Ward (active)", aura = { 6229, 11739, 11740, 28610 }, known = 6229 },
-    { name = "Soul Link", aura = { 19028 }, known = 19028 },
+    { name = "Soul Link", aura = { 25228, 19028 }, known = 19028 },
+    { name = "Sacrifice", aura = sacrifice, known = 697 },
+    { name = "Fel Domination (active)", aura = { 18708 }, known = 18708 },
+    { name = "Pyroclasm", aura = { 1293803 }, known = 18096 },
     { name = "Amplify Curse (active)", aura = { 18288 }, known = 18288 },
   },
   debuffs = {
@@ -39,13 +48,19 @@ return Pack.Build({
     { name = "Curse of Tongues", aura = { 1714, 11719 } },
     { name = "Siphon Life", aura = { 18265, 18879, 18880, 18881 }, known = 18265, dot = true },
     { name = "Shadow Vulnerability", aura = { 17794 } },
-    { name = "Fear", aura = { 5782, 6213, 6215 } },
+    { name = "Fear", aura = { 5782, 6213, 6215 }, glow = true },
+    { name = "Banish", aura = { 710, 18647 }, known = 710, glow = true },
   },
   power = { { label = "Mana", type = 0 } },
   pet = true,
   fiveSecondRule = { 686, 348, 172, 980, 5676, 412758, 689, 1120, 5782, 6353, 5740, 1949 },
+  castBar = true,
   reminders = {
-    { name = "Demon Armor", aura = armor },
+    { name = "Demon Armor", aura = armor, known = 687 },
+    { name = "Pet", pet = true, known = 688, unknown = 18788 },
+    { name = "Soul Link", aura = { 25228, 19028 }, known = 19028, needsPet = true },
+    { name = "Soul Shard", item = 6265, below = 1, known = 1120, icon = true,
+      texture = "Interface\\Icons\\INV_Misc_Gem_Amethyst_02" },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },
 })

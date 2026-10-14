@@ -1143,8 +1143,16 @@ tinsert(templates.class.DRUID[1][8].args, {
     type = WeakAuras.GetTriggerCategoryFor("Stance/Form/Aura"),
     event = "Stance/Form/Aura"}}}
 });
-for j, id in ipairs({5487, 768, 783, 114282, 1394966}) do
-  local title, _, icon = GetSpellInfo(id)
+local druidForms = {}
+for _, id in ipairs({5487, 9634, 768, 783, 1066, 24858}) do
+  druidForms[id] = true
+end
+for j = 1, GetNumShapeshiftForms() do
+  local _, _, _, id = GetShapeshiftFormInfo(j)
+  local title, _, icon
+  if id and druidForms[id] then
+    title, _, icon = GetSpellInfo(id)
+  end
   if title then
     tinsert(templates.class.DRUID[1][8].args, {
       title = title,

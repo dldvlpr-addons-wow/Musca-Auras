@@ -623,9 +623,7 @@ Can use \ to escape -.]=] ] = [=[Filter formats: 'Name', 'Name-Realm', '-Realm'.
 Supports multiple entries, separated by commas
 Can use \ to escape -.]=]
 	--[[Translation missing --]]
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=]
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "Filter to only dispellable de/buffs of the given type(s)"
 	L["Find Auras"] = "Buscar Auras"
 	L["Finish"] = "Finalizar"
 	--[[Translation missing --]]

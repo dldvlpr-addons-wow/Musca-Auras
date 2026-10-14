@@ -602,6 +602,7 @@ local function SplitAnchorTarget(native, button, point)
   end
   return button, point
 end
+Display.SplitAnchorTarget = SplitAnchorTarget
 
 local function PlaceAtPoint(region, native, button, element, defaults)
   local target, point = SplitAnchorTarget(native, button, element.anchor_point or defaults.point)
@@ -652,7 +653,10 @@ local function ResetNative(native, button, width, height, StyleGlow)
     if shared.glow then
       StyleGlow(shared, {blizzardAuraDisplay = {glow = false}})
     end
-    Display.ClearElementGlow(shared)
+    if shared.glowStale then
+      Display.ClearElementGlow(shared)
+    end
+    shared.glowStale = true
   end
   if native.lateGlow then
     native.lateGlow.clip:Hide()
@@ -669,6 +673,7 @@ local function StyleCooldownSwipe(native, data, button, baseFrame)
   cooldown:SetReverse(data.inverse == true)
   cooldown:SetHideCountdownNumbers(data.cooldownTextDisabled ~= false)
   cooldown:SetSwipeColor(unpack(data.blizzardAuraDisplay.swipeColor or {0, 0, 0, 0.8}))
+  cooldown:Show()
   button:SetDurationCooldown(cooldown)
 end
 
@@ -898,7 +903,7 @@ local function StyleSubElements(context)
       frame:Show()
       local entry = native.sharedElements[index]
       if not entry then
-        entry = {button = button, elementFrames = {glow = frame}}
+        entry = {button = button, native = native, elementFrames = {glow = frame}}
         native.sharedElements[index] = entry
       end
       HideElementLeftovers(entry)
@@ -940,6 +945,12 @@ function Display.StyleAppearance(native, data, ElementFrame, StyleText, StyleGlo
     ElementFrame = ElementFrame,
     StyleText = StyleText,
   })
+  for _, shared in pairs(native.sharedElements) do
+    if shared.glowStale then
+      shared.glowStale = nil
+      Display.ClearElementGlow(shared)
+    end
+  end
   Display.StyleNativeConditionIndicators(native, data)
   if Display.StyleRemainingList then
     Display.StyleRemainingList(native, data)

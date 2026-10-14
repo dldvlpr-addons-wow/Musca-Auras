@@ -414,8 +414,7 @@ Supports multiple entries, separated by commas
 Can use \ to escape -.]=] ] = [=[Формат записи: Имя, Имя-Игровой мир, -Игровой мир.
 
 Можно указать несколько значений, разделенных запятыми. Если название уже содержит дефис, экранируйте его при помощи символа \]=]
-	L[ [=[Filter to only dispellable de/buffs of the given type(s)
-Bleed classification via LibDispel]=] ] = "Фильтровать только рассеяемые дебаффы указанного типа(ов) классификации кровотечения через LibDispel"
+	L["Filter to only dispellable de/buffs of the given type(s)"] = "Фильтровать только рассеиваемые баффы/дебаффы указанного типа(ов)"
 	L["Find Auras"] = "Найти индикации"
 	L["Finish"] = "Конечная"
 	L["Finishing..."] = "Завершение..."

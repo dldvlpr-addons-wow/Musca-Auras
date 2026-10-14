@@ -1,6 +1,6 @@
 -- Rank families of beta spell IDs: Private.GetAuraSpellRanks and Private.AuraSpellRankSupported,
 -- used by CooldownViewerCatalog.lua, BlizzardAuraDisplay.lua and SecretAuraTriggerOptions.lua.
--- Spell rank data from talentsforever.com (https://talentsforever.com/data.json, generated 2026-09-24),
+-- Spell rank data from talentsforever.com (https://talentsforever.com/data.json, generated 2026-10-13),
 -- licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changed: beta spell IDs only,
 -- grouped by class, spell and rank, named variants kept separate. See SpellRankData-LICENSE.txt.
 if not WeakAuras.IsLibsOK() then return end
@@ -53,6 +53,7 @@ local families = {
   {2782}, -- Druid / Remove Curse
   {437138, 1237948, 1237949, 1237950, 1237951}, -- Druid / Revive
   {1079, 9492, 9493, 9752, 9894, 9896}, -- Druid / Rip
+  {1322605}, -- Druid / Shifting Power
   {5221, 6800, 8992, 9829, 9830}, -- Druid / Shred
   {2908, 8955, 9901}, -- Druid / Soothe Animal
   {2912, 8949, 8950, 8951, 9875, 9876, 25298}, -- Druid / Starfire
@@ -60,7 +61,6 @@ local families = {
   {779, 780, 769, 9754, 9908}, -- Druid / Swipe
   {18960}, -- Druid / Teleport: Moonglade
   {467, 782, 1075, 8914, 9756, 9910}, -- Druid / Thorns
-  {5217}, -- Druid / Tiger's Fury
   {5225}, -- Druid / Track Humanoids
   {740, 8918, 9862, 9863}, -- Druid / Tranquility
   {783}, -- Druid / Travel Form / Shapeshift
@@ -133,6 +133,7 @@ local families = {
   {24488, 24505, 24506, 24507}, -- Hunter / Shadow Resistance
   {26064}, -- Hunter / Shell Shield
   {1310687, 1310785, 1310786}, -- Hunter / Sniper Shot
+  {1264478, 1264479, 1264480, 1264481, 1264482}, -- Hunter / Sonic Blast
   {1317257}, -- Hunter / Strider Kick
   {1293241, 1293525, 1293526, 1293527}, -- Hunter / Summon Hawk
   {1264494, 1264497, 1264498, 1264501, 1264502}, -- Hunter / Swipe
@@ -291,7 +292,6 @@ local families = {
   {14751}, -- Priest / Inner Focus
   {2050, 2052, 2053}, -- Priest / Lesser Heal
   {1706}, -- Priest / Levitate
-  {724, 27870, 27871}, -- Priest / Lightwell
   {8129, 8131, 10874, 10875, 10876}, -- Priest / Mana Burn
   {8092, 8102, 8103, 8104, 8105, 8106, 10945, 10946, 10947}, -- Priest / Mind Blast
   {605, 10911, 10912}, -- Priest / Mind Control

@@ -334,6 +334,20 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
+local CLASS_PACK_VERSION = "1.9.1"
+
+local function HasClassPack()
+  local _, playerClass = UnitClass("player")
+  for _, data in pairs(db.displays) do
+    if type(data.uid) == "string" and data.uid:match("^mc%a+V%x+$")
+      and type(data.load) == "table" and type(data.load.class) == "table"
+      and data.load.class.single == playerClass then
+      return true
+    end
+  end
+  return false
+end
+
 -- While true no events are handled. E.g. WeakAuras is paused while the Options dialog is open
 local paused = true;
 local importing = false;
@@ -1473,6 +1487,9 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
       if not db.foreverDisclaimerSeen then
         StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"].button3 = L["Install %s HUD"]:format(UnitClass("player"))
         StaticPopup_Show("WEAKAURAS_FOREVER_DISCLAIMER")
+      elseif db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
+        StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"].button1 = L["Update %s HUD"]:format(UnitClass("player"))
+        StaticPopup_Show("WEAKAURAS_CLASS_PACK_UPDATE")
       end
     else
       -- db isn't valid. Request permission to run repair tool before logging in
@@ -2554,6 +2571,20 @@ local function RepairDatabase()
   Private.Threads:Add("repair", coro, 'urgent')
 end
 
+StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
+  text = L["The class pack changed in this version. Update it to get the new auras: your positions and options are kept."],
+  button2 = L["Later"],
+  OnAccept = function()
+    WeakAuras.ImportClassPack()
+  end,
+  OnShow = function()
+    db.classPackNoticeSeen = CLASS_PACK_VERSION
+  end,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+}
+
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   text = "|cff00ccffMusca Auras|r\n\n"
     .. "WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, "
@@ -2580,6 +2611,7 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   end,
   OnShow = function()
     db.foreverDisclaimerSeen = true
+    db.classPackNoticeSeen = CLASS_PACK_VERSION
   end,
   timeout = 0,
   whileDead = true,

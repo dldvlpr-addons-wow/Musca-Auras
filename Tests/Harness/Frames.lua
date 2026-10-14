@@ -283,6 +283,7 @@ function Methods:CreateAnimation(animationType, name)
   State[self].animations[#State[self].animations + 1] = animation
   return animation
 end
+function Methods:CreateControlPoint(name) return NewObject("ControlPoint", name, self) end
 function Methods:GetAnimations() return unpack(State[self].animations or {}) end
 function Methods:Play()
   State[self].playing = true

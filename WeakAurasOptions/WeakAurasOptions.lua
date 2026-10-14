@@ -501,7 +501,7 @@ end
 
 local function AfterScanForLoads()
   if(frame) then
-    if (frame:IsVisible()) then
+    if (frame:IsVisible() and not WeakAuras.IsImporting()) then
       OptionsPrivate.SortDisplayButtons(nil, true);
     else
       frame.needsSort = true;

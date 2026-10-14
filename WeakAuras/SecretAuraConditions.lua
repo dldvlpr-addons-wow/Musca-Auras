@@ -856,6 +856,7 @@ local function AnchorOffsetApplier(horizontal)
     label:SetPoint(anchorPoint, relativeTo, relativePoint, offsetX, offsetY)
   end
 end
+AuraDisplay.AnchorOffsetApplier = AnchorOffsetApplier
 
 local SUB_APPLIERS = {
   text_color = function(sharedEntry, _, _, color)

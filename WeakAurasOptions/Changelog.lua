@@ -10,13 +10,35 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.9.0',
-  dateString = '2026-10-13',
+  versionString = '1.9.1',
+  dateString = '2026-10-14',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Aura (Modern): type a spell name, it becomes the IDs of all its ranks
-- Import report: auras that will not work on WoW Forever are listed before the import
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.9.0 (2026-10-13):
+- Class packs: a grey swipe instead of timer numbers, and a red pulse in the last 3 seconds
+- Import, deletion and selection of auras with glows no longer freeze the game
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.9.1 (2026-10-14):
+
+New:
+
+- Class pack aura icons show no timer numbers: a grey swipe fills them, and they pulse red in their last 3 seconds
+- Class packs add a cast bar for every class, the global cooldown swipe on cooldown icons and more spells for each class. Each spell shows only once it is learned
+- The Specialization load option matches the talent tree with the most points spent
+- Import, deletion and selection of auras with glows no longer freeze the game
+
+Fixes:
+
+- Buff and debuff icons of the Aura (Modern) trigger show their cooldown swipe. With Hide Timer Text off, the game's countdown numbers can now show on them: turn it on if the icon already has a timer text
+- Buff reminders of the class packs show only once the spell is learned: a level 1 rogue no longer sees the poison reminders
+- The Druid form templates match the right form. A form learned after the template window first opened needs a /reload
+- Nature's Swiftness no longer shows the global cooldown countdown when "Hide GCD Text" is on
+
+Removed:
+
+- The Energy Tick trigger: energy regenerates continuously on WoW Forever, there is no 2 second tick. An aura that used it turns into a Health trigger and shows your health after a /reload: delete it. The druid class pack update removes its energy tick bar (keep Remove Obsolete Auras checked)
+
+Click "Class Pack" at the top of the New Aura panel to update your HUD, or "Update <Class> HUD" in the message shown at login. Your positions and options are kept. Coming from 1.8.0 or older: delete the <Class> (Musca) group first, then click "Class Pack".
+
+1.9.0 (2026-10-13):
 
 New:
 

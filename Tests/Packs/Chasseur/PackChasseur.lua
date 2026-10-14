@@ -32,6 +32,9 @@ return Pack.Build({
     { name = "Scatter Shot", spell = 19503 },
     { name = "Disengage", spell = 781 },
     { name = "Deterrence", spell = 19263 },
+    { name = "Flare", spell = 1543 },
+    { name = "Tranquilizing Shot", spell = 19801 },
+    { name = "Distracting Shot", spell = 20736 },
   },
   buffs = {
     { name = "Rapid Fire (active)", aura = { 3045 } },
@@ -52,8 +55,9 @@ return Pack.Build({
   swing = { "ranged" },
   pet = true,
   fiveSecondRule = { 3044, 2643, 19434, 1978, 1130 },
+  castBar = true,
   reminders = {
-    { name = "Aspect", aura = aspects },
+    { name = "Aspect", aura = aspects, known = 415423 },
     { name = "Pet", pet = true, known = 883 },
     { name = "Trueshot Aura", aura = trueshotAura, known = 1299346 },
     { name = "LOW MANA", lowPower = 0, below = 20 },

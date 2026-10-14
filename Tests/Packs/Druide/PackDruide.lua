@@ -5,6 +5,7 @@ local insectSwarm = { 5570, 24974, 24975, 24976, 24977 }
 local rejuvenation = { 774, 1058, 1430, 2090, 2091, 3627, 8910, 9839, 9840, 9841, 25299 }
 local regrowth = { 8936, 8938, 8939, 8940, 8941, 9750, 9856, 9857, 9858 }
 local markOfTheWild = { 1126, 5232, 6756, 5234, 8907, 9884, 9885 }
+local natureGrasp = { 16689, 16810, 16811, 16812, 16813, 17329 }
 local thorns = { 467, 782, 1075, 8914, 9756, 9910 }
 
 return Pack.Build({
@@ -27,6 +28,8 @@ return Pack.Build({
     { name = "Rebirth", spell = 20484, gate = 0 },
     { name = "Barkskin", spell = 22812, gate = 0 },
     { name = "Tranquility", spell = 740, gate = 0 },
+    { name = "Wild Growth", spell = 408120, gate = 0 },
+    { name = "Nature's Grasp (cooldown)", spell = 16689, gate = 0 },
   },
   procs = {
     { name = "Maul", queued = 6807, gate = 1 },
@@ -40,6 +43,8 @@ return Pack.Build({
     { name = "Innervate (active)", aura = { 29166 } },
     { name = "Nature's Swiftness (active)", aura = { 17116 } },
     { name = "Dash (active)", aura = { 1850, 9821 } },
+    { name = "Nature's Grasp", aura = natureGrasp, known = 16689 },
+    { name = "Prowl", aura = { 5215, 6783, 9913 }, known = 5215, gate = 3 },
     { name = "Rejuvenation", aura = rejuvenation },
     { name = "Regrowth", aura = regrowth },
   },
@@ -48,6 +53,7 @@ return Pack.Build({
     { name = "Insect Swarm", aura = insectSwarm, known = 5570, dot = true },
     { name = "Rake", aura = { 1822, 1823, 1824, 9904 }, dot = true },
     { name = "Rip", aura = { 1079, 9492, 9493, 9752, 9894, 9896 }, dot = true },
+    { name = "Lacerate", aura = { 414644, 1235826, 1235827 }, stacks = true, gate = 1, known = 414644 },
     { name = "Pounce", aura = { 9007, 9824, 9826 } },
     { name = "Faerie Fire", aura = { 770, 778, 9749, 9907 } },
     { name = "Demoralizing Roar", aura = { 99, 1735, 9490, 9747, 9898 } },
@@ -60,11 +66,12 @@ return Pack.Build({
     { label = "Rage", type = 1, gate = 1 },
     { label = "Mana", type = 0 },
   },
-  energyTick = true,
   fiveSecondRule = { 5176, 2912, 8921, 5570, 5185, 8936, 774 },
+  castBar = true,
   reminders = {
-    { name = "Mark of the Wild", aura = markOfTheWild },
-    { name = "Thorns", aura = thorns },
+    { name = "Mark of the Wild", aura = markOfTheWild, known = 1126 },
+    { name = "Thorns", aura = thorns, known = 467 },
+    { name = "Moonkin Form", aura = { 24858 }, known = 24858, gate = 0 },
     { name = "Omen of Clarity", aura = { 16864 }, known = 16864 },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },

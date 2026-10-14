@@ -1212,10 +1212,11 @@ local function applyIconSource(ownerRegion, missingDisplay, auraData, source)
   cooldown:SetDrawEdge(auraData.cooldown ~= false and auraData.cooldownEdge == true)
   cooldown:SetReverse(auraData.inverse == true)
   local countdown = countdownElement(nativeView, auraData, true)
+  local hideGCDText = Private.ShouldHideDurationText(auraState)
   if not countdown then
-    cooldown:SetHideCountdownNumbers(auraData.cooldownTextDisabled ~= false)
+    cooldown:SetHideCountdownNumbers(auraData.cooldownTextDisabled ~= false or hideGCDText)
   else
-    cooldown:SetHideCountdownNumbers(false)
+    cooldown:SetHideCountdownNumbers(hideGCDText)
     styleCountdownNumbers(cooldown, nativeView, countdown)
   end
   cooldown:Show()
