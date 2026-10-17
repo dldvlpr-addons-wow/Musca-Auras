@@ -11,8 +11,8 @@ local function Fail(action)
 end
 
 function Secret.Wrap(value)
-  if value == nil then
-    return nil
+  if value == nil or Secret.IsSecret(value) then
+    return value
   end
   local proxy = newproxy(true)
   local proxyMetatable = getmetatable(proxy)

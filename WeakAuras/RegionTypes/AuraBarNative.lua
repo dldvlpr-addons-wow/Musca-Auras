@@ -1,414 +1,399 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
+-- Native drawing for the aura bar region, methods mixed into region.bar by AuraBar.lua.
+-- (a) Secret values and duration objects: hidden driver bars give the geometry, fgMask follows their fill.
+-- (b) The Blizzard cooldown bar ("cdm", set by CDMAuraProgress.lua) is protected: it draws itself,
+--     and any write to it goes through WithWritableCooldownBar.
+local Painter = Private.NativeProgressPainter
 local SharedMedia = LibStub("LibSharedMedia-3.0")
 
-local angleCalculations = {
-  [0] = {-1, -1, -1, 0, 0, -1, 0, 0},
-  [90] = {1, -1, 0, -1, 1, 0, 0, 0},
-  [180] = { 1, 1, 1, 0, 0, 1, 0, 0},
-  [270] = {-1, 1, 0, 1, -1, 0, 0, 0},
-}
+local barFuncs = {}
 
-local function SetCoordsByAngle(t, angle)
-  if angleCalculations[angle] then
-    return t:SetTexCoord(unpack(angleCalculations[angle]));
-  end
+-- (b) Blizzard cooldown bar --------------------------------------------------
 
-  angle = math.rad(angle);
-  local A, B, C, D, E, F = math.cos(angle), math.sin(angle), 1, -math.sin(angle), math.cos(angle), 1
-  local det = A*E - B*D;
-  local ULx, ULy, LLx, LLy, URx, URy, LRx, LRy;
-
-  ULx, ULy = ( B*F - C*E ) / det, ( -(A*F) + C*D ) / det;
-  LLx, LLy = ( -B + B*F - C*E ) / det, ( A - A*F + C*D ) / det;
-  URx, URy = ( E + B*F - C*E ) / det, ( -D - A*F + C*D ) / det;
-  LRx, LRy = ( E - B + B*F - C*E ) / det, ( -D + A -(A*F) + C*D ) / det;
-
-  t:SetTexCoord(ULx, ULy, LLx, LLy, URx, URy, LRx, LRy);
+local function CooldownBarOf(bar)
+  return bar.nativeBars and bar.nativeBars.cdm
 end
 
-local flipPointX = {
-  TOPLEFT = "TOPRIGHT",
-  TOPRIGHT = "TOPLEFT",
-  BOTTOMLEFT = "BOTTOMRIGHT",
-  BOTTOMRIGHT = "BOTTOMLEFT"
-}
-local flipPointY = {
-  TOPLEFT = "BOTTOMLEFT",
-  TOPRIGHT = "BOTTOMRIGHT",
-  BOTTOMLEFT = "TOPLEFT",
-  BOTTOMRIGHT = "TOPRIGHT"
-}
+local function IsCooldownBar(bar, statusBar)
+  return statusBar ~= nil and statusBar == CooldownBarOf(bar)
+end
 
-local whiteTexture = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite"
-local extraTextureWrapMode = "REPEAT"
+-- The only place that writes to the cooldown bar.
+local function WithWritableCooldownBar(bar, write, ...)
+  local cooldownBar = CooldownBarOf(bar)
+  if cooldownBar and not WeakAuras.IsRestricted() then
+    write(cooldownBar, ...)
+  end
+end
 
-local nativeOrientation = {
-  ["HORIZONTAL"] = { "HORIZONTAL", false },
-  ["HORIZONTAL_INVERSE"] = { "HORIZONTAL", true },
-  ["VERTICAL"] = { "VERTICAL", true },
-  ["VERTICAL_INVERSE"] = { "VERTICAL", false },
-}
-local canDrawDurationObject = Enum.StatusBarTimerDirection ~= nil
-                              and CreateFrame("StatusBar").SetTimerDuration ~= nil
+local function ShowFrame(frame) frame:Show() end
+local function HideFrame(frame) frame:Hide() end
 
-local barFuncs = {
-  ["UsesNativeAdditionalBars"] = function(self)
-    if self.nativeBar then
+local function OrientationOf(bar)
+  return Painter.AuraBarOrientation[bar.orientation] or Painter.AuraBarOrientation.default
+end
+
+local function PaintCooldownBar(cooldownBar, direction, texture, red, green, blue, alpha)
+  Painter.ApplyLinearDirection(cooldownBar, direction.axis, direction.reverseFill, false)
+  if texture then
+    cooldownBar:SetStatusBarTexture(texture)
+  end
+  cooldownBar:SetStatusBarColor(red, green, blue, alpha)
+end
+
+-- Copies the bar look onto the cooldown bar. Blizzard may reject a write on its bar:
+-- the error is swallowed and the bar keeps its previous look.
+local function StyleWritableCooldownBar(cooldownBar, bar)
+  local texture = bar:GetStatusBarTexture()
+  if bar.cdmColor then
+    pcall(PaintCooldownBar, cooldownBar, OrientationOf(bar), texture, unpack(bar.cdmColor))
+  else
+    pcall(PaintCooldownBar, cooldownBar, OrientationOf(bar), texture, bar.fg:GetVertexColor())
+  end
+end
+
+function barFuncs:StyleCdmBar()
+  WithWritableCooldownBar(self, StyleWritableCooldownBar, self)
+end
+
+function barFuncs:NativeBarLocked()
+  return IsCooldownBar(self, self.nativeBar) and WeakAuras.IsRestricted()
+end
+
+-- (a) Driver bars ------------------------------------------------------------
+
+function barFuncs:GetNativeBar(kind)
+  self.nativeBars = self.nativeBars or {}
+  local statusBar = self.nativeBars[kind]
+  if not statusBar then
+    statusBar = Painter.CreateDriverBar(self, true)
+    self.nativeBars[kind] = statusBar
+  end
+  return statusBar
+end
+
+function barFuncs:ReleaseNativeBar()
+  local active = self.nativeBar
+  if active and not IsCooldownBar(self, active) then
+    active:Hide()
+  end
+end
+
+function barFuncs:ShowNativeBar(statusBar)
+  if self.nativeBar == statusBar then
+    return
+  end
+  self:ReleaseNativeBar()
+  self.nativeBar = statusBar
+  if IsCooldownBar(self, statusBar) then
+    WithWritableCooldownBar(self, ShowFrame)
+  else
+    statusBar:Show()
+  end
+  self:AnchorMaskToNativeBar()
+  self:UpdateAdditionalBars()
+end
+
+function barFuncs:HideNativeBar()
+  local active = self.nativeBar
+  if not active then
+    return
+  end
+  self:ReleaseNativeBar()
+  if IsCooldownBar(self, active) then
+    WithWritableCooldownBar(self, HideFrame)
+  end
+  self.nativeBar = nil
+  self:UpdateAnchors()
+  self:UpdateAdditionalBars()
+end
+
+function barFuncs:SetDurationObject(durationObject, fillElapsed)
+  if not durationObject then
+    self:HideNativeBar()
+    return false
+  end
+  if not Painter.CanDrawDurationObject then
+    return false
+  end
+  local timer = self:GetNativeBar("timer")
+  Painter.SetTimer(timer, durationObject, Painter.FillDirection(fillElapsed), "Immediate")
+  self:ShowNativeBar(timer)
+  return true
+end
+
+-- value and total may be secret: they only reach the native setters.
+function barFuncs:SetSecretValue(value, total, inverse, smooth)
+  local valueBar = self:GetNativeBar("value")
+  Painter.SetSecretProgress(valueBar, value, total, smooth)
+  inverse = inverse and true or false
+  local inverseChanged = inverse ~= self.nativeInverse
+  self.nativeInverse = inverse
+  if self.nativeBar ~= valueBar then
+    self:ShowNativeBar(valueBar)
+  elseif inverseChanged then
+    self:AnchorMaskToNativeBar()
+  end
+end
+
+function barFuncs:AnchorMaskToNativeBar()
+  local active, mask = self.nativeBar, self.fgMask
+  if IsCooldownBar(self, active) then
+    -- The cooldown bar paints the fill itself; never anchor on a protected frame.
+    mask:ClearAllPoints()
+    mask:SetPoint("TOPLEFT", self, "TOPLEFT")
+    mask:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT")
+    self.fg:Hide()
+    self.spark:Hide()
+    self:StyleCdmBar()
+    return
+  end
+  -- A timer encodes its direction itself; only a value bar flips its fill.
+  local inverted = self.nativeInverse and active == self.nativeBars.value
+  local direction = OrientationOf(self)
+  Painter.ApplyLinearDirection(active, direction.axis, direction.reverseFill, inverted)
+  Painter.AnchorMaskToFill(mask, active:GetStatusBarTexture(), self, direction.axis, direction.reverseFill,
+    inverted, Painter.DriverMaskMargins)
+  self.fg:Show()
+  self.spark:SetShown(self.spark.sparkHidden ~= "ALWAYS")
+end
+
+-- (a) Additional bars --------------------------------------------------------
+
+local function IsSecretGeometry(additionalBar)
+  return Private.IsSecret(additionalBar.min) or Private.IsSecret(additionalBar.max)
+      or Private.IsSecret(additionalBar.width) or Private.IsSecret(additionalBar.offset)
+end
+
+function barFuncs:UsesNativeAdditionalBars()
+  if self.nativeBar then
+    return true
+  end
+  for _, additionalBar in ipairs(self.additionalBars) do
+    if additionalBar.durationObject or IsSecretGeometry(additionalBar) then
       return true
     end
-    for _, additionalBar in ipairs(self.additionalBars) do
-      if additionalBar.durationObject
-         or Private.IsSecret(additionalBar.min, additionalBar.max, additionalBar.width, additionalBar.offset) then
-        return true
-      end
-    end
-    return false
-  end,
+  end
+  return false
+end
 
-  ["UpdateNativeAdditionalBars"] = function(self)
-    for index, additionalBar in ipairs(self.additionalBars) do
-      local abar = self.secretExtraTextures[index];
-      if not abar then
-        abar = CreateFrame("StatusBar", nil, self);
-        abar:SetFrameLevel(self:GetFrameLevel());
-        abar:SetStatusBarTexture(whiteTexture);
-        abar:SetColorFill(1, 1, 1, 0);
+local function DrawSublevel(index)
+  return math.min(index, 7)
+end
 
-        abar.texture = self:CreateTexture(nil, "ARTWORK");
-        abar.texture:SetDrawLayer("ARTWORK", min(index, 7));
-        abar:HookScript("OnShow", function() abar.texture:Show() end);
-        abar:HookScript("OnHide", function() abar.texture:Hide() end);
-        abar.texture:SetTexelSnappingBias(0)
-        abar.texture:SetSnapToPixelGrid(false)
-        abar.texture:SetAllPoints(self)
+-- An overlay StatusBar spans the stretch between the fills of two marker bars; its fill masks a texture
+-- painted over the whole bar. Markers 1 and 2 bound the stretch, the optional offset marker carries them.
+local function CreateOverlay(bar)
+  local overlay = Painter.CreateDriverBar(bar)
+  overlay.markers = { Painter.CreateDriverBar(overlay), Painter.CreateDriverBar(overlay) }
+  local mask = Painter.CreateClampMask(overlay, "NEAREST")
+  Painter.AnchorMaskToFill(mask, overlay:GetStatusBarTexture(), bar, "HORIZONTAL", false, false, Painter.FillMaskMargins)
+  local painted = bar:CreateTexture(nil, "ARTWORK")
+  painted:SetAllPoints(bar)
+  painted:SetSnapToPixelGrid(false)
+  painted:SetTexelSnappingBias(0)
+  painted:AddMaskTexture(mask)
+  overlay.paintedTexture = painted
+  overlay:SetFrameLevel(bar:GetFrameLevel())
+  overlay:HookScript("OnShow", function() painted:Show() end)
+  overlay:HookScript("OnHide", function() painted:Hide() end)
+  return overlay
+end
 
-        abar.textureMask = abar:CreateMaskTexture();
-        abar.textureMask:SetPoint("TOPLEFT", abar:GetStatusBarTexture(), "TOPLEFT", -0.01, 0.01);
-        abar.textureMask:SetPoint("BOTTOMRIGHT", abar:GetStatusBarTexture(), "BOTTOMRIGHT", 0, 0);
-        abar.textureMask:SetTexture(whiteTexture, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE", "NEAREST")
-        abar.textureMask:SetTexelSnappingBias(0)
-        abar.textureMask:SetSnapToPixelGrid(false)
-        abar.texture:AddMaskTexture(abar.textureMask);
+local function MirrorPoint(point, axis)
+  if axis == "HORIZONTAL" then
+    return (point:gsub("LEFT", "<"):gsub("RIGHT", "LEFT"):gsub("<", "RIGHT"))
+  end
+  return (point:gsub("TOP", "<"):gsub("BOTTOM", "TOP"):gsub("<", "BOTTOM"))
+end
 
-        abar.offsetBar1 = CreateFrame("StatusBar", nil, abar);
-        abar.offsetBar1:SetStatusBarTexture(whiteTexture);
-        abar.offsetBar1:SetColorFill(1, 1, 1, 0);
-
-        abar.offsetBar2 = CreateFrame("StatusBar", nil, abar);
-        abar.offsetBar2:SetStatusBarTexture(whiteTexture);
-        abar.offsetBar2:SetColorFill(1, 1, 1, 0);
-
-        self.secretExtraTextures[index] = abar;
-      end
-      if abar.offsetBarAdditional then
-        abar.offsetBarAdditional:Hide();
-      end
-      abar:Show();
-      abar.texture:Show();
-      abar.texture:SetDrawLayer("ARTWORK", additionalBar.underlay and -1 or min(index, 7));
-
-      local minValue, maxValue = additionalBar.min, additionalBar.max
-      local direction, width, offset = additionalBar.direction, additionalBar.width, additionalBar.offset
-      local durationObject, durationObjectUseRemaining = additionalBar.durationObject, additionalBar.durationObjectUseRemaining
-
-      abar.offsetBar1:SetMinMaxValues(self.additionalBarsMin, self.additionalBarsMax);
-      abar.offsetBar2:SetMinMaxValues(self.additionalBarsMin, self.additionalBarsMax);
-
-      local effectiveReverseFill = self.directionInverse;
-      if self.additionalBarsInverse then
-        effectiveReverseFill = not effectiveReverseFill;
-      end
-
-      abar.offsetBar1:ClearAllPoints();
-      abar.offsetBar2:ClearAllPoints();
-      if minValue and maxValue then
-        abar.offsetBar1:SetAllPoints(self);
-        abar.offsetBar2:SetAllPoints(self);
-
-        abar.offsetBar1:SetValue(minValue);
-        abar.offsetBar2:SetValue(maxValue);
-      elseif direction and width then
-        if not abar.offsetBarAdditional then
-          abar.offsetBarAdditional = CreateFrame("StatusBar", nil, abar);
-          abar.offsetBarAdditional:SetStatusBarTexture(whiteTexture);
-          abar.offsetBarAdditional:SetColorFill(1, 1, 1, 0);
-          abar.offsetBarAdditionalTexture = abar.offsetBarAdditional:GetStatusBarTexture();
-        end
-
-        abar.offsetBarAdditional:Show();
-        abar.offsetBarAdditional:SetMinMaxValues(self.additionalBarsMin, self.additionalBarsMax);
-        abar.offsetBarAdditional:SetValue(offset or 0);
-        abar.offsetBarAdditional:ClearAllPoints();
-
-        abar.offsetBar1:SetValue(0);
-        abar.offsetBar2:SetValue(width);
-
-        if self.horizontal then
-          local barWidth = self:GetParent().width - self.iconWidth;
-          abar.offsetBar1:SetWidth(barWidth);
-          abar.offsetBar2:SetWidth(barWidth);
-          abar.offsetBarAdditional:SetWidth(barWidth);
-        else
-          local barHeight = self:GetParent().height - self.iconHeight;
-          abar.offsetBar1:SetHeight(barHeight);
-          abar.offsetBar2:SetHeight(barHeight);
-          abar.offsetBarAdditional:SetHeight(barHeight);
-        end
-
-        local maskPoint1, maskPoint2 = "TOPLEFT", "BOTTOMLEFT";
-        local maskRelativePoint1, maskRelativePoint2 = "TOPRIGHT", "BOTTOMRIGHT";
-        local offsetPoint1, offsetPoint2 = "TOPLEFT", "BOTTOMLEFT";
-        local offsetRelativePoint1, offsetRelativePoint2 = "TOPRIGHT", "BOTTOMRIGHT";
-        local flip = flipPointX
-        if not self.horizontal then
-          maskPoint1, maskPoint2 = "TOPLEFT", "TOPRIGHT";
-          maskRelativePoint1, maskRelativePoint2 = "BOTTOMLEFT", "BOTTOMRIGHT";
-          offsetPoint1, offsetPoint2 = "TOPLEFT", "TOPRIGHT";
-          offsetRelativePoint1, offsetRelativePoint2 = "BOTTOMLEFT", "BOTTOMRIGHT";
-          flip = flipPointY
-        end
-        if self.orientation == "HORIZONTAL_INVERSE" or self.orientation == "VERTICAL_INVERSE" then
-          maskPoint1, maskPoint2  = flip[maskPoint1], flip[maskPoint2];
-          maskRelativePoint1, maskRelativePoint2 = flip[maskRelativePoint1], flip[maskRelativePoint2];
-          offsetPoint1, offsetPoint2 = flip[offsetPoint1], flip[offsetPoint2];
-          offsetRelativePoint1, offsetRelativePoint2 = flip[offsetRelativePoint1], flip[offsetRelativePoint2];
-        end
-
-        if self.additionalBarsInverse then
-          maskPoint1, maskPoint2  = flip[maskPoint1], flip[maskPoint2];
-          offsetPoint1, offsetPoint2 = flip[offsetPoint1], flip[offsetPoint2];
-          offsetRelativePoint1, offsetRelativePoint2 = flip[offsetRelativePoint1], flip[offsetRelativePoint2];
-        end
-
-        if direction ~= "forward" then
-          effectiveReverseFill = not effectiveReverseFill;
-          maskPoint1, maskPoint2  = flip[maskPoint1], flip[maskPoint2];
-          offsetPoint1, offsetPoint2 = flip[offsetPoint1], flip[offsetPoint2];
-          offsetRelativePoint1, offsetRelativePoint2 = flip[offsetRelativePoint1], flip[offsetRelativePoint2];
-        end
-
-        abar.offsetBarAdditional:SetPoint(maskPoint1, self.fgMask, maskRelativePoint1, 0, 0);
-        abar.offsetBarAdditional:SetPoint(maskPoint2, self.fgMask, maskRelativePoint2, 0, 0);
-
-        abar.offsetBar1:SetPoint(offsetPoint1, abar.offsetBarAdditionalTexture, offsetRelativePoint1, 0, 0);
-        abar.offsetBar1:SetPoint(offsetPoint2, abar.offsetBarAdditionalTexture, offsetRelativePoint2, 0, 0);
-        abar.offsetBar2:SetPoint(offsetPoint1, abar.offsetBarAdditionalTexture, offsetRelativePoint1, 0, 0);
-        abar.offsetBar2:SetPoint(offsetPoint2, abar.offsetBarAdditionalTexture, offsetRelativePoint2, 0, 0);
-
-        abar.offsetBarAdditional:SetReverseFill(effectiveReverseFill);
-      end
-
-      abar:ClearAllPoints();
-      if self.horizontal and not effectiveReverseFill then
-        abar:SetPoint("TOPLEFT", abar.offsetBar1:GetStatusBarTexture(), "TOPRIGHT");
-        abar:SetPoint("BOTTOMRIGHT", abar.offsetBar2:GetStatusBarTexture(), "BOTTOMRIGHT");
-      elseif self.horizontal then
-        abar:SetPoint("TOPLEFT", abar.offsetBar2:GetStatusBarTexture(), "TOPLEFT");
-        abar:SetPoint("BOTTOMRIGHT", abar.offsetBar1:GetStatusBarTexture(), "BOTTOMLEFT");
-      elseif effectiveReverseFill then
-        abar:SetPoint("TOPLEFT", abar.offsetBar1:GetStatusBarTexture(), "BOTTOMLEFT");
-        abar:SetPoint("BOTTOMRIGHT", abar.offsetBar2:GetStatusBarTexture(), "BOTTOMRIGHT");
-      else
-        abar:SetPoint("TOPLEFT", abar.offsetBar2:GetStatusBarTexture(), "TOPLEFT");
-        abar:SetPoint("BOTTOMRIGHT", abar.offsetBar1:GetStatusBarTexture(), "TOPRIGHT");
-      end
-
-      abar.offsetBar1:SetReverseFill(effectiveReverseFill);
-      abar.offsetBar2:SetReverseFill(effectiveReverseFill);
-      abar:SetReverseFill(effectiveReverseFill);
-
-      local barOrientation = self.horizontal and "HORIZONTAL" or "VERTICAL"
-      abar:SetOrientation(barOrientation);
-      abar.offsetBar1:SetOrientation(barOrientation);
-      abar.offsetBar2:SetOrientation(barOrientation);
-      if abar.offsetBarAdditional then
-        abar.offsetBarAdditional:SetOrientation(barOrientation);
-      end
-
-      if canDrawDurationObject and Private.IsDurationObject(durationObject) then
-        local durDirection = durationObjectUseRemaining and Enum.StatusBarTimerDirection.RemainingTime or nil
-        abar:SetTimerDuration(durationObject, nil, durDirection);
-      else
-        abar:SetMinMaxValues(0, 1);
-        abar:SetValue(1);
-      end
-
-      local angle = 0;
-      if self.orientation == "HORIZONTAL_INVERSE" then
-        angle = 180;
-      elseif self.orientation == "VERTICAL" then
-        angle = 90;
-      elseif self.orientation == "VERTICAL_INVERSE" then
-        angle = 270;
-      end
-      SetCoordsByAngle(abar.texture, angle)
-
-      local color = self.additionalBarsColors and self.additionalBarsColors[index];
-      if (color) then
-        abar.texture:SetVertexColor(unpack(color));
-      else
-        abar.texture:SetVertexColor(1, 1, 1, 1);
-      end
-
-      local texture = self.additionalBarsTextures and self.additionalBarsTextures[index];
-      if texture then
-        local texturePath = SharedMedia:Fetch("statusbar_atlas", texture, true) or SharedMedia:Fetch("statusbar", texture) or ""
-        Private.SetTextureOrAtlas(abar.texture, texturePath, extraTextureWrapMode, extraTextureWrapMode)
-      else
-        Private.SetTextureOrAtlas(abar.texture, self:GetStatusBarTexture(), extraTextureWrapMode, extraTextureWrapMode)
-      end
-    end
-
-    for i = #self.additionalBars + 1, #self.secretExtraTextures do
-      self.secretExtraTextures[i]:Hide();
-    end
-  end,
-
-  ["GetNativeBar"] = function(self, kind)
-    self.nativeBars = self.nativeBars or {}
-    local nativeBar = self.nativeBars[kind]
-    if not nativeBar then
-      nativeBar = CreateFrame("StatusBar", nil, self)
-      nativeBar:SetAllPoints(self)
-      nativeBar:SetStatusBarTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
-      nativeBar:GetStatusBarTexture():SetAlpha(0)
-      nativeBar:Hide()
-      self.nativeBars[kind] = nativeBar
-    end
-    return nativeBar
-  end,
-
-  ["NativeBarLocked"] = function(self)
-    return self.nativeBar ~= nil and self.nativeBars ~= nil and self.nativeBar == self.nativeBars.cdm
-      and WeakAuras.IsRestricted()
-  end,
-
-  ["ReleaseNativeBar"] = function(self)
-    if self.nativeBar and self.nativeBar ~= self.nativeBars.cdm then
-      self.nativeBar:Hide()
-    end
-  end,
-
-  ["ShowNativeBar"] = function(self, nativeBar)
-    if self.nativeBar ~= nativeBar then
-      self:ReleaseNativeBar()
-      self.nativeBar = nativeBar
-      if nativeBar ~= self.nativeBars.cdm or not WeakAuras.IsRestricted() then
-        nativeBar:Show()
-      end
-      self:AnchorMaskToNativeBar()
-      self:UpdateAdditionalBars()
-    end
-  end,
-
-  ["HideNativeBar"] = function(self)
-    if self.nativeBar then
-      self:ReleaseNativeBar()
-      if self.nativeBar == self.nativeBars.cdm and not WeakAuras.IsRestricted() then
-        self.nativeBar:Hide()
-      end
-      self.nativeBar = nil
-      self:UpdateAnchors()
-      self:UpdateAdditionalBars()
-    end
-  end,
-
-  ["SetDurationObject"] = function(self, durationObject, fillElapsed)
-    if not durationObject then
-      self:HideNativeBar()
-      return false
-    end
-    if not canDrawDurationObject then
-      return false
-    end
-    local nativeBar = self:GetNativeBar("timer")
-    nativeBar:SetTimerDuration(durationObject, Enum.StatusBarInterpolation.Immediate,
-      fillElapsed and Enum.StatusBarTimerDirection.ElapsedTime or Enum.StatusBarTimerDirection.RemainingTime)
-    self:ShowNativeBar(nativeBar)
-    return true
-  end,
-
-  ["SetSecretValue"] = function(self, value, total, inverse, smooth)
-    local nativeBar = self:GetNativeBar("value")
-    nativeBar:SetMinMaxValues(0, total)
-    if smooth and Enum.StatusBarInterpolation then
-      nativeBar:SetValue(value, Enum.StatusBarInterpolation.ExponentialEaseOut)
-    else
-      nativeBar:SetValue(value)
-    end
-    inverse = inverse and true or false
-    local inverseChanged = self.nativeInverse ~= inverse
-    self.nativeInverse = inverse
-    if self.nativeBar == nativeBar then
-      if inverseChanged then
-        self:AnchorMaskToNativeBar()
-      end
-    else
-      self:ShowNativeBar(nativeBar)
-    end
-  end,
-
-  ["StyleCdmBar"] = function(self)
-    local nativeBar = self.nativeBars and self.nativeBars.cdm
-    if not nativeBar or WeakAuras.IsRestricted() then return end
-    local orientation = nativeOrientation[self.orientation] or nativeOrientation.HORIZONTAL
-    local texture = self:GetStatusBarTexture()
-    local color = self.cdmColor or {self.fg:GetVertexColor()}
-    pcall(function()
-      nativeBar:SetOrientation(orientation[1])
-      nativeBar:SetReverseFill(orientation[2])
-      if texture then nativeBar:SetStatusBarTexture(texture) end
-      nativeBar:SetStatusBarColor(unpack(color))
-    end)
-  end,
-
-  ["AnchorMaskToNativeBar"] = function(self)
-    if self.nativeBars and self.nativeBar == self.nativeBars.cdm then
-      self.fgMask:ClearAllPoints()
-      self.fgMask:SetPoint("TOPLEFT", self, "TOPLEFT")
-      self.fgMask:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT")
-      self.fg:Hide()
-      self.spark:Hide()
-      self:StyleCdmBar()
-      return
-    end
-    local orientation = nativeOrientation[self.orientation] or nativeOrientation.HORIZONTAL
-    local reverse = orientation[2]
-    local inverse = self.nativeInverse and self.nativeBars and self.nativeBar == self.nativeBars.value
-    self.nativeBar:SetOrientation(orientation[1])
-    self.nativeBar:SetReverseFill(not reverse ~= not inverse)
-    local fill = self.nativeBar:GetStatusBarTexture()
-    self.fgMask:ClearAllPoints()
-    if not inverse then
-      self.fgMask:SetPoint("TOPLEFT", fill, "TOPLEFT", -0.05, 0.05)
-      self.fgMask:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0.05, -0.05)
-    elseif orientation[1] == "HORIZONTAL" then
-      self.fgMask:SetPoint("TOPLEFT", reverse and fill or self, reverse and "TOPRIGHT" or "TOPLEFT", -0.05, 0.05)
-      self.fgMask:SetPoint("BOTTOMRIGHT", reverse and self or fill, reverse and "BOTTOMRIGHT" or "BOTTOMLEFT", 0.05, -0.05)
-    else
-      self.fgMask:SetPoint("TOPLEFT", reverse and self or fill, reverse and "TOPLEFT" or "BOTTOMLEFT", -0.05, 0.05)
-      self.fgMask:SetPoint("BOTTOMRIGHT", reverse and fill or self, reverse and "TOPRIGHT" or "BOTTOMRIGHT", 0.05, -0.05)
-    end
-    self.fg:Show()
-    if self.spark.sparkHidden == "ALWAYS" then
-      self.spark:Hide()
-    else
-      self.spark:Show()
-    end
-  end,
+-- Pairs of {own point, relative point} that glue a marker bar to the end of a fill.
+local trailingEdge = {
+  HORIZONTAL = { { "TOPLEFT", "TOPRIGHT" }, { "BOTTOMLEFT", "BOTTOMRIGHT" } },
+  VERTICAL = { { "TOPLEFT", "BOTTOMLEFT" }, { "TOPRIGHT", "BOTTOMRIGHT" } },
 }
 
+local function GlueToEdge(marker, target, axis, mirrorOwn, mirrorTarget)
+  for _, pair in ipairs(trailingEdge[axis]) do
+    local own, relative = pair[1], pair[2]
+    if mirrorOwn then own = MirrorPoint(own, axis) end
+    if mirrorTarget then relative = MirrorPoint(relative, axis) end
+    marker:SetPoint(own, target, relative, 0, 0)
+  end
+end
+
+-- Overlay corners between marker fills, keyed by axis then reverse fill:
+-- {top left point, marker index, its point}, {bottom right point, marker index, its point}.
+local overlaySpan = {
+  HORIZONTAL = {
+    [false] = { { "TOPLEFT", 1, "TOPRIGHT" }, { "BOTTOMRIGHT", 2, "BOTTOMRIGHT" } },
+    [true] = { { "TOPLEFT", 2, "TOPLEFT" }, { "BOTTOMRIGHT", 1, "BOTTOMLEFT" } },
+  },
+  VERTICAL = {
+    [false] = { { "TOPLEFT", 2, "TOPLEFT" }, { "BOTTOMRIGHT", 1, "TOPRIGHT" } },
+    [true] = { { "TOPLEFT", 1, "BOTTOMLEFT" }, { "BOTTOMRIGHT", 2, "BOTTOMRIGHT" } },
+  },
+}
+
+local opaqueWhite = { 1, 1, 1, 1 }
+local overlayMedia = { { "statusbar_atlas", true }, { "statusbar", false } }
+
+local function OverlayTexture(bar, index)
+  local name = bar.additionalBarsTextures and bar.additionalBarsTextures[index]
+  if not name then
+    return bar:GetStatusBarTexture()
+  end
+  for _, media in ipairs(overlayMedia) do
+    local found = SharedMedia:Fetch(media[1], name, media[2])
+    if found then
+      return found
+    end
+  end
+  return ""
+end
+
+-- Markers of an overlay. Each one: value (or keepValue), then either cover (a frame it spans)
+-- or glueTo ("mask": end of the main fill, "offsetFill": end of the offset marker fill).
+local function MarkersOf(bar, settings, orientation, backward)
+  if settings.min and settings.max then
+    return { { value = settings.min, cover = bar }, { value = settings.max, cover = bar } }
+  end
+  if not (settings.direction and settings.width) then
+    return { { keepValue = true }, { keepValue = true } }
+  end
+  -- Markers 1 and 2 sit at 0 and width counted from the offset marker, itself counted from the main fill.
+  local parent = bar:GetParent()
+  local length
+  if orientation.axis == "HORIZONTAL" then
+    length = parent.width - bar.iconWidth
+  else
+    length = parent.height - bar.iconHeight
+  end
+  local mirrorOwn = Painter.Either(orientation.mirrored, Painter.Either(bar.additionalBarsInverse, backward))
+  local function FromOffset(value)
+    return { value = value, glueTo = "offsetFill", mirrorOwn = mirrorOwn, mirrorTarget = mirrorOwn, length = length }
+  end
+  return {
+    FromOffset(0),
+    FromOffset(settings.width),
+    offset = { value = settings.offset or 0, glueTo = "mask", mirrorOwn = mirrorOwn,
+               mirrorTarget = orientation.mirrored, length = length },
+  }
+end
+
+-- Everything an overlay needs, computed from the bar and the additional bar settings; nothing is touched.
+local function OverlayLayout(bar, index, settings)
+  local orientation = OrientationOf(bar)
+  local reverseFill = Painter.Either(orientation.reverseFill, bar.additionalBarsInverse)
+  local relative = not (settings.min and settings.max) and settings.direction and settings.width
+  local backward = relative and settings.direction ~= "forward"
+  local timer = Painter.CanDrawDurationObject and Private.IsDurationObject(settings.durationObject)
+    and settings.durationObject or nil
+  return {
+    axis = orientation.axis,
+    reverseFill = Painter.Either(reverseFill, backward),
+    minimum = bar.additionalBarsMin,
+    maximum = bar.additionalBarsMax,
+    sublevel = settings.underlay and -1 or DrawSublevel(index),
+    texCoords = orientation.overlayTexCoords,
+    color = bar.additionalBarsColors and bar.additionalBarsColors[index] or opaqueWhite,
+    texture = OverlayTexture(bar, index),
+    timer = timer,
+    timerDirection = settings.durationObjectUseRemaining and "RemainingTime" or nil,
+    markers = MarkersOf(bar, settings, orientation, backward),
+  }
+end
+
+local function PlaceMarker(marker, spec, layout, glueTargets)
+  marker:SetMinMaxValues(layout.minimum, layout.maximum)
+  marker:ClearAllPoints()
+  if spec.cover then
+    marker:SetAllPoints(spec.cover)
+  elseif spec.glueTo then
+    GlueToEdge(marker, glueTargets[spec.glueTo], layout.axis, spec.mirrorOwn, spec.mirrorTarget)
+  end
+  if not spec.keepValue then
+    marker:SetValue(spec.value)
+  end
+  if spec.length then
+    if layout.axis == "HORIZONTAL" then
+      marker:SetWidth(spec.length)
+    else
+      marker:SetHeight(spec.length)
+    end
+  end
+end
+
+local function ApplyOverlayLayout(bar, overlay, layout)
+  overlay:Show()
+  -- An atlas brings its own coordinates, so the coordinates go first.
+  local painted = overlay.paintedTexture
+  painted:SetTexCoord(unpack(layout.texCoords))
+  Private.SetTextureOrAtlas(painted, layout.texture, "REPEAT", "REPEAT")
+  painted:SetVertexColor(unpack(layout.color))
+  painted:SetDrawLayer("ARTWORK", layout.sublevel)
+  painted:Show()
+
+  Painter.ApplyLinearDirection(overlay, layout.axis, layout.reverseFill, false)
+  if layout.timer then
+    Painter.SetTimer(overlay, layout.timer, layout.timerDirection, nil)
+  else
+    Painter.SetSecretProgress(overlay, 1, 1)
+  end
+
+  local markers, specs = overlay.markers, layout.markers
+  local glueTargets = { mask = bar.fgMask }
+  if specs.offset then
+    markers[3] = markers[3] or Painter.CreateDriverBar(overlay)
+    glueTargets.offsetFill = markers[3]:GetStatusBarTexture()
+  end
+  local function SetUpMarker(marker, spec)
+    Painter.ApplyLinearDirection(marker, layout.axis, layout.reverseFill, false)
+    PlaceMarker(marker, spec, layout, glueTargets)
+  end
+  SetUpMarker(markers[1], specs[1])
+  SetUpMarker(markers[2], specs[2])
+  if specs.offset then
+    SetUpMarker(markers[3], specs.offset)
+    markers[3]:Show()
+  elseif markers[3] then
+    markers[3]:Hide()
+  end
+
+  overlay:ClearAllPoints()
+  for _, corner in ipairs(overlaySpan[layout.axis][layout.reverseFill]) do
+    overlay:SetPoint(corner[1], markers[corner[2]]:GetStatusBarTexture(), corner[3])
+  end
+end
+
+function barFuncs:UpdateNativeAdditionalBars()
+  for index, settings in ipairs(self.additionalBars) do
+    local overlay = self.secretExtraTextures[index]
+    if not overlay then
+      overlay = CreateOverlay(self)
+      self.secretExtraTextures[index] = overlay
+    end
+    ApplyOverlayLayout(self, overlay, OverlayLayout(self, index, settings))
+  end
+  for index = #self.additionalBars + 1, #self.secretExtraTextures do
+    self.secretExtraTextures[index]:Hide()
+  end
+end
+
+local function InitBar(bar)
+  bar.secretExtraTextures = {}
+  hooksecurefunc(bar, "SetFrameLevel", function()
+    for _, overlay in ipairs(bar.secretExtraTextures) do
+      overlay:SetFrameLevel(bar:GetFrameLevel())
+    end
+  end)
+end
+
 Private.AuraBarNative = {
-  canDrawDurationObject = canDrawDurationObject,
+  canDrawDurationObject = Painter.CanDrawDurationObject,
   barFuncs = barFuncs,
-  InitBar = function(bar)
-    bar.secretExtraTextures = {}
-    hooksecurefunc(bar, "SetFrameLevel", function(self)
-      for _, overlay in ipairs(self.secretExtraTextures) do
-        overlay:SetFrameLevel(self:GetFrameLevel())
-      end
-    end)
-  end,
+  InitBar = InitBar,
 }

@@ -540,6 +540,8 @@ L["%s: uses the combat log, which addons cannot read on WoW Forever. Use a custo
 L["%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."] = "%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."
 L["%s: %s may not work in combat (secret values)."] = "%s: %s may not work in combat (secret values)."
 L["%s calls %s, which does not exist on WoW Forever."] = "%s calls %s, which does not exist on WoW Forever."
+L["%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."] = "%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."
+L["Looping Animation"] = "Looping Animation"
 L["Error not receiving display information from %s"] = "Error not receiving display information from %s"
 L["Essence"] = "Essence"
 L["Essence #1"] = "Essence #1"

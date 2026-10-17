@@ -1,3 +1,4 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local Private = select(2, ...)
 
@@ -137,9 +138,8 @@ local function releaseNative(container)
 end
 
 local function createNativeContainer(owner, finishButton)
-  local container = { owner = owner }
   local frame = CreateFrame("AuraContainer", nil, owner, "CustomAuraContainerTemplate")
-  container.frame = frame
+  local container = { owner = owner, frame = frame }
   frame:SetEnabled(false)
   frame:SetAllPoints(owner)
   frame:SetFrameLevel(owner:GetFrameLevel())
@@ -246,21 +246,17 @@ function Display.Modify(region, data)
   releaseNative(region.cdmAuraTimer)
   region.cdmProgressData = data
   region.cdmNativeProgress = nil
-
-  local restricted = isRestricted()
   local builder = selectBuilder(region.regionType or (data and data.regionType), data)
-
-  if not region.cdmAuraTimer and not restricted and Display.IsConfigured(data) and builder and containerAvailable() then
-    region.cdmAuraTimer = builder(region)
+  if builder and not region.cdmAuraTimer and Display.IsConfigured(data) then
+    if isRestricted() then
+      pendingOwners[region] = true
+    elseif containerAvailable() then
+      region.cdmAuraTimer = builder(region)
+    end
   end
-
   local container = region.cdmAuraTimer
-  if container and container.statusBar and not restricted then
+  if container and container.statusBar and not isRestricted() then
     region.bar:ShowNativeBar(container.statusBar)
-  end
-
-  if not container and restricted and builder and Display.IsConfigured(data) then
-    pendingOwners[region] = true
   end
 end
 
@@ -450,25 +446,23 @@ function Display.Style(region, initializing)
   Display.SyncFrameLevels(region)
   local cooldown = container.cooldown
   if not cooldown or not isStylable(cooldown, initializing) then return end
+  local regionCooldown = region.cooldown
   cooldown:SetDrawSwipe(region.cooldownSwipe ~= false)
   cooldown:SetDrawEdge(region.cooldownEdge == true)
-  local regionInverse = region.inverseDirection and true or false
-  local cooldownInverse = (region.cooldown and region.cooldown.inverse) and true or false
-  cooldown:SetReverse(regionInverse == cooldownInverse)
   cooldown:SetHideCountdownNumbers(region.cdmConfiguredHideNumbers == true)
+  cooldown:SetReverse((not region.inverseDirection) == (not (regionCooldown and regionCooldown.inverse)))
 end
 
 function Display.Update(region)
   region.cdmNativeProgress = nil
-  local unit, filter, spellIDs = Display.ResolveNativeSource(resolveState(region))
   local data = region.cdmProgressData
+  local unit, filter, spellIDs = Display.ResolveNativeSource(resolveState(region))
   local builder = selectBuilder(region.regionType or (data and data.regionType), data)
+  local container = region.cdmAuraTimer
   if not unit or not builder then
-    releaseNative(region.cdmAuraTimer)
+    releaseNative(container)
     return
   end
-
-  local container = region.cdmAuraTimer
   if not container then
     if isRestricted() then
       pendingOwners[region] = true
@@ -478,7 +472,6 @@ function Display.Update(region)
     container = builder(region)
     region.cdmAuraTimer = container
   end
-
   if container.cooldown then
     region.cdmNativeProgress = true
     if region.cooldown then
@@ -490,7 +483,6 @@ function Display.Update(region)
     region.bar:ShowNativeBar(container.statusBar)
     region.cdmNativeProgress = true
   end
-
   attachNative(container, unit, filter, spellIDs)
 end
 

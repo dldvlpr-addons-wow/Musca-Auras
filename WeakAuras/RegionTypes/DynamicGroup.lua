@@ -9,21 +9,47 @@ local WeakAuras = WeakAuras
 local L = WeakAuras.L
 local SharedMedia = LibStub("LibSharedMedia-3.0")
 
-local pendingProtectedGroups = setmetatable({}, {__mode = "k"})
+local function NewPendingSet()
+  return setmetatable({}, { __mode = "k" })
+end
+local pendingReloads = NewPendingSet()
+
+local function IsProtectedFrame(frame)
+  if not (frame and frame.IsProtected) then
+    return false
+  end
+  return frame:IsProtected()
+end
+
 local function DeferProtectedLayout(region, frame)
-  if InCombatLockdown() and ((region.IsProtected and region:IsProtected())
-    or (frame and frame.IsProtected and frame:IsProtected())) then
-    pendingProtectedGroups[region] = true
-    return true
+  local protected = IsProtectedFrame(region) or IsProtectedFrame(frame)
+  if not protected or not InCombatLockdown() then
+    return nil
+  end
+  pendingReloads[region] = true
+  return true
+end
+
+local function FlushPendingReloads()
+  local regions = pendingReloads
+  pendingReloads = NewPendingSet()
+  for region in pairs(regions) do
+    region:ReloadControlledChildren()
   end
 end
-local protectedLayoutEvents = CreateFrame("Frame")
-protectedLayoutEvents:RegisterEvent("PLAYER_REGEN_ENABLED")
-protectedLayoutEvents:SetScript("OnEvent", function()
-  if InCombatLockdown() then return end
-  for region in pairs(pendingProtectedGroups) do
-    pendingProtectedGroups[region] = nil
-    region:ReloadControlledChildren()
+
+local function ReadableSize(value)
+  if type(value) ~= "number" or Private.IsSecret(value) then
+    return 1
+  end
+  return value
+end
+
+local combatEndFrame = CreateFrame("Frame")
+combatEndFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+combatEndFrame:SetScript("OnEvent", function()
+  if not InCombatLockdown() then
+    FlushPendingReloads()
   end
 end)
 
@@ -1142,12 +1168,6 @@ local function modify(parent, region, data)
   local function createRegionData(childData, childRegion, childID, cloneID, dataIndex)
     cloneID = cloneID or ""
     local controlPoint = region.controlPoints:Acquire()
-    local dimensions = childData.regionType == "text" and childRegion or childData
-    local width, height = dimensions.width, dimensions.height
-    if type(width) ~= "number" or Private.IsSecret(width) then width = 1 end
-    if type(height) ~= "number" or Private.IsSecret(height) then height = 1 end
-    controlPoint:SetWidth(width)
-    controlPoint:SetHeight(height)
     local regionData = {
       data = childData,
       region = childRegion,
@@ -1163,6 +1183,8 @@ local function modify(parent, region, data)
     else
       regionData.dimensions = childData
     end
+    controlPoint:SetWidth(ReadableSize(regionData.dimensions.width))
+    controlPoint:SetHeight(ReadableSize(regionData.dimensions.height))
 
     controlPoint.regionData = regionData
     childRegion:SetParent(controlPoint)

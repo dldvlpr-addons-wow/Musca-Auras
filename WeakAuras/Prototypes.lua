@@ -29,16 +29,18 @@ end
 local WeakAuras = WeakAuras
 local L = WeakAuras.L
 
-local SpellRange = LibStub("SpellRange-1.0")
 function WeakAuras.IsSpellInRange(spellId, unit)
-  if C_Spell.IsSpellInRange then
-    local ok, result = pcall(C_Spell.IsSpellInRange, spellId, unit)
-    if not ok or Private.IsSecret(result) or result == nil then
-      return nil
-    end
-    return result and 1 or 0
+  local query = C_Spell and C_Spell.IsSpellInRange
+  if not query then
+    return nil
   end
-  return SpellRange.IsSpellInRange(spellId, unit)
+  local ok, inRange = pcall(query, spellId, unit)
+  if ok and not Private.IsSecret(inRange) and inRange ~= nil then
+    if inRange then
+      return 1
+    end
+    return 0
+  end
 end
 
 function Private.ExecEnv.SecretSpellInRange(state)
@@ -53,30 +55,31 @@ end
 
 local LibRangeCheck = LibStub("LibRangeCheck-3.0")
 
-function WeakAuras.GetRange(unit, checkVisible)
-  local ok, min, max = pcall(LibRangeCheck.GetRange, LibRangeCheck, unit, checkVisible)
-  if not ok or Private.IsSecret(min) or Private.IsSecret(max) then
-    return nil
+local function ReadRange(unit, checkVisible)
+  local ok, minRange, maxRange = pcall(LibRangeCheck.GetRange, LibRangeCheck, unit, checkVisible)
+  if ok and not Private.IsSecret(minRange, maxRange) then
+    return true, minRange, maxRange
   end
-  return min, max
+  return false
+end
+
+function WeakAuras.GetRange(unit, checkVisible)
+  local readable, minRange, maxRange = ReadRange(unit, checkVisible)
+  if readable then
+    return minRange, maxRange
+  end
 end
 
 function WeakAuras.CheckRange(unit, range, operator)
-  local ok, min, max = pcall(LibRangeCheck.GetRange, LibRangeCheck, unit, true)
-  if not ok or Private.IsSecret(min) or Private.IsSecret(max) then
-    return
+  local readable, minRange, maxRange = ReadRange(unit, true)
+  range = tonumber(range)
+  if not (readable and range) then
+    return nil
   end
-  if (type(range) ~= "number") then
-    range = tonumber(range);
+  if operator == "<=" then
+    return (maxRange or 999) <= range
   end
-  if (not range) then
-    return
-  end
-  if (operator == "<=") then
-    return (max or 999) <= range;
-  else
-    return (min or 0) >= range;
-  end
+  return (minRange or 0) >= range
 end
 
 local RangeCacheStrings = {friend = "", harm = "", misc = ""}
@@ -768,128 +771,164 @@ end
 
 Private.talentInfo = Private.talentInfo or {}
 
-function Private.GetTalentConfigID()
+Private.GetTalentConfigID = function()
   if WeakAuras.IsRetail() then
     return C_ClassTalents.GetActiveConfigID()
   end
-  local group = C_SpecializationInfo.GetActiveSpecGroup()
-  return C_SpecializationInfo.GetCombatConfigIDForSpecGroup(group)
+  return C_SpecializationInfo.GetCombatConfigIDForSpecGroup(C_SpecializationInfo.GetActiveSpecGroup())
+end
+
+local function VisitTraitNodes(configId, visit)
+  local configInfo = configId and C_Traits.GetConfigInfo(configId)
+  if not configInfo then
+    return false
+  end
+  for _, treeId in ipairs(configInfo.treeIDs or {}) do
+    for _, nodeId in ipairs(C_Traits.GetTreeNodes(treeId) or {}) do
+      local node = C_Traits.GetNodeInfo(configId, nodeId)
+      if node and node.ID ~= 0 then
+        visit(node)
+      end
+    end
+  end
+  return true
+end
+
+local function CompareTalentLayout(left, right)
+  local a, b = left[3], right[3]
+  local sameRow, sameColumn = a[2] == b[2], a[1] == b[1]
+  if sameRow and sameColumn then
+    return left[1] < right[1]
+  end
+  if sameRow then
+    return a[1] < b[1]
+  end
+  return a[2] < b[2]
+end
+
+local function ListEdgeTargets(configId, node)
+  local linkedEntries = {}
+  for _, edge in ipairs(node.visibleEdges or {}) do
+    local targetNode = C_Traits.GetNodeInfo(configId, edge.targetNode)
+    local firstEntry = targetNode and targetNode.entryIDs and targetNode.entryIDs[1]
+    if firstEntry then
+      linkedEntries[#linkedEntries + 1] = firstEntry
+    end
+  end
+  return linkedEntries
 end
 
 if Private.traitTalents and not Private.GetTalentData then
   function Private.GetTalentData(specId)
-    local spec = Private.ExecEnv.GetSpecialization()
-    local playerSpecId = spec and Private.ExecEnv.GetSpecializationInfo(spec)
-    if specId ~= playerSpecId then
-      return {}, {}, {}
+    local list, entriesPerNode = {}, {}
+    local playerSpec = Private.ExecEnv.GetSpecialization()
+    if not playerSpec or specId ~= Private.ExecEnv.GetSpecializationInfo(playerSpec) then
+      return list, {}, entriesPerNode
     end
-    local configId = Private.GetTalentConfigID()
-    local config = configId and C_Traits.GetConfigInfo(configId)
-    local talents, byNode = {}, {}
-    if not config then return talents, {}, byNode end
 
-    for _, treeId in ipairs(config.treeIDs) do
-      for _, nodeId in ipairs(C_Traits.GetTreeNodes(treeId)) do
-        local node = C_Traits.GetNodeInfo(configId, nodeId)
-        if node and node.ID ~= 0 then
-          for index, entryId in ipairs(node.entryIDs) do
-            local entry = C_Traits.GetEntryInfo(configId, entryId)
-            local definition = entry and entry.definitionID and C_Traits.GetDefinitionInfo(entry.definitionID)
-            if definition and definition.spellID then
-              local targets = {}
-              for _, edge in ipairs(node.visibleEdges) do
-                local target = C_Traits.GetNodeInfo(configId, edge.targetNode)
-                if target and target.entryIDs[1] then
-                  tinsert(targets, target.entryIDs[1])
-                end
-              end
-              local talent = {entryId, definition.spellID, {node.posX, node.posY, index, #node.entryIDs}, targets, node.maxRanks}
-              tinsert(talents, talent)
-              byNode[node.ID] = byNode[node.ID] or {}
-              byNode[node.ID][index] = talent
-            end
+    local activeConfig = Private.GetTalentConfigID()
+    VisitTraitNodes(activeConfig, function(node)
+      local configId = activeConfig
+      local entryIds = node.entryIDs or {}
+      local linkedEntries
+      for index, entryId in ipairs(entryIds) do
+        local entryInfo = C_Traits.GetEntryInfo(configId, entryId)
+        local definitionId = entryInfo and entryInfo.definitionID
+        local traitDefinition = definitionId and C_Traits.GetDefinitionInfo(definitionId)
+        local spellId = traitDefinition and traitDefinition.spellID
+        if spellId then
+          linkedEntries = linkedEntries or ListEdgeTargets(configId, node)
+          local record = {
+            entryId,
+            spellId,
+            {node.posX, node.posY, index, #entryIds},
+            linkedEntries,
+            node.maxRanks
+          }
+          list[#list + 1] = record
+          local siblings = entriesPerNode[node.ID]
+          if not siblings then
+            siblings = {}
+            entriesPerNode[node.ID] = siblings
           end
+          siblings[index] = record
         end
       end
-    end
-    table.sort(talents, function(a, b)
-      if a[3][2] ~= b[3][2] then return a[3][2] < b[3][2] end
-      if a[3][1] ~= b[3][1] then return a[3][1] < b[3][1] end
-      return a[1] < b[1]
     end)
-    return talents, {}, byNode
+
+    table.sort(list, CompareTalentLayout)
+    return list, {}, entriesPerNode
   end
 end
+
 if Private.traitTalents then
-  local talentCheckFrame = CreateFrame("Frame")
-  Private.frames["WeakAuras talentCheckFrame"] = talentCheckFrame
-  talentCheckFrame:RegisterEvent("TRAIT_CONFIG_CREATED")
-  talentCheckFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
-  talentCheckFrame:RegisterEvent("PLAYER_TALENT_UPDATE")
-  talentCheckFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-  talentCheckFrame:RegisterEvent("PLAYER_LOGIN")
-  talentCheckFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+  local talentWatcher = CreateFrame("Frame")
+  Private.frames["WeakAuras talentCheckFrame"] = talentWatcher
+  for _, eventName in ipairs({
+    "PLAYER_LOGIN",
+    "PLAYER_SPECIALIZATION_CHANGED",
+    "PLAYER_TALENT_UPDATE",
+    "ACTIVE_TALENT_GROUP_CHANGED",
+    "TRAIT_CONFIG_UPDATED",
+    "TRAIT_CONFIG_CREATED"
+  }) do
+    talentWatcher:RegisterEvent(eventName)
+  end
 
-  --- @type table<number, {rank: number, spellId: number}>
   local selectedTalentsById = {}
+  local reloadAfterDelay = {
+    WA_DELAYED_PLAYER_ENTERING_WORLD = true,
+    PLAYER_TALENT_UPDATE = true
+  }
 
-  Private.CheckTalentsForLoad = function(event)
+  function Private.CheckTalentsForLoad(event)
     Private.StartProfileSystem("talent")
-    selectedTalentsById = {}
-    local configId = Private.GetTalentConfigID()
-    if configId then
-      local configInfo = C_Traits.GetConfigInfo(configId)
-      if configInfo then
-        for _, treeId in ipairs(configInfo.treeIDs) do
-          local nodes = C_Traits.GetTreeNodes(treeId)
-          for _, nodeId in ipairs(nodes) do
-            local node = C_Traits.GetNodeInfo(configId, nodeId)
-            if node and node.ID ~= 0 then
-              for _, talentId in ipairs(node.entryIDs) do
-                local entryInfo = C_Traits.GetEntryInfo(configId, talentId)
-                if entryInfo and entryInfo.definitionID then
-                  local definitionInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
-                  local rank = node.activeRank
-                  if node.activeEntry then
-                    rank = node.activeEntry.entryID == talentId and node.activeEntry.rank or 0
-                  end
-                  if node.subTreeID then
-                    local subTreeInfo = C_Traits.GetSubTreeInfo(configId, node.subTreeID)
-                    if not subTreeInfo.isActive then
-                      rank = 0
-                    end
-                  end
-                  selectedTalentsById[talentId] = {
-                    rank = rank,
-                    spellId = definitionInfo and definitionInfo.spellID
-                  }
-                end
-              end
-            end
+    local chosen = {}
+    local configId
+    configId = Private.GetTalentConfigID()
+
+    VisitTraitNodes(configId, function(node)
+      local choice = node.activeEntry
+      local subTreeInactive = false
+      if node.subTreeID then
+        local subTreeInfo = C_Traits.GetSubTreeInfo(configId, node.subTreeID)
+        subTreeInactive = not (subTreeInfo and subTreeInfo.isActive)
+      end
+      for _, entryId in ipairs(node.entryIDs or {}) do
+        local entryInfo = C_Traits.GetEntryInfo(configId, entryId)
+        local definitionId = entryInfo and entryInfo.definitionID
+        if definitionId then
+          local traitDefinition = C_Traits.GetDefinitionInfo(definitionId)
+          local rank = node.activeRank
+          if choice then
+            rank = entryId == choice.entryID and choice.rank or 0
           end
+          if subTreeInactive then
+            rank = 0
+          end
+          chosen[entryId] = {rank = rank, spellId = traitDefinition and traitDefinition.spellID}
         end
       end
-    end
+    end)
+
+    selectedTalentsById = chosen
     Private.ScanForLoads(nil, "WA_TALENT_UPDATE")
     Private.ScanEvents("WA_TALENT_UPDATE")
 
-    if (event == "WA_DELAYED_PLAYER_ENTERING_WORLD" or event == "PLAYER_TALENT_UPDATE") then
+    if reloadAfterDelay[event] then
       C_Timer.After(1, function()
         local spec = Private.ExecEnv.GetSpecialization()
-        if type(spec) == "number" and spec > 0 then
-          local specId = Private.ExecEnv.GetSpecializationInfo(spec)
-          if specId then
-            Private.talentInfo[specId] = nil
-            Private.GetTalentData(specId)
-          end
+        local specId = spec and Private.ExecEnv.GetSpecializationInfo(spec)
+        if type(specId) == "number" and specId > 0 then
+          Private.talentInfo[specId] = nil
+          Private.GetTalentData(specId)
         end
       end)
     end
-
     Private.StopProfileSystem("talent")
   end
 
-  talentCheckFrame:SetScript("OnEvent", Private.CheckTalentsForLoad)
+  talentWatcher:SetScript("OnEvent", Private.CheckTalentsForLoad)
 
   ---@param talentId integer
   ---@return string? spellName
@@ -1320,19 +1359,20 @@ end
 
 ---@return number? result
 function WeakAuras.GetEffectiveAttackPower(ranged)
-  local base, pos, neg
+  local readPower
   if ranged then
-    if not UnitRangedAttackPower then
-      return nil
-    end
-    base, pos, neg = UnitRangedAttackPower("player")
+    readPower = UnitRangedAttackPower
   else
-    base, pos, neg = UnitAttackPower("player")
+    readPower = UnitAttackPower
   end
-  if Private.IsSecret(base, pos, neg) then
+  if not readPower then
     return nil
   end
-  return base + pos + neg
+  local base, bonus, penalty = readPower("player")
+  if Private.IsSecret(base, bonus, penalty) then
+    return nil
+  end
+  return base + bonus + penalty
 end
 
 Private.ExecEnv.GetRangedHastePercent = function()
@@ -1345,6 +1385,18 @@ Private.ExecEnv.GetRangedHastePercent = function()
   end
   return haste + (type(quiverHaste) == "number" and quiverHaste or 0)
 end
+
+local function LargestNonNegative(...)
+  local largest = 0
+  for position = 1, select("#", ...) do
+    local candidate = select(position, ...)
+    if type(candidate) == "number" and candidate > largest then
+      largest = candidate
+    end
+  end
+  return largest
+end
+Private.ExecEnv.BestExpertise = LargestNonNegative
 
 Private.ExecEnv.AreUnitStatsSecret = function()
   return Private.IsRestricted("unitStats") or Private.IsSecret(UnitStat("player", 1))
@@ -2141,15 +2193,15 @@ Private.load_prototype = {
       optional = true,
     },
     {
-      name = "enabledBossModID",
-      display = L["Enabled BossMod ID(BW Only)"],
-      type = "string",
-      multiline = true,
-      desc = Private.get_encounters_list,
-      preamble = "local bossModChecker = Private.ExecEnv.ParseBossModCheck(%q)",
-      test = "bossModChecker:Check()",
-      events = {"WA_BOSSMOD_ENABLED_STATE_CHANGED"},
       optional = true,
+      type = "string",
+      name = "enabledBossModID",
+      events = {"WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED"},
+      display = L["BigWigs Module Loaded for Encounter ID"],
+      desc = Private.get_encounters_list,
+      multiline = true,
+      test = "WeakAuras.IsBossModEnabled(wantedEncounters)",
+      preamble = "local wantedEncounters = Private.ExecEnv.EncounterIdSet(%q)",
     },
     {
       name = "size",
@@ -2469,6 +2521,43 @@ local GetNameAndIconForSpellName = function(trigger)
   return name, icon
 end
 
+local function ClassicStatArg(name, display, reading, formatter)
+  return {
+    name = name,
+    display = display,
+    type = "number",
+    init = "not statsAreSecret and (" .. reading .. ") or nil",
+    store = true,
+    enable = WeakAuras.IsClassic(),
+    hidden = not WeakAuras.IsClassic(),
+    conditionType = "number",
+    multiEntry = {
+      operator = "and",
+      limit = 2
+    },
+    formatter = formatter,
+  }
+end
+
+local function RangeCheckedSpell(trigger)
+  local typed = trigger.spellName
+  if trigger.use_exact_spellName then
+    return tonumber(typed) or 0
+  end
+  if type(typed) == "number" then
+    return Private.ExecEnv.GetSpellName(typed) or typed
+  end
+  return typed
+end
+
+local function SpellShownInOptions(trigger)
+  local spellId = tonumber(trigger.spellName)
+  if spellId or trigger.use_exact_spellName then
+    return spellId
+  end
+  return RangeCheckedSpell(trigger)
+end
+
 Private.event_prototypes = {
   ["Blizzard Cooldown Manager"] = Private.CooldownViewerPrototype,
   ["Blizzard CDM Buff"] = Private.CooldownViewerBuffPrototype,
@@ -2490,8 +2579,9 @@ Private.event_prototypes = {
         AddUnitEventForEvents(result, unit, "UNIT_IN_RANGE_UPDATE")
       end
       if trigger.use_ignoreInvisible then
-        AddUnitEventForEvents(result, unit, "PARTY_MEMBER_ENABLE")
-        AddUnitEventForEvents(result, unit, "PARTY_MEMBER_DISABLE")
+        for _, event in ipairs({ "PARTY_MEMBER_ENABLE", "PARTY_MEMBER_DISABLE" }) do
+          AddUnitEventForEvents(result, unit, event)
+        end
       end
       return result;
     end,
@@ -3429,6 +3519,7 @@ Private.event_prototypes = {
         init = "UnitHealth(unit)",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "health", scale = "value" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -3464,6 +3555,7 @@ Private.event_prototypes = {
         init = "Private.ExecEnv.PercentOrSecret(value, total)",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "health" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -3506,6 +3598,7 @@ Private.event_prototypes = {
         init = "Private.ExecEnv.DeficitOrSecret(value, total)",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "health", scale = "deficit" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -4158,6 +4251,7 @@ Private.event_prototypes = {
         init = "power",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "power", scale = "value" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -4199,6 +4293,7 @@ Private.event_prototypes = {
         init = "Private.ExecEnv.PercentOrSecret(value, total)",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "power" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -4253,6 +4348,7 @@ Private.event_prototypes = {
         init = "Private.ExecEnv.DeficitOrSecret(value, total)",
         store = true,
         conditionType = "number",
+        conditionSecretPercent = { kind = "power", scale = "deficit" },
         multiEntry = {
           operator = "and",
           limit = 2
@@ -11176,79 +11272,11 @@ Private.event_prototypes = {
         enable = WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists(),
         hidden = not WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists(),
       },
-      {
-        name = "bonushealing",
-        display = L["Bonus Healing"],
-        type = "number",
-        init = "not statsAreSecret and GetSpellBonusHealing and (GetSpellBonusHealing()) or nil",
-        store = true,
-        conditionType = "number",
-        enable = WeakAuras.IsClassic(),
-        hidden = not WeakAuras.IsClassic(),
-        multiEntry = {
-          operator = "and",
-          limit = 2
-        },
-      },
-      {
-        name = "rangedattackpower",
-        display = L["Ranged Attack Power"],
-        type = "number",
-        init = "not statsAreSecret and (WeakAuras.GetEffectiveAttackPower(true)) or nil",
-        store = true,
-        conditionType = "number",
-        enable = WeakAuras.IsClassic(),
-        hidden = not WeakAuras.IsClassic(),
-        multiEntry = {
-          operator = "and",
-          limit = 2
-        },
-      },
-      {
-        name = "spellhastepercent",
-        display = L["Spell Haste (%)"],
-        type = "number",
-        init = "not statsAreSecret and UnitSpellHaste and (UnitSpellHaste('player')) or nil",
-        store = true,
-        conditionType = "number",
-        enable = WeakAuras.IsClassic(),
-        hidden = not WeakAuras.IsClassic(),
-        multiEntry = {
-          operator = "and",
-          limit = 2
-        },
-        formatter = "Number",
-      },
-      {
-        name = "rangedhastepercent",
-        display = L["Ranged Haste (%)"],
-        type = "number",
-        init = "not statsAreSecret and (Private.ExecEnv.GetRangedHastePercent()) or nil",
-        store = true,
-        conditionType = "number",
-        enable = WeakAuras.IsClassic(),
-        hidden = not WeakAuras.IsClassic(),
-        multiEntry = {
-          operator = "and",
-          limit = 2
-        },
-        formatter = "Number",
-      },
-      {
-        name = "expertisepercent",
-        display = L["Expertise (%)"],
-        type = "number",
-        init = "not statsAreSecret and (GetExpertise and math.max(0, GetExpertise())) or nil",
-        store = true,
-        conditionType = "number",
-        enable = WeakAuras.IsClassic(),
-        hidden = not WeakAuras.IsClassic(),
-        multiEntry = {
-          operator = "and",
-          limit = 2
-        },
-        formatter = "Number",
-      },
+      ClassicStatArg("bonushealing", L["Bonus Healing"], "GetSpellBonusHealing and GetSpellBonusHealing()"),
+      ClassicStatArg("rangedattackpower", L["Ranged Attack Power"], "WeakAuras.GetEffectiveAttackPower(true)"),
+      ClassicStatArg("spellhastepercent", L["Spell Haste (%)"], "UnitSpellHaste and UnitSpellHaste('player')", "Number"),
+      ClassicStatArg("rangedhastepercent", L["Ranged Haste (%)"], "Private.ExecEnv.GetRangedHastePercent()", "Number"),
+      ClassicStatArg("expertisepercent", L["Expertise (%)"], "GetExpertise and Private.ExecEnv.BestExpertise(GetExpertise())", "Number"),
       {
         type = "header",
         name = "tertiaryStatsHeader",
@@ -12120,81 +12148,75 @@ Private.event_prototypes = {
 
   ["Spell in Range"] = {
     type = "spell",
+    name = L["Spell in Range"],
     events = {
       ["events"] = {"FRAME_UPDATE"}
     },
-    name = L["Spell in Range"],
     statesParameter = "one",
     init = function(trigger)
       trigger.unit = trigger.unit or "target"
-      local spell
-      if trigger.use_exact_spellName then
-        spell = tostring(tonumber(trigger.spellName) or 0)
-      else
-        local name = type(trigger.spellName) == "number" and Private.ExecEnv.GetSpellName(trigger.spellName) or trigger.spellName or ""
-        spell = ("%q"):format(name)
-      end
-      return ([[
+      local spell = RangeCheckedSpell(trigger)
+      local spellLiteral = type(spell) == "number" and tostring(spell) or ("%q"):format(spell or "")
+      return ([=[
         local unit = %q
         local spell = %s
-        local name, _, icon = Private.ExecEnv.GetSpellInfo(spell)
-        local inRange = UnitExists(unit) and WeakAuras.IsSpellInRange(spell, unit) or nil
-        local active = inRange == %d
-      ]]):format(trigger.unit, spell, trigger.use_inverse and 0 or 1)
-    end,
-    GetNameAndIcon = function(trigger)
-      local name, _, icon = Private.ExecEnv.GetSpellInfo(trigger.spellName)
-      return name, icon
+        local active = UnitExists(unit) and WeakAuras.IsSpellInRange(spell, unit) == %d
+      ]=]):format(trigger.unit, spellLiteral, trigger.use_inverse and 0 or 1)
     end,
     args = {
       {
         name = "spellName",
-        required = true,
-        display = L["Spell"],
         type = "spell",
-        test = "true",
+        display = L["Spell"],
         showExactOption = true,
+        required = true,
+        test = "true",
       },
       {
         name = "unit",
-        required = true,
-        display = L["Unit"],
         type = "unit",
-        init = "unit",
+        display = L["Unit"],
+        required = true,
         values = "unit_types_range_check",
+        store = true,
+        init = "unit",
         test = "true",
-        store = true
       },
       {
         name = "inverse",
+        type = "toggle",
         display = L["Inverse"],
         desc = L["Show while the unit is out of the spell's range instead."],
-        type = "toggle",
         test = "true",
       },
       {
         name = "name",
         display = L["Name"],
         hidden = true,
-        init = "name",
-        test = "true",
         store = true,
-        conditionType = "string"
+        conditionType = "string",
+        init = "(Private.ExecEnv.GetSpellInfo(spell))",
+        test = "true",
       },
       {
         name = "icon",
         hidden = true,
-        init = "icon",
+        store = true,
+        init = "Private.ExecEnv.GetSpellIcon(spell)",
         test = "true",
-        store = true
       },
       {
         hidden = true,
-        test = "active"
-      }
+        test = "active",
+      },
     },
     iconFunc = function(trigger)
-      return Private.ExecEnv.GetSpellIcon(trigger.spellName or 0);
+      local spell = SpellShownInOptions(trigger)
+      return spell and Private.ExecEnv.GetSpellIcon(spell)
+    end,
+    GetNameAndIcon = function(trigger)
+      local name, _, icon = Private.ExecEnv.GetSpellInfo(SpellShownInOptions(trigger))
+      return name, icon
     end,
     automaticrequired = true,
     progressType = "none"

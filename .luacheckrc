@@ -19,7 +19,7 @@ globals = {
   "EditModeManagerFrame", "EditModePresetLayoutManager", "EventRegistry", "FojjiCore", "FojjiCoreDB", "GetTotemInfo",
   "LATER", "LOCALIZED_CLASS_NAMES_MALE", "PixelUtil", "RELOADUI", "ReloadUI", "UnitIsFriend", "UnitPowerType",
   "UnitStat",
-  "AbbreviateLargeNumbers", "AbbreviateNumbers", "abs", "ACCEPT", "AceGUIWeakAurasInputWithIndentationInsertLink",
+  "AbbreviateLargeNumbers", "AbbreviateNumbers", "abs", "ACCEPT", "CANCEL", "AceGUIWeakAurasInputWithIndentationInsertLink",
   "AceGUIWeakAurasMultiLineEditBoxInsertLink", "AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink",
   "AceGUIWidgetLSMlists", "AddonCompartmentFrame", "Ambiguate", "AMMOSLOT", "APIDocumentation",
   "APIDocumentation_LoadUI", "atan2", "AuraUtil", "BackdropTemplateMixin", "BACKSLOT", "BigWigs", "BigWigsLoader",

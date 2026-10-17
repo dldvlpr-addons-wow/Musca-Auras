@@ -471,7 +471,8 @@ end
 
 Without this check, the code stops in combat. Musca Auras catches the error: the aura keeps its last state.
 
-**2. Use the modern functions.** `GetSpellInfo`, `GetSpellCooldown`, `UnitBuff`, `UnitDebuff` no longer exist.
+**2. Use the modern functions.** `GetSpellInfo`, `GetSpellCooldown`, `UnitBuff`, `UnitDebuff` no longer exist in
+the game. Musca Auras replaces them in custom code, but `UnitBuff` and `UnitDebuff` stop in combat on a secret aura.
 Use `C_Spell.GetSpellInfo`, `C_Spell.GetSpellCooldown`, `C_UnitAuras.GetAuraDataBySpellName`,
 `C_UnitAuras.GetAuraDataByAuraInstanceID`, `C_Item.GetItemCount`.
 

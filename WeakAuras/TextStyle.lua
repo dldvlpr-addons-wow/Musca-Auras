@@ -1,49 +1,44 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local sharedFonts = setmetatable({}, {__mode = "k"})
+-- The SLUG renderer draws its own outline: a drop shadow on top of it doubles the glyphs.
+local shadowlessFlags = { ["OUTLINE|SLUG"] = true, ["THICKOUTLINE|SLUG"] = true }
+
+local ownedFonts = setmetatable({}, { __mode = "k" })
 local createdFonts = 0
-local slugFlags = {
-  ["OUTLINE|SLUG"] = true,
-  ["THICKOUTLINE|SLUG"] = true,
-}
 
-local function ResolveFontObject(text, given)
-  if given then
-    return given
-  end
-  local cached = sharedFonts[text]
-  if not cached then
+local function OwnedFont(text)
+  local font = ownedFonts[text]
+  if not font then
     createdFonts = createdFonts + 1
-    cached = CreateFont("WeakAuras-NativeText-Font" .. createdFonts)
-    sharedFonts[text] = cached
+    font = CreateFont("WeakAuras-NativeText-Font" .. createdFonts)
+    ownedFonts[text] = font
   end
-  return cached
-end
-
-local function ConfigureFontObject(object, size, flags, shadowColor, shadowX, shadowY)
-  object:SetFont(STANDARD_TEXT_FONT, size, flags)
-  object:SetShadowColor(unpack(shadowColor))
-  if slugFlags[flags] then
-    shadowX, shadowY = 0, 0
-  end
-  object:SetShadowOffset(shadowX, shadowY)
+  return font
 end
 
 function Private.ApplyTextFont(text, fontObject, fontPath, size, flags, shadowColor, shadowX, shadowY)
-  local object = ResolveFontObject(text, fontObject)
-  ConfigureFontObject(object, size, flags, shadowColor, shadowX, shadowY)
-  text:SetFontObject(object)
-  text:SetFont(fontPath, size, flags)
+  flags = flags or ""
+  local font = fontObject or OwnedFont(text)
+  if shadowlessFlags[flags] then
+    shadowX, shadowY = 0, 0
+  end
+  font:SetFont(STANDARD_TEXT_FONT, size, flags)
+  font:SetShadowColor(unpack(shadowColor))
+  font:SetShadowOffset(shadowX, shadowY)
 
+  text:SetFontObject(font)
+  text:SetFont(fontPath, size, flags)
   if text:GetFont() then
     return
   end
   if fontPath then
-    object:SetFont(fontPath, size, flags)
-    text:SetFontObject(object)
+    font:SetFont(fontPath, size, flags)
+    text:SetFontObject(font)
+    if text:GetFont() then
+      return
+    end
   end
-  if not text:GetFont() then
-    text:SetFont(STANDARD_TEXT_FONT, size, flags)
-  end
+  text:SetFont(STANDARD_TEXT_FONT, size, flags)
 end

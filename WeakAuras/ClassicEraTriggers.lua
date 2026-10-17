@@ -1,374 +1,229 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local L = WeakAuras.L
-local tinsert = table.insert
+if not WeakAuras.IsClassicEra() then return end
 
-if WeakAuras.IsClassicEra() then
-  Private.ExecEnv.GetCarriedAmmoCount = function()
-    local total = 0
-    if not (C_Container and C_Container.GetContainerNumSlots and C_Container.GetContainerItemInfo) then
-      return total
-    end
-    for bag = 0, NUM_BAG_SLOTS or 4 do
-      for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
-        local info = C_Container.GetContainerItemInfo(bag, slot)
-        if info and info.itemID and select(6, C_Item.GetItemInfoInstant(info.itemID)) == 6 then
-          total = total + (info.stackCount or 0)
-        end
+local L = WeakAuras.L
+local ExecEnv = Private.ExecEnv
+
+local PROJECTILE_ITEM_CLASS = 6
+local GENERAL_BAG_FAMILY = 0
+
+local function LastBag()
+  return NUM_BAG_SLOTS or 4
+end
+
+function ExecEnv.GetCarriedAmmoCount()
+  if not (C_Container and C_Container.GetContainerNumSlots and C_Container.GetContainerItemInfo) then
+    return 0
+  end
+  local carried = 0
+  for bag = 0, LastBag() do
+    for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
+      local item = C_Container.GetContainerItemInfo(bag, slot)
+      if item and item.itemID and select(6, C_Item.GetItemInfoInstant(item.itemID)) == PROJECTILE_ITEM_CLASS then
+        carried = carried + (item.stackCount or 0)
       end
     end
-    return total
   end
+  return carried
+end
 
-  Private.event_prototypes["Ammo"] = {
-    type = "item",
+function ExecEnv.GetBagSpace(includeSpecialty)
+  if not (C_Container and C_Container.GetContainerNumFreeSlots and C_Container.GetContainerNumSlots) then
+    return 0, 0
+  end
+  local free, total = 0, 0
+  for bag = 0, LastBag() do
+    local bagFree, family = C_Container.GetContainerNumFreeSlots(bag)
+    if Private.IsSecret(bagFree, family) then
+      return nil, nil
+    end
+    if family == GENERAL_BAG_FAMILY or (includeSpecialty and family) then
+      free = free + (bagFree or 0)
+      total = total + (C_Container.GetContainerNumSlots(bag) or 0)
+    end
+  end
+  return free, total
+end
+
+function ExecEnv.GetEquipmentDurability(slot)
+  if not GetInventoryItemDurability then
+    return 100, 100, 0
+  end
+  local first, last = INVSLOT_FIRST_EQUIPPED or 1, INVSLOT_LAST_EQUIPPED or 19
+  if slot and slot >= first then
+    first, last = slot, slot
+  end
+  local lowest, current, maximum, broken = 100, 0, 0, 0
+  for inventorySlot = first, last do
+    local now, most = GetInventoryItemDurability(inventorySlot)
+    if Private.IsSecret(now, most) then
+      return nil, nil, nil
+    end
+    if now and most and most > 0 then
+      lowest = math.min(lowest, now / most * 100)
+      current, maximum = current + now, maximum + most
+      if now == 0 then
+        broken = broken + 1
+      end
+    end
+  end
+  local overall = maximum > 0 and math.floor(current / maximum * 100) or 100
+  return math.floor(lowest), overall, broken
+end
+
+function ExecEnv.GetActiveTracking(spellIDs)
+  if not (C_Minimap and C_Minimap.GetNumTrackingTypes and C_Minimap.GetTrackingInfo) then
+    return false
+  end
+  local anyTracking = spellIDs[1] == nil
+  for index = 1, C_Minimap.GetNumTrackingTypes() or 0 do
+    local info = C_Minimap.GetTrackingInfo(index)
+    if info and info.active and (anyTracking or tIndexOf(spellIDs, info.spellID)) then
+      return true, info.spellID, info.name, info.texture
+    end
+  end
+  return false
+end
+
+local function Stored(name, init, extra)
+  local arg = { name = name, init = init, hidden = true, store = true, test = "true" }
+  for key, value in pairs(extra or {}) do
+    arg[key] = value
+  end
+  return arg
+end
+
+local function Number(name, display)
+  return { name = name, display = display, type = "number", init = name, store = true, conditionType = "number" }
+end
+
+local function Quoted(text)
+  return string.format("%q", text)
+end
+
+local function SpellList(trigger)
+  local ids = {}
+  if trigger.use_trackingSpell then
+    local spells = trigger.trackingSpell
+    for _, value in ipairs(type(spells) == "table" and spells or { spells }) do
+      local id = tonumber(value)
+      if id then
+        table.insert(ids, id)
+      end
+    end
+  end
+  return ids
+end
+
+local BAG_ICON = "Interface\\Icons\\INV_Misc_Bag_08"
+local DURABILITY_ICON = "Interface\\Icons\\Trade_BlackSmithing"
+
+local prototypes = {
+  {
+    category = "item",
+    event = "Ammo",
     events = {
-      ["events"] = {
-        "BAG_UPDATE_DELAYED",
-        "PLAYER_EQUIPMENT_CHANGED",
-      },
-      ["unit_events"] = {
-        ["player"] = {"UNIT_INVENTORY_CHANGED"}
-      }
+      events = { "BAG_UPDATE_DELAYED", "PLAYER_EQUIPMENT_CHANGED" },
+      unit_events = { player = { "UNIT_INVENTORY_CHANGED" } },
     },
-    internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD", },
     force_events = "UNIT_INVENTORY_CHANGED",
-    name = L["Ammo"],
-    init = function(trigger)
+    hasItemID = true,
+    progressType = "static",
+    GetNameAndIcon = function()
+      return L["Ammo"], GetInventoryItemTexture("player", INVSLOT_AMMO)
+    end,
+    init = function()
       return [[
         local itemId = GetInventoryItemID("player", INVSLOT_AMMO)
         local count = itemId and GetInventoryItemCount("player", INVSLOT_AMMO) or 0
         local carried = Private.ExecEnv.GetCarriedAmmoCount()
       ]]
     end,
-    GetNameAndIcon = function(trigger)
-      return L["Ammo"], GetInventoryItemTexture("player", INVSLOT_AMMO)
-    end,
-    statesParameter = "one",
-    hasItemID = true,
     args = {
-      {
-        name = "count",
-        display = L["Count"],
-        type = "number",
-        init = "count",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "carried",
-        display = L["Total Carried"],
-        type = "number",
-        init = "carried",
-        store = true,
-        conditionType = "number",
-      },
+      Number("count", L["Count"]),
+      Number("carried", L["Total Carried"]),
       {
         name = "ammoItem",
         display = L["Ammo Item"],
         type = "item",
-        multiEntry = {
-          operator = "or"
-        },
+        multiEntry = { operator = "or" },
         test = "itemId == tonumber([[%s]])",
         only_exact = true,
       },
-      {
-        name = "stacks",
-        init = "count",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "value",
-        init = "count",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "total",
-        init = 0,
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "progressType",
-        init = "'static'",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "itemId",
-        display = L["ItemId"],
-        init = "itemId",
-        hidden = true,
-        store = true,
-        test = "true",
-        conditionType = "number",
-        operator_types = "only_equal",
-      },
-      {
-        name = "name",
-        init = "itemId and C_Item.GetItemNameByID(itemId)",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "icon",
-        init = "GetInventoryItemTexture('player', INVSLOT_AMMO)",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
+      Stored("stacks", "count"),
+      Stored("value", "count"),
+      Stored("total", "0"),
+      Stored("progressType", "'static'"),
+      Stored("itemId", "itemId", { display = L["ItemId"], conditionType = "number", operator_types = "only_equal" }),
+      Stored("name", "itemId and C_Item.GetItemNameByID(itemId)"),
+      Stored("icon", "GetInventoryItemTexture('player', INVSLOT_AMMO)"),
     },
-    automaticrequired = true,
-    progressType = "static"
-  }
-
-  Private.ExecEnv.GetBagSpace = function(includeSpecialty)
-    local free, total = 0, 0
-    if not (C_Container and C_Container.GetContainerNumFreeSlots and C_Container.GetContainerNumSlots) then
-      return free, total
-    end
-    for bag = 0, NUM_BAG_SLOTS or 4 do
-      local bagFree, bagFamily = C_Container.GetContainerNumFreeSlots(bag)
-      if Private.IsSecret(bagFree, bagFamily) then
-        return nil, nil
-      end
-      if bagFamily == 0 or (includeSpecialty and bagFamily) then
-        free = free + (bagFree or 0)
-        total = total + (C_Container.GetContainerNumSlots(bag) or 0)
-      end
-    end
-    return free, total
-  end
-
-  Private.event_prototypes["Bag Space"] = {
-    type = "item",
-    events = {
-      ["events"] = { "BAG_UPDATE_DELAYED" }
-    },
-    internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD", },
+  },
+  {
+    category = "item",
+    event = "Bag Space",
+    events = { events = { "BAG_UPDATE_DELAYED" } },
     force_events = "BAG_UPDATE_DELAYED",
-    name = L["Bag Space"],
+    progressType = "static",
+    GetNameAndIcon = function()
+      return L["Bag Space"], BAG_ICON
+    end,
     init = function(trigger)
-      return ([[
-        local free, total = Private.ExecEnv.GetBagSpace(%s)
-      ]]):format(trigger.use_includeSpecialty and "true" or "false")
+      return string.format("local free, total = Private.ExecEnv.GetBagSpace(%s)\n",
+        tostring(trigger.use_includeSpecialty and true or false))
     end,
-    GetNameAndIcon = function(trigger)
-      return L["Bag Space"], "Interface\\Icons\\INV_Misc_Bag_08"
-    end,
-    statesParameter = "one",
     args = {
-      {
-        name = "includeSpecialty",
-        display = L["Include Specialty Bags"],
-        type = "toggle",
-        test = "true",
-      },
-      {
-        name = "free",
-        display = L["Free Slots"],
-        type = "number",
-        init = "free",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "used",
-        display = L["Used Slots"],
-        type = "number",
-        init = "free and total - free",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "stacks",
-        init = "free",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "value",
-        init = "free",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "name",
-        init = ("%q"):format(L["Bag Space"]),
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "icon",
-        init = "'Interface\\\\Icons\\\\INV_Misc_Bag_08'",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "total",
-        init = "total",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "progressType",
-        init = "'static'",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
+      { name = "includeSpecialty", display = L["Include Specialty Bags"], type = "toggle", test = "true" },
+      Number("free", L["Free Slots"]),
+      { name = "used", display = L["Used Slots"], type = "number", init = "free and total - free", store = true,
+        conditionType = "number" },
+      Stored("stacks", "free"),
+      Stored("value", "free"),
+      Stored("name", Quoted(L["Bag Space"])),
+      Stored("icon", Quoted(BAG_ICON)),
+      Stored("total", "total"),
+      Stored("progressType", "'static'"),
     },
-    automaticrequired = true,
-    progressType = "static"
-  }
-
-  Private.ExecEnv.GetEquipmentDurability = function(slot)
-    local lowest, broken, current, maximum = 100, 0, 0, 0
-    if not GetInventoryItemDurability then
-      return lowest, lowest, broken
-    end
-    if slot and slot < (INVSLOT_FIRST_EQUIPPED or 1) then
-      slot = nil
-    end
-    for itemSlot = slot or INVSLOT_FIRST_EQUIPPED or 1, slot or INVSLOT_LAST_EQUIPPED or 19 do
-      local itemCurrent, itemMaximum = GetInventoryItemDurability(itemSlot)
-      if Private.IsSecret(itemCurrent, itemMaximum) then
-        return nil, nil, nil
-      end
-      if itemCurrent and itemMaximum and itemMaximum > 0 then
-        lowest = math.min(lowest, itemCurrent / itemMaximum * 100)
-        current, maximum = current + itemCurrent, maximum + itemMaximum
-        if itemCurrent == 0 then
-          broken = broken + 1
-        end
-      end
-    end
-    return math.floor(lowest), maximum > 0 and math.floor(current / maximum * 100) or 100, broken
-  end
-
-  Private.event_prototypes["Equipment Durability"] = {
-    type = "item",
-    events = {
-      ["events"] = { "UPDATE_INVENTORY_DURABILITY", "PLAYER_EQUIPMENT_CHANGED" }
-    },
-    internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD", },
+  },
+  {
+    category = "item",
+    event = "Equipment Durability",
+    events = { events = { "UPDATE_INVENTORY_DURABILITY", "PLAYER_EQUIPMENT_CHANGED" } },
     force_events = "UPDATE_INVENTORY_DURABILITY",
-    name = L["Equipment Durability"],
+    progressType = "static",
+    GetNameAndIcon = function()
+      return L["Equipment Durability"], DURABILITY_ICON
+    end,
     init = function(trigger)
-      return ([[
-        local lowest, overall, broken = Private.ExecEnv.GetEquipmentDurability(%s)
-        local progress = %s
-      ]]):format(trigger.use_durabilitySlot and tonumber(trigger.durabilitySlot) or "nil",
-                 trigger.durabilityProgress == "lowest" and "lowest" or "overall")
+      local slot = trigger.use_durabilitySlot and tonumber(trigger.durabilitySlot)
+      local progress = trigger.durabilityProgress == "lowest" and "lowest" or "overall"
+      return string.format("local lowest, overall, broken = Private.ExecEnv.GetEquipmentDurability(%s)\n"
+        .. "local progress = %s\n", tostring(slot), progress)
     end,
-    GetNameAndIcon = function(trigger)
-      return L["Equipment Durability"], "Interface\\Icons\\Trade_BlackSmithing"
-    end,
-    statesParameter = "one",
     args = {
-      {
-        name = "durabilitySlot",
-        display = L["Equipment Slot"],
-        type = "select",
-        values = "item_slot_types",
-        test = "true",
-      },
-      {
-        name = "durabilityProgress",
-        display = L["Progress Value"],
-        type = "select",
-        values = "durability_progress_types",
-        required = true,
-        default = "overall",
-        test = "true",
-      },
-      {
-        name = "lowest",
-        display = L["Lowest Item Durability (%)"],
-        type = "number",
-        init = "lowest",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "overall",
-        display = L["Overall Durability (%)"],
-        type = "number",
-        init = "overall",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "broken",
-        display = L["Broken Items"],
-        type = "number",
-        init = "broken",
-        store = true,
-        conditionType = "number",
-      },
-      {
-        name = "value",
-        init = "progress",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "name",
-        init = ("%q"):format(L["Equipment Durability"]),
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "icon",
-        init = "'Interface\\\\Icons\\\\Trade_BlackSmithing'",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "total",
-        init = 100,
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "progressType",
-        init = "'static'",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
+      { name = "durabilitySlot", display = L["Equipment Slot"], type = "select", values = "item_slot_types", test = "true" },
+      { name = "durabilityProgress", display = L["Progress Value"], type = "select", values = "durability_progress_types",
+        required = true, default = "overall", test = "true" },
+      Number("lowest", L["Lowest Item Durability (%)"]),
+      Number("overall", L["Overall Durability (%)"]),
+      Number("broken", L["Broken Items"]),
+      Stored("value", "progress"),
+      Stored("name", Quoted(L["Equipment Durability"])),
+      Stored("icon", Quoted(DURABILITY_ICON)),
+      Stored("total", "100"),
+      Stored("progressType", "'static'"),
     },
-    automaticrequired = true,
-    progressType = "static"
-  }
-
-  Private.event_prototypes["Role"] = {
-    type = "unit",
-    events = {
-      ["events"] = { "PLAYER_ROLES_ASSIGNED", "ROLE_CHANGED_INFORM", "GROUP_ROSTER_UPDATE" }
-    },
-    internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD", },
+  },
+  {
+    category = "unit",
+    event = "Role",
+    events = { events = { "PLAYER_ROLES_ASSIGNED", "ROLE_CHANGED_INFORM", "GROUP_ROSTER_UPDATE" } },
     force_events = "PLAYER_ROLES_ASSIGNED",
-    name = L["Role"],
-    init = function(trigger)
+    progressType = "none",
+    init = function()
       return [[
         local role = UnitGroupRolesAssigned("player")
         if Private.ExecEnv.IsSecret(role) or role == "NONE" then
@@ -376,123 +231,50 @@ if WeakAuras.IsClassicEra() then
         end
       ]]
     end,
-    statesParameter = "one",
     args = {
-      {
-        name = "role",
-        display = L["Role"],
-        type = "select",
-        values = "role_types",
-        init = "role",
-        store = true,
-        conditionType = "select",
-      },
-      {
-        hidden = true,
-        test = "role ~= nil",
-      },
+      { name = "role", display = L["Role"], type = "select", values = "role_types", init = "role", store = true,
+        conditionType = "select" },
+      { hidden = true, test = "role ~= nil" },
     },
-    automaticrequired = true,
-    progressType = "none"
-  }
-
-  Private.ExecEnv.GetActiveTracking = function(spellIDs)
-    if not (C_Minimap and C_Minimap.GetNumTrackingTypes and C_Minimap.GetTrackingInfo) then
-      return false
-    end
-    for index = 1, C_Minimap.GetNumTrackingTypes() or 0 do
-      local info = C_Minimap.GetTrackingInfo(index)
-      if info and info.active and (not spellIDs[1] or tIndexOf(spellIDs, info.spellID)) then
-        return true, info.spellID, info.name, info.texture
-      end
-    end
-    return false
-  end
-
-  Private.event_prototypes["Tracking"] = {
-    type = "unit",
-    events = {
-      ["events"] = { "MINIMAP_UPDATE_TRACKING" }
-    },
-    internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD", },
+  },
+  {
+    category = "unit",
+    event = "Tracking",
+    events = { events = { "MINIMAP_UPDATE_TRACKING" } },
     force_events = "MINIMAP_UPDATE_TRACKING",
-    name = L["Tracking"],
-    init = function(trigger)
-      local spellIDs = {}
-      if trigger.use_trackingSpell then
-        local entries = type(trigger.trackingSpell) == "table" and trigger.trackingSpell or { trigger.trackingSpell }
-        for _, entry in ipairs(entries) do
-          if tonumber(entry) then
-            tinsert(spellIDs, tonumber(entry))
-          end
-        end
-      end
-      return ([[
-        local found, spellId, name, icon = Private.ExecEnv.GetActiveTracking({%s})
-        local inverse = %s
-      ]]):format(table.concat(spellIDs, ", "), trigger.use_inverse and "true" or "false")
-    end,
+    progressType = "none",
     GetNameAndIcon = function(trigger)
-      local spellID = type(trigger.trackingSpell) == "table" and trigger.trackingSpell[1] or trigger.trackingSpell
-      if trigger.use_trackingSpell and tonumber(spellID) then
-        return Private.ExecEnv.GetSpellName(tonumber(spellID)), Private.ExecEnv.GetSpellIcon(tonumber(spellID))
+      local spells = trigger.trackingSpell
+      local spellID = trigger.use_trackingSpell and tonumber(type(spells) == "table" and spells[1] or spells)
+      if spellID then
+        return ExecEnv.GetSpellName(spellID), ExecEnv.GetSpellIcon(spellID)
       end
       return L["Tracking"], "Interface\\Minimap\\Tracking\\None"
     end,
-    statesParameter = "one",
+    init = function(trigger)
+      return string.format("local found, spellId, name, icon = Private.ExecEnv.GetActiveTracking({%s})\n"
+        .. "local inverse = %s\n", table.concat(SpellList(trigger), ", "), tostring(trigger.use_inverse and true or false))
+    end,
     args = {
-      {
-        name = "trackingSpell",
-        display = L["Tracking Spell"],
-        type = "spell",
-        multiEntry = {
-          operator = "or"
-        },
-        test = "true",
-        only_exact = true,
-      },
-      {
-        name = "inverse",
-        display = L["Inverse"],
-        type = "toggle",
-        test = "true",
-      },
-      {
-        hidden = true,
-        test = "found ~= inverse",
-      },
-      {
-        name = "spellId",
-        display = L["Spell ID"],
-        init = "spellId",
-        hidden = true,
-        store = true,
-        test = "true",
-        conditionType = "number",
-        operator_types = "only_equal",
-      },
-      {
-        name = "name",
-        init = "name",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
-      {
-        name = "icon",
-        init = "icon",
-        hidden = true,
-        store = true,
-        test = "true",
-      },
+      { name = "trackingSpell", display = L["Tracking Spell"], type = "spell", multiEntry = { operator = "or" },
+        test = "true", only_exact = true },
+      { name = "inverse", display = L["Inverse"], type = "toggle", test = "true" },
+      { hidden = true, test = "found ~= inverse" },
+      Stored("spellId", "spellId", { display = L["Spell ID"], conditionType = "number", operator_types = "only_equal" }),
+      Stored("name", "name"),
+      Stored("icon", "icon"),
     },
-    automaticrequired = true,
-    progressType = "none"
-  }
+  },
+}
 
-  Private.category_event_prototype.item["Ammo"] = L["Ammo"]
-  Private.category_event_prototype.item["Bag Space"] = L["Bag Space"]
-  Private.category_event_prototype.item["Equipment Durability"] = L["Equipment Durability"]
-  Private.category_event_prototype.unit["Role"] = L["Role"]
-  Private.category_event_prototype.unit["Tracking"] = L["Tracking"]
+for _, prototype in ipairs(prototypes) do
+  local category, event = prototype.category, prototype.event
+  prototype.category, prototype.event = nil, nil
+  prototype.type = category
+  prototype.name = L[event]
+  prototype.internal_events = { "WA_DELAYED_PLAYER_ENTERING_WORLD" }
+  prototype.statesParameter = "one"
+  prototype.automaticrequired = true
+  Private.event_prototypes[event] = prototype
+  Private.category_event_prototype[category][event] = prototype.name
 end

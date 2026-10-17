@@ -1,24 +1,47 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
-local Private = select(2, ...)
 
-local isSecret = Private.IsSecret
+local _, Private = ...
 
-local weakKeys = { __mode = "k" }
-local identityCache = {}
+local function isSecret(value)
+  return issecretvalue ~= nil and issecretvalue(value) and true or false
+end
+
+local function readable(value)
+  if isSecret(value) then return nil end
+  return value
+end
+
+local function readNumber(value)
+  if isSecret(value) or type(value) ~= "number" then return nil end
+  return value
+end
+
+local function readBoolean(value)
+  if isSecret(value) or type(value) ~= "boolean" then return nil end
+  return value
+end
+
+local function readString(value)
+  if isSecret(value) or type(value) ~= "string" then return nil end
+  return value
+end
+
+local function weakKeyed()
+  return setmetatable({}, { __mode = "k" })
+end
+
+local nativeRecords = weakKeyed()
+local watchedViewers = weakKeyed()
+local nativeSpells = weakKeyed()
+local timerMemories = weakKeyed()
+local identityMemory = {}
 local requestedItems = {}
-local nativeRecords = setmetatable({}, weakKeys)
-local lastNativeSpells = setmetatable({}, weakKeys)
-local keptTimings = setmetatable({}, weakKeys)
-local hookedViewers = setmetatable({}, weakKeys)
 local pendingSelfCasts = {}
 local refreshPending = false
 
-local viewerNames = {
-  "EssentialCooldownViewer",
-  "UtilityCooldownViewer",
-  "BuffIconCooldownViewer",
-  "BuffBarCooldownViewer",
-}
+local viewerNames = { "EssentialCooldownViewer", "UtilityCooldownViewer", "BuffIconCooldownViewer", "BuffBarCooldownViewer" }
+local buffViewerNames = { BuffIconCooldownViewer = true, BuffBarCooldownViewer = true }
 
 local categoryLabels = {
   TrackedBar = "Tracked Bars",
@@ -32,47 +55,12 @@ local categoryLabels = {
   Essential = "Essential",
 }
 
-local simpleTextKinds = {
-  bp = true,
-  bs = true,
-  p = true,
-  s = true,
-  caster = true,
-  dispel = true,
-}
+local buffCategoryNames = { "TrackedBuff", "TrackedBar", "GroupBuff", "SpecAgnosticTracked", "EquipSlotTracked" }
 
-local function readValue(value)
-  if isSecret(value) then
-    return nil
-  end
-  return value
-end
-
-local function readNumber(value)
-  if isSecret(value) or type(value) ~= "number" then
-    return nil
-  end
-  return value
-end
-
-local function readBoolean(value)
-  if isSecret(value) or type(value) ~= "boolean" then
-    return nil
-  end
-  return value
-end
-
-local function readString(value)
-  if isSecret(value) or type(value) ~= "string" then
-    return nil
-  end
-  return value
-end
+local textWords = { bp = true, bs = true, p = true, s = true, caster = true, dispel = true }
 
 local function queueRefresh()
-  if refreshPending then
-    return
-  end
+  if refreshPending then return end
   refreshPending = true
   C_Timer.After(0, function()
     refreshPending = false
@@ -85,18 +73,8 @@ end
 Private.QueueCDMRefresh = queueRefresh
 
 function Private.CDMRequestItemData(itemID)
-  if not itemID then
-    return
-  end
-  if not (C_Item and C_Item.IsItemDataCachedByID and C_Item.RequestLoadItemDataByID) then
-    return
-  end
-  if requestedItems[itemID] then
-    return
-  end
-  if C_Item.IsItemDataCachedByID(itemID) then
-    return
-  end
+  if not itemID or not C_Item or not C_Item.IsItemDataCachedByID or not C_Item.RequestLoadItemDataByID then return end
+  if requestedItems[itemID] or C_Item.IsItemDataCachedByID(itemID) then return end
   requestedItems[itemID] = true
   C_Item.RequestLoadItemDataByID(itemID)
 end
@@ -104,68 +82,100 @@ end
 function Private.CDMResetIdentities()
   local batch = Private.cdmScanBatch
   if batch then
-    if batch.identitiesReset then
-      return
-    end
+    if batch.identitiesReset then return end
     batch.identitiesReset = true
   end
-  wipe(identityCache)
+  identityMemory = {}
 end
 
 function Private.CDMCategoryName(category)
-  for memberName, memberValue in pairs(Enum.CooldownViewerCategory) do
-    if memberValue == category then
-      return categoryLabels[memberName] or memberName
+  local categories = Enum and Enum.CooldownViewerCategory
+  if categories and category ~= nil then
+    for name, value in pairs(categories) do
+      if value == category then
+        return categoryLabels[name] or name
+      end
     end
   end
   return "Other"
 end
 
 function Private.CDMIsBuff(category)
-  local categories = Enum.CooldownViewerCategory
-  return category == categories.TrackedBuff
-    or category == categories.TrackedBar
-    or category == categories.GroupBuff
-    or category == categories.SpecAgnosticTracked
-    or category == categories.EquipSlotTracked
+  local categories = Enum and Enum.CooldownViewerCategory or {}
+  for _, name in ipairs(buffCategoryNames) do
+    if category == categories[name] then return true end
+  end
+  return false
 end
 
-local function convertRawTimes(record)
-  if record.converted then
-    return record.converted
+local function newDuration()
+  if C_DurationUtil and C_DurationUtil.CreateDuration then
+    return C_DurationUtil.CreateDuration()
   end
+  return nil
+end
+
+local function rereadFrame(frame, record)
+  record.read = true
+  record.cooldownID = readable(frame.cooldownID)
+  record.spellID = nil
+  if frame.GetSpellID then
+    record.spellID = readable(frame:GetSpellID())
+  end
+  record.onCooldown = readBoolean(frame.isOnActualCooldown)
+  record.recharging = readBoolean(frame.wasSetFromCharges)
+  record.paused = readable(frame.cooldownPaused) == true
+  if record.completedRevision ~= nil and record.completedRevision == record.revision then
+    record.onCooldown = false
+    record.recharging = false
+  end
+  record.charges = readNumber(frame.cooldownChargesCount)
+  record.onGCD = readBoolean(frame.isOnGCD)
+  if record.onCooldown or record.recharging or readable(frame.cooldownUseAuraDisplayTime) == true then
+    record.onGCD = false
+  end
+end
+
+local function restartTimer(frame, record, durationObject, raw)
+  record.revision = record.revision + 1
+  record.duration = durationObject
+  record.raw = raw
+  record.converted = nil
+  rereadFrame(frame, record)
+  queueRefresh()
+end
+
+local function convertRaw(record)
+  if record.converted then return record.converted end
   local raw = record.raw
-  if not raw or not (C_DurationUtil and C_DurationUtil.CreateDuration) then
-    return nil
+  if not raw then return nil end
+  local object = newDuration()
+  if object and pcall(object.SetTimeFromStart, object, raw.start, raw.duration, raw.modRate) then
+    record.converted = object
+    return object
   end
-  local duration = C_DurationUtil.CreateDuration()
-  if pcall(duration.SetTimeFromStart, duration, raw.start, raw.duration, raw.modRate) then
-    record.converted = duration
-  end
-  return record.converted
+  return nil
 end
 
-local function isTimerExpired(record)
-  if record.paused then
-    return false
-  end
-  local durationObject = record.duration or record.converted
-  if durationObject and durationObject.GetRemainingDuration then
-    local remaining = readNumber(durationObject:GetRemainingDuration())
-    if remaining == nil then
-      return false
-    end
-    return remaining <= 0
+local function timerExpired(record)
+  if record.paused then return false end
+  local object = record.duration or record.converted
+  if object and object.GetRemainingDuration then
+    local ok, remaining = pcall(object.GetRemainingDuration, object)
+    remaining = ok and readNumber(remaining) or nil
+    return remaining ~= nil and remaining <= 0
   end
   local raw = record.raw
   if raw then
     local start = readNumber(raw.start)
     local duration = readNumber(raw.duration)
-    local modRate
-    if not isSecret(raw.modRate) and raw.modRate == nil then
+    local modRate = raw.modRate
+    if isSecret(modRate) then
+      modRate = nil
+    elseif modRate == nil then
       modRate = 1
     else
-      modRate = readNumber(raw.modRate)
+      modRate = readNumber(modRate)
     end
     if start and duration and modRate and modRate > 0 then
       return GetTime() >= start + duration / modRate
@@ -174,56 +184,86 @@ local function isTimerExpired(record)
   return false
 end
 
-local function gatherState(frame, record)
-  record.cooldownID = readValue(frame.cooldownID)
-  if frame.GetSpellID then
-    record.spellID = readValue(frame:GetSpellID())
-  else
-    record.spellID = nil
+local function hookMethod(target, method, handler)
+  if hooksecurefunc and type(target[method]) == "function" then
+    hooksecurefunc(target, method, handler)
   end
-  local onCooldown = readBoolean(frame.isOnActualCooldown)
-  local recharging = readBoolean(frame.wasSetFromCharges)
-  record.paused = readValue(frame.cooldownPaused) == true
-  if record.completedRevision and record.completedRevision == record.revision then
-    onCooldown = false
-    recharging = false
-  end
-  record.onCooldown = onCooldown
-  record.recharging = recharging
-  record.charges = readNumber(frame.cooldownChargesCount)
-  local onGCD = readBoolean(frame.isOnGCD)
-  if onCooldown or recharging or readValue(frame.cooldownUseAuraDisplayTime) then
-    onGCD = false
-  end
-  record.onGCD = onGCD
 end
 
-local function resync(frame, record)
-  gatherState(frame, record)
-  queueRefresh()
-end
-
-local function startRevision(frame, record, durationObject, raw)
-  record.revision = record.revision + 1
-  record.duration = durationObject
+local function seedFromWidget(frame, record, widget)
+  local raw
+  if widget.GetCooldownTimes then
+    local ok, start, duration = pcall(widget.GetCooldownTimes, widget)
+    start = ok and readNumber(start) or nil
+    duration = ok and readNumber(duration) or nil
+    if start and duration then
+      raw = { start = start / 1000, duration = duration / 1000, modRate = frame.cooldownModRate }
+    end
+  end
+  if not raw and frame.RefreshSpellCooldownInfo then
+    raw = { start = frame.cooldownStartTime, duration = frame.cooldownDuration, modRate = frame.cooldownModRate }
+  end
   record.raw = raw
-  record.converted = nil
-  resync(frame, record)
 end
 
-local function hookMethod(target, methodName, handler)
-  if target[methodName] then
-    hooksecurefunc(target, methodName, handler)
+local function observeFrame(frame)
+  if nativeRecords[frame] or not hooksecurefunc then return end
+  local record = { revision = 0 }
+  nativeRecords[frame] = record
+
+  local function restart()
+    restartTimer(frame, record, nil, nil)
   end
-end
+  local function relay()
+    rereadFrame(frame, record)
+    queueRefresh()
+  end
+  local function auraInfoChanged()
+    if frame.RefreshSpellCooldownInfo then
+      queueRefresh()
+    else
+      restart()
+    end
+  end
 
-local function observeCooldownWidget(frame, record, cooldown)
-  if cooldown.HookScript then
-    cooldown:HookScript("OnCooldownDone", function()
-      gatherState(frame, record)
-      if readValue(frame.cooldownUseAuraDisplayTime) == false
-        and record.onGCD == false
-        and isTimerExpired(record) then
+  for _, method in ipairs({ "OnCooldownIDSet", "OnCooldownIDCleared", "ResetCooldownData" }) do
+    hookMethod(frame, method, restart)
+  end
+  for _, method in ipairs({ "ClearAuraInstanceInfo", "OnAuraInstanceInfoCleared", "OnAuraInstanceInfoSet" }) do
+    hookMethod(frame, method, auraInfoChanged)
+  end
+  for _, method in ipairs({ "RefreshData", "RefreshCooldownOnly" }) do
+    hookMethod(frame, method, relay)
+  end
+  for _, method in ipairs({ "SetAuraInstanceInfo", "OnUnitAuraRemovedEvent", "OnUnitAuraUpdatedEvent", "OnNewTarget", "OnActiveStateChanged", "RefreshIconColor" }) do
+    hookMethod(frame, method, queueRefresh)
+  end
+  if frame.HookScript then
+    frame:HookScript("OnShow", queueRefresh)
+    frame:HookScript("OnHide", queueRefresh)
+  end
+
+  local widget = frame.Cooldown or frame.cooldown
+  if not widget then return end
+  hookMethod(widget, "SetCooldownFromDurationObject", function(_, object)
+    restartTimer(frame, record, object, nil)
+  end)
+  hookMethod(widget, "SetCooldown", function(_, start, duration, modRate)
+    restartTimer(frame, record, nil, { start = start, duration = duration, modRate = modRate })
+  end)
+  hookMethod(widget, "Clear", restart)
+  hookMethod(widget, "Pause", function()
+    record.paused = true
+    queueRefresh()
+  end)
+  hookMethod(widget, "Resume", function()
+    record.paused = false
+    queueRefresh()
+  end)
+  if widget.HookScript then
+    widget:HookScript("OnCooldownDone", function()
+      rereadFrame(frame, record)
+      if readable(frame.cooldownUseAuraDisplayTime) == false and record.onGCD == false and timerExpired(record) then
         record.completedRevision = record.revision
         record.onCooldown = false
         record.recharging = false
@@ -231,126 +271,38 @@ local function observeCooldownWidget(frame, record, cooldown)
       queueRefresh()
     end)
   end
-  hookMethod(cooldown, "SetCooldownFromDurationObject", function(_, durationObject)
-    startRevision(frame, record, durationObject, nil)
-  end)
-  hookMethod(cooldown, "SetCooldown", function(_, start, duration, modRate)
-    startRevision(frame, record, nil, { start = start, duration = duration, modRate = modRate })
-  end)
-  hookMethod(cooldown, "Clear", function()
-    startRevision(frame, record, nil, nil)
-  end)
-  hookMethod(cooldown, "Pause", function()
-    record.paused = true
-    queueRefresh()
-  end)
-  hookMethod(cooldown, "Resume", function()
-    record.paused = false
-    queueRefresh()
-  end)
-
-  if cooldown.GetCooldownTimes then
-    local succeeded, startMilliseconds, durationMilliseconds = pcall(cooldown.GetCooldownTimes, cooldown)
-    local start = succeeded and readNumber(startMilliseconds)
-    local duration = succeeded and readNumber(durationMilliseconds)
-    if start and duration then
-      record.raw = { start = start / 1000, duration = duration / 1000, modRate = frame.cooldownModRate }
-    elseif frame.RefreshSpellCooldownInfo then
-      record.raw = {
-        start = frame.cooldownStartTime,
-        duration = frame.cooldownDuration,
-        modRate = frame.cooldownModRate,
-      }
-    end
-  elseif frame.RefreshSpellCooldownInfo then
-    record.raw = {
-      start = frame.cooldownStartTime,
-      duration = frame.cooldownDuration,
-      modRate = frame.cooldownModRate,
-    }
-  end
-  gatherState(frame, record)
+  seedFromWidget(frame, record, widget)
+  rereadFrame(frame, record)
 end
 
-local function observeFrame(frame)
-  if not hooksecurefunc or nativeRecords[frame] then
-    return
+local function observeViewer(viewer, name)
+  if watchedViewers[viewer] then return end
+  watchedViewers[viewer] = true
+  if not hooksecurefunc then return end
+  for _, method in ipairs({ "OnUnitAura", "OnPlayerTargetChanged", "RefreshActiveFramesForTargetChange" }) do
+    hookMethod(viewer, method, queueRefresh)
   end
-  local record = { revision = 0 }
-  nativeRecords[frame] = record
-
-  local function resetOrQueue()
-    if frame.RefreshSpellCooldownInfo then
-      queueRefresh()
-    else
-      startRevision(frame, record, nil, nil)
-    end
-  end
-  local function reset()
-    startRevision(frame, record, nil, nil)
-  end
-  local function resyncRecord()
-    resync(frame, record)
-  end
-
-  hookMethod(frame, "ClearAuraInstanceInfo", resetOrQueue)
-  hookMethod(frame, "OnAuraInstanceInfoCleared", resetOrQueue)
-  hookMethod(frame, "OnAuraInstanceInfoSet", resetOrQueue)
-  hookMethod(frame, "OnCooldownIDSet", reset)
-  hookMethod(frame, "OnCooldownIDCleared", reset)
-  hookMethod(frame, "ResetCooldownData", reset)
-  hookMethod(frame, "SetAuraInstanceInfo", queueRefresh)
-  hookMethod(frame, "OnUnitAuraRemovedEvent", queueRefresh)
-  hookMethod(frame, "OnUnitAuraUpdatedEvent", queueRefresh)
-  hookMethod(frame, "OnNewTarget", queueRefresh)
-  hookMethod(frame, "OnActiveStateChanged", queueRefresh)
-  hookMethod(frame, "RefreshIconColor", queueRefresh)
-  hookMethod(frame, "RefreshData", resyncRecord)
-  hookMethod(frame, "RefreshCooldownOnly", resyncRecord)
-  if frame.HookScript then
-    frame:HookScript("OnShow", queueRefresh)
-    frame:HookScript("OnHide", queueRefresh)
-  end
-
-  local cooldown = frame.Cooldown or frame.cooldown
-  if cooldown then
-    observeCooldownWidget(frame, record, cooldown)
-  end
-end
-
-local function hookViewer(viewerName, viewer)
-  if hookedViewers[viewer] or not hooksecurefunc then
-    return
-  end
-  hookedViewers[viewer] = true
-  if viewerName == "BuffIconCooldownViewer" or viewerName == "BuffBarCooldownViewer" then
-    hookMethod(viewer, "OnAcquireItemFrame", function(_, itemFrame)
-      if itemFrame then
-        observeFrame(itemFrame)
-      end
-    end)
+  if buffViewerNames[name] then
     hookMethod(viewer, "RefreshData", queueRefresh)
+    hookMethod(viewer, "OnAcquireItemFrame", function(_, itemFrame)
+      if itemFrame then observeFrame(itemFrame) end
+    end)
   end
-  hookMethod(viewer, "OnUnitAura", queueRefresh)
-  hookMethod(viewer, "OnPlayerTargetChanged", queueRefresh)
-  hookMethod(viewer, "RefreshActiveFramesForTargetChange", queueRefresh)
 end
 
 function Private.CDMFrames()
   local batch = Private.cdmScanBatch
-  if batch and batch.frames then
-    return batch.frames
-  end
+  if batch and batch.frames then return batch.frames end
   local frames = {}
-  for _, viewerName in ipairs(viewerNames) do
-    local viewer = _G[viewerName]
+  for _, name in ipairs(viewerNames) do
+    local viewer = _G[name]
     if viewer then
-      hookViewer(viewerName, viewer)
+      observeViewer(viewer, name)
       local pool = viewer.itemFramePool
       if pool and pool.EnumerateActive then
         for frame in pool:EnumerateActive() do
           local cooldownID = readNumber(frame.cooldownID)
-          if cooldownID ~= nil then
+          if cooldownID then
             observeFrame(frame)
             frames[cooldownID] = frame
           end
@@ -358,97 +310,81 @@ function Private.CDMFrames()
       end
     end
   end
-  if batch then
-    batch.frames = frames
-  end
+  if batch then batch.frames = frames end
   return frames
 end
 
 function Private.CDMGetNativeCooldown(frame, spellID)
-  if not frame then
-    return nil
-  end
+  if not frame then return nil end
   local record = nativeRecords[frame]
-  if not record then
-    return nil
-  end
-  if record.cooldownID ~= readValue(frame.cooldownID) then
-    return nil
-  end
-  if record.spellID ~= spellID then
-    return nil
-  end
-  if frame.GetSpellID and readValue(frame:GetSpellID()) ~= spellID then
-    return nil
+  if not record or not record.read then return nil end
+  if record.cooldownID ~= readable(frame.cooldownID) then return nil end
+  local wanted = readable(spellID)
+  if record.spellID ~= wanted then return nil end
+  if frame.GetSpellID then
+    local current = readable(frame:GetSpellID())
+    if current ~= wanted then return nil end
   end
   local inRange
   local outOfRange = readBoolean(frame.spellOutOfRange)
-  if outOfRange ~= nil then
-    inRange = not outOfRange
-  end
+  if outOfRange ~= nil then inRange = not outOfRange end
   return {
-    duration = record.duration or convertRawTimes(record),
+    duration = record.duration or convertRaw(record),
     revision = record.revision,
     onGCD = record.onGCD,
     onCooldown = record.onCooldown,
     recharging = record.recharging,
     charges = record.charges,
     inRange = inRange,
-    paused = record.paused and true or false,
+    paused = record.paused == true,
   }
 end
 
-function Private.CDMCatalog()
+local function dataProviderLayout()
   local provider
   if CooldownViewerSettings and CooldownViewerSettings.GetDataProvider then
     provider = CooldownViewerSettings:GetDataProvider()
   end
   provider = provider or CooldownViewerDataProvider
-  local layout
   if provider and provider.GetDisplayData and not (provider.IsDirty and provider:IsDirty()) then
-    local displayData = provider:GetDisplayData()
-    layout = displayData and displayData.cooldownInfoByID
+    local display = provider:GetDisplayData()
+    return display and display.cooldownInfoByID
   end
+  return nil
+end
 
+function Private.CDMCatalog()
+  local catalog = {}
+  local layout = dataProviderLayout()
   local frames = Private.CDMFrames()
   local categories = Enum.CooldownViewerCategory
-  local catalog = {}
-
-  for _, sourceCategory in pairs(categories) do
-    if type(sourceCategory) == "number" and sourceCategory >= 0 then
-      local cooldownIDs = C_CooldownViewer.GetCooldownViewerCategorySet(sourceCategory, true) or {}
-      for _, rawCooldownID in ipairs(cooldownIDs) do
-        local cooldownID = readNumber(rawCooldownID)
-        local info = cooldownID ~= nil and C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+  for _, source in pairs(categories) do
+    if type(source) == "number" and source >= 0 then
+      local identifiers = C_CooldownViewer.GetCooldownViewerCategorySet(source, true) or {}
+      for _, rawID in ipairs(identifiers) do
+        local cooldownID = readNumber(rawID)
+        local info = cooldownID and C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
         if info then
-          local layoutEntry = layout and layout[cooldownID]
-          local placement = layoutEntry and readNumber(layoutEntry.category)
+          local placement
           local displayed
-          if placement ~= nil and placement ~= false then
-            displayed = placement == categories.Essential
-              or placement == categories.Utility
-              or placement == categories.TrackedBuff
-              or placement == categories.TrackedBar
-          else
-            placement = nil
-            local frame = frames[cooldownID]
-            if frame then
-              displayed = true
-              placement = frame.viewerFrame and readNumber(frame.viewerFrame.cooldownViewerCategory)
-              if placement == false then
-                placement = nil
-              end
-            end
+          local placed = layout and layout[cooldownID]
+          local layoutCategory = placed and readNumber(placed.category)
+          if layoutCategory then
+            placement = layoutCategory
+            displayed = placement == categories.Essential or placement == categories.Utility
+              or placement == categories.TrackedBuff or placement == categories.TrackedBar
+          elseif frames[cooldownID] then
+            displayed = true
+            local viewerFrame = frames[cooldownID].viewerFrame
+            placement = viewerFrame and readNumber(viewerFrame.cooldownViewerCategory) or nil
           end
-          local category = sourceCategory
-          if placement and placement >= 0 then
-            category = placement
-          end
+          local category = source
+          if placement and placement >= 0 then category = placement end
           catalog[cooldownID] = {
             category = category,
-            sourceCategory = sourceCategory,
+            sourceCategory = source,
             displayed = displayed,
-            known = not isSecret(info.isKnown) and info.isKnown ~= false,
+            known = readBoolean(info.isKnown) ~= false,
           }
         end
       end
@@ -457,39 +393,28 @@ function Private.CDMCatalog()
   return catalog
 end
 
-local function firstReadableNumber(...)
-  for index = 1, select("#", ...) do
-    local number = readNumber((select(index, ...)))
-    if number ~= nil then
-      return number
-    end
-  end
-  return nil
-end
-
 function Private.CDMIdentity(id, entry, info, frame)
-  local spellID
+  local spellID, itemID, slot
   if frame and frame.GetSpellID then
     spellID = readNumber(frame:GetSpellID())
   end
-  if spellID == nil then
-    spellID = firstReadableNumber(info.linkedSpellID, info.overrideTooltipSpellID, info.overrideSpellID)
+  if not spellID then
+    spellID = readNumber(info.linkedSpellID) or readNumber(info.overrideTooltipSpellID) or readNumber(info.overrideSpellID)
   end
-  if spellID == nil and Private.CDMIsBuff(entry.category) and info.linkedSpellIDs then
-    for _, linkedSpellID in ipairs(info.linkedSpellIDs) do
-      local readable = readNumber(linkedSpellID)
-      if readable and readable > 0 then
-        spellID = readable
+  if not spellID and Private.CDMIsBuff(entry.category) and type(info.linkedSpellIDs) == "table" then
+    for _, linked in ipairs(info.linkedSpellIDs) do
+      local candidate = readNumber(linked)
+      if candidate and candidate > 0 then
+        spellID = candidate
         break
       end
     end
   end
-  if spellID == nil then
+  if not spellID then
     spellID = readNumber(info.spellID)
   end
 
-  local slot = readNumber(info.equipSlot)
-  local itemID
+  slot = readNumber(info.equipSlot)
   if slot then
     itemID = readNumber(GetInventoryItemID("player", slot))
   end
@@ -497,14 +422,12 @@ function Private.CDMIdentity(id, entry, info, frame)
     itemID = readNumber(frame.cooldownInfo.lastItemIDForCategory)
   end
 
-  if spellID == nil then
-    local spellCategoryID = readNumber(info.spellCategoryID)
-    if spellCategoryID and C_Spell and C_Spell.GetLastCategoryCooldownSource then
-      local sourceSpell, sourceItem = C_Spell.GetLastCategoryCooldownSource(spellCategoryID)
-      spellID = readNumber(sourceSpell)
-      if itemID == nil then
-        itemID = readNumber(sourceItem)
-      end
+  if not spellID then
+    local spellCategory = readNumber(info.spellCategoryID)
+    if spellCategory and C_Spell and C_Spell.GetLastCategoryCooldownSource then
+      local categorySpell, categoryItem = C_Spell.GetLastCategoryCooldownSource(spellCategory)
+      spellID = readNumber(categorySpell)
+      if itemID == nil then itemID = readNumber(categoryItem) end
     end
   end
 
@@ -518,33 +441,23 @@ function Private.CDMIdentity(id, entry, info, frame)
   end
   if itemID and C_Item then
     Private.CDMRequestItemData(itemID)
-    name = (C_Item.GetItemNameByID and C_Item.GetItemNameByID(itemID)) or ("Item " .. itemID)
-    icon = (C_Item.GetItemIconByID and C_Item.GetItemIconByID(itemID)) or icon
+    name = C_Item.GetItemNameByID and C_Item.GetItemNameByID(itemID) or ("Item " .. itemID)
+    icon = C_Item.GetItemIconByID and C_Item.GetItemIconByID(itemID) or icon
   end
 
-  local previous = identityCache[id]
-  if slot or (itemID and previous and itemID ~= previous.itemID) then
+  local previous = identityMemory[id]
+  if previous and (slot or (itemID and itemID ~= previous.itemID)) then
     previous = nil
   end
   previous = previous or {}
-
-  local resolvedName = name or previous.name
-  if not resolvedName then
-    if slot then
-      resolvedName = "Equipment slot " .. slot
-    else
-      resolvedName = "CDM entry " .. tostring(id)
-    end
-  end
-
   local identity = {
     spellID = spellID or previous.spellID,
     itemID = itemID or previous.itemID,
     slot = slot,
-    name = resolvedName,
+    name = name or previous.name or (slot and ("Equipment slot " .. slot)) or ("CDM entry " .. tostring(id)),
     icon = icon or previous.icon or 134400,
   }
-  identityCache[id] = {
+  identityMemory[id] = {
     spellID = identity.spellID,
     itemID = identity.itemID,
     slot = identity.slot,
@@ -557,15 +470,15 @@ end
 function Private.CDMApplyItem(state, identity)
   local start, duration, enabled
   if identity.slot then
-    start, duration, enabled = GetInventoryItemCooldown("player", identity.slot)
+    if GetInventoryItemCooldown then
+      start, duration, enabled = GetInventoryItemCooldown("player", identity.slot)
+    end
   elseif identity.itemID and C_Item and C_Item.GetItemCooldown then
     start, duration, enabled = C_Item.GetItemCooldown(identity.itemID)
   end
   start = readNumber(start)
   duration = readNumber(duration)
-  if start == nil or duration == nil then
-    return
-  end
+  if not start or not duration then return end
   local expirationTime = start + duration
   state.progressType = "timed"
   state.duration = duration
@@ -580,14 +493,91 @@ function Private.CDMApplyItem(state, identity)
   end
 end
 
-local function setDurationMode(state, durationObject)
+local function spellLabel(spellID)
+  local name, _, icon = Private.ExecEnv.GetSpellInfo(spellID)
+  name = readString(name)
+  if not name then return nil end
+  if icon then
+    return "|T" .. icon .. ":16|t " .. name
+  end
+  return name
+end
+
+local function forEachOptionEntry(categoryNames, visit)
+  local viewerApi = C_CooldownViewer
+  local categories = Enum and Enum.CooldownViewerCategory
+  if not viewerApi or not viewerApi.GetCooldownViewerCategorySet or not categories then return end
+  for _, categoryName in ipairs(categoryNames) do
+    local category = categories[categoryName]
+    if category ~= nil then
+      local ok, identifiers = pcall(viewerApi.GetCooldownViewerCategorySet, category)
+      if ok and type(identifiers) == "table" then
+        for _, rawID in ipairs(identifiers) do
+          local cooldownID = readNumber(rawID)
+          if cooldownID then
+            local infoOk, info = pcall(viewerApi.GetCooldownViewerCooldownInfo, cooldownID)
+            if infoOk and info then
+              visit(cooldownID, info)
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
+function Private.GetCooldownManagerSpells()
+  local spells = {}
+  forEachOptionEntry({ "Essential", "Utility" }, function(_, info)
+    local spellID = readNumber(info.spellID)
+    if spellID and spells[spellID] == nil then
+      spells[spellID] = spellLabel(spellID)
+    end
+  end)
+  return spells
+end
+
+function Private.GetCooldownManagerAuras()
+  local auras = {}
+  forEachOptionEntry({ "TrackedBuff", "TrackedBar" }, function(cooldownID, info)
+    local spellID = readNumber(info.spellID)
+    if spellID then
+      auras[cooldownID] = spellLabel(spellID)
+    end
+  end)
+  return auras
+end
+
+function Private.GetCooldownManagerAuraSpellIDs(cooldownID)
+  local list = {}
+  local viewerApi = C_CooldownViewer
+  if not viewerApi or not viewerApi.GetCooldownViewerCooldownInfo then return list end
+  local ok, info = pcall(viewerApi.GetCooldownViewerCooldownInfo, cooldownID)
+  if not ok or not info then return list end
+  if type(info.linkedSpellIDs) == "table" then
+    for _, spellID in ipairs(info.linkedSpellIDs) do
+      list[#list + 1] = spellID
+    end
+  end
+  local tooltipSpell = readNumber(info.overrideTooltipSpellID)
+  if tooltipSpell then list[#list + 1] = tooltipSpell end
+  local baseSpell = readNumber(info.spellID)
+  if baseSpell then list[#list + 1] = baseSpell end
+  return list
+end
+
+local function playerAuraLookupAvailable()
+  return C_UnitAuras ~= nil and C_UnitAuras.GetPlayerAuraBySpellID ~= nil and not WeakAuras.IsRestricted()
+end
+
+local function setObjectTiming(state, object)
   state.progressType = "durationObject"
-  state.durationObject = durationObject
+  state.durationObject = object
   state.value = nil
   state.total = nil
 end
 
-local function setTimedMode(state, duration, expirationTime, modRate)
+local function setTimedTiming(state, duration, expirationTime, modRate)
   state.progressType = "timed"
   state.duration = duration
   state.expirationTime = expirationTime
@@ -596,382 +586,131 @@ local function setTimedMode(state, duration, expirationTime, modRate)
   state.total = nil
 end
 
-local function canQueryPlayerAuras()
-  return C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID and not WeakAuras.IsRestricted()
-end
-
-local function applyAuraTiming(state, aura)
-  state.stacks = readValue(aura.applications)
-  if not state.durationObject and C_DurationUtil and C_DurationUtil.CreateDuration then
-    local durationObject = C_DurationUtil.CreateDuration()
-    if pcall(durationObject.SetTimeFromEnd, durationObject, aura.expirationTime, aura.duration, aura.timeMod) then
-      setDurationMode(state, durationObject)
+local function applyAuraData(state, aura)
+  state.stacks = readNumber(aura.applications)
+  if not state.durationObject then
+    local object = newDuration()
+    if object and pcall(object.SetTimeFromEnd, object, aura.expirationTime, aura.duration, aura.timeMod) then
+      setObjectTiming(state, object)
     end
   end
   local duration = readNumber(aura.duration)
   local expirationTime = readNumber(aura.expirationTime)
-  if duration ~= nil and expirationTime ~= nil then
+  if duration and expirationTime then
     if not state.durationObject then
-      setTimedMode(state, duration, expirationTime, readNumber(aura.timeMod) or 1)
+      setTimedTiming(state, duration, expirationTime, readNumber(aura.timeMod) or 1)
     end
     state.auraActive = duration == 0 or expirationTime > GetTime()
   end
 end
 
-local function captureNativeWidgets(state, frame, unit)
-  local cooldown = frame.Cooldown or frame.cooldown
-  local countdownSource
-  if cooldown and cooldown.GetCountdownFontString then
-    countdownSource = cooldown:GetCountdownFontString()
-  end
-  if not countdownSource and frame.Bar then
-    countdownSource = frame.Bar.Duration
-  end
-  state.cdmCountdownSource = countdownSource
-
+local function findStackSource(frame)
   local applications = frame.Applications
+  local icon = frame.Icon
   if applications then
     local candidate = applications.Applications or applications
-    if candidate.GetText then
-      state.cdmStackSource = candidate
-    elseif frame.Icon and frame.Icon.Applications and frame.Icon.Applications.GetText then
-      state.cdmStackSource = frame.Icon.Applications
-    end
-  elseif frame.Icon and frame.Icon.Applications and frame.Icon.Applications.GetText then
-    state.cdmStackSource = frame.Icon.Applications
+    if candidate.GetText then return candidate end
   end
-
-  state.cdmTextRecord = nativeRecords[frame]
-
-  local instanceID = frame.auraInstanceID
-  if (isSecret(instanceID) or type(instanceID) == "number")
-    and (unit == "player" or unit == "target")
-    and C_UnitAuras and C_UnitAuras.GetAuraDuration then
-    local succeeded, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, instanceID)
-    if succeeded and Private.IsDurationObject(durationObject) then
-      setDurationMode(state, durationObject)
-    end
+  if icon and icon.Applications and icon.Applications.GetText then
+    return icon.Applications
   end
+  return nil
 end
 
-local function applyNativeRecord(state, record)
-  if not state.durationObject then
-    if record.duration then
-      setDurationMode(state, record.duration)
-    elseif record.raw then
-      local converted = convertRawTimes(record)
-      if converted then
-        setDurationMode(state, converted)
-      else
-        local start = readNumber(record.raw.start)
-        local duration = readNumber(record.raw.duration)
-        if start ~= nil and duration ~= nil then
-          setTimedMode(state, duration, start + duration, readNumber(record.raw.modRate) or 1)
-        end
-      end
-    end
+local function findCountdownSource(frame)
+  local widget = frame.Cooldown or frame.cooldown
+  local source
+  if widget and widget.GetCountdownFontString then
+    source = widget:GetCountdownFontString()
   end
-  state.cdmNativePaused = record.paused == true
+  if not source and frame.Bar then
+    source = frame.Bar.Duration
+  end
+  return source
 end
 
-local function expandWithRanks(spellIDs)
-  local expanded = {}
+local function expandRanks(list)
   local seen = {}
-  for _, spellID in ipairs(spellIDs) do
-    for _, rankSpellID in ipairs(Private.GetAuraSpellRanks(spellID)) do
-      if not seen[rankSpellID] then
-        seen[rankSpellID] = true
-        expanded[#expanded + 1] = rankSpellID
+  local expanded = {}
+  for _, spellID in ipairs(list) do
+    local family = Private.GetAuraSpellRanks(spellID) or { spellID }
+    for _, member in ipairs(family) do
+      if not seen[member] then
+        seen[member] = true
+        expanded[#expanded + 1] = member
       end
     end
   end
   return expanded
 end
 
-local function resolveCachedAura(state, frame, exactID, buffSpellIDs)
-  state.cdmAuraUnit = "player"
-  state.cdmAuraFilter = "HELPFUL"
-  state.cdmAuraTotem = false
-
-  local aura, unit
-  if frame then
-    aura = frame.auraDataCached
-    unit = readString(frame.auraDataUnit)
-  end
-
-  if unit == "player" or unit == "target" then
-    state.cdmAuraUnit = unit
-  end
-  local filter
-  local harmful = aura and readBoolean(aura.isHarmful)
-  if harmful ~= nil then
-    filter = harmful and "HARMFUL" or "HELPFUL"
-  elseif state.cdmAuraUnit == "target" then
-    if readValue(UnitIsFriend("player", "target")) == true then
-      filter = "HELPFUL"
-    else
-      filter = "HARMFUL"
-    end
-  else
-    filter = "HELPFUL"
-  end
-  if state.cdmAuraUnit == "target" then
-    if filter == "HELPFUL" then
-      filter = "HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY"
-    else
-      filter = "HARMFUL|PLAYER"
-    end
-  end
-  state.cdmAuraFilter = filter
-
-  local nativeSpellID
-  local nativeMatches
-  if not exactID then
-    nativeMatches = frame and true or false
-  elseif frame then
-    nativeSpellID = readNumber(frame.auraSpellID)
-    if nativeSpellID == nil and aura then
-      nativeSpellID = readNumber(aura.spellId)
-    end
-    if nativeSpellID == nil and unit == "player" and canQueryPlayerAuras() then
-      local succeeded, foundAura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, exactID)
-      if succeeded then
-        if foundAura and foundAura.isFromPlayerOrPlayerPet == true then
-          aura = foundAura
-          nativeSpellID = exactID
-        else
-          lastNativeSpells[frame] = nil
-        end
-      end
-    end
-    if nativeSpellID ~= nil then
-      lastNativeSpells[frame] = nativeSpellID
-    elseif aura and WeakAuras.IsRestricted() then
-      nativeSpellID = lastNativeSpells[frame]
-    end
-    nativeMatches = nativeSpellID ~= nil and nativeSpellID == exactID
-  else
-    nativeMatches = false
-  end
-
-  if nativeMatches then
-    local instanceID = frame.auraInstanceID
-    if not isSecret(instanceID) then
-      if instanceID ~= nil then
-        state.auraActive = true
-      elseif not aura then
-        state.auraActive = false
-      end
-    end
-  end
-
-  if exactID and aura and not nativeMatches then
-    aura = nil
-    unit = nil
-  end
-
-  local nativeAbsent = false
-  if frame then
-    local instanceID = frame.auraInstanceID
-    nativeAbsent = not isSecret(instanceID) and instanceID == nil and not frame.auraDataCached
-  end
-
-  state.cdmAuraRenderUnit = nil
-  state.cdmAuraRenderSpellIDs = nil
-  if nativeMatches and not nativeAbsent and (unit == "player" or unit == "target") then
-    state.cdmAuraRenderUnit = unit
-    local renderSpellID = readNumber(frame.auraSpellID)
-    if renderSpellID == nil and aura then
-      renderSpellID = readNumber(aura.spellId)
-    end
-    local renderSpellIDs
-    if renderSpellID ~= nil then
-      renderSpellIDs = { renderSpellID }
-    else
-      renderSpellIDs = buffSpellIDs
-    end
-    if not exactID and Private.GetAuraSpellRanks and type(renderSpellIDs) == "table" then
-      renderSpellIDs = expandWithRanks(renderSpellIDs)
-    end
-    state.cdmAuraRenderSpellIDs = renderSpellIDs
-  end
-
-  if nativeAbsent then
-    state.auraActive = false
-  end
-
-  if aura then
-    state.auraActive = true
-    local dispelName = readString(aura.dispelName)
-    if dispelName ~= nil then
-      state.cdmDispelName = dispelName
-      if dispelName == "" then
-        state.debuffClass = "enrage"
-      else
-        state.debuffClass = dispelName:lower()
-      end
-    end
-  end
-
-  local totemData = frame and frame.totemData
-  if not aura and totemData then
-    state.cdmAuraTotem = true
-    state.auraActive = nil
-    local duration = readNumber(totemData.duration)
-    local expirationTime = readNumber(totemData.expirationTime)
-    if duration ~= nil and expirationTime ~= nil then
-      setTimedMode(state, duration, expirationTime, readNumber(totemData.modRate) or 1)
-      state.auraActive = expirationTime > GetTime()
-    end
-    return nativeSpellID
-  end
-
-  local usable = nativeMatches and not nativeAbsent
-  if usable then
-    captureNativeWidgets(state, frame, unit)
-    local record = nativeRecords[frame]
-    if record then
-      applyNativeRecord(state, record)
-    end
-  end
-  if aura then
-    applyAuraTiming(state, aura)
-  end
-
-  if usable and unit == "player" and not state.durationObject and not state.duration
-    and canQueryPlayerAuras() and state.cdmAuraRenderSpellIDs then
-    for _, renderSpellID in ipairs(state.cdmAuraRenderSpellIDs) do
-      local succeeded, foundAura = pcall(C_UnitAuras.GetPlayerAuraBySpellID, renderSpellID)
-      if succeeded and foundAura and foundAura.isFromPlayerOrPlayerPet == true then
-        applyAuraTiming(state, foundAura)
-        break
-      end
-    end
-  end
-
-  return nativeSpellID
+local function restoreMemory(state, memory)
+  state.progressType = memory.progressType
+  state.durationObject = memory.durationObject
+  state.duration = memory.duration
+  state.expirationTime = memory.expirationTime
+  state.modRate = memory.modRate
+  state.value = nil
+  state.total = nil
 end
 
-local function resolveActiveState(state, frame, exactID, nativeSpellID)
-  local active = frame.isActive
-  if isSecret(active) then
-    state.auraActive = nil
-    return
-  end
-  if type(active) ~= "boolean" then
-    return
-  end
-  state.auraActive = active
-  if active and exactID then
-    local spellID = nativeSpellID
-    if spellID == nil then
-      spellID = readNumber(frame.auraSpellID)
-    end
-    if spellID == nil and frame.auraDataCached then
-      spellID = readNumber(frame.auraDataCached.spellId)
-    end
-    if spellID ~= nil then
-      state.auraActive = spellID == exactID
-    else
-      state.auraActive = nil
-    end
-  end
+local function remainingOf(object)
+  if not object or not object.GetRemainingDuration then return nil end
+  local ok, remaining = pcall(object.GetRemainingDuration, object)
+  return ok and readNumber(remaining) or nil
 end
 
-local function trackedSpellID(frame, previousKept)
-  local spellID = readNumber(frame.auraSpellID)
-  if spellID == nil and frame.auraDataCached then
-    spellID = readNumber(frame.auraDataCached.spellId)
-  end
-  if spellID == nil and previousKept then
-    spellID = previousKept.spellID
-  end
-  return spellID
+local function totalOf(object)
+  if not object or not object.GetTotalDuration then return nil end
+  local ok, total = pcall(object.GetTotalDuration, object)
+  return ok and readNumber(total) or nil
 end
 
-local function keepOrRestoreTiming(state, frame)
-  local kept = keptTimings[frame]
-  local cooldownID = readValue(frame.cooldownID)
-  local now = GetTime()
-
-  if state.progressType == "static" then
-    if not kept then
-      return
-    end
-    if kept.cooldownID ~= cooldownID or (kept.expiresAt and kept.expiresAt <= now) then
-      keptTimings[frame] = nil
-      return
-    end
-    state.progressType = kept.progressType
-    state.durationObject = kept.durationObject
-    state.duration = kept.duration
-    state.expirationTime = kept.expirationTime
-    state.modRate = kept.modRate
-    state.value = nil
-    state.total = nil
-    return
-  end
-
-  if kept and kept.cooldownID ~= cooldownID then
-    kept = nil
-  end
-
-  local stateDuration = readNumber(state.duration)
-  local stateExpiration = readNumber(state.expirationTime)
-  local durationObject = state.durationObject
-
+local function rememberTimer(state, frame, cooldownID, previous)
+  if previous and previous.cooldownID ~= cooldownID then previous = nil end
+  local auraData = type(frame.auraDataCached) == "table" and frame.auraDataCached or nil
+  local trackedSpell = readNumber(frame.auraSpellID) or (auraData and readNumber(auraData.spellId)) or (previous and previous.spellID)
+  local duration = readNumber(state.duration)
+  local expirationTime = readNumber(state.expirationTime)
   local expiresAt
-  if stateDuration and stateExpiration and stateDuration > 0 then
-    expiresAt = stateExpiration
-  elseif durationObject then
-    local succeeded, remaining = pcall(durationObject.GetRemainingDuration, durationObject)
-    remaining = succeeded and readNumber(remaining)
-    if remaining and remaining > 0 then
-      expiresAt = now + remaining
-    end
+  if duration and expirationTime and duration > 0 then
+    expiresAt = expirationTime
+  else
+    local remaining = remainingOf(state.durationObject)
+    if remaining and remaining > 0 then expiresAt = GetTime() + remaining end
   end
-
-  local totalDuration = stateDuration
-  if totalDuration == nil and durationObject then
-    local succeeded, total = pcall(durationObject.GetTotalDuration, durationObject)
-    totalDuration = succeeded and readNumber(total) or nil
-  end
-  if totalDuration == nil and kept then
-    totalDuration = kept.totalDuration
-  end
-
-  keptTimings[frame] = {
+  timerMemories[frame] = {
     cooldownID = cooldownID,
     progressType = state.progressType,
-    durationObject = durationObject,
+    durationObject = state.durationObject,
     duration = state.duration,
     expirationTime = state.expirationTime,
     modRate = state.modRate,
-    spellID = trackedSpellID(frame, kept),
+    spellID = trackedSpell,
     expiresAt = expiresAt,
-    totalDuration = totalDuration,
+    totalDuration = duration or totalOf(state.durationObject) or (previous and previous.totalDuration),
   }
 end
 
-function Private.CDMApplyAura(state, identity, info, frame, exactID, buffSpellIDs)
-  local nativeSpellID = resolveCachedAura(state, frame, exactID, buffSpellIDs)
-
-  if frame and state.auraActive ~= false then
-    resolveActiveState(state, frame, exactID, nativeSpellID)
-  end
-
-  if frame then
-    if state.auraActive == false or state.cdmAuraUnit == "target" then
-      keptTimings[frame] = nil
-    else
-      keepOrRestoreTiming(state, frame)
+local function keepTimerAcrossSecrets(state, frame)
+  local memory = timerMemories[frame]
+  local cooldownID = readable(frame.cooldownID)
+  if state.auraActive == false or state.cdmAuraUnit == "target" then
+    timerMemories[frame] = nil
+  elseif state.progressType == "static" then
+    if memory then
+      if memory.cooldownID ~= cooldownID or (memory.expiresAt and memory.expiresAt <= GetTime()) then
+        timerMemories[frame] = nil
+      else
+        restoreMemory(state, memory)
+      end
     end
+  else
+    rememberTimer(state, frame, cooldownID, memory)
   end
+end
 
-  if state.auraActive ~= false then
-    return
-  end
-
+local function resetInactive(state)
   state.progressType = "static"
   state.value = 1
   state.total = 1
@@ -987,41 +726,266 @@ function Private.CDMApplyAura(state, identity, info, frame, exactID, buffSpellID
   state.debuffClass = nil
 end
 
+local function chooseFilter(aura, unit)
+  local filter = "HELPFUL"
+  local harmful = aura and readBoolean(aura.isHarmful)
+  if harmful ~= nil then
+    filter = harmful and "HARMFUL" or "HELPFUL"
+  elseif unit == "target" then
+    filter = readBoolean(UnitIsFriend("player", "target")) == true and "HELPFUL" or "HARMFUL"
+  end
+  if unit == "target" then
+    filter = filter == "HELPFUL" and "HELPFUL|PLAYER|INCLUDE_NAME_PLATE_ONLY" or "HARMFUL|PLAYER"
+  end
+  return filter
+end
+
+function Private.CDMApplyAura(state, identity, info, frame, exactID, buffSpellIDs)
+  state.cdmAuraUnit = "player"
+  state.cdmAuraFilter = "HELPFUL"
+  state.cdmAuraTotem = false
+
+  local aura = frame and frame.auraDataCached
+  if type(aura) ~= "table" then aura = nil end
+  local unit = frame and readString(frame.auraDataUnit) or nil
+  if unit == "player" or unit == "target" then
+    state.cdmAuraUnit = unit
+  end
+  state.cdmAuraFilter = chooseFilter(aura, state.cdmAuraUnit)
+
+  local instanceID = frame and frame.auraInstanceID
+  local instanceSecret = isSecret(instanceID)
+  local nativeSpell
+  local matches
+  if exactID == nil then
+    matches = frame ~= nil
+  elseif not frame then
+    matches = false
+  else
+    nativeSpell = readNumber(frame.auraSpellID) or (aura and readNumber(aura.spellId)) or nil
+    if not nativeSpell and unit == "player" and playerAuraLookupAvailable() then
+      local ok, found = pcall(C_UnitAuras.GetPlayerAuraBySpellID, exactID)
+      if ok then
+        if type(found) == "table" and readBoolean(found.isFromPlayerOrPlayerPet) == true then
+          aura = found
+          nativeSpell = exactID
+        else
+          nativeSpells[frame] = nil
+        end
+      end
+    end
+    if nativeSpell then
+      nativeSpells[frame] = nativeSpell
+    elseif aura and WeakAuras.IsRestricted() then
+      nativeSpell = nativeSpells[frame]
+    end
+    matches = nativeSpell ~= nil and nativeSpell == exactID
+  end
+
+  if matches and frame and not instanceSecret then
+    if instanceID ~= nil then
+      state.auraActive = true
+    elseif aura == nil then
+      state.auraActive = false
+    end
+  end
+  if exactID ~= nil and aura and not matches then
+    aura = nil
+  end
+  local nativeAbsent = frame ~= nil and not instanceSecret and instanceID == nil and frame.auraDataCached == nil
+  if nativeAbsent then
+    state.auraActive = false
+  end
+  if aura then
+    state.auraActive = true
+  end
+  local usable = frame ~= nil and matches and not nativeAbsent
+  local record = frame and nativeRecords[frame]
+
+  state.cdmAuraRenderUnit = nil
+  state.cdmAuraRenderSpellIDs = nil
+  if usable and (unit == "player" or unit == "target") then
+    state.cdmAuraRenderUnit = unit
+    local renderSpell = readNumber(frame.auraSpellID) or (aura and readNumber(aura.spellId)) or nil
+    local list = renderSpell and { renderSpell } or buffSpellIDs
+    if exactID == nil and Private.GetAuraSpellRanks and type(list) == "table" then
+      list = expandRanks(list)
+    end
+    state.cdmAuraRenderSpellIDs = list
+  end
+
+  local totem = (not aura and frame) and frame.totemData or nil
+  if totem then
+    state.cdmAuraTotem = true
+    state.auraActive = nil
+    local duration = readNumber(totem.duration)
+    local expirationTime = readNumber(totem.expirationTime)
+    if duration and expirationTime then
+      setTimedTiming(state, duration, expirationTime, readNumber(totem.modRate) or 1)
+      state.auraActive = expirationTime > GetTime()
+    end
+  else
+    if usable then
+      state.cdmCountdownSource = findCountdownSource(frame)
+      local stackSource = findStackSource(frame)
+      if stackSource then state.cdmStackSource = stackSource end
+      state.cdmTextRecord = record
+      if (instanceSecret or type(instanceID) == "number") and (unit == "player" or unit == "target")
+        and C_UnitAuras and C_UnitAuras.GetAuraDuration then
+        local ok, object = pcall(C_UnitAuras.GetAuraDuration, unit, instanceID)
+        if ok and Private.IsDurationObject(object) then
+          setObjectTiming(state, object)
+        end
+      end
+      if record then
+        if not state.durationObject then
+          local object = record.duration or convertRaw(record)
+          if object then
+            setObjectTiming(state, object)
+          elseif record.raw then
+            local start = readNumber(record.raw.start)
+            local duration = readNumber(record.raw.duration)
+            if start and duration then
+              setTimedTiming(state, duration, start + duration, readNumber(record.raw.modRate) or 1)
+            end
+          end
+        end
+        state.cdmNativePaused = record.paused == true
+      end
+    end
+    if aura then
+      applyAuraData(state, aura)
+    end
+    local renderList = state.cdmAuraRenderSpellIDs
+    if usable and unit == "player" and not state.durationObject and not state.duration
+      and playerAuraLookupAvailable() and renderList then
+      for _, spellID in ipairs(renderList) do
+        local ok, found = pcall(C_UnitAuras.GetPlayerAuraBySpellID, spellID)
+        if ok and type(found) == "table" and readBoolean(found.isFromPlayerOrPlayerPet) == true then
+          applyAuraData(state, found)
+          break
+        end
+      end
+    end
+  end
+
+  local dispelName = aura and readString(aura.dispelName)
+  if dispelName then
+    state.cdmDispelName = dispelName
+    state.debuffClass = dispelName == "" and "enrage" or dispelName:lower()
+  end
+
+  if frame and state.auraActive ~= false then
+    local isActive = frame.isActive
+    if isSecret(isActive) then
+      state.auraActive = nil
+    elseif type(isActive) == "boolean" then
+      state.auraActive = isActive
+      if isActive and exactID ~= nil then
+        local auraData = type(frame.auraDataCached) == "table" and frame.auraDataCached or nil
+        local compared = nativeSpell or readNumber(frame.auraSpellID) or (auraData and readNumber(auraData.spellId)) or nil
+        if compared then
+          state.auraActive = compared == exactID
+        else
+          state.auraActive = nil
+        end
+      end
+    end
+  end
+
+  if frame then
+    keepTimerAcrossSecrets(state, frame)
+  end
+
+  if state.auraActive == false then
+    resetInactive(state)
+  end
+end
+
+local function relaunchAfterCast(castSpellID)
+  local ranks = Private.GetAuraSpellRanks and Private.GetAuraSpellRanks(castSpellID) or { castSpellID }
+  local family = {}
+  for _, member in ipairs(ranks) do family[member] = true end
+  for frame, remembered in pairs(nativeSpells) do
+    if family[remembered] and remembered ~= castSpellID then
+      nativeSpells[frame] = castSpellID
+    end
+  end
+  local relaunched = false
+  for _, memory in pairs(timerMemories) do
+    local total = memory.totalDuration
+    if memory.spellID and family[memory.spellID] and total and total > 0 then
+      local expiresAt = GetTime() + total * (memory.modRate or 1)
+      local done = false
+      if memory.progressType == "durationObject" then
+        local object = newDuration()
+        if object and pcall(object.SetTimeFromEnd, object, expiresAt, total, memory.modRate) then
+          memory.durationObject = object
+          done = true
+        end
+      else
+        memory.expirationTime = expiresAt
+        done = true
+      end
+      if done then
+        memory.expiresAt = expiresAt
+        relaunched = true
+      end
+    end
+  end
+  if relaunched then queueRefresh() end
+end
+
+local castListener = CreateFrame("Frame")
+for _, eventName in ipairs({ "UNIT_SPELLCAST_SENT", "UNIT_SPELLCAST_SUCCEEDED", "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_FAILED_QUIET", "UNIT_SPELLCAST_INTERRUPTED" }) do
+  castListener:RegisterUnitEvent(eventName, "player")
+end
+castListener:SetScript("OnEvent", function(_, event, _, first, second, third)
+  if event == "UNIT_SPELLCAST_SENT" then
+    if isSecret(first) or isSecret(second) or second == nil then return end
+    if first == nil or first == "" then
+      pendingSelfCasts[second] = true
+    else
+      local playerName = UnitName("player")
+      if not isSecret(playerName) and first == playerName then
+        pendingSelfCasts[second] = true
+      end
+    end
+    return
+  end
+  if isSecret(first) or first == nil then return end
+  if event == "UNIT_SPELLCAST_SUCCEEDED" then
+    if not pendingSelfCasts[first] then return end
+    pendingSelfCasts[first] = nil
+    local castSpellID = readNumber(second)
+    if castSpellID then relaunchAfterCast(castSpellID) end
+  else
+    pendingSelfCasts[first] = nil
+  end
+end)
+
 function Private.ParseCDMText(value)
-  if type(value) ~= "string" then
-    return nil
-  end
-  local token = value:match("^%%{(.+)}$") or value:match("^%%(.+)$")
-  if not token then
-    return nil
-  end
-  if simpleTextKinds[token] then
-    return token
-  end
-  local index, kind = token:match("^(%d+)%.(%a+)$")
-  if kind and simpleTextKinds[kind] then
-    return kind, tonumber(index)
+  if isSecret(value) or type(value) ~= "string" then return nil end
+  local token = value:match("^%%{([^{}]+)}$") or value:match("^%%([%w%.]+)$")
+  if not token then return nil end
+  if textWords[token] then return token end
+  local index, word = token:match("^(%d+)%.(%a+)$")
+  if index and textWords[word] then
+    return word, tonumber(index)
   end
   return nil
 end
 
 function Private.IsCDMBuffText(value, data)
   local kind, index = Private.ParseCDMText(value)
-  if not kind then
-    return false
-  end
-  if kind == "bp" or kind == "bs" then
-    return true
-  end
+  if not kind then return false end
+  if kind == "bp" or kind == "bs" then return true end
   local triggers = data and data.triggers
-  if not triggers then
-    return false
-  end
+  if type(triggers) ~= "table" then return false end
   if not index then
-    local source = data.progressSource and data.progressSource[1]
-    if source == 0 then
-      return false
-    elseif type(source) == "number" and source > 0 then
+    local source = type(data.progressSource) == "table" and data.progressSource[1] or nil
+    if source == 0 then return false end
+    if type(source) == "number" and source > 0 then
       index = source
     elseif type(triggers.activeTriggerMode) == "number" and triggers.activeTriggerMode > 0 then
       index = triggers.activeTriggerMode
@@ -1032,39 +996,24 @@ function Private.IsCDMBuffText(value, data)
     end
   end
   local entry = triggers[index]
-  if type(entry) ~= "table" or type(entry.trigger) ~= "table" then
-    return false
-  end
-  return entry.trigger.type == "cdm" and entry.trigger.event == "Blizzard CDM Buff"
+  local trigger = type(entry) == "table" and entry.trigger or nil
+  return type(trigger) == "table" and trigger.type == "cdm" and trigger.event == "Blizzard CDM Buff"
 end
 
-function Private.CopyCDMCountdownText(destination, state, kind)
-  if kind == "caster" then
-    destination:SetText("")
-    return
-  end
+local function countdownTextFor(state, kind)
+  if kind == "caster" then return "" end
   if kind == "dispel" then
-    if state and state.show and state.cdmDispelName then
-      destination:SetText(state.cdmDispelName)
-    else
-      destination:SetText("")
-    end
-    return
+    if state.show and state.cdmDispelName then return state.cdmDispelName end
+    return ""
   end
-  if kind == "s" then
-    kind = "bs"
+  local stack = kind == "bs" or kind == "s"
+  local buff = state.cdmBuff
+  if not stack and buff and state.show and not state.cdmTextPreview and Private.IsDurationObject(state.durationObject) then
+    return Private.FormatDurationText(state.durationObject, false, 99, 0, 0)
   end
-  local isStack = kind == "bs"
-
-  if not isStack and state and state.cdmBuff and state.show and not state.cdmTextPreview
-    and Private.IsDurationObject(state.durationObject) then
-    destination:SetText(Private.FormatDurationText(state.durationObject, false, 99, 0, 0))
-    return
-  end
-
   local source
-  if state and state.show then
-    if isStack then
+  if state.show then
+    if stack then
       source = state.cdmStackSource
     else
       source = state.cdmCountdownSource
@@ -1073,197 +1022,26 @@ function Private.CopyCDMCountdownText(destination, state, kind)
   if source and source.IsForbidden and source:IsForbidden() then
     source = nil
   end
-
-  if source and (isStack or state.cdmBuff) and source.IsShown then
-    local shown = source:IsShown()
-    if not isSecret(shown) and not shown then
-      destination:SetText("")
-      return
-    end
-  end
-
   if source then
+    if (stack or buff) and source.IsShown and readBoolean(source:IsShown()) == false then
+      return ""
+    end
     local text = source:GetText()
-    if not isStack and state.cdmBuff and not isSecret(text) and tonumber(text) == 0 then
-      text = ""
+    if not stack and buff and not isSecret(text) and tonumber(text) == 0 then
+      return ""
     end
-    destination:SetText(text)
-    return
+    return text
   end
-
-  if state and state.show and state.cdmTextPreview then
-    if isStack then
-      destination:SetText("3")
-    elseif state.expirationTime then
-      destination:SetText(tostring(math.ceil(math.max(0, state.expirationTime - GetTime()))))
-    else
-      destination:SetText("6")
+  if state.show and state.cdmTextPreview then
+    if stack then return "3" end
+    if state.expirationTime then
+      return tostring(math.ceil(math.max(0, state.expirationTime - GetTime())))
     end
-    return
+    return "6"
   end
-
-  destination:SetText("")
+  return ""
 end
 
-local function forEachCooldownEntry(categoryNames, callback)
-  if not (C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCategorySet and Enum.CooldownViewerCategory) then
-    return
-  end
-  for _, categoryName in ipairs(categoryNames) do
-    local categoryValue = Enum.CooldownViewerCategory[categoryName]
-    local succeeded, cooldownIDs = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, categoryValue)
-    if succeeded and type(cooldownIDs) == "table" then
-      for _, cooldownID in ipairs(cooldownIDs) do
-        local infoSucceeded, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldownID)
-        if infoSucceeded and info then
-          callback(cooldownID, info)
-        end
-      end
-    end
-  end
+function Private.CopyCDMCountdownText(destination, state, kind)
+  destination:SetText(countdownTextFor(state or {}, kind))
 end
-
-local function spellLabel(spellID)
-  local name, _, icon = Private.ExecEnv.GetSpellInfo(spellID)
-  if not name then
-    return nil
-  end
-  if icon then
-    return "|T" .. icon .. ":16|t " .. name
-  end
-  return name
-end
-
-function Private.GetCooldownManagerSpells()
-  local spells = {}
-  forEachCooldownEntry({ "Essential", "Utility" }, function(_, info)
-    local spellID = info.spellID
-    if spellID and spells[spellID] == nil then
-      spells[spellID] = spellLabel(spellID)
-    end
-  end)
-  return spells
-end
-
-function Private.GetCooldownManagerAuras()
-  local auras = {}
-  forEachCooldownEntry({ "TrackedBuff", "TrackedBar" }, function(cooldownID, info)
-    if info.spellID then
-      auras[cooldownID] = spellLabel(info.spellID)
-    end
-  end)
-  return auras
-end
-
-function Private.GetCooldownManagerAuraSpellIDs(cooldownID)
-  local spellIDs = {}
-  if not (C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo) then
-    return spellIDs
-  end
-  local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
-  if not info then
-    return spellIDs
-  end
-  for _, linkedSpellID in ipairs(info.linkedSpellIDs or {}) do
-    spellIDs[#spellIDs + 1] = linkedSpellID
-  end
-  if info.overrideTooltipSpellID then
-    spellIDs[#spellIDs + 1] = info.overrideTooltipSpellID
-  end
-  if info.spellID then
-    spellIDs[#spellIDs + 1] = info.spellID
-  end
-  return spellIDs
-end
-
-local function isInRankFamily(rankSpellIDs, spellID)
-  for _, rankSpellID in ipairs(rankSpellIDs) do
-    if rankSpellID == spellID then
-      return true
-    end
-  end
-  return false
-end
-
-local function restartKeptTiming(kept)
-  local modRate = kept.modRate
-  local expiresAt = GetTime() + kept.totalDuration * (modRate or 1)
-  if kept.progressType == "durationObject" then
-    if not (C_DurationUtil and C_DurationUtil.CreateDuration) then
-      return false
-    end
-    local durationObject = C_DurationUtil.CreateDuration()
-    if not pcall(durationObject.SetTimeFromEnd, durationObject, expiresAt, kept.totalDuration, modRate) then
-      return false
-    end
-    kept.durationObject = durationObject
-  else
-    kept.expirationTime = expiresAt
-  end
-  kept.expiresAt = expiresAt
-  return true
-end
-
-local function handleSelfCastSucceeded(castSpellID)
-  local rankSpellIDs = Private.GetAuraSpellRanks(castSpellID)
-  for frame, lastSpellID in pairs(lastNativeSpells) do
-    if lastSpellID ~= castSpellID and isInRankFamily(rankSpellIDs, lastSpellID) then
-      lastNativeSpells[frame] = castSpellID
-    end
-  end
-  local restarted = false
-  for _, kept in pairs(keptTimings) do
-    if kept.spellID and isInRankFamily(rankSpellIDs, kept.spellID)
-      and kept.totalDuration and kept.totalDuration > 0 then
-      if restartKeptTiming(kept) then
-        restarted = true
-      end
-    end
-  end
-  if restarted then
-    queueRefresh()
-  end
-end
-
-local recastFrame = CreateFrame("Frame")
-for _, eventName in ipairs({
-  "UNIT_SPELLCAST_SENT",
-  "UNIT_SPELLCAST_SUCCEEDED",
-  "UNIT_SPELLCAST_FAILED",
-  "UNIT_SPELLCAST_FAILED_QUIET",
-  "UNIT_SPELLCAST_INTERRUPTED",
-}) do
-  recastFrame:RegisterUnitEvent(eventName, "player")
-end
-
-recastFrame:SetScript("OnEvent", function(_, event, ...)
-  if event == "UNIT_SPELLCAST_SENT" then
-    local _, target, castGUID = ...
-    if isSecret(target) or isSecret(castGUID) or not castGUID then
-      return
-    end
-    local playerName = UnitName("player")
-    if target == nil or target == "" or (not isSecret(playerName) and target == playerName) then
-      pendingSelfCasts[castGUID] = true
-    end
-    return
-  end
-
-  local _, castGUID, spellID = ...
-  if isSecret(castGUID) or castGUID == nil then
-    return
-  end
-  if event == "UNIT_SPELLCAST_SUCCEEDED" then
-    if not pendingSelfCasts[castGUID] then
-      return
-    end
-    pendingSelfCasts[castGUID] = nil
-    local castSpellID = readNumber(spellID)
-    if castSpellID == nil then
-      return
-    end
-    handleSelfCastSucceeded(castSpellID)
-  else
-    pendingSelfCasts[castGUID] = nil
-  end
-end)

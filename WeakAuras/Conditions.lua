@@ -526,14 +526,16 @@ local function CreateDeactivateCondition(ret, condition, conditionNumber, data, 
         local propertyData = properties and properties[change.property]
         if (propertyData and propertyData.type and propertyData.setter) then
           usedProperties[change.property] = true;
+          local baseValue = GetBaseProperty(data, change.property)
+          if baseValue == nil then
+            baseValue = propertyData.resetValue
+          end
           table.insert(ret, "    propertyChanges['" .. change.property .. "'] = "
-                .. formatValueForAssignment(propertyData.type, GetBaseProperty(data, change.property),
-                                            nil, nil, data)
+                .. formatValueForAssignment(propertyData.type, baseValue, nil, nil, data)
                 .. "\n")
           if (debug) then
             table.insert(ret, "    print('- " .. change.property .. " "
-                      .. formatValueForAssignment(propertyData.type, GetBaseProperty(data, change.property),
-                                                 nil, nil, data)
+                      .. formatValueForAssignment(propertyData.type, baseValue, nil, nil, data)
                       .. "')\n")
           end
         end
@@ -833,16 +835,20 @@ local function ConstructConditionFunction(data)
       base = "region.subRegions[" .. subIndex .. "]:"
     end
 
-    if Private.BlizzardAuraDisplay.Enabled(data) and Private.BlizzardAuraDisplay.IsNativeConditionProperty(data, property) then
-      table.insert(ret, "    Private.ExecEnv.SetSecretAuraConditionProperty(region, " .. string.format("%q", property) .. ", " .. formatValueForCall(properties[property].type, property) .. ")\n")
+    local valueCode = formatValueForCall(properties[property].type, property)
+    local display = Private.BlizzardAuraDisplay
+    if display.Enabled(data) and display.IsNativeConditionProperty(data, property) then
+      table.insert(ret, ("    Private.ExecEnv.SetSecretAuraConditionProperty(region, %q, %s)\n"):format(property, valueCode))
     else
-      table.insert(ret, "    " .. base .. properties[property].setter .. "(" .. arg1 .. formatValueForCall(properties[property].type, property)  .. ")\n")
+      table.insert(ret, "    " .. base .. properties[property].setter .. "(" .. arg1 .. valueCode .. ")\n")
     end
     if (debug) then table.insert(ret, "    print('Calling "  .. properties[property].setter ..  " with', " .. arg1 ..  formatValueForCall(properties[property].type, property) .. ")\n") end
     table.insert(ret, "  end\n")
   end
-  if C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean and not Private.BlizzardAuraDisplay.Enabled(data) then
-    Private.CreateSecretConditionCode(ret, data, properties, allConditionsTemplate, CreateTestForCondition, ParseProperty, GetBaseProperty)
+  local curves = C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean
+  if curves and not Private.BlizzardAuraDisplay.Enabled(data) then
+    Private.CreateSecretConditionCode(ret, data, properties, allConditionsTemplate, CreateTestForCondition, ParseProperty,
+      GetBaseProperty)
   end
   table.insert(ret, "end\n")
 

@@ -41,17 +41,23 @@ local properties = {
   textureVisible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
   textureDesaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   textureColor = {
     display = L["Color"],
     setter = "SetColor",
+    secretCapable = true,
     type = "color"
   },
   textureMirror = {
@@ -74,6 +80,13 @@ local funcs = {
   SetDesaturated = function(self, b)
     self.texture:SetDesaturated(b)
   end,
+  SetSecretDesaturation = function(self, value)
+    self.texture:SetDesaturation(value)
+  end,
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.visible, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   SetColor = function(self, ...)
     self.texture:SetVertexColor(...)
   end,

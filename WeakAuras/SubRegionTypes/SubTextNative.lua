@@ -2,31 +2,12 @@ if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
 local canBindDurationText = C_DurationUtil ~= nil and C_DurationUtil.CreateDurationTextBinding ~= nil
-  and C_StringUtil ~= nil and C_StringUtil.CreateSecondsFormatter ~= nil
-local durationFormatters = {}
+  and C_StringUtil ~= nil and C_StringUtil.CreateNumericRuleFormatter ~= nil
 
-local function ConfigureDurationFormatter(formatter, timeFormat, threshold)
-  if timeFormat == 1 or timeFormat == 2 then
-    formatter:SetDesiredUnitCount(timeFormat)
-    if Enum.SecondsFormatterAbbreviation then
-      formatter:SetDefaultAbbreviation(Enum.SecondsFormatterAbbreviation.OneLetter)
-    end
-  end
-  if tonumber(threshold) then
-    formatter:SetMillisecondsThreshold(tonumber(threshold))
-  end
-end
-
-local function GetDurationFormatter(timeFormat, threshold)
-  local key = tostring(timeFormat) .. ":" .. tostring(threshold)
-  if not durationFormatters[key] then
-    local formatter = C_StringUtil.CreateSecondsFormatter()
-    if not pcall(ConfigureDurationFormatter, formatter, timeFormat, threshold) then
-      formatter = C_StringUtil.CreateSecondsFormatter()
-    end
-    durationFormatters[key] = formatter
-  end
-  return durationFormatters[key]
+local function GetDurationFormatter(subRegion)
+  local timeFormat = subRegion.durationTimeFormat or 0
+  return Private.GetDurationTextFormatter((timeFormat == 0 and subRegion.durationLegacyFloor) and 0 or 99,
+    subRegion.durationThreshold or 60, subRegion.durationPrecision or 1, false, timeFormat)
 end
 
 local function BindDurationText(subRegion, durationObject)
@@ -37,7 +18,7 @@ local function BindDurationText(subRegion, durationObject)
     binding:SetFontString(subRegion.text)
     subRegion.durationTextBinding = binding
   end
-  local formatter = GetDurationFormatter(subRegion.durationTimeFormat, subRegion.durationThreshold)
+  local formatter = GetDurationFormatter(subRegion)
   if subRegion.boundDurationFormatter ~= formatter then
     binding:SetFormatter(formatter)
     subRegion.boundDurationFormatter = formatter

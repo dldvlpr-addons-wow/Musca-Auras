@@ -14,7 +14,6 @@ return function(test)
   local realRegister = WeakAuras.RegisterTriggerSystemOptions
   WeakAuras.RegisterTriggerSystemOptions = function(_, builder) buildOptions = builder end
   local optionsPrivate = {
-    Private = private,
     commonOptions = { AddCommonTriggerOptions = function() end },
     AuraEditor = { AddOptions = function() end },
     AddTriggerMetaFunctions = function() end,
@@ -33,6 +32,8 @@ return function(test)
     end,
   }
   local ok, message = test.Loader.RunFile(test.tocPath:gsub("WeakAuras/WeakAuras.toc$", "WeakAurasOptions/SecretAuraTriggerOptions.lua"), "WeakAurasOptions", optionsPrivate)
+  -- In game, WeakAuras.ToggleOptions sets Private only after the options addon has loaded.
+  optionsPrivate.Private = private
   WeakAuras.RegisterTriggerSystemOptions = realRegister
   assert(ok, tostring(message))
   assert(buildOptions, "secretAura options not registered")

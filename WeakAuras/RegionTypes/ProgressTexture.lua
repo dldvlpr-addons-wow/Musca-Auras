@@ -73,21 +73,27 @@ local properties = {
   desaturateForeground = {
     display = L["Desaturate Foreground"],
     setter = "SetForegroundDesaturated",
+    secretSetter = "SetSecretForegroundDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   desaturateBackground = {
     display = L["Desaturate Background"],
     setter = "SetBackgroundDesaturated",
+    secretSetter = "SetSecretBackgroundDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   foregroundColor = {
     display = L["Foreground Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color"
   },
   backgroundColor = {
     display = L["Background Color"],
     setter = "SetBackgroundColor",
+    secretCapable = true,
     type = "color"
   },
   width = {
@@ -715,6 +721,17 @@ local funcs = {
   SetBackgroundDesaturated = function(self, b)
     self.background:SetDesaturated(b)
     self.backgroundSpinner:SetDesaturated(b)
+  end,
+  SetSecretForegroundDesaturation = function(self, value)
+    self.foreground:SetDesaturation(value)
+    self.foregroundSpinner:SetDesaturation(value)
+    if self.nativeRadial then
+      self.nativeRadial:SetDesaturation(value)
+    end
+  end,
+  SetSecretBackgroundDesaturation = function(self, value)
+    self.background:SetDesaturation(value)
+    self.backgroundSpinner:SetDesaturation(value)
   end,
   SetBackgroundColor = function(self, r, g, b, a)
     self.background:SetColor(r, g, b, a)

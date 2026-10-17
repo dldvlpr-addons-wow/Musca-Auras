@@ -132,6 +132,17 @@ local function CanHaveMatchCheck(trigger)
 end
 
 local function CreateNameOptions(aura_options, data, triggernum, size, isExactSpellId, isIgnoreList, prefix, baseOrder, useKey, optionKey, name, desc, inverse, enabled, onChanged)
+  local function Commit(withThumbnail)
+    if onChanged then
+      onChanged()
+      return
+    end
+    WeakAuras.Add(data)
+    if withThumbnail then
+      WeakAuras.UpdateThumbnail(data)
+    end
+    WeakAuras.ClearAndUpdateOptions(data.id)
+  end
   local trigger = data.triggers[triggernum].trigger
 
   local spellCache = WeakAuras.spellCache
@@ -140,7 +151,8 @@ local function CreateNameOptions(aura_options, data, triggernum, size, isExactSp
     local hiddenFunction
     if enabled then
       hiddenFunction = function()
-        return not (enabled() and (i == 1 or trigger[optionKey] and trigger[optionKey][i - 1]))
+        local previousFilled = i == 1 or (trigger[optionKey] and trigger[optionKey][i - 1])
+        return not (previousFilled and enabled())
       end
     elseif isIgnoreList then
       hiddenFunction = function()
@@ -232,10 +244,7 @@ local function CreateNameOptions(aura_options, data, triggernum, size, isExactSp
           local _, bestSuggestion = getAuraMatchesList(input)
           if bestSuggestion then
             trigger[optionKey][i] = bestSuggestion
-            if onChanged then onChanged() else
-              WeakAuras.Add(data)
-              WeakAuras.ClearAndUpdateOptions(data.id)
-            end
+            Commit(false)
           end
         end
       end
@@ -277,11 +286,7 @@ local function CreateNameOptions(aura_options, data, triggernum, size, isExactSp
           end
         end
 
-        if onChanged then onChanged() else
-          WeakAuras.Add(data)
-          WeakAuras.UpdateThumbnail(data)
-          WeakAuras.ClearAndUpdateOptions(data.id)
-        end
+        Commit(true)
       end,
       validate = isExactSpellId and WeakAuras.ValidateNumeric or nil,
       control = "WeakAurasInputFocus",

@@ -534,9 +534,13 @@ end
 
 -- Create region options table
 local function createOptions(id, data)
+  local title = L["Group Settings"]
+  if data.blizzardFlow then
+    title = L["Modern Aura Group Settings"]
+  end
   -- Region options
   local options = {
-    __title = data.blizzardFlow and "Modern Aura Group Settings" or L["Group Settings"],
+    __title = title,
     __order = 1,
     groupIcon = {
       type = "input",
@@ -640,7 +644,8 @@ local function createOptions(id, data)
   end
 
 
-  if not hasSubGroups and not data.blizzardFlow then
+  local flowManagesLayout = data.blizzardFlow
+  if not (hasSubGroups or flowManagesLayout) then
     for k, v in pairs(createDistributeAlignOptions(id, data)) do
       options[k] = v
     end
@@ -654,8 +659,10 @@ local function createOptions(id, data)
 
   return {
     group = options,
-    position = OptionsPrivate.commonOptions.PositionOptions(id, data, nil, true,
-      function() return not (data.blizzardFlow and data.blizzardFlowFrames) end, true),
+    position = OptionsPrivate.commonOptions.PositionOptions(id, data, nil, true, function()
+      local flowPositionsFrames = data.blizzardFlow and data.blizzardFlowFrames
+      return not flowPositionsFrames
+    end, true),
   };
 end
 

@@ -1,98 +1,36 @@
--- Options preview of the native aura display: sample native buttons with fake bindings.
--- Fills Private.BlizzardAuraDisplay; called by BlizzardAuraDisplay.lua, SecretAuraSingle.lua and SecretAuraConditions.lua.
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
+
+-- Options preview of the native display: fake aura buttons ("samples") that mimic the Blizzard
+-- button interface, laid out by growth and running a looping countdown while the options are open.
+-- Display members of files loaded later are looked up at call time.
+
 local Display = Private.BlizzardAuraDisplay
 
 local SAMPLE_DURATION = 6
+local TICK_SECONDS = 0.05
+local FALLBACK_NAME, FALLBACK_ICON = "Aura", 134400
+local DEFAULT_SPACING = 6
+
 Display.PREVIEW_SAMPLE_DURATION = SAMPLE_DURATION
-local BINDING_KINDS = {"Icon", "DurationText", "ApplicationCount", "SpellName", "DurationBar", "DurationCooldown"}
 
-local function AttachBindingMethods(button)
-  for _, kind in ipairs(BINDING_KINDS) do
-    button["Clear" .. kind] = function(self)
-      self.bindings[kind] = {}
-    end
-    button["Set" .. kind] = function(self, widget, options)
-      local list = self.bindings[kind] or {}
-      self.bindings[kind] = list
-      list[#list + 1] = {widget = widget, options = options}
-    end
-  end
+local function TimedText(timed, text)
+  return timed and text or ""
 end
 
-local function AttachDispelAndAnimationMethods(button)
-  function button:AddAuraShownAnimation(animation)
-    animation:Play()
-  end
-  function button:RemoveAuraShownAnimation(animation)
-    animation:Stop()
-  end
-  function button:AddDispelTypeTexture(texture, options)
-    local styles = Enum.CustomAuraButtonDispelTypeTextureStyle
-    if options.style == styles.PreserveAsset then
-      AuraUtil.SetAuraBorderColor(texture, "Magic")
-      texture:Show()
-      return
-    end
-    if options.style == styles.Border then
-      AuraUtil.SetAuraBorderAtlas(texture, "Magic", false)
-    else
-      AuraUtil.SetAuraDispelTypeIcon(texture, "Magic")
-    end
-    texture:SetVertexColor(1, 1, 1, 1)
-    texture:Show()
-  end
-end
-
-function Display.CreateSampleNative(parent)
-  local button = CreateFrame("Frame", nil, parent)
-  button:EnableMouse(false)
-  button.bindings = {}
-  AttachBindingMethods(button)
-  AttachDispelAndAnimationMethods(button)
-  local native = {button = button, preview = true}
-  native.inner = CreateFrame("Frame", nil, button)
-  native.inner:SetPoint("CENTER", button, "CENTER")
-  native.outer = CreateFrame("Frame", nil, button)
-  native.outer:SetPoint("CENTER", button, "CENTER")
-  native.border = button:CreateTexture(nil, "BACKGROUND")
-  native.border:SetAllPoints(button)
-  local baseFrame = CreateFrame("Frame", nil, button)
-  baseFrame:SetAllPoints(button)
-  native.elementFrames = {sharedBase = baseFrame}
-  native.icon = baseFrame:CreateTexture(nil, "ARTWORK")
-  native.cooldown = CreateFrame("Cooldown", nil, baseFrame, "CooldownFrameTemplate")
-  native.cooldown:SetAllPoints(native.icon)
-  native.cooldown:SetDrawBling(false)
-  native.overlay = CreateFrame("Frame", nil, button)
-  native.overlay:SetAllPoints(button)
-  return native
-end
-
-local bindingFillers = {
-  Icon = function(widget, fill)
-    widget:SetTexture(fill.iconID)
-  end,
-  SpellName = function(widget, fill)
-    widget:SetText(fill.name)
-  end,
-  ApplicationCount = function(widget, fill)
-    widget:SetText(fill.timed and "3" or "")
-  end,
-  DurationText = function(widget, fill)
-    widget:SetText(fill.timed and "6" or "")
-  end,
-  DurationBar = function(widget, fill)
+-- Example value per binding kind; the keys are also the kinds of the Set/Clear button methods.
+local BINDING_FILLERS = {
+  Icon = function(widget, iconID) widget:SetTexture(iconID) end,
+  SpellName = function(widget, _, name) widget:SetText(name) end,
+  ApplicationCount = function(widget, _, _, _, timed) widget:SetText(TimedText(timed, "3")) end,
+  DurationText = function(widget, _, _, _, timed) widget:SetText(TimedText(timed, tostring(SAMPLE_DURATION))) end,
+  DurationBar = function(widget, _, _, data, timed)
     widget:SetMinMaxValues(0, SAMPLE_DURATION)
-    local value = 0
-    if fill.timed then
-      value = fill.data.inverse and 0 or SAMPLE_DURATION
-    end
-    widget:SetValue(value)
+    widget:SetValue((timed and not data.inverse) and SAMPLE_DURATION or 0)
   end,
-  DurationCooldown = function(widget, fill)
-    if fill.timed then
+  DurationCooldown = function(widget, _, _, _, timed)
+    if timed then
       widget:SetCooldown(GetTime(), SAMPLE_DURATION)
       widget:Show()
     else
@@ -102,144 +40,189 @@ local bindingFillers = {
   end,
 }
 
-function Display.FillSampleBindings(button, iconID, name, data, timed)
-  local fill = {iconID = iconID, name = name, data = data, timed = timed}
-  for kind, entries in pairs(button.bindings) do
-    local apply = bindingFillers[kind]
-    for _, entry in ipairs(entries) do
-      if apply then
-        apply(entry.widget, fill)
-      end
-    end
+local function EachBound(button, kind, action)
+  for _, binding in ipairs(button.bindings[kind] or {}) do action(binding.widget) end
+end
+
+local SampleButton = {}
+
+for kind in pairs(BINDING_FILLERS) do
+  SampleButton["Set" .. kind] = function(self, widget, options)
+    local list = self.bindings[kind] or {}
+    self.bindings[kind] = list
+    list[#list + 1] = { widget = widget, options = options }
+  end
+  SampleButton["Clear" .. kind] = function(self)
+    self.bindings[kind] = {}
   end
 end
 
-local function TickSample(button, native, elapsed)
-  button.elapsed = (button.elapsed or 0) + elapsed
-  if button.elapsed < 0.05 then
-    return
-  end
-  button.elapsed = 0
-  local now = GetTime()
-  if not button.expires or button.expires <= now then
-    button.expires = now + SAMPLE_DURATION
-    for _, entry in ipairs(button.bindings.DurationCooldown or {}) do
-      entry.widget:SetCooldown(now, SAMPLE_DURATION)
-    end
-  end
-  local remaining = math.max(0, button.expires - now)
-  if native.conditionData then
-    Display.UpdateConditionPreview(native, native.conditionData, remaining)
-  end
-  local label
-  if remaining < 3 then
-    label = string.format("%.1f", remaining)
+-- A sample is always "present": shown animations play at once.
+function SampleButton:AddAuraShownAnimation(group) group:Play() end
+function SampleButton:RemoveAuraShownAnimation(group) group:Stop() end
+
+function SampleButton:AddDispelTypeTexture(texture, options)
+  local styles = Enum.CustomAuraButtonDispelTypeTextureStyle
+  local style = options and options.style
+  if style == styles.PreserveAsset then
+    AuraUtil.SetAuraBorderColor(texture, "Magic")
   else
-    label = tostring(math.ceil(remaining))
+    if style == styles.Border then
+      AuraUtil.SetAuraBorderAtlas(texture, "Magic", false)
+    else
+      AuraUtil.SetAuraDispelTypeIcon(texture, "Magic")
+    end
+    texture:SetVertexColor(1, 1, 1, 1)
   end
-  for _, entry in ipairs(button.bindings.DurationText or {}) do
-    entry.widget:SetText(label)
-  end
-  for _, entry in ipairs(button.bindings.DurationBar or {}) do
-    entry.widget:SetValue(button.inverse and SAMPLE_DURATION - remaining or remaining)
-  end
+  texture:Show()
 end
 
-local function CreateSample(region)
-  local native = Display.CreateSampleNative(region)
-  native.button:SetScript("OnUpdate", function(self, elapsed)
-    if not WeakAuras.IsOptionsOpen() then
-      Display.HidePreview(region)
-      if Display.FlushInstanceQueue then
-        Display.FlushInstanceQueue(region)
-      end
-      return
-    end
-    if self.staticSample then
-      return
-    end
-    TickSample(self, native, elapsed)
-  end)
-  return native
+function Display.CreateSampleNative(parent)
+  local button = CreateFrame("Frame", nil, parent)
+  button:EnableMouse(false)
+  button.bindings = {}
+  for name, method in pairs(SampleButton) do button[name] = method end
+
+  local function CenteredFrame()
+    local frame = CreateFrame("Frame", nil, button)
+    frame:SetPoint("CENTER", button, "CENTER")
+    return frame
+  end
+  local function FilledFrame()
+    local frame = CreateFrame("Frame", nil, button)
+    frame:SetAllPoints(button)
+    return frame
+  end
+
+  local border = button:CreateTexture(nil, "BACKGROUND")
+  border:SetAllPoints(button)
+  local sharedBase = FilledFrame()
+  local icon = sharedBase:CreateTexture(nil, "ARTWORK")
+  local cooldown = CreateFrame("Cooldown", nil, sharedBase, "CooldownFrameTemplate")
+  cooldown:SetAllPoints(icon)
+  cooldown:SetDrawBling(false)
+
+  return {
+    button = button,
+    preview = true,
+    inner = CenteredFrame(),
+    outer = CenteredFrame(),
+    border = border,
+    elementFrames = { sharedBase = sharedBase },
+    icon = icon,
+    cooldown = cooldown,
+    overlay = FilledFrame(),
+  }
+end
+
+function Display.FillSampleBindings(button, iconID, name, data, timed)
+  for kind, fill in pairs(BINDING_FILLERS) do
+    EachBound(button, kind, function(widget) fill(widget, iconID, name, data, timed) end)
+  end
 end
 
 function Display.StopSampleAnimations(sample)
-  for _, shared in pairs(sample.sharedElements or {}) do
-    Display.ClearElementGlow(shared)
-  end
+  for _, entry in pairs(sample.sharedElements or {}) do Display.ClearElementGlow(entry) end
   for _, host in pairs(sample.conditionHosts or {}) do
-    if host.pulse then
-      host.pulse:Stop()
-    end
+    if host.pulse then host.pulse:Stop() end
   end
 end
 
 function Display.HidePreview(region)
   region.secretAuraSamplesActive = false
-  local samples = region.secretAuraSamples or {}
-  for _, sample in ipairs(samples) do
+  for _, sample in ipairs(region.secretAuraSamples or {}) do
     sample.button:Hide()
     Display.StopSampleAnimations(sample)
   end
 end
 
-local function LayoutOffsets(growth, offset)
-  local x, y = 0, 0
-  if growth == "UP" or growth == "DOWN" or growth == "CENTER_VERTICAL" then
-    y = growth == "UP" and offset or -offset
-  else
-    x = growth == "LEFT" and -offset or offset
+local function TickSample(region, sample, elapsed)
+  if not WeakAuras.IsOptionsOpen() then
+    Display.HidePreview(region)
+    if Display.FlushInstanceQueue then Display.FlushInstanceQueue(region) end
+    return
   end
-  return x, y
+  local button = sample.button
+  if button.staticSample then return end
+  button.elapsed = (button.elapsed or 0) + elapsed
+  if button.elapsed < TICK_SECONDS then return end
+  button.elapsed = 0
+
+  local now = GetTime()
+  if not button.expires or button.expires <= now then
+    button.expires = now + SAMPLE_DURATION
+    EachBound(button, "DurationCooldown", function(cooldown) cooldown:SetCooldown(now, SAMPLE_DURATION) end)
+  end
+  local remaining = math.max(0, button.expires - now)
+  if sample.conditionData then Display.UpdateConditionPreview(sample, sample.conditionData, remaining) end
+  local label = remaining < 3 and string.format("%.1f", remaining) or string.format("%d", math.ceil(remaining))
+  EachBound(button, "DurationText", function(text) text:SetText(label) end)
+  local barValue = button.inverse and SAMPLE_DURATION - remaining or remaining
+  EachBound(button, "DurationBar", function(bar) bar:SetValue(barValue) end)
+end
+
+local function NewAnimatedSample(region)
+  local sample = Display.CreateSampleNative(region)
+  sample.button:Hide()
+  sample.button:SetScript("OnUpdate", function(_, elapsed) TickSample(region, sample, elapsed) end)
+  return sample
+end
+
+-- Anchor point (same on the sample and the region) and direction of each growth.
+local GROWTH_LAYOUTS = {
+  RIGHT = { point = "TOPLEFT", x = 1 },
+  LEFT = { point = "TOPRIGHT", x = -1 },
+  DOWN = { point = "TOPLEFT", y = -1 },
+  UP = { point = "BOTTOMLEFT", y = 1 },
+  CENTER_HORIZONTAL = { point = "CENTER", x = 1, centered = true },
+  CENTER_VERTICAL = { point = "CENTER", y = -1, centered = true },
+}
+
+local function SlotOffset(layout, position, count, width, height, spacing)
+  local shift = layout.centered and (count - 1) / 2 or 0
+  local steps = position - 1 - shift
+  if layout.y then return 0, layout.y * steps * (height + spacing) end
+  return layout.x * steps * (width + spacing), 0
+end
+
+local function SpellLook(spellID)
+  local info = spellID and C_Spell.GetSpellInfo(spellID)
+  return info and info.name or FALLBACK_NAME, info and info.iconID or FALLBACK_ICON
 end
 
 function Display.ShowPreview(region, data, StyleSample)
-  local spellIds = Display.GetSpellIDs(Display.GetTrigger(data), false)
-  if #spellIds == 0 then
-    spellIds[1] = false
-  end
-  local settings = data.blizzardAuraDisplay
-  local count = math.min(#spellIds, Display.MaxAuras(data))
+  local spellIDs = Display.GetSpellIDs(Display.GetTrigger(data), false)
+  local perUnit = math.min(math.max(#spellIDs, 1), Display.MaxAuras(data))
   local width, height = Display.Dimensions(data)
-  local growth, spacing = Display.Growth(data), settings.spacing or 6
-  local showsMissing = Display.PreviewShowsMissing(data)
-  local vertical = growth == "UP" or growth == "DOWN" or growth == "CENTER_VERTICAL"
-  local centered = growth == "CENTER_HORIZONTAL" or growth == "CENTER_VERTICAL"
-  local cornerPoint = "TOPLEFT"
-  if growth == "LEFT" then
-    cornerPoint = "TOPRIGHT"
-  elseif growth == "UP" then
-    cornerPoint = "BOTTOMLEFT"
-  end
-  region.secretAuraSamples = region.secretAuraSamples or {}
+  local layout = GROWTH_LAYOUTS[Display.Growth(data)] or GROWTH_LAYOUTS.RIGHT
+  local spacing = data.blizzardAuraDisplay.spacing or DEFAULT_SPACING
+  local missing = Display.PreviewShowsMissing(data) and true or false
+
   Display.RestorePreviewRegion(region)
   Display.HidePreview(region)
   region.secretAuraSamplesActive = true
-  local unitList = Display.FlowPreviewUnits and Display.FlowPreviewUnits(data) or {false}
-  for slot = 1, count * #unitList do
-    local position = (slot - 1) % count + 1
-    local sample = region.secretAuraSamples[slot] or CreateSample(region)
-    region.secretAuraSamples[slot] = sample
-    sample.previewUnit = unitList[math.floor((slot - 1) / count) + 1]
+
+  local units = Display.FlowPreviewUnits and Display.FlowPreviewUnits(data) or { false }
+  region.secretAuraSamples = region.secretAuraSamples or {}
+  local samples = region.secretAuraSamples
+  for slot = 1, perUnit * #units do
+    local position = (slot - 1) % perUnit + 1
+    local sample = samples[slot] or NewAnimatedSample(region)
+    samples[slot] = sample
     local button = sample.button
+
+    sample.previewUnit = units[math.floor((slot - 1) / perUnit) + 1]
     button.expires = GetTime() + SAMPLE_DURATION
     button.inverse = data.inverse == true
-    local spellInfo = spellIds[position] and C_Spell.GetSpellInfo(spellIds[position])
-    sample.name = spellInfo and spellInfo.name or "Aura"
-    sample.iconID = spellInfo and spellInfo.iconID or 134400
+    sample.name, sample.iconID = SpellLook(spellIDs[position])
     StyleSample(sample, data)
-    local centerShift = centered and (count - 1) / 2 or 0
-    local step = (vertical and height or width) + spacing
-    local x, y = LayoutOffsets(growth, (position - 1 - centerShift) * step)
+
+    local x, y = SlotOffset(layout, position, perUnit, width, height, spacing)
     button:ClearAllPoints()
-    local point = centered and "CENTER" or cornerPoint
-    button:SetPoint(point, region, point, x, y)
-    button.staticSample = showsMissing
-    local iconID = showsMissing and Display.SingleIcon(data) or sample.iconID
-    Display.FillSampleBindings(button, iconID, sample.name, data, not showsMissing)
-    if showsMissing then
-      Display.StyleMissingIcon(sample, data)
-    end
+    button:SetPoint(layout.point, region, layout.point, x, y)
+    button.staticSample = missing
+    Display.FillSampleBindings(button, missing and Display.SingleIcon(data) or sample.iconID, sample.name, data, not missing)
+    if missing then Display.StyleMissingIcon(sample, data) end
     button:Show()
   end
 end

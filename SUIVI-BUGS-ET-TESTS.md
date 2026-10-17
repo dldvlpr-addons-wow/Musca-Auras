@@ -15,7 +15,7 @@ Les tests marqués 🔴 sont bloquants : s'ils échouent, note-le et passe quand
 
 # 1. Bugs à traiter
 
-### B1. Throw Weapon absent (non reproduit 2026-10-09 : Thrown présent dans Load, Item Type Equipped)
+### B1. Throw Weapon absent (clos 2026-10-16 : non reproduit le 2026-10-09, Thrown présent dans Load et Item Type Equipped)
 Signalement : « The Throw Weapon item type is missing in both the trigger type and in the "Load" conditionals. »
 
 Constat dans le code : `WeakAuras/Types.lua:4484-4488` n'exclut pas le type 16 (Thrown) sur Forever, seul Glaives (9)
@@ -23,7 +23,9 @@ l'est. La liste vient de `C_Item.GetItemSubClassInfo(2, i)` (`Types.lua:4490-449
 (`Prototypes.lua:9394-9397`) comme au chargement (`Prototypes.lua:2223-2229`), d'où l'absence aux deux endroits.
 Cause probable, non vérifiée : `C_Item.GetItemSubClassInfo(2, 16)` renvoie nil sur Forever. Test : étape 12.1.
 
-### B2. Masque : icônes géantes en jeu (corrigé 2026-10-09 selon le rapport, à tester : étape 12.6)
+### B2. Masque : icônes géantes en jeu (corrigé, reste le test en jeu : étape 12.6)
+État au 2026-10-16 : `Private.MasquePinSize` (`SecretAuraAppearance.lua:84`) est appelé par `SyncMasque` (`:118`) et par `RegionTypes/Icon.lua:395`, et il est couvert en headless par `Tests/Scenarios/39_AppearanceContract.lua`. Seule l'étape 12.6 reste à faire, avant le 22 octobre.
+
 Signalement court : « using any masque skin, any WA you make looks normal when you have the options menu open and
 making the aura, as soon as it triggers in game the icon is like gigantic ».
 
@@ -81,16 +83,17 @@ Tested: icons hold their configured size through entering combat with fresh buff
 Note: The root issue is arguably Masque's — SetFrameSize() without arguments shouldn't overwrite an explicitly supplied size. The pin works with the current Masque API and would be harmless if Masque changes that later.
 ```
 
-### B3. Tests KO notés à l'étape 5 (à confirmer)
+### B3. Tests KO notés à l'étape 5 (clos 2026-10-16 : les trois tests sont OK le 2026-10-09)
 Code relu le 2026-10-09 contre l'API Forever 70291 : Durability et Tracking collent à l'API, aucune cause trouvée. Instance Type : ids Forever 242, 243, 233, 250 sans nom dans `Types.lua`. Corrections suspendues aux `/dump` de l'étape 12.7.
 - **Equipment Durability** : ok 2026-10-09 (overall 17, lowest 0, broken 1 ; aura du slot 6 ok), aucun correctif.
 - **Tracking** : ok 2026-10-09 (Find Herbs 2383 et Inverse), aucun correctif.
 - **Load, Instance Type** : ok 2026-10-09 (Gouffre de Ragefeu, difficulté 1 : Dungeon (Normal) chargé dedans, None dehors), aucun correctif.
-- À trancher : `CHANGES.md` (2026-10-04) dit Equipment Durability et Tracking « Tested in game on WoW Forever 70124 ».
-  Refaire ces tests pour savoir lequel est à jour, puis corriger `CHANGES.md` ou le code.
+- Tranché le 2026-10-16 : les tests du 2026-10-09 confirment `CHANGES.md` (2026-10-04), qui dit Equipment Durability
+  et Tracking « Tested in game on WoW Forever 70124 ». Aucun correctif, ni dans `CHANGES.md` ni dans le code.
 
-### B4. Étape 8 marquée « bug » sans détail
-Le titre de l'étape 8 portait « bug » sans précision. Noter le test concerné et ce qui a été vu.
+### B4. Étape 8 marquée « bug » sans détail (clos 2026-10-16 faute de constat)
+Le titre de l'étape 8 portait « bug » sans précision. Les tests de l'étape 8 sont OK le 2026-10-09, sauf le mode
+groupe, non testé faute de groupe. À rouvrir avec le test concerné et ce qui a été vu si le bug revient.
 
 ---
 
@@ -152,8 +155,8 @@ a pas de TOC retail : `RemoveDispelTypeTexture` (`SecretAuraConditions.lua:1032`
 - [ ] Installer **BugGrabber + BugSack** : ils gardent le texte complet des erreurs, mieux que la fenêtre de base.
 - [ ] Désactiver ForeverAuras (les deux addons ne doivent pas tourner ensemble).
 - [ ] En jeu : `/console scriptErrors 1`, puis `/reload`.
-- [ ] `/wa` ouvre les options, sans erreur.
-- [ ] `/wa tutorial` ouvre le tutoriel, et les deux boutons d'import marchent.
+- [x] `/wa` ouvre les options, sans erreur.
+- [x] `/wa tutorial` ouvre le tutoriel, et les deux boutons d'import marchent.
 
 Pour copier une erreur : ouvre BugSack, copie la première ligne et les 5 lignes de pile qui suivent.
 
@@ -298,7 +301,7 @@ Passée le 2026-10-09 : pas de contrôle disponible (chaman niveau 16). Aura de 
 
 ---
 
-## Étape 8 : groupe, glow, divers (10 min) (marquée « bug », voir B4)
+## Étape 8 : groupe, glow, divers (10 min) (voir B4, clos)
 
 - [ok 2026-10-09, Pixel, Autocast, Bouton, Proc] Action **Glow** (Pixel, Autocast, Proc) sur une icône : le glow est visible et bien dessiné.
 - [non testé 2026-10-09, pas de groupe] Trigger Aura en mode groupe (party) : les membres sont trouvés, pas d'erreur de GUID en combat.

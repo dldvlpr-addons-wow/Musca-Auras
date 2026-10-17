@@ -103,6 +103,7 @@ local properties = {
   icon_color = {
     display = {L["Icon"], L["Color"]},
     setter = "SetIconColor",
+    secretCapable = true,
     type = "color"
   },
   iconSource = {
@@ -126,11 +127,13 @@ local properties = {
   backgroundColor = {
     display = L["Background Color"],
     setter = "SetBackgroundColor",
+    secretCapable = true,
     type = "color"
   },
   sparkColor = {
     display = {L["Spark"], L["Color"]},
     setter = "SetSparkColor",
+    secretCapable = true,
     type = "color"
   },
   sparkHeight = {

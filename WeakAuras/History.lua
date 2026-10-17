@@ -50,19 +50,8 @@ function Private.SetHistory(uid, data, source)
   end
 end
 
-local function GetHistory(uid, load)
-  return loadHistory():Get(uid, load)
-end
-
 function Private.RemoveHistory(uid)
   return loadHistory():Drop(uid)
-end
-
-function Private.RestoreFromHistory(uid)
-  local _, histData = GetHistory(uid, true)
-  if histData then
-    WeakAuras.Add(histData)
-  end
 end
 
 function Private.SetMigrationSnapshot(uid, oldData)

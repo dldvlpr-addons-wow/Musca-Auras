@@ -31,12 +31,16 @@ local properties = {
   tick_visible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true,
   },
   tick_color = {
     display = L["Color"],
     setter = "SetTickColor",
+    secretCapable = true,
     type = "color",
   },
   tick_placement_mode = {
@@ -70,6 +74,8 @@ local properties = {
   tick_desaturate = {
     display = L["Desaturate"],
     setter = "SetTickDesaturated",
+    secretSetter = "SetSecretTickDesaturation",
+    secretCapable = true,
     type = "bool",
     default = true,
   },
@@ -175,6 +181,10 @@ local funcs = {
     self.inverse_direction = self.parent:GetInverse()
     self:UpdateTickPlacement()
   end,
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.tick_visible, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   SetVisible = function(self, visible)
     if self.tick_visible ~= visible then
       self.tick_visible = visible
@@ -365,6 +375,14 @@ local funcs = {
     if self.use_texture and self.tick_desaturate ~= desaturate then
       self.tick_desaturate = desaturate
       self:UpdateTickDesaturated()
+    end
+  end,
+  SetSecretTickDesaturation = function(self, value)
+    if self.use_texture then
+      self.tick_desaturate = nil
+      for _, tick in ipairs(self.ticks) do
+        tick:SetDesaturation(value)
+      end
     end
   end,
   UpdateTickDesaturated = function(self)

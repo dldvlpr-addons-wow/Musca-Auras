@@ -247,14 +247,25 @@ end
 
 local dynamicTextInputs = {}
 
+local nativeDurationOperators = { ["<"] = "<", [">="] = ">=" }
+local nativeDispelOperators = { ["=="] = "=", ["~="] = "!=" }
+
+local function EqualityOperatorsFor(template)
+  if template.operator_types == "native_aura_dispel" then
+    return nativeDispelOperators
+  end
+  return OptionsPrivate.Private.equality_operator_types
+end
+
 local function addControlsForChange(args, order, data, conditionVariable, totalAuraCount, conditions, i, j, allProperties, usedProperties)
   local thenText = (j == 1) and L["Then "] or L["And "];
   local display = isSubset(data, conditions[i].changes[j], totalAuraCount) and allProperties.displayWithCopy or allProperties.display;
   local valuesForProperty = filterUsedProperties(allProperties.indexToProperty, display, usedProperties, conditions[i].changes[j].property);
-  for index in pairs(valuesForProperty) do
-    local property = allProperties.indexToProperty[index]
-    if property and property ~= "DELETE" and property ~= "COPY"
-        and not OptionsPrivate.Private.BlizzardAuraDisplay.NativeConditionAllowsProperty(data, conditions[i].check, property) then
+  local Display = OptionsPrivate.Private.BlizzardAuraDisplay
+  local alwaysOffered = { DELETE = true, COPY = true }
+  for index in pairs(CopyTable(valuesForProperty)) do
+    local candidate = allProperties.indexToProperty[index]
+    if not alwaysOffered[candidate] and not Display.NativeConditionAllowsProperty(data, conditions[i].check, candidate) then
       valuesForProperty[index] = nil
     end
   end
@@ -494,9 +505,9 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
   end
 
   local property = conditions[i].changes[j].property;
-  local propertyData = property and allProperties.propertyMap[property] or nil
-  propertyData = OptionsPrivate.Private.BlizzardAuraDisplay.HighlightPropertyOptions(data, conditions[i], property, propertyData)
-  local propertyType = propertyData and propertyData.type or nil
+  local definition = property and OptionsPrivate.Private.BlizzardAuraDisplay.HighlightPropertyOptions(
+    data, conditions[i], property, allProperties.propertyMap[property])
+  local propertyType = definition and definition.type
   if (propertyType == "bool" or propertyType == "number") then
     args["condition" .. i .. "value" .. j] = {
       type = "toggle",
@@ -511,12 +522,14 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
     order = order + 1;
     if (propertyType == "number") then
       args["condition" .. i .. "value" .. j].name = blueIfNoValue(data, conditions[i].changes[j], "value", L["Differences"])
-      local properties = propertyData;
-      if property == "faAuraHighlightSize" and properties then
-        args["condition" .. i .. "value" .. j].name = properties.display
-        args["condition" .. i .. "value" .. j].desc = properties.description
+      local properties = definition
+      local valueOption = args["condition" .. i .. "value" .. j]
+      if properties and property == "faAuraHighlightSize" then
+        valueOption.name = properties.display
+        valueOption.desc = properties.description
       end
-      if (properties and (properties.min or properties.softMin)) and (properties.max or properties.softMax) then
+      local hasLowerBound = properties and (properties.min or properties.softMin)
+      if hasLowerBound and (properties.max or properties.softMax) then
         args["condition" .. i .. "value" .. j].type = "range";
         args["condition" .. i .. "value" .. j].control = "WeakAurasSpinBox"
         args["condition" .. i .. "value" .. j].min = properties.min;
@@ -1207,7 +1220,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         if not custom then
           return "";
         end
-        local _, errorString = loadstring("return  " .. custom);
+        local _, errorString = OptionsPrivate.Private.LoadFunction("return " .. custom, data.id, true);
         return errorString and "|cFFFF0000"..errorString or "";
       end,
       width = WeakAuras.doubleWidth,
@@ -1227,7 +1240,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
           return true;
         end
 
-        local loadedFunction, errorString = loadstring("return " .. custom);
+        local loadedFunction, errorString = OptionsPrivate.Private.LoadFunction("return " .. custom, data.id, true);
         if(errorString and not loadedFunction) then
           return false;
         else
@@ -1286,7 +1299,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         if not custom then
           return "";
         end
-        local _, errorString = loadstring("return function() " .. custom .. "\n end");
+        local _, errorString = OptionsPrivate.Private.LoadFunction("return function() " .. custom .. "\n end", data.id, true);
         return errorString and "|cFFFF0000"..errorString or "";
       end,
       width = WeakAuras.doubleWidth,
@@ -1297,7 +1310,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         if (not custom) then
           return true;
         end
-        local loadedFunction, errorString = loadstring("return function() " .. custom .. "\n end");
+        local loadedFunction, errorString = OptionsPrivate.Private.LoadFunction("return function() " .. custom .. "\n end", data.id, true);
         if(errorString and not loadedFunction) then
           return false;
         else
@@ -1773,13 +1786,18 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
   end
 
   if indentDepth > 0 then
-    valuesForIf = CopyTable(valuesForIf)
-    for index in pairs(valuesForIf) do
-      if OptionsPrivate.Private.BlizzardAuraDisplay.NativeConditionKind(data, {
-          trigger = conditionTemplatesToUse.indexToTrigger[index], variable = conditionTemplatesToUse.indexToVariable[index]}) then
-        valuesForIf[index] = nil
+    local Display = OptionsPrivate.Private.BlizzardAuraDisplay
+    local nestedValues = {}
+    for index, label in pairs(valuesForIf) do
+      local candidate = {
+        trigger = conditionTemplatesToUse.indexToTrigger[index],
+        variable = conditionTemplatesToUse.indexToVariable[index],
+      }
+      if Display.NativeConditionKind(data, candidate) == nil then
+        nestedValues[index] = label
       end
     end
+    valuesForIf = nestedValues
   end
 
   args["condition" .. i .. tostring(path) .. "if"] = {
@@ -1883,17 +1901,23 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
         check.variable = variable;
         check.trigger = trigger;
         if indentDepth == 0 then
-          local display = OptionsPrivate.Private.BlizzardAuraDisplay
+          local Display = OptionsPrivate.Private.BlizzardAuraDisplay
           for _, change in ipairs(conditions[i].changes or {}) do
-            if change.property and not display.NativeConditionAllowsProperty(data, check, change.property) then
-              change.property, change.value = nil, nil
+            if not Display.NativeConditionAllowsProperty(data, check, change.property) then
+              change.value = nil
+              change.property = nil
             end
           end
-          if display.NativeConditionKind(data, check) then
-            conditions[i].linked = false
-            if conditions[i + 1] then conditions[i + 1].linked = false end
-            if display.IsNativeDurationCondition(check) then check.op = "<"
-            elseif check.variable == "faAuraDispel" or check.variable == "faAuraType" then check.op = "==" end
+          if Display.NativeConditionKind(data, check) then
+            for linkedIndex = i, i + 1 do
+              if conditions[linkedIndex] then conditions[linkedIndex].linked = false end
+            end
+          end
+          local exactMatchVariables = { faAuraDispel = true, faAuraType = true }
+          if Display.IsNativeDurationCondition(check) then
+            check.op = "<"
+          elseif exactMatchVariables[check.variable] then
+            check.op = "=="
           end
         end
         local newType = conditionTemplatesToUse.all[trigger][variable].type;
@@ -1969,9 +1993,10 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
 
     if (currentConditionTemplate.type == "number" or currentConditionTemplate.type == "timer" or currentConditionTemplate.type == "elapsedTimer") then
       local opTypes = OptionsPrivate.Private.operator_types
-      if currentConditionTemplate.operator_types == "native_aura_duration" then
-        opTypes = {['<'] = '<', ['>='] = '>='}
-      elseif currentConditionTemplate.operator_types == "without_equal" then
+      local operatorStyle = currentConditionTemplate.operator_types
+      if operatorStyle == "native_aura_duration" then
+        opTypes = nativeDurationOperators
+      elseif operatorStyle == "without_equal" then
         opTypes = OptionsPrivate.Private.operator_types_without_equal
       elseif currentConditionTemplate.operator_types == "only_equal" then
         opTypes = OptionsPrivate.Private.equality_operator_types
@@ -2012,7 +2037,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
           type = "select",
           width = WeakAuras.normalWidth,
           order = order,
-          values = currentConditionTemplate.operator_types == "native_aura_dispel" and {["=="] = "=", ["~="] = "!="} or OptionsPrivate.Private.equality_operator_types,
+          values = EqualityOperatorsFor(currentConditionTemplate),
           get = function()
             return check.op;
           end,
@@ -2271,7 +2296,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
           if (not check.value) then
             return ""
           end
-          local _, errorString = loadstring("return " .. check.value);
+          local _, errorString = OptionsPrivate.Private.LoadFunction("return " .. check.value, data.id, true);
           return errorString and "|cFFFF0000"..errorString or "";
         end,
         width = WeakAuras.doubleWidth,
@@ -2281,7 +2306,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
             return true;
           end
 
-          local loadedFunction, errorString = loadstring("return " .. check.value);
+          local loadedFunction, errorString = OptionsPrivate.Private.LoadFunction("return " .. check.value, data.id, true);
           if(errorString and not loadedFunction) then
             return false;
           else
@@ -2633,8 +2658,12 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     end
   end
 
-  if OptionsPrivate.Private.BlizzardAuraDisplay.ContainsNativeCondition(data, conditions[i].check)
-      or (i > 1 and OptionsPrivate.Private.BlizzardAuraDisplay.ContainsNativeCondition(data, conditions[i - 1].check)) then showElseIf = isLinked and true or false end
+  local function IsNativeAt(index)
+    return OptionsPrivate.Private.BlizzardAuraDisplay.ContainsNativeCondition(data, conditions[index].check)
+  end
+  if IsNativeAt(i) or (i > 1 and IsNativeAt(i - 1)) then
+    showElseIf = isLinked and true or false
+  end
   if showElseIf then
     args["condition" .. i .. "_else"] = {
       type = "toggle",

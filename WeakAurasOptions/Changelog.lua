@@ -10,13 +10,39 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.9.1',
-  dateString = '2026-10-14',
+  versionString = '1.10.0',
+  dateString = '2026-10-18',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Class packs: a grey swipe instead of timer numbers, and a red pulse in the last 3 seconds
-- Import, deletion and selection of auras with glows no longer freeze the game
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.9.1 (2026-10-14):
+- Conditions on health and power change Alpha, Color and Desaturate in combat, on the aura and its sub elements
+- New "Looping Animation" condition property
+- Daily backups of your auras: /wa backups and /wa restore
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.10.0 (2026-10-18):
+
+New:
+
+- Conditions on Health, Health (%), Health Deficit, Power, Power (%) and Power Deficit (<, <=, >, >=) change Alpha, Color and Desaturate even when the game hides the value, in combat included. On an enemy, only the % conditions work
+- These conditions also drive the sub elements: sub text, border, glow, texture, progress textures, stop motion and tick can be shown, hidden or recolored, and texture, progress textures, stop motion and tick greyed out. Bar color, bar icon, background and spark follow too
+- Text auras get an Alpha property for conditions. A condition that changes the text works on a hidden value, and several such conditions stack
+- New condition property "Looping Animation": while the condition is true, the aura plays the main animation you choose, and its own animation comes back afterwards
+- Your auras are backed up once a day, three copies kept. /wa backups lists them and /wa restore <number> puts one back after a confirmation
+- Custom code can call UnitAura, UnitBuff, UnitDebuff, GetSpellInfo, GetSpellTexture, IsUsableSpell, GetSpellCooldown and GetSpellCharges, which WoW Forever lacks. UnitAura, UnitBuff and UnitDebuff stop in combat on a hidden aura. The import report says when a call is replaced
+- Cooldown Manager trigger: a buff chosen by name tracks every spell ID of that name, with one clone per Cooldown Manager entry. A spell counts as known when another rank of it is known
+
+Fixes:
+
+- The Shaman class pack totem icons keep their sub elements when the pack is loaded, and their timer swipe turns the right way
+- "Spell in Range": a spell saved by ID shows its name and icon, and a trigger without a spell no longer shows a wrong icon
+- Errors raised while custom condition code loads now show under the code field
+- A Lua error no longer fires when the game does not describe a talent subtree (talent load option)
+
+Changed:
+
+- The load option "Enabled BossMod ID(BW Only)" is now "BigWigs Module Loaded for Encounter ID". Your setting is kept
+
+Click "Update <Class> HUD" in the message shown at login, or "Class Pack" at the top of the New Aura panel, to update your HUD. Your positions and options are kept.
+
+1.9.1 (2026-10-14):
 
 New:
 
@@ -229,7 +255,7 @@ New:
 - Blizzard Cooldown Manager trigger: Cooldown, Buff/Debuff and Item, with remaining time, total, stacks and "require target" filters. ForeverAuras auras that use it are imported as they are
 - "Hide Blizzard's CDM" in the options and /wa cdm: hide the Blizzard Cooldown Manager while its triggers keep working
 - CDM Dispel Type Icon sub element
-- Load conditions: Specialization (deduced from the talents you learned), Secret Restrictions Active, Enabled BossMod ID (BigWigs)
+- Load conditions: Specialization (deduced from the talents you learned), Secret Restrictions Active, BigWigs Module Loaded for Encounter ID
 - Spell in Range trigger
 - Color picker palette: class colors, favorites, recent colors and a hex field
 - Warnings in the trigger options for values the game hides in combat, and combat status of the Cast trigger
@@ -305,7 +331,7 @@ New:
 - Text aura and Text sub element: %health, %maxhealth, %percenthealth, %power, %maxpower, %percentpower, %value, %total, %p and %t are drawn by the game in combat, with the plain text around them. Format options are ignored while the value is hidden, and a text with { (raid markers, %{...}) keeps its last readable values
 - Cast trigger: while the cast of the unit is hidden, the bar, the swipe and a %p text follow the cast. The name is shown empty, the icon is the icon of the spell. A trigger filtered by spell name or ID, Remaining Time or Interruptible does not match a hidden cast
 - Totem trigger: the timer of a totem keeps running in combat. The totem name, icon and spell ID filters accept every hidden totem; the Remaining Time filter does not
-- Talent and Or Talent load conditions, and the Talent Known trigger: once a single Class and Specialization is selected, a talent picker shows the talent tree of that specialization. The talents are read from the game's talent trees, with the same IDs as ForeverAuras. The talent data reader and the picker come from ForeverAuras (m33shoq, GPL-2.0)
+- Talent and Or Talent load conditions, and the Talent Known trigger: once a single Class and Specialization is selected, a talent picker shows the talent tree of that specialization. The talents are read from the game's talent trees, with the same IDs as ForeverAuras. The talent data reader and the picker come from ForeverAuras (Neroxrw, GPL-2.0)
 
 Changes:
 

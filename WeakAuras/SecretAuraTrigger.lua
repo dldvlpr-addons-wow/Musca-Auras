@@ -1,101 +1,154 @@
--- Trigger system of the Aura (Modern) trigger type (secretAura): load, fallback and fake states, names,
--- icons and progress. Registered through WeakAuras.RegisterTriggerSystem; uses Private.BlizzardAuraDisplay.
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
+
+-- Trigger system of the "secretAura" trigger type. The auras themselves are
+-- drawn by Private.BlizzardAuraDisplay; this file only gives WeakAuras the
+-- load cycle and one placeholder state per trigger, shown or hidden with the
+-- unit the trigger follows.
+
 local Display = Private.BlizzardAuraDisplay
 
-local ModernAura = {}
-local registeredDisplays = {}
-local activeDisplays = {}
+local TRIGGER_NAME = "Aura (Modern)"
+local DEFAULT_NAME = "Secret Auras"
+local DEFAULT_ICON = 134400
+local PREVIEW_DURATION = 6
+local PREVIEW_STACKS = 3
 
-local SECRET_AURA_TYPE = "secretAura"
-local DISPLAY_NAME = "Aura (Modern)"
+-- One record per aura id: `data` while the aura holds a secretAura trigger,
+-- `loaded` while WeakAuras keeps it loaded.
+local auraStates = {}
 
-function ModernAura.Add(data)
-  Display.MigrateNativeConditions(data)
-  Display.MigrateFallback(data)
-  local displayId = data.id
-  registeredDisplays[displayId] = nil
-  for _, triggerEntry in ipairs(data.triggers) do
-    if triggerEntry.trigger.type == SECRET_AURA_TYPE then
-      registeredDisplays[displayId] = data
-      return
-    end
+local function DropIfEmpty(id)
+  local record = auraStates[id]
+  if record and record.data == nil and not record.loaded then
+    auraStates[id] = nil
   end
 end
 
-local unitsThatMayBeAbsent = {
-  target = true,
-  focus = true,
-  pet = true,
-  targettarget = true,
-  focustarget = true,
-  member = true,
+local OPTIONAL_UNITS = {
+  target = true, focus = true, pet = true, targettarget = true, focustarget = true, member = true,
 }
 
-local function IsTrackedUnitAbsent(trigger)
-  if type(trigger) ~= "table" then
-    return false
-  end
-  if not unitsThatMayBeAbsent[trigger.unit] or trigger.unitExists then
-    return false
-  end
-  return not Display.SingleUnitExists(trigger)
+local function GetTrigger(data, triggernum)
+  local entry = data and data.triggers and data.triggers[triggernum]
+  return entry and entry.trigger
 end
 
-local function SettingsAllowDisplay(data)
-  return not Display.Enabled(data) or Display.Validate(data) == nil
+local function IsSecretTrigger(entry)
+  return type(entry) == "table" and type(entry.trigger) == "table" and entry.trigger.type == "secretAura"
 end
 
-local function ComputeShow(data, triggernum)
-  if not SettingsAllowDisplay(data) then
+-- Units that may be absent, unless the trigger already requires them.
+local function TracksOptionalUnit(trigger)
+  return type(trigger) == "table" and OPTIONAL_UNITS[trigger.unit] and not trigger.unitExists
+end
+
+local function IsUnitMissing(trigger)
+  if not TracksOptionalUnit(trigger) then
     return false
   end
-  local triggerEntry = data.triggers[triggernum]
-  return WeakAuras.IsOptionsOpen() or not IsTrackedUnitAbsent(triggerEntry and triggerEntry.trigger)
+  local present = Display.SingleUnitExists(trigger)
+  return not present
 end
 
-function ModernAura.CreateFallbackState(data, triggernum, state)
-  state.show = SettingsAllowDisplay(data)
+-- An aura without the native display, or with valid native settings.
+local function IsAuraUsable(data)
+  local usesNativeDisplay = Display.Enabled(data)
+  if not usesNativeDisplay then
+    return true
+  end
+  return Display.Validate(data) == nil
+end
+
+local function ShouldShow(data, triggernum)
+  if not IsAuraUsable(data) then
+    return false
+  end
+  return WeakAuras.IsOptionsOpen() or not IsUnitMissing(GetTrigger(data, triggernum))
+end
+
+local function HasSecretTrigger(data)
+  local triggers = data.triggers
+  if triggers == nil then
+    return false
+  end
+  local index = 1
+  while triggers[index] ~= nil do
+    if IsSecretTrigger(triggers[index]) then
+      return true
+    end
+    index = index + 1
+  end
+  return false
+end
+
+local system = {}
+
+function system.Add(data)
+  Display.MigrateNativeConditions(data)
+  Display.MigrateFallback(data)
+  local id = data.id
+  if HasSecretTrigger(data) then
+    local record = auraStates[id] or {}
+    record.data = data
+    auraStates[id] = record
+  elseif auraStates[id] then
+    auraStates[id].data = nil
+    DropIfEmpty(id)
+  end
+end
+
+function system.GetNameAndIcon(data, triggernum)
+  local spellIDs = Display.GetSpellIDs(GetTrigger(data, triggernum), false)
+  local spellID = spellIDs and spellIDs[1]
+  local info = spellID and C_Spell.GetSpellInfo(spellID)
+  if not info then
+    return DEFAULT_NAME, DEFAULT_ICON
+  end
+  return info.name or DEFAULT_NAME, info.iconID or DEFAULT_ICON
+end
+
+function system.CreateFallbackState(data, triggernum, state)
+  state.show = IsAuraUsable(data)
   state.changed = true
   state.progressType = "static"
-  state.value = 1
   state.total = 1
-  state.name, state.icon = ModernAura.GetNameAndIcon(data, triggernum)
+  state.value = state.total
+  state.name, state.icon = system.GetNameAndIcon(data, triggernum)
+  state.unit = nil
   if WeakAuras.IsOptionsOpen() then
     state.unit = Display.GetPreviewUnit(data) or nil
-  else
-    state.unit = nil
-  end
-  if WeakAuras.IsOptionsOpen() then
     state.progressType = "timed"
-    state.duration = 6
-    state.expirationTime = GetTime() + 6
-    state.stacks = 3
+    state.duration = PREVIEW_DURATION
+    state.expirationTime = GetTime() + PREVIEW_DURATION
+    state.stacks = PREVIEW_STACKS
   end
 end
 
-function ModernAura.CreateFakeStates(id, triggernum)
+function system.CreateFakeStates(id, triggernum)
+  local data = WeakAuras.GetData(id)
   local states = WeakAuras.GetTriggerStateForTrigger(id, triggernum)
   wipe(states)
-  states[""] = {}
-  local data = WeakAuras.GetData(id)
-  ModernAura.CreateFallbackState(data, triggernum, states[""])
-  states[""].show = ComputeShow(data, triggernum)
+  local state = {}
+  system.CreateFallbackState(data, triggernum, state)
+  state.show = ShouldShow(data, triggernum)
+  states[""] = state
 end
 
-function ModernAura.LoadDisplays(toLoad)
+function system.LoadDisplays(toLoad)
   for id in pairs(toLoad) do
-    local data = registeredDisplays[id]
+    local record = auraStates[id]
+    local data = record and record.data
     if data then
-      activeDisplays[id] = true
+      record.loaded = true
       local regionInfo = Private.regions[id]
       if regionInfo then
         Display.Activate(regionInfo.region, data)
       end
-      for index, triggerEntry in ipairs(data.triggers) do
-        if triggerEntry.trigger.type == SECRET_AURA_TYPE then
-          ModernAura.CreateFakeStates(id, index)
+      for index, entry in ipairs(data.triggers) do
+        if IsSecretTrigger(entry) then
+          system.CreateFakeStates(id, index)
         end
       end
       Private.UpdatedTriggerState(id)
@@ -103,180 +156,213 @@ function ModernAura.LoadDisplays(toLoad)
   end
 end
 
-local unitEventAffects = {
-  PLAYER_TARGET_CHANGED = {target = true, targettarget = true},
-  PLAYER_FOCUS_CHANGED = {focus = true, focustarget = true},
-  UNIT_TARGET = {target = {targettarget = true}, focus = {focustarget = true}},
-  UNIT_PET = {player = {pet = true}},
-  PLAYER_ENTERING_WORLD = {
-    target = true,
-    focus = true,
-    pet = true,
-    targettarget = true,
-    focustarget = true,
-    member = true,
-  },
-  GROUP_ROSTER_UPDATE = {member = true},
-  INSTANCE_ENCOUNTER_ENGAGE_UNIT = {member = true},
-  ARENA_OPPONENT_UPDATE = {member = true},
-}
-
-local function ResolveAffectedUnits(event, unit)
-  local affected = unitEventAffects[event]
-  if event == "UNIT_TARGET" then
-    return unit and affected[unit]
-  elseif event == "UNIT_PET" then
-    return unit == "player" and affected.player or (unit and {member = true})
-  end
-  return affected
-end
-
-local function RefreshDisplayStates(id, affected)
-  local data = registeredDisplays[id]
-  local changed = false
-  local triggerList = data and data.triggers or {}
-  for index, triggerEntry in ipairs(triggerList) do
-    if triggerEntry.trigger.type == SECRET_AURA_TYPE and affected[triggerEntry.trigger.unit] then
-      local state = WeakAuras.GetTriggerStateForTrigger(id, index)[""]
-      local show = ComputeShow(data, index)
-      if not state then
-        if show then
-          ModernAura.CreateFakeStates(id, index)
-          changed = true
-        end
-      elseif state.show ~= show then
-        state.show = show
-        state.changed = true
-        changed = true
-      end
-    end
-  end
-  return changed
-end
-
-local unitWatcher = CreateFrame("Frame")
-for event in pairs(unitEventAffects) do
-  unitWatcher:RegisterEvent(event)
-end
-unitWatcher:SetScript("OnEvent", function(_, event, unit)
-  if WeakAuras.IsOptionsOpen() then
-    return
-  end
-  local affected = ResolveAffectedUnits(event, unit)
-  if not affected then
-    return
-  end
-  for id in pairs(activeDisplays) do
-    if RefreshDisplayStates(id, affected) then
-      Private.UpdatedTriggerState(id)
-    end
-  end
-end)
-
-function ModernAura.UnloadDisplays(toUnload)
+function system.UnloadDisplays(toUnload)
   for id in pairs(toUnload) do
-    activeDisplays[id] = nil
-    if registeredDisplays[id] then
-      local regionInfo = Private.regions[id]
+    local record = auraStates[id]
+    if record then
+      record.loaded = nil
+      local regionInfo = record.data and Private.regions[id]
       if regionInfo then
         Display.Release(regionInfo.region)
       end
+      DropIfEmpty(id)
     end
   end
 end
 
-function ModernAura.UnloadAll()
-  ModernAura.UnloadDisplays(activeDisplays)
+function system.UnloadAll()
+  local loadedIds = {}
+  for id, record in pairs(auraStates) do
+    if record.loaded then
+      loadedIds[id] = true
+    end
+  end
+  system.UnloadDisplays(loadedIds)
 end
 
-function ModernAura.Delete(id)
-  ModernAura.UnloadDisplays({[id] = true})
-  registeredDisplays[id] = nil
+function system.Delete(id)
+  system.UnloadDisplays({ [id] = true })
+  local record = auraStates[id]
+  if record then
+    record.data = nil
+    DropIfEmpty(id)
+  end
 end
 
-function ModernAura.Rename(oldid, newid)
-  registeredDisplays[newid] = registeredDisplays[oldid]
-  activeDisplays[newid] = activeDisplays[oldid]
-  registeredDisplays[oldid] = nil
-  activeDisplays[oldid] = nil
+function system.Rename(oldid, newid)
+  auraStates[newid], auraStates[oldid] = auraStates[oldid], nil
 end
 
-function ModernAura.FinishLoadUnload()
+function system.FinishLoadUnload()
 end
 
-function ModernAura.GetName()
-  return DISPLAY_NAME
+function system.GetName()
+  return TRIGGER_NAME
 end
 
-function ModernAura.CanHaveTooltip()
+function system.CanHaveTooltip()
   return false
 end
 
-function ModernAura.SetToolTip()
+function system.SetToolTip()
   return false
 end
 
-function ModernAura.GetOverlayInfo()
+function system.GetOverlayInfo()
   return {}
 end
 
-function ModernAura.GetAdditionalProperties()
+function system.GetAdditionalProperties()
   return {}
 end
 
-function ModernAura.GetProgressSources(data, triggernum, values)
-  table.insert(values, {
+function system.GetTriggerConditions()
+  return {}
+end
+
+function system.GetProgressSources(data, triggernum, values)
+  values[#values + 1] = {
     trigger = triggernum,
     property = "value",
     type = "number",
-    display = DISPLAY_NAME,
+    display = TRIGGER_NAME,
     total = "total",
-  })
+  }
 end
 
-function ModernAura.GetTriggerConditions()
-  return {}
-end
-
-function ModernAura.GetNameAndIcon(data, triggernum)
-  local trigger = data.triggers[triggernum].trigger
-  local spellId = Display.GetSpellIDs(trigger, false)[1]
-  local spellInfo = spellId and C_Spell.GetSpellInfo(spellId)
-  return spellInfo and spellInfo.name or "Secret Auras", spellInfo and spellInfo.iconID or 134400
-end
-
-local function DescribeSpellIDs(ids, enabled)
-  if not enabled or not ids or #ids == 0 then
+local function DescribeSpellIDs(spellIDs, enabled)
+  if not enabled or type(spellIDs) ~= "table" or #spellIDs == 0 then
     return "None"
   end
-  local firstIds = {}
-  for position = 1, math.min(#ids, 3) do
-    firstIds[#firstIds + 1] = tostring(ids[position])
+  local count = #spellIDs
+  local text = tostring(spellIDs[1])
+  for index = 2, count < 3 and count or 3 do
+    text = text .. ", " .. tostring(spellIDs[index])
   end
-  local text = table.concat(firstIds, ", ")
-  if #ids > #firstIds then
-    text = text .. " (+" .. (#ids - #firstIds) .. " more)"
+  local hidden = count - 3
+  if hidden > 0 then
+    text = ("%s (+%d more)"):format(text, hidden)
   end
   return text
 end
 
-function ModernAura.GetTriggerDescription(data, triggernum, lines)
-  local trigger = data.triggers[triggernum].trigger
-  local unitLabel
+local function UnitLabel(trigger)
   if trigger.unit == "member" then
-    unitLabel = Display.SpecificUnit(trigger) or "Specific Unit"
-  else
-    unitLabel = Display.units[trigger.unit] or trigger.unit
+    return Display.SpecificUnit(trigger) or "Specific Unit"
   end
-  lines[#lines + 1] = {"Secret Auras", unitLabel}
-  local showOnLabel = Display.showOnValues[Display.ShowOn(trigger)]
-  local comparison, seconds = Display.RemainingWindow(trigger)
-  if comparison then
-    showOnLabel = showOnLabel .. ", remaining " .. comparison .. " " .. seconds .. " s"
-  end
-  lines[#lines + 1] = {"Show On", showOnLabel}
-  lines[#lines + 1] = {"Spell IDs (All Ranks)", DescribeSpellIDs(trigger.auraRankSpellIDs, Display.UsesRankSpellIDs(trigger))}
-  lines[#lines + 1] = {"Exact Spell IDs", DescribeSpellIDs(trigger.auraspellids, Display.UsesSpellIDs(trigger))}
+  return Display.units[trigger.unit] or trigger.unit
 end
 
-WeakAuras.RegisterTriggerSystem({SECRET_AURA_TYPE}, ModernAura)
+local function ShowOnLabel(trigger)
+  local label = Display.showOnValues[Display.ShowOn(trigger)]
+  local comparator, seconds = Display.RemainingWindow(trigger)
+  if not (comparator and seconds) then
+    return label
+  end
+  return ("%s, remaining %s %s s"):format(tostring(label), comparator, seconds)
+end
+
+function system.GetTriggerDescription(data, triggernum, lines)
+  local trigger = GetTrigger(data, triggernum)
+  lines[#lines + 1] = { DEFAULT_NAME, UnitLabel(trigger) }
+  lines[#lines + 1] = { "Show On", ShowOnLabel(trigger) }
+  lines[#lines + 1] = { "Spell IDs (All Ranks)", DescribeSpellIDs(trigger.auraRankSpellIDs, Display.UsesRankSpellIDs(trigger)) }
+  lines[#lines + 1] = { "Exact Spell IDs", DescribeSpellIDs(trigger.auraspellids, Display.UsesSpellIDs(trigger)) }
+end
+
+WeakAuras.RegisterTriggerSystem({ "secretAura" }, system)
+
+-- Unit appearance and disappearance: units each event may have changed.
+local TARGET_UNITS = { target = true, targettarget = true }
+local FOCUS_UNITS = { focus = true, focustarget = true }
+local TARGET_OF_TARGET = { targettarget = true }
+local TARGET_OF_FOCUS = { focustarget = true }
+local PET_UNITS = { pet = true }
+local MEMBER_UNITS = { member = true }
+
+local unitsByEvent = {
+  PLAYER_TARGET_CHANGED = TARGET_UNITS,
+  PLAYER_FOCUS_CHANGED = FOCUS_UNITS,
+  PLAYER_ENTERING_WORLD = OPTIONAL_UNITS,
+  GROUP_ROSTER_UPDATE = MEMBER_UNITS,
+  INSTANCE_ENCOUNTER_ENGAGE_UNIT = MEMBER_UNITS,
+  ARENA_OPPONENT_UPDATE = MEMBER_UNITS,
+}
+
+local function AffectedUnits(event, unit)
+  if event == "UNIT_TARGET" then
+    if unit == "target" then
+      return TARGET_OF_TARGET
+    elseif unit == "focus" then
+      return TARGET_OF_FOCUS
+    end
+    return nil
+  elseif event == "UNIT_PET" then
+    if unit == "player" then
+      return PET_UNITS
+    elseif unit then
+      return MEMBER_UNITS
+    end
+    return nil
+  end
+  return unitsByEvent[event]
+end
+
+-- Returns true when the state had to change.
+local function ApplyVisibility(state, show)
+  if state.show == show then
+    return false
+  end
+  state.show = show
+  state.changed = true
+  return true
+end
+
+-- Returns true when the trigger's placeholder was created or updated.
+local function RefreshTrigger(id, data, index)
+  local show = ShouldShow(data, index)
+  local state = WeakAuras.GetTriggerStateForTrigger(id, index)[""]
+  if state then
+    return ApplyVisibility(state, show)
+  end
+  if show then
+    system.CreateFakeStates(id, index)
+    return true
+  end
+  return false
+end
+
+local function RefreshAura(id, data, units)
+  local updated = false
+  for index, slot in ipairs(data.triggers) do
+    if IsSecretTrigger(slot) and units[slot.trigger.unit] and RefreshTrigger(id, data, index) then
+      updated = true
+    end
+  end
+  if updated then
+    Private.UpdatedTriggerState(id)
+  end
+end
+
+local eventFrame = CreateFrame("Frame")
+for _, event in ipairs({
+  "PLAYER_TARGET_CHANGED", "PLAYER_FOCUS_CHANGED", "UNIT_TARGET", "UNIT_PET", "PLAYER_ENTERING_WORLD",
+  "GROUP_ROSTER_UPDATE", "INSTANCE_ENCOUNTER_ENGAGE_UNIT", "ARENA_OPPONENT_UPDATE",
+}) do
+  eventFrame:RegisterEvent(event)
+end
+-- The editor shows every placeholder, whatever the unit.
+eventFrame:SetScript("OnEvent", function(_, event, unit)
+  if WeakAuras.IsOptionsOpen() then
+    return
+  end
+  local units = AffectedUnits(event, unit)
+  if not units then
+    return
+  end
+  for id, record in pairs(auraStates) do
+    if record.loaded and record.data then
+      RefreshAura(id, record.data, units)
+    end
+  end
+end)

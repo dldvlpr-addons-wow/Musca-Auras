@@ -26,12 +26,17 @@ local properties = {
   border_visible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
   border_color = {
     display = L["Color"],
     setter = "SetBorderColor",
+    secretSetter = "SetSecretBorderColor",
+    secretCapable = true,
     type = "color"
   },
 }
@@ -113,6 +118,11 @@ local function modify(parent, region, parentData, data, first)
 
   local defaultColor = data.border_color
 
+  function region:SetSecretBorderColor(r, g, b, a)
+    self.colorOverridden = true
+    self:SetBackdropBorderColor(r, g, b, a)
+  end
+
   function region:SetBorderColor(r, g, b, a)
     self.colorOverridden = r ~= defaultColor[1] or g ~= defaultColor[2] or b ~= defaultColor[3]
     if self.Update and not self.colorOverridden then
@@ -121,6 +131,12 @@ local function modify(parent, region, parentData, data, first)
       self:SetBackdropBorderColor(r, g, b, a or 1)
     end
   end
+
+  function region:SetSecretVisible(value)
+    Private.SetSecretSubRegionVisible(self, self:IsShown(), value)
+  end
+
+  region.ClearSecretVisible = Private.ClearSecretSubRegionVisible
 
   function region:SetVisible(visible)
     if visible then

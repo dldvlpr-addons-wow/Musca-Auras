@@ -61,6 +61,11 @@ local funcs = {
       self.textures[i]:SetDesaturated(desaturate)
     end
   end,
+  SetDesaturation = function(self, value)
+    for i = 1, 3 do
+      self.textures[i]:SetDesaturation(value)
+    end
+  end,
   --- @type fun(self: CircularProgressTextureInstance, blendMode: BlendMode)
   SetBlendMode = function(self, blendMode)
     for i = 1, 3 do

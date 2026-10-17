@@ -1102,7 +1102,7 @@ local function UpdateStateWithNoMatch(time, triggerStates, triggerInfo, cloneId,
       changed = true
     end
 
-    if state.durationObject then
+    if state.durationObject ~= nil then
       state.durationObject = nil
       changed = true
     end
@@ -3102,34 +3102,21 @@ local function createScanFunc(trigger)
     table.insert(ret, ret2:format(property, property, trigger.tooltipValue_operator, trigger.tooltipValue))
   end
 
-  if trigger.useNamePattern and trigger.namePattern_name and trigger.namePattern_name ~= "" then
-    table.insert(ret, [=[
-      if type(matchData.name) ~= "string" or (issecretvalue and issecretvalue(matchData.name)) then
+  local namePattern = trigger.useNamePattern and trigger.namePattern_name
+  if namePattern and namePattern ~= "" then
+    local nameTests = {
+      ["=="] = "name == %q",
+      ["find('%s')"] = "name:find(%q, 1, true)",
+      ["match('%s')"] = "name:match(%q)",
+    }
+    local nameTest = nameTests[trigger.namePattern_operator or "=="]
+    if nameTest then
+      table.insert(ret, ([=[
+      local name = matchData.name
+      if type(name) ~= "string" or (issecretvalue and issecretvalue(name)) or not (%s) then
         return false
       end
-    ]=])
-    local operator = trigger.namePattern_operator or "=="
-    if operator == "find('%s')" then
-      local ret2 = [=[
-      if not matchData.name:find(%s, 1, true) then
-        return false
-      end
-      ]=]
-      table.insert(ret, ret2:format(Private.QuotedString(trigger.namePattern_name)))
-    elseif operator == "match('%s')" then
-      local ret2 = [=[
-      if not matchData.name:match(%s) then
-        return false
-      end
-      ]=]
-      table.insert(ret, ret2:format(Private.QuotedString(trigger.namePattern_name)))
-    else
-      local ret2 = [=[
-      if matchData.name ~= %s then
-        return false
-      end
-      ]=]
-      table.insert(ret, ret2:format(Private.QuotedString(trigger.namePattern_name)))
+      ]=]):format(nameTest:format(namePattern)))
     end
   end
 
@@ -3860,144 +3847,6 @@ end
 function BuffTrigger.GetName(triggerType)
   if triggerType == "aura2" then
     return L["Aura"]
-  end
-end
-
-function Private.CanConvertBuffTrigger2(trigger)
-  if trigger.type ~= "aura" then
-    return false
-  end
-
-  if trigger.unit == "multi" then
-    return true, L["Note: The available text replacements for multi triggers match the normal triggers now."]
-  end
-
-  if trigger.unit and trigger.hideAlone then
-    return false, L["Note: 'Hide Alone' is not available in the new aura tracking system. A load option can be used instead."]
-  end
-
-  if trigger.unit == "group" then
-    return true, L["Warning: Name info is now available via %affected, %unaffected. Number of affected group members via %unitCount. Some options behave differently now. This is not automatically adjusted."]
-  end
-
-  if trigger.fullscan then
-    if trigger.subcount then
-      return true, L["Warning: Tooltip values are now available via %tooltip1, %tooltip2, %tooltip3 instead of %s. This is not automatically adjusted."]
-    end
-
-    if trigger.use_name and trigger.use_spellId then
-      return false, L["Warning: Full Scan auras checking for both name and spell id can't be converted."]
-    end
-  end
-
-  return true
-end
-
-function Private.ConvertBuffTrigger2(trigger)
-  if not Private.CanConvertBuffTrigger2(trigger) then
-    return
-  end
-  trigger.type = "aura2"
-
-  if trigger.fullscan and trigger.autoclone then
-    trigger.combineMatches = "showClones"
-  else
-    trigger.combineMatches = "showLowest"
-  end
-
-  if trigger.fullscan and trigger.use_stealable then
-    trigger.use_stealable = true
-  else
-    trigger.use_stealable = nil
-  end
-
-  if trigger.fullscan and trigger.use_debuffClass and trigger.debuffClass then
-  else
-    trigger.use_debuffClass = false
-  end
-
-  if trigger.fullscan and trigger.use_tooltip then
-    trigger.fetchTooltip = true
-  else
-    trigger.use_tooltip = false
-  end
-
-  if trigger.fullscan and trigger.subcount then
-    trigger.fetchTooltip = true
-  end
-
-  if trigger.fullscan and trigger.use_name then
-    trigger.useNamePattern = true
-    trigger.namePattern_operator = trigger.name_operator
-    trigger.namePattern_name = trigger.name
-  end
-
-  if trigger.fullscan then
-    -- Use name from fullscan
-    if trigger.use_name then
-      if trigger.name_operator == "==" then
-        -- Convert to normal name check
-        trigger.useName = true
-        trigger.auranames = {}
-        trigger.auranames[1] = trigger.name
-      end
-    end
-    if trigger.use_spellId then
-      trigger.useExactSpellId = true
-      trigger.auraspellids = {}
-      trigger.auraspellids[1] = trigger.spellId
-    end
-  else
-    trigger.useName = true
-  end
-
-  if not trigger.fullscan and trigger.unit ~= "multi" then
-    trigger.auranames = {}
-    for i = 1, 9 do
-      trigger.auranames[i] = trigger.spellIds[i] and tostring(trigger.spellIds[i]) or trigger.names[i]
-    end
-  end
-
-  if trigger.unit == "multi" then
-    -- Closest to the old behavior
-    trigger.showClones = true
-    trigger.useName = true
-    trigger.auranames = {}
-    trigger.auranames[1] = tostring(trigger.spellId) or trigger.name
-  end
-
-  -- debuffType is exactly the same, no need to touch it
-  -- remaining is exactly the same for now
-  -- ownOnly is exactly the same
-  -- unitExists is exactly the same
-
-  if trigger.useCount then
-    trigger.useStacks = trigger.useCount
-    trigger.stacksOperator = trigger.countOperator
-    trigger.stacks = trigger.count
-  end
-
-  if trigger.fullscan and trigger.autoclone then
-    trigger.matchesShowOn = "showOnActive"
-  else
-    trigger.matchesShowOn = trigger.buffShowOn
-  end
-
-  if trigger.unit == "group" then
-    trigger.matchesShowOn = nil
-    trigger.showClones = trigger.groupclone
-  end
-
-  if trigger.unit == "group" and not trigger.groupclone then
-    if trigger.name_info == "players" or trigger.name_info == "nonplayers" then
-      trigger.useAffected = true
-    end
-  end
-
-  if trigger.unit == "group" and trigger.group_countOperator and trigger.group_count then
-    trigger.useGroup_count = true
-  else
-    trigger.useGroup_count = false
   end
 end
 

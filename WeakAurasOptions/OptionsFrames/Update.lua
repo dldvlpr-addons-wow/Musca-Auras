@@ -102,7 +102,11 @@ local function compatibilityReport(auras, codes)
     local source = " " .. code.code
     for _, name in ipairs(removedFunctions) do
       if _G[name] == nil and source:find("[^%w_%.:]" .. name .. "%s*%(") then
-        tinsert(lines, L["%s calls %s, which does not exist on WoW Forever."]:format(code.text, name))
+        if OptionsPrivate.Private.HasRemovedFunctionReplacement(name) then
+          tinsert(lines, L["%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."]:format(code.text, name))
+        else
+          tinsert(lines, L["%s calls %s, which does not exist on WoW Forever."]:format(code.text, name))
+        end
       end
     end
   end

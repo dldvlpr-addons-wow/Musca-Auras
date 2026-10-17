@@ -707,6 +707,8 @@ L["%s: uses the combat log, which addons cannot read on WoW Forever. Use a custo
 L["%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."] = "%s : suit une aura qui devient secrète en combat. Passe le type de déclencheur en Aura (Modern)."
 L["%s: %s may not work in combat (secret values)."] = "%s : %s peut ne pas marcher en combat (valeurs secrètes)."
 L["%s calls %s, which does not exist on WoW Forever."] = "%s appelle %s, qui n'existe pas sur WoW Forever."
+L["%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."] = "%s appelle %s, qui n'existe pas sur WoW Forever. Musca-Auras la remplace."
+L["Looping Animation"] = "Animation en boucle"
 L["Error not receiving display information from %s"] = "Erreur de non-réception d'informations d'affichage de %s"
 --[[Translation missing --]]
 L["Essence"] = "Essence"

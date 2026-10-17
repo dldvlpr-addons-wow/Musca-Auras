@@ -34,6 +34,8 @@ local default = {
   shadowYOffset = -1
 };
 
+Private.regionPrototype.AddAlphaToDefault(default);
+
 local properties = {
   color = {
     display = L["Color"],
@@ -53,6 +55,9 @@ local properties = {
   displayText = {
     display = L["Text"],
     setter = "ChangeText",
+    secretLayers = "SetSecretTextLayers",
+    secretRestore = "ClearSecretTextLayers",
+    secretCapable = true,
     type = "string",
     control = "WeakAurasInputWithIndentation"
   },
@@ -84,11 +89,26 @@ Private.regionPrototype.AddProperties(properties, default);
 --- @field SetTextHeight fun(self: TextRegion, size: number)
 --- @field ChangeText fun(self: TextRegion, msg: string)
 
-local function AnchorText(region, point)
-  if region.textAnchorPoint == point then return end
-  region.textAnchorPoint = point
-  region.text:ClearAllPoints()
-  region.text:SetPoint(point, region, point)
+local function PinTextTo(region, point)
+  if region.textAnchorPoint ~= point then
+    local text = region.text
+    text:ClearAllPoints()
+    text:SetPoint(point, region, point)
+    region.textAnchorPoint = point
+  end
+end
+
+local function TextPinPoint(region, data)
+  if not region.automaticTextWidth then
+    return data.justify
+  end
+  return region.anchorPoint or data.selfPoint
+end
+
+local function FollowAnchorPoint(region, point)
+  if region.automaticTextWidth then
+    PinTextTo(region, point)
+  end
 end
 
 local fontObjectCounter = 0
@@ -110,10 +130,10 @@ local function create(parent)
 
   Private.regionPrototype.create(region);
 
-  local SetAnchor = region.SetAnchor
-  function region:SetAnchor(point, relativeTo, relativePoint)
-    SetAnchor(self, point, relativeTo, relativePoint)
-    if self.automaticTextWidth then AnchorText(self, point) end
+  local prototypeSetAnchor = region.SetAnchor
+  region.SetAnchor = function(self, point, ...)
+    prototypeSetAnchor(self, point, ...)
+    FollowAnchorPoint(self, point)
   end
 
   return region;
@@ -172,9 +192,10 @@ local function modify(parent, region, data)
 
   text:SetTextHeight(data.fontSize);
 
-  region.automaticTextWidth = data.automaticWidth ~= "Fixed"
+  local fixedWidth = data.automaticWidth == "Fixed"
+  region.automaticTextWidth = not fixedWidth
   region.textAnchorPoint = nil
-  AnchorText(region, region.automaticTextWidth and (region.anchorPoint or data.selfPoint) or data.justify)
+  PinTextTo(region, TextPinPoint(region, data))
 
   local SetText;
 
@@ -281,6 +302,21 @@ local function modify(parent, region, data)
     formatters, everyFrameFormatters = Private.CreateFormatters(texts, getter, false, data)
   end
 
+  local layerTexts = { data.displayText }
+  local layersTick = Private.ContainsAnyPlaceHolders(data.displayText)
+  for _, condition in ipairs(type(data.conditions) == "table" and data.conditions or {}) do
+    local value
+    for _, change in ipairs(type(condition.changes) == "table" and condition.changes or {}) do
+      if change.property == "displayText" then
+        value = change.value
+      end
+    end
+    if type(value) == "string" then
+      layerTexts[#layerTexts + 1] = value
+      layersTick = layersTick or Private.ContainsAnyPlaceHolders(value)
+    end
+  end
+
   local customTextFunc = nil
   if containsCustomText and data.customText and data.customText ~= "" then
     customTextFunc = WeakAuras.LoadFunction("return "..data.customText, data.id)
@@ -350,6 +386,22 @@ local function modify(parent, region, data)
       end
     end
 
+    if self.secretTextAlphas then
+      local update, tick = Update, FrameTick
+      Update = function(...)
+        update(...)
+        self:UpdateSecretTextLayers()
+      end
+      if tick or layersTick then
+        FrameTick = function()
+          if tick then
+            tick()
+          end
+          self:UpdateSecretTextLayers()
+        end
+      end
+    end
+
     self.Update = Update
     self.FrameTick = FrameTick
 
@@ -372,6 +424,12 @@ local function modify(parent, region, data)
     end
   end
 
+  region.secretTextAlphas = nil
+  for _, layer in ipairs(region.secretTextLayers or {}) do
+    layer:Hide()
+  end
+  text:SetAlpha(1)
+
   function region:Color(r, g, b, a)
     region.color_r = r;
     region.color_g = g;
@@ -381,6 +439,9 @@ local function modify(parent, region, data)
       a = a or 1;
     end
     text:SetTextColor(region.color_anim_r or r, region.color_anim_g or g, region.color_anim_b or b, region.color_anim_a or a);
+    if region.secretTextAlphas then
+      region:UpdateSecretTextLayers()
+    end
   end
 
   function region:ColorAnim(r, g, b, a)
@@ -392,6 +453,9 @@ local function modify(parent, region, data)
       a = a or 1;
     end
     text:SetTextColor(r or region.color_r, g or region.color_g, b or region.color_b, a or region.color_a);
+    if region.secretTextAlphas then
+      region:UpdateSecretTextLayers()
+    end
   end
 
   function region:GetColor()
@@ -413,9 +477,85 @@ local function modify(parent, region, data)
     self:ConfigureSubscribers()
   end
 
+  local function LayerText(textStr)
+    if not Private.ContainsAnyPlaceHolders(textStr) then
+      return WeakAuras.ReplaceRaidMarkerSymbols((textStr:gsub("\\n", "\n")))
+    end
+    textStr = Private.ReplacePlaceHolders(textStr, region, nil, false, formatters)
+    if Private.IsSecret(textStr) then
+      return textStr
+    end
+    return WeakAuras.ReplaceRaidMarkerSymbols(textStr)
+  end
+
+  local wordWrap = data.automaticWidth ~= "Fixed" or data.wordWrap == "WordWrap"
+
+  function region:UpdateSecretTextLayers()
+    local point = self.textAnchorPoint or "CENTER"
+    local factor = 0
+    for index, textStr in ipairs(layerTexts) do
+      factor = factor + 1
+      local layer = self.secretTextLayers[index]
+      layer:SetAlpha(self.secretTextAlphas[factor])
+      for depth = 1, #layerTexts - index do
+        factor = factor + 1
+        self.secretTextHolders[index][depth]:SetAlpha(self.secretTextAlphas[factor])
+      end
+      layer:SetFontObject(fontObject)
+      layer:SetFont(text:GetFont())
+      layer:SetTextColor(text:GetTextColor())
+      layer:SetWordWrap(wordWrap)
+      layer:SetNonSpaceWrap(wordWrap)
+      layer:SetWidth(self.automaticTextWidth and 0 or data.fixedWidth)
+      layer:ClearAllPoints()
+      layer:SetPoint(point, self, point)
+      layer:SetText(LayerText(textStr))
+      layer:Show()
+    end
+  end
+
+  function region:SetSecretTextLayers(...)
+    local activate = not self.secretTextAlphas
+    self.secretTextAlphas = { ... }
+    self.secretTextLayers = self.secretTextLayers or {}
+    self.secretTextHolders = self.secretTextHolders or {}
+    for index = 1, #layerTexts do
+      local holders = self.secretTextHolders[index] or {}
+      self.secretTextHolders[index] = holders
+      local parentFrame = self
+      for depth = 1, #layerTexts - index do
+        if not holders[depth] then
+          holders[depth] = CreateFrame("Frame", nil, parentFrame)
+          holders[depth]:SetAllPoints(self)
+        end
+        parentFrame = holders[depth]
+      end
+      self.secretTextLayers[index] = self.secretTextLayers[index] or parentFrame:CreateFontString(nil, "OVERLAY")
+      self.secretTextLayers[index]:SetParent(parentFrame)
+    end
+    if activate then
+      text:SetAlpha(0)
+      self:ConfigureTextUpdate()
+      self:ConfigureSubscribers()
+    end
+    self:UpdateSecretTextLayers()
+  end
+
+  function region:ClearSecretTextLayers()
+    self.secretTextAlphas = nil
+    for _, layer in ipairs(self.secretTextLayers or {}) do
+      layer:Hide()
+    end
+    text:SetAlpha(1)
+    self:ConfigureTextUpdate()
+    self:ConfigureSubscribers()
+  end
+
   region.displayText = data.displayText
   region.durationTimeFormat = data.displayText_format_p_time_format
   region.durationThreshold = data.displayText_format_p_time_dynamic_threshold
+  region.durationPrecision = data.displayText_format_p_time_precision
+  region.durationLegacyFloor = data.displayText_format_p_time_legacy_floor
   region:ConfigureTextUpdate()
   region:ConfigureSubscribers()
   Private.regionPrototype.modifyFinish(parent, region, data);

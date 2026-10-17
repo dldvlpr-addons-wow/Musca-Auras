@@ -412,6 +412,11 @@ function Private.Animate(namespace, uid, type, anim, region, inverse, onFinished
   end
 end
 
+function Private.IsMainAnimationReplaceable(region)
+  local animation = animations[tostring(region)]
+  return not animation or animation.type == "main"
+end
+
 function Private.CancelAnimation(region, resetPos, resetAlpha, resetScale, resetRotation, resetColor, doOnFinished)
   local key = tostring(region);
   local anim = animations[key];

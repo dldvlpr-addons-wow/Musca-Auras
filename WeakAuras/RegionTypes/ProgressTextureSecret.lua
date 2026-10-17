@@ -1,191 +1,176 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local nativeOrientation = {
-  ["HORIZONTAL_INVERSE"] = { "HORIZONTAL", false },
-  ["HORIZONTAL"] = { "HORIZONTAL", true },
-  ["VERTICAL"] = { "VERTICAL", false },
-  ["VERTICAL_INVERSE"] = { "VERTICAL", true },
-}
-local canDrawDurationObject = Enum.StatusBarTimerDirection ~= nil
-                              and CreateFrame("StatusBar").SetTimerDuration ~= nil
-local canDrawRadialPercent = CreateFrame("Frame"):CreateTexture().SetRadialProgressBarPercent ~= nil
-                             and CurveConstants ~= nil and CurveConstants.ZeroToOne ~= nil
-                             and CurveConstants.Reverse ~= nil
+-- Native drawing for the progress texture region when the progress is secret or a duration object.
+-- Linear: the foreground is pinned full and a mask follows the fill of a hidden driver bar.
+-- Circular: a separate radial texture whose percent is pushed every frame.
+local Painter = Private.NativeProgressPainter
 
-local function GetNativeBar(self)
-  if not self.nativeBar then
-    local nativeBar = CreateFrame("StatusBar", nil, self)
-    nativeBar:SetAllPoints(self)
-    nativeBar:SetStatusBarTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
-    nativeBar:GetStatusBarTexture():SetAlpha(0)
-    nativeBar:Hide()
-    local mask = self:CreateMaskTexture()
-    mask:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite",
-                    "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE", "NEAREST")
-    mask:SetTexelSnappingBias(0)
-    mask:SetSnapToPixelGrid(false)
-    local fill = nativeBar:GetStatusBarTexture()
-    mask:SetPoint("TOPLEFT", fill, "TOPLEFT", -0.05, 0.05)
-    mask:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0.05, -0.05)
-    self.nativeBar = nativeBar
-    self.nativeMask = mask
+local function GetNativeBar(region)
+  if not region.nativeBar then
+    region.nativeBar = Painter.CreateDriverBar(region, true)
+    region.nativeMask = Painter.CreateClampMask(region, "NEAREST")
   end
-  return self.nativeBar
+  return region.nativeBar
 end
 
 local NativeRadialTick
 
-local function HideNative(self)
-  if self.FrameTick == NativeRadialTick then
-    self.FrameTick = nil
-    self.subRegionEvents:RemoveSubscriber("FrameTick", self)
+-- Moves the FrameTick subscription of a region to the given tick (nil unsubscribes).
+local function SetFrameTick(region, tick)
+  if region.FrameTick == tick then
+    return
   end
-  if self.nativeLinearShown then
-    self.nativeLinearShown = false
-    self.foreground.texture:RemoveMaskTexture(self.nativeMask)
-    self.nativeBar:Hide()
+  if region.FrameTick then
+    region.subRegionEvents:RemoveSubscriber("FrameTick", region)
   end
-  if self.nativeRadialShown then
-    self.nativeRadialShown = false
-    self.nativeRadial:Hide()
-    self.foregroundSpinner:Show()
+  region.FrameTick = tick
+  if tick then
+    region.subRegionEvents:AddSubscriber("FrameTick", region)
   end
 end
 
-local function ShowNativeLinear(self, inverse)
-  local nativeBar = GetNativeBar(self)
-  local orientation = nativeOrientation[self.orientation] or nativeOrientation.HORIZONTAL_INVERSE
-  local reverse = orientation[2]
-  inverse = inverse and true or false
-  nativeBar:SetOrientation(orientation[1])
-  nativeBar:SetReverseFill(not reverse ~= not inverse)
-  if self.nativeMaskInverse ~= inverse or self.nativeMaskOrientation ~= self.orientation then
-    self.nativeMaskInverse = inverse
-    self.nativeMaskOrientation = self.orientation
-    local mask, fill = self.nativeMask, nativeBar:GetStatusBarTexture()
-    mask:ClearAllPoints()
-    if not inverse then
-      mask:SetPoint("TOPLEFT", fill, "TOPLEFT", -0.05, 0.05)
-      mask:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0.05, -0.05)
-    elseif orientation[1] == "HORIZONTAL" then
-      mask:SetPoint("TOPLEFT", reverse and fill or self, reverse and "TOPRIGHT" or "TOPLEFT", -0.05, 0.05)
-      mask:SetPoint("BOTTOMRIGHT", reverse and self or fill, reverse and "BOTTOMRIGHT" or "BOTTOMLEFT", 0.05, -0.05)
-    else
-      mask:SetPoint("TOPLEFT", reverse and self or fill, reverse and "TOPLEFT" or "BOTTOMLEFT", -0.05, 0.05)
-      mask:SetPoint("BOTTOMRIGHT", reverse and fill or self, reverse and "TOPRIGHT" or "BOTTOMRIGHT", 0.05, -0.05)
-    end
+local function HideNative(region)
+  if region.FrameTick == NativeRadialTick then
+    SetFrameTick(region, nil)
   end
-  if not self.nativeLinearShown then
-    self.nativeLinearShown = true
-    self.foreground.texture:AddMaskTexture(self.nativeMask)
+  if region.nativeLinearShown then
+    region.nativeLinearShown = false
+    region.foreground.texture:RemoveMaskTexture(region.nativeMask)
+    region.nativeBar:Hide()
+  end
+  if region.nativeRadialShown then
+    region.nativeRadialShown = false
+    region.nativeRadial:Hide()
+    region.foregroundSpinner:Show()
+  end
+end
+
+local function ShowNativeLinear(region, inverse)
+  local nativeBar = GetNativeBar(region)
+  local direction = Painter.ProgressTextureSecretOrientation[region.orientation]
+                    or Painter.ProgressTextureSecretOrientation.default
+  inverse = inverse and true or false
+  Painter.ApplyLinearDirection(nativeBar, direction.axis, direction.reverseFill, inverse)
+  if region.nativeMaskInverse ~= inverse or region.nativeMaskOrientation ~= region.orientation then
+    region.nativeMaskInverse = inverse
+    region.nativeMaskOrientation = region.orientation
+    Painter.AnchorMaskToFill(region.nativeMask, nativeBar:GetStatusBarTexture(), region, direction.axis,
+      direction.reverseFill, inverse, Painter.DriverMaskMargins)
+  end
+  if not region.nativeLinearShown then
+    region.nativeLinearShown = true
+    region.foreground.texture:AddMaskTexture(region.nativeMask)
     nativeBar:Show()
   end
-  self.progress = 1
-  if self.useSmoothProgress then
-    self.smoothProgress:ResetSmoothedValue(1)
+  -- The mask cuts the progress, so the foreground itself stays full.
+  region.progress = 1
+  if region.useSmoothProgress then
+    region.smoothProgress:ResetSmoothedValue(1)
   end
-  self.foreground:SetValue(0, 1)
+  region.foreground:SetValue(0, 1)
   return nativeBar
 end
 
-local function ShowNativeRadial(self, percent)
-  if not self.nativeRadial then
-    self.nativeRadial = self:CreateTexture(nil, "ARTWORK", nil, 1)
-    self.nativeRadial:SetAllPoints(self)
+-- Region settings seen as a painter look; the view reads the region live, so it is built once.
+local function AnimatedOrStatic(animated, static)
+  return function(region) return region[animated] or region[static] end
+end
+local regionLookReaders = {
+  texture = "currentTexture",
+  wrapMode = "textureWrapMode",
+  blendMode = function(region) return region.foreground:GetBlendMode() end,
+  spin = "auraRotation",
+  cropX = "crop_x",
+  cropY = "crop_y",
+  textureRotation = AnimatedOrStatic("effectiveTexRotation", "texRotation"),
+  flipX = function(region) return Painter.Either(region.mirror, region.mirror_h) end,
+  flipY = "mirror_v",
+  orientation = "orientation",
+  startAngle = "startAngle",
+  endAngle = "endAngle",
+  red = AnimatedOrStatic("color_anim_r", "color_r"),
+  green = AnimatedOrStatic("color_anim_g", "color_g"),
+  blue = AnimatedOrStatic("color_anim_b", "color_b"),
+  alpha = AnimatedOrStatic("color_anim_a", "color_a"),
+}
+
+local function RadialLook(region)
+  region.nativeRadialLook = region.nativeRadialLook or Painter.LookView(region, regionLookReaders)
+  return region.nativeRadialLook
+end
+
+local function ShowNativeRadial(region, percent)
+  if not region.nativeRadial then
+    region.nativeRadial = region:CreateTexture(nil, "ARTWORK", nil, 1)
+    region.nativeRadial:SetAllPoints(region)
   end
-  local radial = self.nativeRadial
-  Private.SetTextureOrAtlas(radial, self.currentTexture, self.textureWrapMode, self.textureWrapMode)
-  radial:SetVertexColor(self.color_anim_r or self.color_r or 1, self.color_anim_g or self.color_g or 1,
-                        self.color_anim_b or self.color_b or 1, self.color_anim_a or self.color_a or 1)
-  radial:SetBlendMode(self.foreground:GetBlendMode())
-  if radial.SetRadialProgressBarReverse then
-    radial:SetRadialProgressBarReverse(self.orientation == "ANTICLOCKWISE")
-  end
-  radial:SetRotation(math.rad(self.auraRotation or 0))
-  self.nativeRadialCoord = self.nativeRadialCoord or Private.TextureCoords.create(radial)
-  self.nativeRadialCoord:SetFull()
-  self.nativeRadialCoord:Transform(self.crop_x or 1, self.crop_y or 1, self.effectiveTexRotation or self.texRotation or 0,
-                                   not self.mirror ~= not self.mirror_h, self.mirror_v, 0, 0)
-  self.nativeRadialCoord:Apply()
-  if radial.SetRadialProgressBarStartOffset
-     and (self.nativeRadialOffset or (self.startAngle or 0) ~= 0 or (self.endAngle or 360) ~= 360) then
-    radial:SetRadialProgressBarStartOffset(((self.startAngle or 0) + 180) % 360 / 360)
-    radial:SetRadialProgressBarEndOffset(((self.endAngle or 360) + 180) % 360 / 360)
-    self.nativeRadialOffset = true
+  local radial = region.nativeRadial
+  region.nativeRadialCoord = region.nativeRadialCoord or Private.TextureCoords.create(radial)
+  local look = RadialLook(region)
+  Painter.PaintArt(radial, region.nativeRadialCoord, look, false)
+  -- Once offsets were written they are kept up to date, even back at their defaults.
+  if Painter.ApplyRadialShape(radial, look, region.nativeRadialOffset) then
+    region.nativeRadialOffset = true
   end
   radial:SetRadialProgressBarPercent(percent)
-  if not self.nativeRadialShown then
-    self.nativeRadialShown = true
-    self.foregroundSpinner:Hide()
+  if not region.nativeRadialShown then
+    region.nativeRadialShown = true
+    region.foregroundSpinner:Hide()
     radial:Show()
   end
 end
 
-local function EvaluateDurationPercent(self)
-  local fillElapsed = not self.inverse ~= not self.inverseDirection
-  local ok, percent = pcall(self.durationObject.EvaluateRemainingPercent, self.durationObject,
-                            fillElapsed and CurveConstants.Reverse or CurveConstants.ZeroToOne)
-  if ok and type(percent) == "number" then
-    return percent
+local function FillsElapsed(region)
+  return Painter.Either(region.inverse, region.inverseDirection)
+end
+
+NativeRadialTick = function(region)
+  local readable, percent = Painter.EvaluateRemainingPercent(region.durationObject, FillsElapsed(region))
+  if readable then
+    ShowNativeRadial(region, percent)
   end
 end
 
-NativeRadialTick = function(self)
-  local percent = EvaluateDurationPercent(self)
-  if percent then
-    ShowNativeRadial(self, percent)
-  end
-end
-
-local function UpdateNativeValue(self)
-  if self.circular then
-    if not self.inverseDirection and canDrawRadialPercent and type(self.secretPercent) == "number" then
-      ShowNativeRadial(self, self.secretPercent)
+local function UpdateNativeValue(region)
+  if region.circular then
+    if not region.inverseDirection and Painter.CanDrawRadialPercent and type(region.secretPercent) == "number" then
+      ShowNativeRadial(region, region.secretPercent)
       return true
     end
-  elseif canDrawDurationObject and type(self.secretValue) == "number" and type(self.secretTotal) == "number" then
-    local nativeBar = ShowNativeLinear(self, self.inverseDirection)
-    nativeBar:SetMinMaxValues(0, self.secretTotal)
-    if self.useSmoothProgress and Enum.StatusBarInterpolation then
-      nativeBar:SetValue(self.secretValue, Enum.StatusBarInterpolation.ExponentialEaseOut)
-    else
-      nativeBar:SetValue(self.secretValue)
-    end
+  elseif Painter.CanDrawDurationObject and type(region.secretValue) == "number" and type(region.secretTotal) == "number" then
+    local nativeBar = ShowNativeLinear(region, region.inverseDirection)
+    Painter.SetSecretProgress(nativeBar, region.secretValue, region.secretTotal, region.useSmoothProgress)
     return true
   end
   return false
 end
 
-local function UpdateNativeTime(self)
-  if not self.durationObject then
+local function UpdateNativeTime(region)
+  if not region.durationObject then
     return false
   end
-  if self.circular then
-    if not canDrawRadialPercent then
+  if region.circular then
+    -- A circle never falls back to the linear driver bar.
+    if not Painter.CanDrawRadialPercent then
       return false
     end
-    local percent = EvaluateDurationPercent(self)
-    if not percent then
+    local readable, percent = Painter.EvaluateRemainingPercent(region.durationObject, FillsElapsed(region))
+    if not readable then
       return false
     end
-    ShowNativeRadial(self, percent)
-    if not self.paused and self.FrameTick ~= NativeRadialTick then
-      if self.FrameTick then
-        self.subRegionEvents:RemoveSubscriber("FrameTick", self)
-      end
-      self.FrameTick = NativeRadialTick
-      self.subRegionEvents:AddSubscriber("FrameTick", self)
+    ShowNativeRadial(region, percent)
+    if not region.paused then
+      SetFrameTick(region, NativeRadialTick)
     end
     return true
   end
-  if not canDrawDurationObject then
+  if not Painter.CanDrawDurationObject then
     return false
   end
-  local nativeBar = ShowNativeLinear(self)
-  local fillElapsed = not self.inverse ~= not self.inverseDirection
-  nativeBar:SetTimerDuration(self.durationObject, Enum.StatusBarInterpolation.Immediate,
-    fillElapsed and Enum.StatusBarTimerDirection.ElapsedTime or Enum.StatusBarTimerDirection.RemainingTime)
+  local nativeBar = ShowNativeLinear(region)
+  Painter.SetTimer(nativeBar, region.durationObject, Painter.FillDirection(FillsElapsed(region)), "Immediate")
   return true
 end
 

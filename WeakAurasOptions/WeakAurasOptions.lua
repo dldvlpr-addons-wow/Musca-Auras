@@ -266,11 +266,17 @@ local function commonParent(controlledChildren)
 end
 
 local function CreateNewGroupFromSelection(regionType, resetChildPositions, settings)
+  local modernFlow = settings ~= nil and settings.blizzardFlow
+  local nameSuffix = modernFlow and " Modern Aura Group" or " Group"
   local data = {
-    id = OptionsPrivate.Private.FindUnusedId(tempGroup.controlledChildren[1]..(settings and settings.blizzardFlow and " Modern Aura Group" or " Group")),
+    id = OptionsPrivate.Private.FindUnusedId(tempGroup.controlledChildren[1] .. nameSuffix),
     regionType = regionType,
   };
-  for key, value in pairs(settings or {}) do data[key] = value end
+  if settings then
+    for field, value in pairs(settings) do
+      data[field] = value
+    end
+  end
 
   WeakAuras.DeepMixin(data, OptionsPrivate.Private.data_stub)
   data.internalVersion = WeakAuras.InternalVersion()
@@ -361,10 +367,10 @@ function OptionsPrivate.MultipleDisplayTooltipMenu()
       end
     },
     {
-      text = "Add to new Modern Aura Group",
+      text = L["Add to new Modern Aura Group"],
       notCheckable = 1,
       func = function()
-        CreateNewGroupFromSelection("group", false, {blizzardFlow = true, blizzardFlowGrowth = "RIGHT", blizzardFlowSpacing = 2})
+        CreateNewGroupFromSelection("group", false, { blizzardFlow = true, blizzardFlowGrowth = "RIGHT", blizzardFlowSpacing = 2 })
       end
     },
     {
@@ -1404,12 +1410,6 @@ function OptionsPrivate.GetDisplayButton(id)
   end
 end
 
-function OptionsPrivate.AddDisplayButton(data)
-  EnsureDisplayButton(data);
-  WeakAuras.UpdateThumbnail(data);
-  frame.buttonsScroll:AddChild(displayButtons[data.id]);
-end
-
 function OptionsPrivate.StartGrouping(data)
   if not data then
     return
@@ -1774,18 +1774,27 @@ local BaseDynamicTextCodes = {
   }
 }
 
-local ModernTextCodes = {
-  {type = "mini", name = "p", desc = "Remaining time, drawn by Blizzard. Put it in its own text element."},
-  {type = "mini", name = "s", desc = "Stacks, drawn by Blizzard. Put it in its own text element."},
-  {type = "mini", name = "n", desc = "Aura name, drawn by Blizzard. Put it in its own text element."},
+local function ClientRenderedTextCode(code, meaning)
+  return {type = "mini", name = code, desc = L["%s (rendered by the game client)"]:format(meaning)}
+end
+
+local modernAuraTextCodes = {
+  ClientRenderedTextCode("p", L["Time left on the aura"]),
+  ClientRenderedTextCode("s", L["Number of stacks"]),
+  ClientRenderedTextCode("n", L["Name of the aura"]),
   {type = "mini", name = "%", desc = L["% - To show a percent sign"]},
 }
+
+local codesWithoutTrigger = { c = true, ["%"] = true }
 
 function OptionsPrivate.UpdateTextReplacements(frame, data)
   frame.scrollList:ReleaseChildren()
 
-  local modern = OptionsPrivate.Private.BlizzardAuraDisplay.Enabled(data)
-  local props = modern and {} or OptionsPrivate.Private.GetAdditionalProperties(data)
+  local blizzardDrawn = OptionsPrivate.Private.BlizzardAuraDisplay.Enabled(data)
+  local props = {}
+  if not blizzardDrawn then
+    props = OptionsPrivate.Private.GetAdditionalProperties(data)
+  end
   local sortedProps = {}
 
   -- Add global header and markers
@@ -1796,11 +1805,9 @@ function OptionsPrivate.UpdateTextReplacements(frame, data)
 
   -- Add base dynamic text codes
   local globalProps = {}
-  if modern then
-    tAppendAll(globalProps, CopyTable(ModernTextCodes))
-  else
-    tAppendAll(globalProps, CopyTable(BaseDynamicTextCodes.trigger))
-    tAppendAll(globalProps, CopyTable(BaseDynamicTextCodes.global))
+  local codeLists = blizzardDrawn and { modernAuraTextCodes } or { BaseDynamicTextCodes.trigger, BaseDynamicTextCodes.global }
+  for _, codeList in ipairs(codeLists) do
+    tAppendAll(globalProps, CopyTable(codeList))
   end
   for _, prop in ipairs(globalProps) do
     prop.widthFraction = #globalProps
@@ -1886,7 +1893,7 @@ function OptionsPrivate.UpdateTextReplacements(frame, data)
           tooltip:ClearLines()
           tooltip:AddLine(("%s%s"):format(propPrefix, prop.name))
           tooltip:AddLine(prop.desc, 1, 1, 1, true)
-          if prop.name ~= "c" and prop.name ~= "%" and not modern then
+          if not (blizzardDrawn or codesWithoutTrigger[prop.name]) then
             tooltip:AddLine("\n")
             tooltip:AddLine(
               prop.triggerNum > 0
@@ -1983,7 +1990,8 @@ function WeakAuras.NewAura(sourceData, regionType, targetId)
 
   AddDefaultSubRegions(data)
 
-  if not sourceData or not sourceData.triggers then
+  local hasOwnTriggers = sourceData and sourceData.triggers
+  if not hasOwnTriggers then
     local supportsModern = OptionsPrivate.Private.BlizzardAuraDisplay.SupportsRegionType(regionType)
     data.triggers[1].trigger.auraTracking = supportsModern and "native" or "readable"
     OptionsPrivate.AuraEditor.Resolve(data, 1)

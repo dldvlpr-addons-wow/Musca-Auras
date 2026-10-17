@@ -74,6 +74,13 @@ function WowApi.Install(target)
     end
     return t
   end
+  table.indexof = function(list, value)
+    for index, entry in ipairs(list) do
+      if entry == value then
+        return index
+      end
+    end
+  end
 
   target.bit = Bit
   target.format = format

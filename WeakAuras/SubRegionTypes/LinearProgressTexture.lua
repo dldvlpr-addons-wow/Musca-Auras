@@ -47,12 +47,17 @@ local properties = {
   linearTextureVisible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
   linearTextureDesaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   linearTextureInverse = {
@@ -63,6 +68,7 @@ local properties = {
   linearTextureColor = {
     display = L["Color"],
     setter = "SetColor",
+    secretCapable = true,
     type = "color"
   },
   linearTextureAuraRotation = {
@@ -110,6 +116,13 @@ local funcs = {
   SetDesaturated = function(self, b)
     self.linearTexture:SetDesaturated(b)
   end,
+  SetSecretDesaturation = function(self, value)
+    self.linearTexture:SetDesaturation(value)
+  end,
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.visible, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   --- @type fun(self: LinearProgressSubElement, ...: any)
   SetColor = function(self, ...)
     self.linearTexture:SetColor(...)

@@ -479,16 +479,21 @@ local function GetGenericTriggerOptions(data, triggernum)
       order = 7.1,
       width = WeakAuras.normalWidth,
       values = subtypes,
-      sorting = triggerType == "cdm" and {"Blizzard Cooldown Manager", "Blizzard CDM Buff", "Blizzard CDM Item"}
-        or OptionsPrivate.Private.SortOrderForValues(subtypes),
+      sorting = triggerType ~= "cdm" and OptionsPrivate.Private.SortOrderForValues(subtypes)
+        or { "Blizzard Cooldown Manager", "Blizzard CDM Buff", "Blizzard CDM Item" },
       get = function(info)
         return trigger.event
       end,
       set = function(info, v)
         trigger.event = v
-        if trigger.type == "cdm" then trigger.cdmSource = v == "Blizzard CDM Buff" and "buff" or "cooldown" end
+        local isCooldownViewer = trigger.type == "cdm"
+        if isCooldownViewer then
+          trigger.cdmSource = (v ~= "Blizzard CDM Buff") and "cooldown" or "buff"
+        end
         WeakAuras.Add(data)
-        if trigger.type == "cdm" then OptionsPrivate.Private.UpdateFakeStatesFor(data.id) end
+        if isCooldownViewer then
+          OptionsPrivate.Private.UpdateFakeStatesFor(data.id)
+        end
         WeakAuras.ClearAndUpdateOptions(data.id)
       end,
     }
@@ -555,17 +560,20 @@ local function GetGenericTriggerOptions(data, triggernum)
     end
     if (prototypeOptions) then
       Mixin(options, prototypeOptions);
-      if trigger.type == "cdm" then OptionsPrivate.AddCooldownViewerOptions(options, data, triggernum) end
+      if triggerType == "cdm" then
+        OptionsPrivate.AddCooldownViewerOptions(options, data, triggernum)
+      end
     end
   end
 
+  local secretWarnings = OptionsPrivate.TriggerSecretWarnings
   options.secretValueWarning = {
     type = "description",
-    order = 9.5,
-    width = "full",
+    name = function() return secretWarnings.GetText(data, triggernum) end,
+    hidden = function() return secretWarnings.GetScope(data, triggernum) == nil end,
     fontSize = "small",
-    name = function() return OptionsPrivate.TriggerSecretWarnings.GetText(data, triggernum) end,
-    hidden = function() return OptionsPrivate.TriggerSecretWarnings.GetScope(data, triggernum) == nil end,
+    width = "full",
+    order = 9.5,
   }
 
   return {

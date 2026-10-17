@@ -47,12 +47,17 @@ local properties = {
   circularTextureVisible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
   circularTextureDesaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   circularTextureInverse = {
@@ -63,6 +68,7 @@ local properties = {
   circularTextureColor = {
     display = L["Color"],
     setter = "SetColor",
+    secretCapable = true,
     type = "color"
   },
   circularTextureClockwise = {
@@ -118,6 +124,13 @@ local funcs = {
   SetDesaturated = function(self, b)
     self.circularTexture:SetDesaturated(b)
   end,
+  SetSecretDesaturation = function(self, value)
+    self.circularTexture:SetDesaturation(value)
+  end,
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.visible, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   --- @type fun(self: CircularProgressSubElement, ...: any)
   SetColor = function(self, ...)
     self.circularTexture:SetColor(...)

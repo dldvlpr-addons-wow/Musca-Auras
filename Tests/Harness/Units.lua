@@ -507,6 +507,19 @@ function Units.Install(target, fire, wowApi)
     end
     return value
   end
+  local function UnitPercent(current, maximum, curve)
+    local percent = maximum > 0 and current / maximum or 0
+    if curve then
+      return curve:Evaluate(Secret.Wrap(percent))
+    end
+    return Secret.Wrap(percent * 100)
+  end
+  target.UnitHealthPercent = function(token, _, curve)
+    return UnitPercent(Read(token, "health") or 0, Read(token, "healthMax") or 0, curve)
+  end
+  target.UnitPowerPercent = function(token, _, _, curve)
+    return UnitPercent(Read(token, "power") or 0, Read(token, "powerMax") or 0, curve)
+  end
   target.UnitPowerType = function(token) return Read(token, "powerType") or 0, "RAGE" end
 end
 

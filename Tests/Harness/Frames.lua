@@ -11,6 +11,7 @@ local Frames = {
 }
 
 local Methods = {}
+Frames.Methods = Methods
 local metatable = {}
 local State = setmetatable({}, { __mode = "k" })
 Frames.State = State
@@ -307,6 +308,8 @@ function Methods:SetText(text)
   State[self].text = text
 end
 function Methods:GetText() return State[self].text end
+function Methods:SetTextColor(r, g, b, a) State[self].textColor = { r, g, b, a or 1 } end
+function Methods:GetTextColor() return unpack(State[self].textColor or { 1, 1, 1, 1 }) end
 function Methods:SetFormattedText(formatString, ...)
   State[self].text = string.format(formatString, ...)
 end
@@ -336,8 +339,9 @@ function Methods:SetFontObject(fontObject) State[self].fontObject = fontObject e
 function Methods:GetFontObject() return State[self].fontObject end
 function Methods:CopyFontObject(fontObject) State[self].fontObject = fontObject end
 
-function Methods:SetTexture(texture)
+function Methods:SetTexture(texture, wrapHorizontal, wrapVertical, filter)
   State[self].texture = texture
+  State[self].wrapHorizontal, State[self].wrapVertical, State[self].filter = wrapHorizontal, wrapVertical, filter
   return true
 end
 function Methods:GetTexture() return State[self].texture end
@@ -345,10 +349,18 @@ function Methods:GetTextureFileID() return type(State[self].texture) == "number"
 function Methods:SetAtlas(atlas) State[self].atlas = atlas return true end
 function Methods:GetAtlas() return State[self].atlas end
 function Methods:SetColorTexture(r, g, b, a) State[self].colorTexture = { r, g, b, a } end
-function Methods:SetVertexColor(r, g, b, a) State[self].vertexColor = { r, g, b, a or 1 } end
+function Methods:SetVertexColor(r, g, b, a) State[self].vertexColor = { r, g, b, a or 1 } State[self].gradient = nil end
+function Methods:SetGradient(orientation, minColor, maxColor)
+  State[self].gradient = { orientation, minColor, maxColor }
+end
 function Methods:GetVertexColor() return unpack(State[self].vertexColor) end
-function Methods:SetDesaturated(value) State[self].desaturated = value end
+function Methods:SetDesaturated(value)
+  State[self].desaturated = value
+  State[self].desaturation = value and 1 or 0
+end
 function Methods:IsDesaturated() return State[self].desaturated end
+function Methods:SetDesaturation(value) State[self].desaturation = value end
+function Methods:GetDesaturation() return State[self].desaturation end
 function Methods:SetTexCoord(...) State[self].texCoord = { ... } end
 function Methods:SetBackdrop(backdrop) State[self].backdrop = backdrop end
 function Methods:SetBackdropColor(r, g, b, a) State[self].backdropColor = { r, g, b, a or 1 } end
@@ -434,7 +446,7 @@ function Methods:EnableMouse(enabled) State[self].mouseEnabled = enabled end
 
 function Methods:SetMinMaxValues(minValue, maxValue) State[self].minValue, State[self].maxValue = minValue, maxValue end
 function Methods:GetMinMaxValues() return State[self].minValue or 0, State[self].maxValue or 1 end
-function Methods:SetValue(value) State[self].value = value end
+function Methods:SetValue(value, interpolation) State[self].value, State[self].valueInterpolation = value, interpolation end
 function Methods:GetValue() return State[self].value or 0 end
 function Methods:SetStatusBarTexture(texture)
   if type(texture) == "table" then
@@ -448,7 +460,56 @@ function Methods:GetStatusBarTexture()
   State[self].statusBarTexture = State[self].statusBarTexture or NewObject("Texture", nil, self)
   return State[self].statusBarTexture
 end
-function Methods:SetTimerDuration(duration) State[self].timerDuration = duration end
+function Methods:SetTimerDuration(duration, interpolation, direction)
+  State[self].timerDuration, State[self].timerInterpolation, State[self].timerDirection = duration, interpolation, direction
+end
+function Methods:SetOrientation(orientation) State[self].orientation = orientation end
+function Methods:GetOrientation() return State[self].orientation or "HORIZONTAL" end
+function Methods:SetReverseFill(reverse) State[self].reverseFill = reverse end
+function Methods:GetReverseFill() return State[self].reverseFill or false end
+function Methods:SetColorFill(r, g, b, a) State[self].colorFill = { r, g, b, a } end
+function Methods:SetStatusBarColor(r, g, b, a) State[self].statusBarColor = { r, g, b, a } end
+function Methods:GetStatusBarColor()
+  if State[self].statusBarColor then return unpack(State[self].statusBarColor) end
+  return 1, 1, 1, 1
+end
+function Methods:SetRenderMode(mode) State[self].renderMode = mode end
+
+function Methods:AddMaskTexture(mask)
+  State[self].masks = State[self].masks or {}
+  for _, present in ipairs(State[self].masks) do
+    if present == mask then return end
+  end
+  State[self].masks[#State[self].masks + 1] = mask
+end
+function Methods:RemoveMaskTexture(mask)
+  local masks = State[self].masks or {}
+  for index = #masks, 1, -1 do
+    if masks[index] == mask then table.remove(masks, index) end
+  end
+end
+function Methods:GetNumMaskTextures() return #(State[self].masks or {}) end
+function Methods:GetMaskTexture(index) return (State[self].masks or {})[index] end
+function Methods:SetTexelSnappingBias(bias) State[self].texelSnappingBias = bias end
+function Methods:SetSnapToPixelGrid(snap) State[self].snapToPixelGrid = snap end
+function Methods:SetBlendMode(mode) State[self].blendMode = mode end
+function Methods:GetBlendMode() return State[self].blendMode or "BLEND" end
+function Methods:SetRotation(radians) State[self].rotation = radians end
+function Methods:GetRotation() return State[self].rotation or 0 end
+
+local function Radial(object)
+  State[object].radial = State[object].radial or {}
+  return State[object].radial
+end
+function Methods:SetRadialProgressBarPercent(percent) Radial(self).percent = percent end
+function Methods:SetRadialProgressBarStartOffset(offset) Radial(self).startOffset = offset end
+function Methods:SetRadialProgressBarEndOffset(offset) Radial(self).endOffset = offset end
+function Methods:SetRadialProgressBarReverse(reverse) Radial(self).reverse = reverse end
+function Methods:SetRadialProgressBarFeather(feather) Radial(self).feather = feather end
+function Methods:ClearRadialProgressBar()
+  State[self].radial = nil
+  State[self].radialCleared = (State[self].radialCleared or 0) + 1
+end
 
 function Methods:SetCooldown(start, duration)
   State[self].cooldown = { start = start, duration = duration }

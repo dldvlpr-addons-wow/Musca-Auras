@@ -140,45 +140,38 @@ function OptionsPrivate.DuplicateSubRegion(data, index, regionType)
   end
 end
 
+local function RefreshOptionsAfterElementChange(parentData)
+  local modernAura = OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(parentData)
+  if not modernAura then
+    WeakAuras.ClearAndUpdateOptions(parentData.id)
+    return
+  end
+  OptionsPrivate.QueueOptionsRefresh(parentData.id)
+end
+
 function OptionsPrivate.AddUpDownDeleteDuplicate(options, parentData, index, subRegionType)
   options.__up = function()
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(parentData) do
       OptionsPrivate.MoveSubRegionUp(child, index, subRegionType)
     end
-    if OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(parentData) then
-      OptionsPrivate.QueueOptionsRefresh(parentData.id)
-    else
-      WeakAuras.ClearAndUpdateOptions(parentData.id)
-    end
+    RefreshOptionsAfterElementChange(parentData)
   end
   options.__down = function()
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(parentData) do
       OptionsPrivate.MoveSubRegionDown(child, index, subRegionType)
     end
-    if OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(parentData) then
-      OptionsPrivate.QueueOptionsRefresh(parentData.id)
-    else
-      WeakAuras.ClearAndUpdateOptions(parentData.id)
-    end
+    RefreshOptionsAfterElementChange(parentData)
   end
   options.__duplicate = function()
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(parentData) do
       OptionsPrivate.DuplicateSubRegion(child, index, subRegionType)
     end
-    if OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(parentData) then
-      OptionsPrivate.QueueOptionsRefresh(parentData.id)
-    else
-      WeakAuras.ClearAndUpdateOptions(parentData.id)
-    end
+    RefreshOptionsAfterElementChange(parentData)
   end
   options.__delete = function()
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(parentData) do
       OptionsPrivate.DeleteSubRegion(child, index, subRegionType)
     end
-    if OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(parentData) then
-      OptionsPrivate.QueueOptionsRefresh(parentData.id)
-    else
-      WeakAuras.ClearAndUpdateOptions(parentData.id)
-    end
+    RefreshOptionsAfterElementChange(parentData)
   end
 end
