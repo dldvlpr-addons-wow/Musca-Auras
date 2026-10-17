@@ -1,3 +1,45 @@
+# Musca Auras 1.10.0 (2026-10-18)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Conditions on Health, Health (%), Health Deficit, Power, Power (%) and Power Deficit (`<`, `<=`, `>`, `>=`) change
+  Alpha, Color and Desaturate even when the game hides the value, in combat included. On an enemy, only the %
+  conditions work.
+- These conditions also drive the sub elements: sub text, border, glow, texture, progress textures, stop motion and
+  tick can be shown, hidden or recolored, and texture, progress textures, stop motion and tick greyed out. Bar color,
+  bar icon, background and spark follow too.
+- Text auras get an Alpha property for conditions. A condition that changes the text works on a hidden value, and
+  several such conditions stack.
+- New condition property `Looping Animation`: while the condition is true, the aura plays the main animation you
+  choose, and its own animation comes back afterwards.
+- Your auras are backed up once a day, three copies kept. `/wa backups` lists them and `/wa restore <number>` puts one
+  back after a confirmation.
+- Custom code can call `UnitAura`, `UnitBuff`, `UnitDebuff`, `GetSpellInfo`, `GetSpellTexture`, `IsUsableSpell`,
+  `GetSpellCooldown` and `GetSpellCharges`, which WoW Forever lacks. `UnitAura`, `UnitBuff` and `UnitDebuff` stop in
+  combat on a hidden aura. The import report says when a call is replaced.
+- Cooldown Manager trigger: a buff chosen by name tracks every spell ID of that name, with one clone per Cooldown
+  Manager entry. A spell counts as known when another rank of it is known.
+
+## Fixes
+
+- The Shaman class pack totem icons keep their sub elements when the pack is loaded, and their timer swipe turns the
+  right way.
+- `Spell in Range`: a spell saved by ID shows its name and icon, and a trigger without a spell no longer shows a
+  wrong icon.
+- Errors raised while custom condition code loads now show under the code field.
+- A Lua error no longer fires when the game does not describe a talent subtree (talent load option).
+
+## Changed
+
+- The load option `Enabled BossMod ID(BW Only)` is now `BigWigs Module Loaded for Encounter ID`. Your setting is kept.
+
+## After the update
+
+- Click `Update <Class> HUD` in the message shown at login, or `Class Pack` at the top of the New Aura panel, to update
+  your HUD. Your positions and options are kept.
+
 # Musca Auras 1.9.1 (2026-10-14)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
@@ -312,7 +354,7 @@ Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://
 # WeakAuras Forever 1.4.0 (2026-10-03)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/WeakAuras-Forever/blob/main/CHANGES.md).
-Features taken from ForeverAuras (m33shoq, GPL-2.0).
+Features taken from ForeverAuras (Neroxrw, GPL-2.0).
 
 ## Highlights
 
@@ -336,8 +378,8 @@ Features taken from ForeverAuras (m33shoq, GPL-2.0).
 - "Hide Blizzard's CDM" in the options and `/wa cdm`: hide the Blizzard Cooldown Manager while its triggers keep
   working.
 - CDM Dispel Type Icon sub element.
-- Load conditions: Specialization (deduced from the talents you learned), Secret Restrictions Active, Enabled
-  BossMod ID (BigWigs).
+- Load conditions: Specialization (deduced from the talents you learned), Secret Restrictions Active, BigWigs
+  Module Loaded for Encounter ID.
 - Spell in Range trigger.
 - Color picker palette: class colors, favorites, recent colors and a hex field.
 - Warnings in the trigger options for values the game hides in combat, and combat status of the Cast trigger.
@@ -467,7 +509,7 @@ Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://
 - Talent and Or Talent load conditions, and the Talent Known trigger: once a single Class and Specialization is
   selected, a talent picker shows the talent tree of that specialization. The talents are read from the game's
   talent trees, with the same IDs as ForeverAuras. The talent data reader and the picker come from ForeverAuras
-  (m33shoq, GPL-2.0).
+  (Neroxrw, GPL-2.0).
 
 ## Changes
 

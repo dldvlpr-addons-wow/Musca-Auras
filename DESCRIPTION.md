@@ -52,11 +52,11 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ---
 
-## <span style="color: #3c3;">🆕 New in 1.9.1</span>
+## <span style="color: #3c3;">🆕 New in 1.10.0</span>
 
-- <span style="color: #ffd100;"><strong>Cleaner class packs:</strong></span> no timer numbers on the icons, a grey swipe instead, and a red pulse in the last 3 seconds.
-- <span style="color: #ffd100;"><strong>More spells in every class pack,</strong></span> each shown once it is learned.
-- <span style="color: #ffd100;"><strong>No more freezes</strong></span> when importing, deleting or selecting auras with glows.
+- <span style="color: #ffd100;"><strong>Health and power conditions work in combat:</strong></span> they change transparency, color and grey-out, on the aura and on its border, glow, texts and bars.
+- <span style="color: #ffd100;"><strong>New Looping Animation condition:</strong></span> the aura plays the animation you choose while the condition is true.
+- <span style="color: #ffd100;"><strong>Daily backups of your auras:</strong></span> `/wa backups` lists them, `/wa restore <number>` puts one back.
 
 Full list in the **Files** tab.
 
@@ -67,7 +67,7 @@ Full list in the **Files** tab.
 ### <span style="color: #ff9800;">⚠ Works, with limits</span>
 
 - Buffs and debuffs move in combat only with the **Aura (Modern)** trigger, used by default for new auras. The classic Aura trigger freezes in combat.
-- In combat, conditions only change transparency, color and grey-out.
+- In combat, conditions only change transparency, color, grey-out, text and the visibility of sub elements.
 
 ### <span style="color: #f44336;">✖ Does not work</span>
 
@@ -78,7 +78,7 @@ Full list in the **Files** tab.
 
 ## <span style="color: #0cf;">🌐 Auras made elsewhere</span>
 
-<span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log or on removed functions (`GetSpellInfo`, `UnitBuff`…) need to be updated:</strong></span> the import report tells you which ones.
+<span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log need to be updated.</strong></span> Removed functions (`GetSpellInfo`, `UnitBuff`…) are replaced in custom code, but `UnitBuff` and `UnitDebuff` stop in combat on a hidden aura: the import report tells you which ones.
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
 
@@ -86,11 +86,11 @@ Full list in the **Files** tab.
 
 ## <span style="color: #ff6b35;">🔄 Updating from an older version</span>
 
-1. Install **1.9.1**, then click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel to update your HUD. Coming from **1.8.1** or older? **Restart the game**: the new logo is not loaded by a <span style="color: #ffd100;"><strong>/reload</strong></span>
+1. Install **1.10.0**, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel, to update your HUD. Coming from **1.8.1** or older? **Restart the game**: the new logo is not loaded by a <span style="color: #ffd100;"><strong>/reload</strong></span>
 2. Coming from **1.8.0** or older? Open <span style="color: #ffd100;"><strong>/wa</strong></span>, **delete** the <span style="color: #ffd100;"><strong>&lt;Class&gt; (Musca)</strong></span> group, then click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel. Aura ids changed once in 1.8.1.
 
 - <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> The saved data format did not change. An aura that used the removed Energy Tick trigger becomes a Health trigger: delete it.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.9.0?</strong></span> Install **1.9.0** again from the **Files** tab, and report it on Discord, GitHub or CurseForge with the text of the error.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.9.1?</strong></span> Install **1.9.1** again from the **Files** tab, and report it on Discord, GitHub or CurseForge with the text of the error.
 
 ---
 

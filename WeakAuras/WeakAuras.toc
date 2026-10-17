@@ -41,6 +41,8 @@ PlayerSpecialization.lua
 CDMBackground.lua
 CDMSetup.lua
 CooldownViewerCatalog.lua
+CooldownViewerSelection.lua
+CooldownViewerStates.lua
 CooldownViewerTrigger.lua
 PrototypeSecretHelpers.lua
 Prototypes.lua
@@ -49,6 +51,7 @@ Profiling.lua
 Profiling.xml
 WeakAuras.lua
 History.lua
+AuraBackups.lua
 Transmission.lua
 ForeverTutorial.lua
 Modernize.lua
@@ -60,6 +63,7 @@ AnchorToWeakAuras.lua
 
 # Trigger systems
 SecretAuraRanks.lua
+SecretAuraAnchor.lua
 BlizzardAuraDisplay.lua
 SecretAuraPreview.lua
 DispelTypeDisplay.lua
@@ -69,6 +73,10 @@ SecretAuraConditions.lua
 SecretAuraSingle.lua
 SecretAuraGlow.lua
 SecretAuraFlow.lua
+SecretAuraFlowShadow.lua
+SecretAuraFlowUnits.lua
+SecretAuraFlowGrid.lua
+SecretAuraFlowPreview.lua
 SecretAuraTrigger.lua
 BuffTriggerRestrictedAuras.lua
 BuffTriggerNativeFilter.lua
@@ -95,6 +103,7 @@ RegionTypes\Empty.lua
 BaseRegions\TextureCoords.lua
 BaseRegions\CircularProgressTexture.lua
 BaseRegions\LinearProgressTexture.lua
+NativeProgressPainter.lua
 ProgressTextureNative.lua
 RegionTypes\ProgressTextureSecret.lua
 RegionTypes\ProgressTexture.lua

@@ -36,6 +36,9 @@ local properties = {
   glow = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
@@ -53,6 +56,7 @@ local properties = {
   glowColor = {
     display = L["Custom Color"],
     setter = "SetGlowColor",
+    secretCapable = true,
     type = "color"
   },
   glowLines = {
@@ -141,6 +145,7 @@ local properties = {
 }
 
 local function glowStart(self, frame, color)
+
   local width, height = frame:GetWidth(), frame:GetHeight()
   if Private.IsSecret(width, height) or width < 1 or height < 1 then
     self.glowStop(frame)
@@ -148,6 +153,9 @@ local function glowStart(self, frame, color)
   end
 
   if self.glowType == "buttonOverlay" then
+    if color and Private.IsSecret(color[4]) then
+      color = {color[1], color[2], color[3], 1}
+    end
     self.glowStart(frame, color, self.glowFrequency, 0)
   elseif self.glowType == "Pixel" then
     self.glowStart(
@@ -188,6 +196,10 @@ local function glowStart(self, frame, color)
 end
 
 local funcs = {
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.glow, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   SetVisible = function(self, visible)
     local color
     self.glow = visible

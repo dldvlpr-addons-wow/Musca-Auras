@@ -1,1318 +1,1469 @@
--- Maps WeakAuras conditions onto native aura indicators (duration colour, stacks, pandemic, highlight,
--- missing desaturation), with their migration, validation and preview. Fills Private.BlizzardAuraDisplay;
--- called by BlizzardAuraDisplay.lua, SecretAuraAppearance.lua, Conditions.lua and ConditionOptions.lua.
-if not WeakAuras.IsLibsOK() then
-  return
-end
-local _, AddonPrivate = ...
-local AuraDisplay = AddonPrivate.BlizzardAuraDisplay
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
+if not WeakAuras.IsLibsOK() then return end
+local _, Private = ...
 
-local SECRET_TRIGGER_TYPE = "secretAura"
-local STEP_COLOR = {1, 1, 1, 1}
-local HIGHLIGHT_COLOR = {1, 0.82, 0, 1}
-local PULSE_BOUNDS = {min = 0.2, max = 5}
-local PANDEMIC_FRACTION = 0.3
-local DISPEL_KEYS = {"None", "Magic", "Curse", "Disease", "Poison", "Bleed", "Enrage", ""}
-local STACK_OPERATORS = {["<"] = true, [">="] = true, [">"] = true, ["<="] = true, ["=="] = true, ["~="] = true}
-local TIME_OPERATORS = {["<"] = true, [">="] = true}
-local TEXT_CHANNELS = {text_color = "color", text_visible = "visible", text_text = "text"}
-local ROOT_TEXT_CHANNELS = {color = "color", displayText = "text"}
+-- Native conditions of the secret aura display. Two registries drive everything: the condition
+-- variables (editor models, validation, threshold rules, highlights, preview) and the properties
+-- (types, Missing permissions, appliers). Rendering of highlights lives at the end of the file.
+
+local AuraDisplay = Private.BlizzardAuraDisplay
+
+local floor, ceil, min, max = math.floor, math.ceil, math.min, math.max
+
+local WHITE = { 1, 1, 1, 1 }
+local HIGHLIGHT_COLOR = { 1, 0.82, 0, 1 }
+local GLOW_TEXTURE = "Interface\\Buttons\\UI-ActionButton-Border"
+local FLAT_TEXTURE = "Interface\\Buttons\\WHITE8X8"
+local SIZE_MAX = 64
+local PULSE_MIN, PULSE_MAX = 0.2, 5
+local PANDEMIC_PREVIEW_SHARE = 0.3
+local DISPEL_KEYS = { "None", "Magic", "Curse", "Disease", "Poison", "Bleed", "Enrage", "" }
+
+---------------------------------------------------------------------------------------------------
+-- Small helpers
+---------------------------------------------------------------------------------------------------
+
+local function Each(list)
+  return ipairs(list or {})
+end
+
+local function IsTable(value)
+  return type(value) == "table"
+end
+
+local function Slot(owner, field)
+  local held = owner[field]
+  if held == nil then
+    held = {}
+    owner[field] = held
+  end
+  return held
+end
+
+local function FirstProblem(validators, ...)
+  for index = 1, #validators do
+    local problem = validators[index](...)
+    if problem then return problem end
+  end
+  return nil
+end
+
+local function ToNumber(value)
+  local number = tonumber(value)
+  if number ~= number then return nil end
+  return number
+end
+
+local function Bounded(value, low, high, default)
+  value = ToNumber(value)
+  if value == nil then return default end
+  return max(low, min(high, value))
+end
+
+local function ClampColor(color, fallback)
+  local result = {}
+  for index = 1, 4 do
+    local component = type(color) == "table" and color[index]
+    if type(component) ~= "number" or component ~= component then component = fallback[index] end
+    result[index] = max(0, min(1, component))
+  end
+  return result
+end
+
+local function ParseSubPath(path)
+  if type(path) ~= "string" then return nil end
+  local position, key = path:match("^sub%.(%d+)%.(.+)$")
+  return position and tonumber(position), key
+end
+
+local function ElementAt(data, position)
+  local list = data.subRegions
+  local element = type(list) == "table" and list[position]
+  return type(element) == "table" and element or nil
+end
+
+local function Unescape(text)
+  if type(text) ~= "string" then return text end
+  return (text:gsub("%%%%", "%%"))
+end
+
+local function Detached(data, element)
+  return AuraDisplay.IsDetachedElement(data, element) == true
+end
+
+local function CopyValue(value)
+  if type(value) == "table" then return CopyTable(value) end
+  return value
+end
+
+local function Merge(base, extra)
+  for key, value in pairs(extra or {}) do base[key] = value end
+  return base
+end
+
+local function SortedPoints(set)
+  local list = {}
+  for point in pairs(set) do list[#list + 1] = point end
+  table.sort(list)
+  return list
+end
+
+---------------------------------------------------------------------------------------------------
+-- Messages and highlight definitions
+---------------------------------------------------------------------------------------------------
 
 local MESSAGES = {
-  grouping = "Aura (Modern) conditions cannot use AND, OR, or Else If.",
-  timeOperator = "Aura (Modern) time conditions support < and >=.",
-  typeOperator = "Aura (Modern) type conditions support = and !=.",
+  grouping = "Aura (Modern) conditions cannot be combined with AND, OR or Else If.",
+  timeOperator = "Native time checks only accept < (less than) and >= (at least).",
+  typeOperator = "Native kind and dispel checks only accept == (is) and ~= (is not).",
   missingRegion = "Aura Missing works on Icon, Bar, Progress Texture and Text displays.",
   missingShowOn = "Aura Missing needs the trigger's Show On set to Aura(s) Missing or Always.",
-  remainingGlow = "A Remaining Time glow condition must use < and turn the glow on.",
-  elapsedGlow = "An Elapsed Time glow condition must use < and turn the glow on.",
-  pandemicGlow = "An In Pandemic Window glow condition must turn the glow on.",
-  lateGlow = "A Glow can follow one Remaining Time or Elapsed Time condition, or the pandemic window, not several.",
-  timeBasis = "Use one time basis per countdown text: seconds, percentage, elapsed, total, start, or end.",
+  remainingGlow = "To light a glow from the seconds left, compare with < and set the glow to on.",
+  elapsedGlow = "To light a glow from the seconds elapsed, compare with < and set the glow to on.",
+  pandemicGlow = "A glow driven by the pandemic window has to switch the glow on.",
+  lateGlow = "Only one source may drive a given glow: either seconds left or seconds elapsed, or else the pandemic window.",
+  timeBasis = "A countdown text follows one time basis only: seconds left, share left, elapsed, total, start or end.",
   property = "Choose a supported property for this Aura (Modern) condition.",
-  foreignTrigger = "Use another trigger or a global condition. Aura (Modern) does not expose aura state to conditions.",
-  borderDisplay = "Aura Highlight Border Thickness",
-  paddingDisplay = "Aura Highlight Padding",
-  borderHint = "Border thickness in UI units, limited to one quarter of the aura's smaller dimension so the center stays visible. Set style and color in this same condition.",
-  paddingHint = "Extra space around a glow or custom texture, in UI units. Overlay always fills the aura and ignores padding. Set style and color in this same condition.",
+  foreignTrigger = "This check reads a trigger whose values conditions cannot use. Point it at another trigger or at a global variable.",
+  borderDisplay = "Highlight border thickness",
+  paddingDisplay = "Highlight padding",
+  borderHint = "Thickness of the border, in interface units, capped at one quarter of the shortest side. Choose the style and the color in this same condition.",
+  paddingHint = "Space kept around a glow or a custom texture, in interface units (the full overlay never uses it). Choose the style and the color in this same condition.",
 }
 
-local actionProperties = {
-  chat = "chat",
-  sound = "sound",
-  customcode = "customcode",
-  glowexternal = "glowexternal",
+-- Drawing recipes. A style either borrows another one (base, plus its own pulse) or describes how
+-- its edges are drawn: sides = four edges, padding = the size becomes a margin, spill = extra margin.
+local STYLES = {
+  border = { label = "Plain border", sides = true },
+  glow = { label = "Static glow", glow = true, texture = GLOW_TEXTURE, padding = true, spill = 8 },
+  overlay = { label = "Full overlay" },
+  texture = { label = "Custom texture", custom = true, padding = true },
+  pulseBorder = { label = "Pulsing border", base = "border" },
+  pulseGlow = { label = "Pulsing glow", base = "glow" },
 }
 
-local function Flags(...)
-  local set = {}
-  for _, name in ipairs({...}) do set[name] = true end
-  return set
+local STYLE_LABELS = {}
+for name, style in pairs(STYLES) do STYLE_LABELS[name] = style.label end
+
+local HIGHLIGHT_FIELDS = {
+  { property = "faAuraHighlightColor", label = "Highlight color", type = "color", default = HIGHLIGHT_COLOR },
+  { property = "faAuraHighlightStyle", label = "Highlight style", type = "list", default = "border", values = STYLE_LABELS },
+  { property = "faAuraHighlightPulse", label = "Highlight pulse period", type = "number", default = 1,
+    min = PULSE_MIN, max = PULSE_MAX, step = 0.1 },
+  { property = "faAuraHighlightSize", label = "Highlight thickness", type = "number", default = 2, min = 1, max = SIZE_MAX, step = 1 },
+  { property = "faAuraHighlightTexture", label = "Highlight texture", type = "string", default = GLOW_TEXTURE },
+}
+
+local HIGHLIGHT_SET = {}
+for _, field in ipairs(HIGHLIGHT_FIELDS) do HIGHLIGHT_SET[field.property] = true end
+
+---------------------------------------------------------------------------------------------------
+-- Property registry
+---------------------------------------------------------------------------------------------------
+
+local function Field(name)
+  return function(native) return native[name] end
 end
 
-local function TypedProperties(groups)
-  local typeByName = {}
-  for valueType, names in pairs(groups) do
-    for _, name in ipairs(names) do typeByName[name] = valueType end
+local function ProgressTexture(native)
+  return native.progressTexture and native.progressTexture.texture
+end
+
+local function Driver(targetOf, method, spread)
+  return function(native, _, value)
+    local target = targetOf(native)
+    if not target then return end
+    if spread then target[method](target, unpack(value)) else target[method](target, value) end
   end
-  return typeByName
 end
 
-local rootPropertyTypes = {
-  icon = TypedProperties({
-    color = {"color"},
-    bool = {"desaturate", "inverse", "cooldownSwipe", "cooldownEdge", "cooldownTextDisabled"},
-    number = {"zoom"},
-  }),
-  aurabar = TypedProperties({
-    color = {"barColor", "backgroundColor", "icon_color"},
-    bool = {"desaturate"},
-  }),
-  text = TypedProperties({
-    color = {"color"},
-    number = {"fontSize"},
-    string = {"displayText"},
-  }),
-  progresstexture = TypedProperties({
-    color = {"foregroundColor", "backgroundColor"},
-    bool = {"desaturateForeground"},
-  })}
-
-local subRegionPropertyTypes = {
-  subtext = TypedProperties({
-    color = {"text_color"},
-    bool = {"text_visible"},
-    string = {"text_text"},
-    number = {"text_fontSize", "text_anchorXOffset", "text_anchorYOffset", "text_alpha"},
-  }),
-  subglow = TypedProperties({bool = {"glow"}})}
-
-local function DurationVariable(binding, label, divisor)
-  return {binding = binding, label = label, divisor = divisor}
+local function ResizeFont(fontString, size)
+  if not fontString then return end
+  local path, _, flags = fontString:GetFont()
+  fontString:SetFont(path, size, flags or "")
 end
 
-local durationDefinitions = {
-  faAuraRemaining = DurationVariable("RemainingDuration", "Remaining Time", 1),
-  faAuraRemainingPercent = DurationVariable("RemainingPercent", "Remaining Time (%)", 100),
-  faAuraElapsed = DurationVariable("ElapsedDuration", "Elapsed Time", 1),
-  faAuraElapsedPercent = DurationVariable("ElapsedPercent", "Elapsed Time (%)", 100),
-  faAuraTotal = DurationVariable("TotalDuration", "Total Duration", 1),
-  faAuraStart = DurationVariable("StartTime", "Start Time (game clock)", 1),
-  faAuraEnd = DurationVariable("EndTime", "End Time (game clock)", 1)}
+local function ColorRoot(native, data, value)
+  if data.regionType == "text" then
+    if native.mainText then native.mainText:SetTextColor(unpack(value)) end
+  elseif native.icon then
+    native.icon:SetVertexColor(unpack(value))
+  end
+end
 
-local nativeVariableSet = Flags("faAuraPandemic", "faAuraStealable", "faAuraNotStealable", "faAuraDispel",
-  "faAuraType", "faAuraPresent", "faAuraApplications", "faAuraMissing")
-for variableName in pairs(durationDefinitions) do nativeVariableSet[variableName] = true end
+local function BackgroundRoot(native, _, value)
+  if native.progressBackground then
+    native.progressBackground:SetColor(unpack(value))
+  elseif native.barBackground then
+    native.barBackground:SetColorTexture(unpack(value))
+  end
+end
 
-local highlightProperties = Flags("faAuraHighlightColor", "faAuraHighlightStyle", "faAuraHighlightSize",
-  "faAuraHighlightTexture", "faAuraHighlightPulse")
-
-AuraDisplay.missingRootProperties = {
-  icon = Flags("desaturate", "color", "zoom"),
-  aurabar = Flags("barColor", "backgroundColor", "icon_color", "desaturate"),
-  progresstexture = Flags("foregroundColor", "backgroundColor", "desaturateForeground"),
-  text = Flags("color"),
+local ROOT_APPLIERS = {
+  color = ColorRoot,
+  foregroundColor = Driver(ProgressTexture, "SetVertexColor", true),
+  desaturateForeground = Driver(ProgressTexture, "SetDesaturated"),
+  backgroundColor = BackgroundRoot,
+  barColor = Driver(Field("bar"), "SetStatusBarColor", true),
+  desaturate = Driver(Field("icon"), "SetDesaturated"),
+  icon_color = Driver(Field("icon"), "SetVertexColor", true),
+  zoom = function(native, data, value) AuraDisplay.StyleIconTexCoords(native, data, value) end,
+  inverse = Driver(Field("cooldown"), "SetReverse"),
+  cooldownSwipe = Driver(Field("cooldown"), "SetDrawSwipe"),
+  cooldownEdge = Driver(Field("cooldown"), "SetDrawEdge"),
+  cooldownTextDisabled = Driver(Field("cooldown"), "SetHideCountdownNumbers"),
+  fontSize = function(native, _, value) ResizeFont(native.mainText, value) end,
+  displayText = function(native, _, value)
+    if native.mainText then native.mainText:SetText(Unescape(value)) end
+  end,
 }
 
-local COMPARATORS = {
-  ["<"] = function(left, right) return left < right end,
-  [">="] = function(left, right) return left >= right end,
-  [">"] = function(left, right) return left > right end,
-  ["<="] = function(left, right) return left <= right end,
-  ["=="] = function(left, right) return left == right end,
-  ["~="] = function(left, right) return left ~= right end,
+-- Root property types per region type, and what a Missing condition may touch on each.
+local ROOT_PROPERTIES = {
+  icon = { color = "color", desaturate = "bool", inverse = "bool", cooldownSwipe = "bool", cooldownEdge = "bool",
+    cooldownTextDisabled = "bool", zoom = "number" },
+  aurabar = { barColor = "color", backgroundColor = "color", icon_color = "color", desaturate = "bool" },
+  text = { color = "color", fontSize = "number", displayText = "string" },
+  progresstexture = { foregroundColor = "color", backgroundColor = "color", desaturateForeground = "bool" },
 }
 
-local function SomeCheck(node, predicate)
-  if predicate(node) then return true end
-  local children = node and node.checks or {}
-  for _, child in ipairs(children) do
-    if SomeCheck(child, predicate) then return true end
+local MISSING_ROOT_NAMES = {
+  icon = { "desaturate", "color", "zoom" },
+  aurabar = { "barColor", "backgroundColor", "icon_color", "desaturate" },
+  progresstexture = { "foregroundColor", "backgroundColor", "desaturateForeground" },
+  text = { "color" },
+}
+
+local missingRoot = {}
+for region, names in pairs(MISSING_ROOT_NAMES) do
+  missingRoot[region] = {}
+  for _, name in ipairs(names) do missingRoot[region][name] = true end
+end
+AuraDisplay.missingRootProperties = missingRoot
+
+local ACTION_TYPES = { chat = true, sound = true, customcode = true, glowexternal = true }
+
+function AuraDisplay.AnchorOffsetApplier(horizontal)
+  return function(entry, _, _, offset)
+    local text = entry and entry.text
+    if not text then return end
+    local point, relativeTo, relativePoint, x, y = text:GetPoint(1)
+    text:ClearAllPoints()
+    if offset ~= nil then
+      if horizontal then x = offset else y = offset end
+    end
+    text:SetPoint(point, relativeTo, relativePoint, x, y)
+  end
+end
+
+local function ApplyTextColor(entry, _, _, value)
+  if entry.text then entry.text:SetTextColor(unpack(value)) end
+end
+
+local function ApplyTextContent(entry, _, _, value)
+  if entry.text then entry.text:SetText(Unescape(value)) end
+end
+
+local function ApplyTextSize(entry, _, _, value)
+  ResizeFont(entry.text, value)
+end
+
+-- Visibility and opacity share one applier: the text is hidden through its alpha, so both inputs
+-- are read from the overrides first, then from the element itself.
+local function ApplyTextPresence(entry, data, position, _, values)
+  local text = entry.text
+  if not text then return end
+  local element = ElementAt(data, position) or {}
+  local prefix = "sub." .. position .. "."
+  local visible = values[prefix .. "text_visible"]
+  if visible == nil then visible = element.text_visible ~= false end
+  local opacity = values[prefix .. "text_alpha"]
+  if opacity == nil then opacity = element.text_alpha end
+  if opacity == nil then opacity = 1 end
+  text:SetAlpha(visible and opacity or 0)
+end
+
+local function ApplyGlow(entry, _, _, value)
+  local frames = entry.elementFrames
+  local glow = frames and frames.glow
+  if glow then glow:SetAlpha(value and 1 or 0) end
+end
+
+-- Per element type: key -> { type, apply, missing (a Missing condition may drive it), literalOnly }.
+local ELEMENT_PROPERTIES = {
+  subtext = {
+    text_color = { type = "color", apply = ApplyTextColor, missing = true },
+    text_visible = { type = "bool", apply = ApplyTextPresence, missing = true },
+    text_text = { type = "string", apply = ApplyTextContent, literalOnly = true },
+    text_fontSize = { type = "number", apply = ApplyTextSize },
+    text_anchorXOffset = { type = "number", apply = AuraDisplay.AnchorOffsetApplier(true) },
+    text_anchorYOffset = { type = "number", apply = AuraDisplay.AnchorOffsetApplier(false) },
+    text_alpha = { type = "number", apply = ApplyTextPresence },
+  },
+  subglow = {
+    glow = { type = "bool", apply = ApplyGlow, missing = true },
+  },
+}
+
+local ELEMENT_APPLIERS = {}
+for _, keys in pairs(ELEMENT_PROPERTIES) do
+  for key, definition in pairs(keys) do ELEMENT_APPLIERS[key] = definition.apply end
+end
+
+local function DetachedType(data, element, key)
+  local definition = Private.subRegionTypes and Private.subRegionTypes[element.type]
+  local properties = (definition or {}).properties
+  if type(properties) == "function" then properties = properties(data, element) end
+  local property = type(properties) == "table" and properties[key]
+  if type(property) ~= "table" or not property.type or property.valueFromBoolean or property.colorFromBoolean then
+    return nil
+  end
+  return property.type
+end
+
+local function PropertyType(data, path)
+  if path == nil then return nil end
+  if ACTION_TYPES[path] then return path end
+  local position, key = ParseSubPath(path)
+  if not position then
+    local kinds = ROOT_PROPERTIES[data.regionType]
+    local kind = kinds and kinds[path]
+    if path == "displayText" and AuraDisplay.TextKind(data.displayText) ~= "literal" then return nil end
+    return kind
+  end
+  local element = ElementAt(data, position)
+  if not element then return nil end
+  if Detached(data, element) then return DetachedType(data, element, key) end
+  local keys = ELEMENT_PROPERTIES[element.type]
+  local definition = keys and keys[key]
+  if not definition then return nil end
+  if definition.literalOnly and AuraDisplay.TextKind(element.text_text) ~= "literal" then return nil end
+  return definition.type
+end
+
+function AuraDisplay.IsNativeConditionProperty(auraData, path)
+  if ACTION_TYPES[path] then return false end
+  if AuraDisplay.IsDetachedProperty(auraData, path) then return false end
+  return PropertyType(auraData, path) ~= nil
+end
+
+function AuraDisplay.IsGlowProperty(auraData, path)
+  local position, key = ParseSubPath(path)
+  if key ~= "glow" then return false end
+  local element = ElementAt(auraData, position)
+  return element ~= nil and element.type == "subglow" and not Detached(auraData, element)
+end
+
+---------------------------------------------------------------------------------------------------
+-- Text targets
+---------------------------------------------------------------------------------------------------
+
+local ROOT_TEXT_CHANNELS = { color = "color", displayText = "text" }
+local ELEMENT_TEXT_CHANNELS = { text_color = "color", text_visible = "visible", text_text = "text" }
+
+-- The color path of the text a property belongs to, and what the property drives on it.
+local function TextTarget(data, path, wantedKind)
+  if path == nil then return nil end
+  local position, key = ParseSubPath(path)
+  if not position then
+    local channel = ROOT_TEXT_CHANNELS[path]
+    if channel and data.regionType == "text" and AuraDisplay.TextKind(data.displayText) == wantedKind then
+      return "color", channel
+    end
+    return nil
+  end
+  local channel = ELEMENT_TEXT_CHANNELS[key]
+  local element = channel and ElementAt(data, position)
+  if element and element.type == "subtext" and not Detached(data, element)
+    and AuraDisplay.TextKind(element.text_text) == wantedKind then
+    return "sub." .. position .. ".text_color", channel
+  end
+  return nil
+end
+
+local function BaseTextVisible(data, path)
+  local base = data.nativeConditionBaseData or data
+  local position, key = ParseSubPath(path)
+  if key ~= "text_color" then return true end
+  local element = ElementAt(base, position)
+  return not (element and element.text_visible == false)
+end
+
+---------------------------------------------------------------------------------------------------
+-- Variable registry
+---------------------------------------------------------------------------------------------------
+
+local TIME_OPERATORS = { ["<"] = true, [">="] = true }
+local KIND_OPERATORS = { ["=="] = true, ["~="] = true }
+local STACK_OPERATORS = { ["<"] = true, [">="] = true, [">"] = true, ["<="] = true, ["=="] = true, ["~="] = true }
+
+local function AllowsTimeText(data, path)
+  local target, channel = TextTarget(data, path, "duration")
+  return (target and channel ~= "text") == true
+end
+
+local function AllowsGlowOrTimeText(data, path)
+  return AuraDisplay.IsGlowProperty(data, path) or AllowsTimeText(data, path)
+end
+
+local function AllowsStackText(data, path)
+  return TextTarget(data, path, "stack") ~= nil
+end
+
+local function AllowsHighlight(_, path)
+  return HIGHLIGHT_SET[path] == true
+end
+
+local function AllowsGlowOrHighlight(data, path)
+  return AuraDisplay.IsGlowProperty(data, path) or HIGHLIGHT_SET[path] == true
+end
+
+local function AllowsMissing(data, path)
+  local roots = missingRoot[data.regionType]
+  if not roots then return false end
+  if HIGHLIGHT_SET[path] or roots[path] then return true end
+  local position, key = ParseSubPath(path)
+  if not position then return false end
+  local element = ElementAt(data, position)
+  if not element or Detached(data, element) then return false end
+  local keys = ELEMENT_PROPERTIES[element.type]
+  local definition = keys and keys[key]
+  return definition ~= nil and definition.missing == true
+end
+
+local function MissingHeader(data)
+  if not missingRoot[data.regionType] then return MESSAGES.missingRegion end
+  local showOn = AuraDisplay.ShowOn(AuraDisplay.GetTrigger(data))
+  if showOn ~= "showOnMissing" and showOn ~= "showAlways" then return MESSAGES.missingShowOn end
+end
+
+local function UsesVariable(data, index, name)
+  local function Scan(check)
+    if not IsTable(check) then return false end
+    if check.trigger == index and check.variable == name then return true end
+    for _, child in Each(check.checks) do
+      if Scan(child) then return true end
+    end
+    return false
+  end
+  for _, condition in ipairs(type(data.conditions) == "table" and data.conditions or {}) do
+    if Scan(condition.check) then return true end
   end
   return false
 end
 
-local function UsesVariable(rootCheck, triggerIndex, variableName)
-  return SomeCheck(rootCheck, function(node)
-    return node and node.trigger == triggerIndex and node.variable == variableName
-  end)
+local function Spec(base, extra)
+  return Merge(base, extra)
 end
 
-local function SubRegionAt(auraData, position)
-  return position and auraData.subRegions and auraData.subRegions[tonumber(position)]
+local function Duration(label, binding, extra)
+  return Spec({
+    family = "duration", label = label, binding = binding, divisor = 1, allows = AllowsTimeText,
+    operators = TIME_OPERATORS, operatorMessage = "timeOperator",
+    offered = function(variable, data, index, name)
+      if not AuraDisplay.SupportsDurationColorCondition() then return false end
+      if Enum.DurationTextBindingProperty[variable.binding] == nil then return false end
+      return not variable.onDemand or UsesVariable(data, index, name)
+    end,
+  }, extra)
 end
+
+local function Plain(label, extra)
+  return Spec({ family = "plain", label = label, allows = AllowsHighlight, indicator = {} }, extra)
+end
+
+local function StealableIndicator(filterName)
+  return {
+    configure = function(options)
+      options.showWhenHarmful, options.stealableFilter =
+        false, Enum.CustomAuraButtonDispelTypeStealableFilter[filterName]
+    end,
+  }
+end
+
+local function SameAsExpected(entry, expected)
+  return (entry.value == expected) == (entry.equal ~= false)
+end
+
+local VARIABLES = {
+  faAuraRemaining = Duration("Seconds left", "RemainingDuration", {
+    allows = AllowsGlowOrTimeText, glow = { message = "remainingGlow", operator = "<", conflictWhenSame = false } }),
+  faAuraRemainingPercent = Duration("Share of time left (%)", "RemainingPercent", { divisor = 100 }),
+  faAuraElapsed = Duration("Seconds elapsed", "ElapsedDuration", {
+    allows = AllowsGlowOrTimeText, glow = { message = "elapsedGlow", operator = "<", conflictWhenSame = false } }),
+  faAuraElapsedPercent = Duration("Share of time elapsed (%)", "ElapsedPercent", { divisor = 100 }),
+  faAuraTotal = Duration("Full duration (seconds)", "TotalDuration"),
+  faAuraStart = Duration("Start time", "StartTime", { onDemand = true }),
+  faAuraEnd = Duration("End time", "EndTime", { onDemand = true }),
+
+  faAuraApplications = {
+    family = "stack", label = "Stack count", divisor = 1, allows = AllowsStackText, operators = STACK_OPERATORS,
+    offered = function() return not not (C_StringUtil and C_StringUtil.CreateNumericRuleFormatter) end,
+  },
+
+  faAuraPandemic = Plain("Pandemic refresh window", {
+    allows = AllowsGlowOrHighlight,
+    glow = { message = "pandemicGlow", conflictWhenSame = true },
+    preview = function(_, remaining)
+      return type(remaining) == "number" and remaining > 0
+        and remaining <= AuraDisplay.PREVIEW_SAMPLE_DURATION * PANDEMIC_PREVIEW_SHARE
+    end,
+  }),
+  faAuraStealable = Plain("Aura can be stolen", { indicator = StealableIndicator("Stealable") }),
+  faAuraNotStealable = Plain("Aura cannot be stolen", {
+    indicator = StealableIndicator("NotStealable"),
+    preview = function(_, _, isBuff) return isBuff end,
+  }),
+  faAuraPresent = Plain("Aura is up", { preview = function() return true end }),
+
+  faAuraType = {
+    family = "select", label = "Kind of aura", allows = AllowsHighlight,
+    operators = KIND_OPERATORS, operatorMessage = "typeOperator",
+    options = function() return { HELPFUL = "Helpful aura", HARMFUL = "Harmful aura" } end,
+    indicator = {
+      valid = function(check)
+        return KIND_OPERATORS[check.op] and (check.value == "HELPFUL" or check.value == "HARMFUL")
+      end,
+      configure = function(options, check, equal)
+        local filter = check.value
+        if not equal then filter = filter == "HELPFUL" and "HARMFUL" or "HELPFUL" end
+        options.showWhenHelpful = filter == "HELPFUL"
+        options.showWhenHarmful = filter == "HARMFUL"
+      end,
+    },
+    preview = function(entry, _, isBuff) return SameAsExpected(entry, isBuff and "HELPFUL" or "HARMFUL") end,
+  },
+  faAuraDispel = {
+    family = "select", label = "Dispel school", allows = AllowsHighlight,
+    operators = KIND_OPERATORS, operatorMessage = "typeOperator",
+    options = function()
+      local values = {}
+      for _, name in ipairs({ "Magic", "Curse", "Disease", "Poison", "Bleed", "Enrage", "None" }) do values[name] = name end
+      return values
+    end,
+    indicator = {
+      valid = function(check) return KIND_OPERATORS[check.op] and type(check.value) == "string" end,
+      configure = function(_, check, equal)
+        local wanted = check.value == "Enrage" and "" or check.value
+        return function(key) return (wanted == key) == equal end
+      end,
+    },
+    preview = function(entry) return SameAsExpected(entry, "Magic") end,
+  },
+
+  faAuraMissing = {
+    family = "missing", label = "Aura is absent", allows = AllowsMissing, header = MissingHeader,
+    indicator = { valid = function(_, native) return native.preview end },
+  },
+}
+
+local MODEL_FAMILIES = {
+  duration = { type = "number", operatorTypes = "native_aura_duration" },
+  stack = { type = "number" },
+  select = { type = "select", operatorTypes = "native_aura_dispel" },
+  plain = { type = "alwaystrue" },
+  missing = { type = "alwaystrue" },
+}
+
+---------------------------------------------------------------------------------------------------
+-- Kinds
+---------------------------------------------------------------------------------------------------
 
 function AuraDisplay.IsNativeDurationCondition(conditionCheck)
-  if not conditionCheck then return conditionCheck end
-  return durationDefinitions[conditionCheck.variable] ~= nil
+  if conditionCheck == nil then return nil end
+  local variable = VARIABLES[conditionCheck.variable]
+  return variable ~= nil and variable.family == "duration"
 end
 
 function AuraDisplay.NativeConditionKind(auraData, conditionCheck)
   if not conditionCheck then return nil end
-  local triggerEntry = auraData.triggers and auraData.triggers[conditionCheck.trigger]
-  local triggerSettings = type(triggerEntry) == "table" and triggerEntry.trigger
-  if type(triggerSettings) ~= "table" or triggerSettings.type ~= SECRET_TRIGGER_TYPE then return nil end
-  if nativeVariableSet[conditionCheck.variable] then return conditionCheck.variable end
-  return nil
+  local triggers = auraData.triggers
+  local slot = type(triggers) == "table" and triggers[conditionCheck.trigger] or nil
+  local source = type(slot) == "table" and slot.trigger or nil
+  local isSecret = type(source) == "table" and source.type == "secretAura"
+  return isSecret and VARIABLES[conditionCheck.variable] and conditionCheck.variable or nil
 end
 
 function AuraDisplay.ContainsNativeCondition(auraData, conditionCheck)
-  return SomeCheck(conditionCheck, function(node)
-    return AuraDisplay.NativeConditionKind(auraData, node)
-  end)
+  local pending = conditionCheck and { conditionCheck } or {}
+  while #pending > 0 do
+    local current = table.remove(pending)
+    if AuraDisplay.NativeConditionKind(auraData, current) then return true end
+    for _, child in ipairs(current.checks or {}) do pending[#pending + 1] = child end
+  end
+  return false
 end
 
 function AuraDisplay.SupportsDurationColorCondition()
-  local curvesReady = C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor
-  local bindingsReady = Enum and Enum.LuaCurveType and Enum.LuaCurveType.Step ~= nil and Enum.DurationTextBindingProperty
-    and Enum.DurationTextBindingProperty.RemainingDuration ~= nil
-  return curvesReady and bindingsReady
+  return not not (C_CurveUtil and C_CurveUtil.CreateColorCurve and CreateColor
+    and Enum.LuaCurveType and Enum.LuaCurveType.Step
+    and Enum.DurationTextBindingProperty and Enum.DurationTextBindingProperty.RemainingDuration)
 end
 
-local function RootTextTarget(auraData, propertyPath, textKind)
-  if auraData.regionType ~= "text" or AuraDisplay.TextKind(auraData.displayText) ~= textKind then return end
-  local channel = ROOT_TEXT_CHANNELS[propertyPath]
-  if channel then return "color", channel end
+function AuraDisplay.NativeConditionAllowsProperty(auraData, conditionCheck, path)
+  local name = AuraDisplay.NativeConditionKind(auraData, conditionCheck)
+  if not name then return HIGHLIGHT_SET[path] ~= true end
+  return VARIABLES[name].allows(auraData, path)
 end
 
-local function SubTextTarget(auraData, propertyPath, textKind)
-  local position, field
-  if propertyPath then position, field = propertyPath:match("^sub%.(%d+)%.(.*)$") end
-  local subRegion = SubRegionAt(auraData, position)
-  local usable = subRegion and subRegion.type == "subtext" and not AuraDisplay.IsDetachedElement(auraData, subRegion)
-    and AuraDisplay.TextKind(subRegion.text_text) == textKind
-  if not usable then return end
-  local channel = TEXT_CHANNELS[field]
-  if channel then return "sub." .. position .. ".text_color", channel end
+local function MissingConditions(data)
+  local found = {}
+  for _, condition in ipairs(type(data.conditions) == "table" and data.conditions or {}) do
+    if AuraDisplay.NativeConditionKind(data, condition.check) == "faAuraMissing" then found[#found + 1] = condition end
+  end
+  return found
 end
 
-local function TextProperty(auraData, propertyPath, textKind)
-  local target, channel = RootTextTarget(auraData, propertyPath, textKind)
-  if target then return target, channel end
-  return SubTextTarget(auraData, propertyPath, textKind)
+function AuraDisplay.MissingDesaturated(auraData)
+  for _, condition in ipairs(MissingConditions(auraData)) do
+    for _, change in Each(condition.changes) do
+      if change.value == true and change.property == "desaturate" then return true end
+    end
+  end
+  return false
 end
 
-local function IsGlowPath(auraData, propertyPath)
-  local subRegion = SubRegionAt(auraData, propertyPath and propertyPath:match("^sub%.(%d+)%.glow$"))
-  if subRegion == nil then return false end
-  return subRegion.type == "subglow" and not AuraDisplay.IsDetachedElement(auraData, subRegion)
-end
-AuraDisplay.IsGlowProperty = IsGlowPath
+---------------------------------------------------------------------------------------------------
+-- Threshold rules (per aura, per target text), duration curves and stack text
+---------------------------------------------------------------------------------------------------
 
-local function HasEnabledChange(auraData, variableKind, propertyPath, skipLinked)
-  for _, conditionEntry in ipairs(auraData.conditions or {}) do
-    local applies = not (skipLinked and conditionEntry.linked)
-      and AuraDisplay.NativeConditionKind(auraData, conditionEntry.check) == variableKind
-    if applies then
-      for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-        if propertyChange.property == propertyPath and propertyChange.value == true then return true end
+local TESTS = {
+  ["<"] = function(point, threshold) return point < threshold end,
+  [">="] = function(point, threshold) return point >= threshold end,
+  [">"] = function(point, threshold) return point > threshold end,
+  ["<="] = function(point, threshold) return point <= threshold end,
+  ["=="] = function(point, threshold) return point == threshold end,
+  ["~="] = function(point, threshold) return point ~= threshold end,
+}
+
+local NO_RULES = {}
+local ruleCaches = setmetatable({}, { __mode = "k" })
+
+local function CacheFor(data)
+  local cache = ruleCaches[data]
+  if not cache then
+    cache = { owns = {}, duration = {}, stack = {} }
+    ruleCaches[data] = cache
+  end
+  return cache
+end
+
+function AuraDisplay.ForgetConditionRules(auraData)
+  ruleCaches[auraData] = nil
+end
+
+local function CollectRules(data, path, family)
+  local rules = {}
+  for _, condition in ipairs(type(data.conditions) == "table" and data.conditions or {}) do
+    local check = type(condition) == "table" and not condition.linked and condition.check
+    local variable = check and VARIABLES[AuraDisplay.NativeConditionKind(data, check)]
+    local threshold = variable and variable.family == family and ToNumber(check.value)
+    if threshold and threshold >= 0 and threshold < math.huge and variable.operators[check.op] then
+      for _, change in Each(condition.changes) do
+        local target, channel = TextTarget(data, change.property, family)
+        if target == path and (family ~= "duration" or channel ~= "text") then
+          rules[#rules + 1] = {
+            threshold = threshold / variable.divisor, operator = check.op, value = change.value,
+            channel = channel, variable = check.variable,
+          }
+        end
+      end
+    end
+  end
+  return rules
+end
+
+local function Rules(data, path, family)
+  if path == nil then return NO_RULES end
+  local byPath = CacheFor(data)[family]
+  local rules = byPath[path]
+  if not rules then
+    rules = CollectRules(data, path, family)
+    byPath[path] = rules
+  end
+  return rules
+end
+
+-- Folds every rule satisfied at a point into the state, in order (the last one wins).
+local function ApplyRules(rules, point, state)
+  for _, rule in Each(rules) do
+    if TESTS[rule.operator](point, rule.threshold) then
+      if rule.channel == "color" then
+        state.color = rule.value
+      elseif rule.channel == "visible" then
+        state.visible = rule.value ~= false
+      elseif rule.channel == "text" and type(rule.value) == "string" then
+        state.text = rule.value
+        state.visible = true
+      end
+    end
+  end
+  return state
+end
+
+local function CurveColor(data, path, rules, window, baseColor, point)
+  local state = ApplyRules(rules, point, { color = baseColor, visible = BaseTextVisible(data, path) })
+  if window and not AuraDisplay.InRemainingWindow(point, window[1], window[2]) then state.visible = false end
+  local color = ClampColor(state.color, WHITE)
+  if not state.visible then color[4] = 0 end
+  return CreateColor(unpack(color))
+end
+
+local function NewStepCurve()
+  local made = C_CurveUtil.CreateColorCurve()
+  made:SetType(Enum.LuaCurveType.Step)
+  return made
+end
+
+function AuraDisplay.DurationColorCondition(auraData, baseColor, path, window)
+  if not AuraDisplay.SupportsDurationColorCondition() then return nil end
+  local rules = Rules(auraData, path, "duration")
+  if #rules == 0 and not window then return nil end
+  local name = rules[1] and rules[1].variable or "faAuraRemaining"
+  if window and name ~= "faAuraRemaining" then return nil end
+  local binding = Enum.DurationTextBindingProperty[VARIABLES[name].binding]
+  if binding == nil then return nil end
+
+  local points = { [0] = true }
+  for _, rule in Each(rules) do
+    if rule.variable ~= name then return nil end
+    points[rule.threshold] = true
+  end
+  if window then
+    for _, point in ipairs(AuraDisplay.RemainingWindowPoints(window[1], window[2])) do points[point] = true end
+  end
+
+  local curve = NewStepCurve()
+  for _, point in ipairs(SortedPoints(points)) do
+    curve:AddPoint(point, CurveColor(auraData, path, rules, window, baseColor, point))
+  end
+  return { curve = curve, property = binding }
+end
+
+local function StackPoints(rules)
+  local points = { [0] = true, [2] = true }
+  for _, rule in Each(rules) do
+    local whole = floor(rule.threshold)
+    points[whole], points[ceil(rule.threshold)], points[whole + 1] = true, true, true
+  end
+  return SortedPoints(points)
+end
+
+local function StackFormat(data, path, rules, point)
+  local state = ApplyRules(rules, point, { visible = point >= 2 and BaseTextVisible(data, path) })
+  if not state.visible then return "" end
+  local pattern = state.text and (state.text:gsub("%%", "%%%%")) or "%d"
+  if not state.color then return pattern end
+  local color = ClampColor(state.color, WHITE)
+  return ("|cff%02x%02x%02x%s|r"):format(floor(color[1] * 255 + 0.5), floor(color[2] * 255 + 0.5),
+    floor(color[3] * 255 + 0.5), pattern)
+end
+
+function AuraDisplay.StackTextFor(auraData, path, count)
+  local rules = Rules(auraData, path, "stack")
+  if #rules == 0 then return count >= 2 and tostring(count) or "" end
+  local format = ""
+  for _, point in ipairs(StackPoints(rules)) do
+    if point <= count then format = StackFormat(auraData, path, rules, point) end
+  end
+  return (format:gsub("%%([%%d])", function(symbol) return symbol == "d" and tostring(count) or "%" end))
+end
+
+function AuraDisplay.StackTextCondition(auraData, path)
+  if not (C_StringUtil and C_StringUtil.CreateNumericRuleFormatter) then return nil end
+  local rules = Rules(auraData, path, "stack")
+  if #rules == 0 then return nil end
+  local steps = {}
+  for _, point in ipairs(StackPoints(rules)) do
+    steps[#steps + 1] = { threshold = point, format = StackFormat(auraData, path, rules, point) }
+  end
+  local rendering = C_StringUtil.CreateNumericRuleFormatter()
+  rendering:SetBreakpoints(steps)
+  return rendering
+end
+
+-- True when the native display drives this color path alone (curve or formatter): applying the
+-- condition value on top of it would fight the native binding.
+local function OwnsColor(data, path)
+  if path == nil then return false end
+  local owns = CacheFor(data).owns
+  local cached = owns[path]
+  if cached == nil then
+    local timeTarget = TextTarget(data, path, "duration")
+    local stackTarget = TextTarget(data, path, "stack")
+    cached = (timeTarget ~= nil and AuraDisplay.SupportsDurationColorCondition()
+        and #Rules(data, timeTarget, "duration") > 0)
+      or (stackTarget ~= nil and C_StringUtil ~= nil and C_StringUtil.CreateNumericRuleFormatter ~= nil
+        and #Rules(data, stackTarget, "stack") > 0)
+    cached = not not cached
+    owns[path] = cached
+  end
+  return cached
+end
+
+---------------------------------------------------------------------------------------------------
+-- Migration of the previous switches
+---------------------------------------------------------------------------------------------------
+
+local function FirstSecretTrigger(data)
+  if type(data.triggers) ~= "table" then return nil end
+  for index, entry in Each(data.triggers) do
+    if type(entry) == "table" and type(entry.trigger) == "table" and entry.trigger.type == "secretAura" then
+      return index
+    end
+  end
+  return nil
+end
+
+local function LegacyRemainingTarget(data)
+  if data.regionType == "text" and AuraDisplay.TextKind(data.displayText) == "duration" then return "color" end
+  for position, element in ipairs(data.subRegions or {}) do
+    if element.type == "subtext" and element.text_visible ~= false and not Detached(data, element)
+      and AuraDisplay.TextKind(element.text_text) == "duration" then
+      return "sub." .. position .. ".text_color"
+    end
+  end
+  return nil
+end
+
+local function AppendCondition(data, check, property, value)
+  if not data.conditions then data.conditions = {} end
+  data.conditions[#data.conditions + 1] = { check = check, changes = { { property = property, value = value } } }
+end
+
+function AuraDisplay.MigrateNativeConditions(auraData)
+  local previous = auraData.blizzardAuraDisplay
+  if type(previous) ~= "table" then return end
+  local trigger = FirstSecretTrigger(auraData)
+  if not trigger then return end
+
+  if previous.missingDesaturate then
+    AppendCondition(auraData, { trigger = trigger, variable = "faAuraMissing" }, "desaturate", true)
+    previous.missingDesaturate = nil
+  end
+  if previous.remainingTimeColorEnabled then
+    local target = LegacyRemainingTarget(auraData)
+    if target then
+      AppendCondition(auraData, { trigger = trigger, variable = "faAuraRemaining", op = "<",
+        value = previous.remainingTimeColorThreshold or 10 }, target, previous.remainingTimeColor or { 1, 0, 0, 1 })
+      previous.remainingTimeColorEnabled = nil
+    end
+  end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Editor: highlight properties and condition models
+---------------------------------------------------------------------------------------------------
+
+function AuraDisplay.FilterConditionProperties(auraData, definitions)
+  if not AuraDisplay.Enabled(auraData) then return definitions end
+  for _, field in ipairs(HIGHLIGHT_FIELDS) do
+    definitions[field.property] = {
+      display = field.label, type = field.type, default = CopyValue(field.default), values = CopyValue(field.values),
+      min = field.min, max = field.max, step = field.step,
+    }
+  end
+  return definitions
+end
+
+local function ResolveStyle(name)
+  local style = STYLES[name] or STYLES.overlay
+  local pulse = false
+  if style.base then
+    pulse = true
+    style = STYLES[style.base]
+  end
+  return style, pulse
+end
+
+function AuraDisplay.HighlightBorderLimit(auraData)
+  local box = { AuraDisplay.Dimensions(auraData) }
+  local shortest = box[1] < box[2] and box[1] or box[2]
+  return max(1, (shortest - shortest % 4) / 4)
+end
+
+function AuraDisplay.HighlightPropertyOptions(auraData, condition, path, definition)
+  if path ~= "faAuraHighlightSize" or not definition then return definition end
+  local style = "border"
+  for _, change in Each(condition and condition.changes) do
+    local isStyle = change.property == "faAuraHighlightStyle"
+    if isStyle then style = change.value end
+  end
+  local options = CopyTable(definition)
+  if ResolveStyle(style).sides then
+    options.display, options.description, options.max = MESSAGES.borderDisplay, MESSAGES.borderHint,
+      AuraDisplay.HighlightBorderLimit(auraData)
+  else
+    options.display, options.description, options.max = MESSAGES.paddingDisplay, MESSAGES.paddingHint, SIZE_MAX
+  end
+  return options
+end
+
+local function TriggerIsSecret(data, index)
+  local entry = type(data.triggers) == "table" and data.triggers[index]
+  return type(entry) == "table" and type(entry.trigger) == "table" and entry.trigger.type == "secretAura"
+end
+
+local function BuildModel(data, index, name, variable)
+  if variable.offered and not variable.offered(variable, data, index, name) then return nil end
+  local family = MODEL_FAMILIES[variable.family]
+  return {
+    display = variable.label, type = family.type, operator_types = family.operatorTypes,
+    values = variable.options and variable.options() or nil,
+  }
+end
+
+function AuraDisplay.FilterConditionTemplates(auraData, templatesByTrigger)
+  if not AuraDisplay.Enabled(auraData) then return templatesByTrigger end
+  for index in pairs(templatesByTrigger) do
+    if TriggerIsSecret(auraData, index) then
+      local models = {}
+      for name, variable in pairs(VARIABLES) do models[name] = BuildModel(auraData, index, name, variable) end
+      templatesByTrigger[index] = models
+    end
+  end
+  return templatesByTrigger
+end
+
+---------------------------------------------------------------------------------------------------
+-- Validation: header validators, then change validators, then the trigger check
+---------------------------------------------------------------------------------------------------
+
+local HEADER_VALIDATORS = {
+  function(context)
+    if not context.variable or context.condition.linked or (context.following and context.following.linked) then
+      return MESSAGES.grouping
+    end
+  end,
+  function(context)
+    local variable, operator = context.variable, context.check.op
+    if variable.operatorMessage and operator ~= nil and not variable.operators[operator] then
+      return MESSAGES[variable.operatorMessage]
+    end
+  end,
+  function(context)
+    if context.variable.header then return context.variable.header(context.pass.data) end
+  end,
+}
+
+local function LateGlowIndex(pass)
+  if not pass.lateKnown then
+    pass.lateKnown = true
+    pass.lateIndex = select(3, AuraDisplay.LateGlowSpec(pass.data, AuraDisplay.GetTrigger(pass.data)))
+  end
+  return pass.lateIndex
+end
+
+local CHANGE_VALIDATORS = {
+  function(context, change)
+    local glow = context.variable.glow
+    if not glow or not AuraDisplay.IsGlowProperty(context.pass.data, change.property) then return nil end
+    if (glow.operator ~= nil and context.check.op ~= glow.operator) or change.value ~= true then
+      return MESSAGES[glow.message]
+    end
+    local late = LateGlowIndex(context.pass)
+    if late and (change.property == "sub." .. late .. ".glow") == glow.conflictWhenSame then return MESSAGES.lateGlow end
+  end,
+  function(context, change)
+    if context.variable.family ~= "duration" then return nil end
+    local target = TextTarget(context.pass.data, change.property, "duration")
+    if not target then return nil end
+    local seen = context.pass.bases
+    if seen[target] and seen[target] ~= context.name then return MESSAGES.timeBasis end
+    seen[target] = context.name
+  end,
+  function(context, change)
+    if change.property ~= nil
+      and not AuraDisplay.NativeConditionAllowsProperty(context.pass.data, context.check, change.property) then
+      return MESSAGES.property
+    end
+  end,
+}
+
+local function CheckUsable(data, check)
+  local name = check and check.variable
+  if not name then return true end
+  if name == "AND" or name == "OR" then
+    for _, child in Each(check.checks) do
+      if not CheckUsable(data, child) then return false end
+    end
+    return true
+  end
+  local slot = check.trigger
+  if slot == -1 then return true end
+  local entry = IsTable(data.triggers) and data.triggers[slot] or nil
+  if not (IsTable(entry) and IsTable(entry.trigger)) then return false end
+  return entry.trigger.type ~= "secretAura" or VARIABLES[name] ~= nil
+end
+
+local function NativeConditionProblem(pass, condition, following)
+  local name = AuraDisplay.NativeConditionKind(pass.data, condition.check)
+  local context = { pass = pass, condition = condition, following = following, check = condition.check,
+    name = name, variable = name and VARIABLES[name] }
+  local found = FirstProblem(HEADER_VALIDATORS, context)
+  for _, change in Each(condition.changes) do
+    if found ~= nil then break end
+    found = FirstProblem(CHANGE_VALIDATORS, context, change)
+  end
+  return found
+end
+
+function AuraDisplay.ValidateConditions(auraData)
+  local conditions = auraData.conditions
+  if not IsTable(conditions) then return nil end
+  local pass = { data = auraData, bases = {} }
+  for index, condition in ipairs(conditions) do
+    local found
+    if AuraDisplay.ContainsNativeCondition(auraData, condition.check) then
+      found = NativeConditionProblem(pass, condition, conditions[index + 1])
+    end
+    if found == nil and not CheckUsable(auraData, condition.check) then found = MESSAGES.foreignTrigger end
+    if found ~= nil then return found end
+  end
+  return nil
+end
+
+---------------------------------------------------------------------------------------------------
+-- Appearance copy: elements a condition may switch on later must exist at render time
+---------------------------------------------------------------------------------------------------
+
+local FORCED_KEYS = { glow = true, text_visible = true }
+
+-- Copies the aura only when the first element needs forcing; each element is copied once.
+local function LazyAppearanceCopy(data)
+  local copy
+  local forced = {}
+  return {
+    Force = function(position, key)
+      if not copy then
+        copy = Merge({}, data)
+        copy.subRegions = Merge({}, data.subRegions)
+        copy.nativeConditionBaseData = data
+      end
+      if not forced[position] then
+        copy.subRegions[position] = CopyTable(copy.subRegions[position])
+        forced[position] = true
+      end
+      copy.subRegions[position][key] = true
+    end,
+    Result = function() return copy or data end,
+  }
+end
+
+function AuraDisplay.PrepareConditionAppearance(auraData)
+  if type(auraData.conditions) ~= "table" then return auraData end
+  local builder = LazyAppearanceCopy(auraData)
+  for _, condition in ipairs(auraData.conditions) do
+    for _, change in Each(condition.changes) do
+      local position, key = ParseSubPath(change.property)
+      if position and FORCED_KEYS[key] and not AuraDisplay.IsDetachedProperty(auraData, change.property)
+        and PropertyType(auraData, change.property) ~= nil then
+        builder.Force(position, key)
+      end
+    end
+  end
+  return builder.Result()
+end
+
+---------------------------------------------------------------------------------------------------
+-- Applying property values to native buttons
+---------------------------------------------------------------------------------------------------
+
+local function ApplyProperty(native, data, path, value, values)
+  if OwnsColor(data, path) then return end
+  if not native.preview and WeakAuras.IsRestricted() then return end
+  local position, key = ParseSubPath(path)
+  if not position then
+    local apply = ROOT_APPLIERS[path]
+    if apply then apply(native, data, value) end
+    return
+  end
+  local entry = native.sharedElements and native.sharedElements[position]
+  local apply = entry and ELEMENT_APPLIERS[key]
+  if apply then apply(entry, data, position, value, values) end
+end
+
+local function SameValue(old, new)
+  if type(old) ~= "table" or type(new) ~= "table" then return old == new end
+  if #old ~= #new then return false end
+  for index = 1, #old do
+    if Private.IsSecret(old[index], new[index]) or old[index] ~= new[index] then return false end
+  end
+  return true
+end
+
+local function EachNative(display, visit)
+  for _, instance in ipairs(display.instances or {}) do
+    for _, button in ipairs(instance.buttons or {}) do visit(button, false) end
+    local missing = instance.single and instance.single.missing and instance.single.missing.native
+    if missing then visit(missing, true) end
+  end
+end
+
+local function KeepMissing(native, data)
+  if AuraDisplay.KeepMissingDesaturated then AuraDisplay.KeepMissingDesaturated(native, data) end
+end
+
+function AuraDisplay.SetConditionProperty(auraRegion, path, ...)
+  local display = auraRegion.blizzardAuraDisplay
+  if not (display and display.active and display.data) then return end
+  local data = display.data
+  local kind = PropertyType(data, path)
+  if kind == nil then return end
+  local value
+  if kind == "color" then value = { ... } else value = (...) end
+
+  local values = auraRegion.secretAuraConditionValues
+  if not values then
+    values = {}
+    auraRegion.secretAuraConditionValues = values
+  end
+  local previous = values[path]
+  if previous ~= nil and not Private.IsSecret(previous, value) and SameValue(previous, value) then return end
+  values[path] = value
+
+  EachNative(display, function(native, isMissing)
+    ApplyProperty(native, data, path, value, values)
+    if isMissing then KeepMissing(native, data) end
+  end)
+end
+
+function AuraDisplay.ApplyMissingConditions(nativeDisplay, auraData)
+  local values = {}
+  for _, condition in ipairs(MissingConditions(auraData)) do
+    for _, change in Each(condition.changes) do
+      local property = change.property
+      if property ~= nil and not HIGHLIGHT_SET[property] and change.value ~= nil
+        and AuraDisplay.NativeConditionAllowsProperty(auraData, condition.check, property) then
+        values[property] = change.value
+      end
+    end
+  end
+  for property, value in pairs(values) do ApplyProperty(nativeDisplay, auraData, property, value, values) end
+end
+
+-- What an element looks like before any condition acts on it.
+local BASE_STATES = {
+  subglow = { key = "glow", read = function(element) return element.glow == true end },
+  subtext = { key = "text_visible", read = function(element) return element.text_visible ~= false end },
+}
+
+function AuraDisplay.ApplyConditionAppearance(auraButton, auraRegion, auraData)
+  local values = auraRegion.secretAuraConditionValues or {}
+  for position, element in ipairs(auraData.subRegions or {}) do
+    local base = BASE_STATES[element.type]
+    if base and not Detached(auraData, element) then
+      ApplyProperty(auraButton, auraData, "sub." .. position .. "." .. base.key, base.read(element), values)
+    end
+  end
+  for path, value in pairs(auraRegion.secretAuraConditionValues or {}) do
+    ApplyProperty(auraButton, auraData, path, value, values)
+  end
+end
+
+function AuraDisplay.RefreshConditionAppearance(auraRegion)
+  local display = auraRegion.blizzardAuraDisplay
+  if not (display and display.active and auraRegion.secretAuraConditionValues) then return end
+  EachNative(display, function(native, isMissing)
+    AuraDisplay.ApplyConditionAppearance(native, auraRegion, display.data)
+    if isMissing then KeepMissing(native, display.data) end
+  end)
+end
+
+---------------------------------------------------------------------------------------------------
+-- Pandemic glow frames
+---------------------------------------------------------------------------------------------------
+
+-- Creates store[key] on first use, then hands back the stored object.
+local function Cached(store, key, build)
+  local item = store[key]
+  if item == nil then
+    item = build()
+    store[key] = item
+  end
+  return item
+end
+
+local function PandemicDrivesGlow(data, position)
+  local wanted = "sub." .. position .. ".glow"
+  for _, entry in Each(IsTable(data.conditions) and data.conditions or nil) do
+    if not entry.linked and AuraDisplay.NativeConditionKind(data, entry.check) == "faAuraPandemic" then
+      for _, change in Each(entry.changes) do
+        if change.value == true and change.property == wanted then return true end
       end
     end
   end
   return false
 end
 
-local function TurnsGlowOn(auraData, position)
-  return HasEnabledChange(auraData, "faAuraPandemic", "sub." .. position .. ".glow", true)
-end
-
-local function PandemicGlow(auraData, position)
-  local baseData = auraData.nativeConditionBaseData or auraData
-  local subRegion = baseData.subRegions and baseData.subRegions[position]
-  if not subRegion or subRegion.type ~= "subglow" or subRegion.glow then return false end
-  return TurnsGlowOn(auraData, position)
-end
-
 function AuraDisplay.PandemicGlowHolder(nativeDisplay, auraData, position, levelFrame)
-  if not PandemicGlow(auraData, position) then return end
-  nativeDisplay.pandemicGlowFrames = nativeDisplay.pandemicGlowFrames or {}
-  local glowFrame = nativeDisplay.pandemicGlowFrames[position]
-  if not glowFrame then
-    glowFrame = CreateFrame("Frame", nil, nativeDisplay.gateClip or nativeDisplay.button)
-    nativeDisplay.pandemicGlowFrames[position] = glowFrame
-  end
+  local element = ElementAt(auraData.nativeConditionBaseData or auraData, position)
+  local eligible = element ~= nil and element.type == "subglow" and not element.glow
+  if not (eligible and PandemicDrivesGlow(auraData, position)) then return nil end
+
+  local glowFrame = Cached(Slot(nativeDisplay, "pandemicGlowFrames"), position, function()
+    return CreateFrame("Frame", nil, nativeDisplay.gateClip or nativeDisplay.button)
+  end)
   glowFrame:ClearAllPoints()
   glowFrame:SetAllPoints(nativeDisplay.button)
   glowFrame:SetFrameLevel(levelFrame:GetFrameLevel() + 1)
   glowFrame:Hide()
-  nativeDisplay.pandemicGlows = nativeDisplay.pandemicGlows or {}
-  nativeDisplay.pandemicGlows[position] = glowFrame
+  Slot(nativeDisplay, "pandemicGlows")[position] = glowFrame
   return glowFrame
 end
 
 function AuraDisplay.ResetPandemicGlows(nativeDisplay)
-  for _, glowFrame in pairs(nativeDisplay.pandemicGlowFrames or {}) do glowFrame:Hide() end
+  local frames = nativeDisplay.pandemicGlowFrames
   nativeDisplay.pandemicGlows = {}
+  for position in pairs(frames or {}) do frames[position]:Hide() end
 end
 
-local function MissingAllows(auraData, propertyPath)
-  local allowed = AuraDisplay.missingRootProperties[auraData.regionType]
-  if not allowed then return false end
-  if highlightProperties[propertyPath] or allowed[propertyPath] then return true end
-  local position, key = (propertyPath or ""):match("^sub%.(%d+)%.(.+)$")
-  local subRegion = SubRegionAt(auraData, position)
-  if not subRegion or AuraDisplay.IsDetachedElement(auraData, subRegion) then return false end
-  if subRegion.type == "subglow" then return key == "glow" end
-  return subRegion.type == "subtext" and (key == "text_visible" or key == "text_color")
-end
+---------------------------------------------------------------------------------------------------
+-- Highlight indicators
+---------------------------------------------------------------------------------------------------
 
-function AuraDisplay.NativeConditionAllowsProperty(auraData, conditionCheck, propertyPath)
-  local variableKind = AuraDisplay.NativeConditionKind(auraData, conditionCheck)
-  local glowKind = variableKind == "faAuraRemaining" or variableKind == "faAuraElapsed" or variableKind == "faAuraPandemic"
-  if glowKind and IsGlowPath(auraData, propertyPath) then return true end
-  if durationDefinitions[variableKind] then
-    local target, channel = TextProperty(auraData, propertyPath, "duration")
-    return target ~= nil and channel ~= "text"
-  end
-  if variableKind == "faAuraApplications" then return TextProperty(auraData, propertyPath, "stack") ~= nil end
-  if variableKind == "faAuraMissing" then return MissingAllows(auraData, propertyPath) end
-  if variableKind then return highlightProperties[propertyPath] == true end
-  return not highlightProperties[propertyPath]
-end
-
-function AuraDisplay.MissingDesaturated(auraData)
-  return HasEnabledChange(auraData, "faAuraMissing", "desaturate", false)
-end
-
-local function FirstSecretTrigger(auraData)
-  local triggers = type(auraData) == "table" and auraData.triggers
-  if type(triggers) ~= "table" then return end
-  for triggerIndex, triggerEntry in ipairs(triggers) do
-    if type(triggerEntry) == "table" and type(triggerEntry.trigger) == "table"
-      and triggerEntry.trigger.type == SECRET_TRIGGER_TYPE then
-      return triggerIndex
-    end
-  end
-end
-
-local function MigrateMissing(auraData, legacy)
-  if not legacy.missingDesaturate then return end
-  local triggerIndex = FirstSecretTrigger(auraData)
-  if not triggerIndex then return end
-  auraData.conditions = auraData.conditions or {}
-  table.insert(auraData.conditions, {
-    check = {trigger = triggerIndex, variable = "faAuraMissing"},
-    changes = {{property = "desaturate", value = true}},
-  })
-  legacy.missingDesaturate = nil
-end
-
-local function ResolveDurationProperty(auraData, propertyPath)
-  for position, subRegion in ipairs(auraData.subRegions or {}) do
-    local candidate = not propertyPath and subRegion.type == "subtext" and subRegion.text_visible ~= false
-      and not AuraDisplay.IsDetachedElement(auraData, subRegion) and AuraDisplay.TextKind(subRegion.text_text) == "duration"
-    if candidate then propertyPath = "sub." .. position .. ".text_color" end
-  end
-  return propertyPath
-end
-
-local function MigrateRemaining(auraData, legacy)
-  if not legacy.remainingTimeColorEnabled then return end
-  local propertyPath
-  if auraData.regionType == "text" and AuraDisplay.TextKind(auraData.displayText) == "duration" then
-    propertyPath = "color"
-  end
-  propertyPath = ResolveDurationProperty(auraData, propertyPath)
-  local triggerIndex = FirstSecretTrigger(auraData)
-  if not (triggerIndex and propertyPath) then return end
-  local conditionList = auraData.conditions or {}
-  auraData.conditions = conditionList
-  table.insert(auraData.conditions, {
-    check = {trigger = triggerIndex, variable = "faAuraRemaining", op = "<",
-      value = legacy.remainingTimeColorThreshold or 10},
-    changes = {{property = propertyPath, value = legacy.remainingTimeColor or {1, 0, 0, 1}}},
-  })
-  legacy.remainingTimeColorEnabled = nil
-end
-
-function AuraDisplay.MigrateNativeConditions(auraData)
-  local legacy = auraData.blizzardAuraDisplay or {}
-  MigrateMissing(auraData, legacy)
-  MigrateRemaining(auraData, legacy)
-end
-
-local function Clamped(component, fallback)
-  if type(component) == "number" and component == component then return math.max(0, math.min(1, component)) end
-  return fallback
-end
-
-local function ClampedColor(components, fallback)
-  if type(components) ~= "table" then components = fallback end
-  local channels = {}
-  for slot = 1, 4 do channels[slot] = Clamped(components[slot], fallback[slot]) end
-  return CreateColor(unpack(channels))
-end
-
--- Rules and answers per aura and property path, dropped by Display.Modify when the aura data changes.
-local conditionRulesCache = setmetatable({}, {__mode = "k"})
-
-local function CachedRules(auraData)
-  local known = conditionRulesCache[auraData]
-  if not known then
-    known = {owns = {}, duration = {}, stack = {}}
-    conditionRulesCache[auraData] = known
-  end
-  return known
-end
-
-function AuraDisplay.ForgetConditionRules(auraData)
-  conditionRulesCache[auraData] = nil
-end
-
-local function CollectThresholdRules(auraData, propertyPath, stack)
-  local collected = {}
-  local textKind = stack and "stack" or "duration"
-  local operators = stack and STACK_OPERATORS or TIME_OPERATORS
-  for _, conditionEntry in ipairs(auraData.conditions or {}) do
-    local variableKind = AuraDisplay.NativeConditionKind(auraData, conditionEntry.check)
-    local relevant
-    if stack then relevant = variableKind == "faAuraApplications" else relevant = durationDefinitions[variableKind] end
-    if not conditionEntry.linked and relevant then
-      local conditionCheck = conditionEntry.check
-      local threshold = tonumber(conditionCheck.value)
-      if threshold and threshold == threshold and threshold >= 0 and threshold < math.huge and operators[conditionCheck.op] then
-        local divisor = stack and 1 or durationDefinitions[variableKind].divisor
-        for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-          local target, channel = TextProperty(auraData, propertyChange.property, textKind)
-          if target == propertyPath and (stack or channel ~= "text") then
-            collected[#collected + 1] = {
-              threshold = threshold / divisor,
-              op = conditionCheck.op,
-              value = propertyChange.value,
-              channel = channel,
-              kind = variableKind,
-            }
-          end
-        end
-      end
-    end
-  end
-  return collected
-end
-
--- The returned list is shared: callers only read it.
-local function ThresholdRules(auraData, propertyPath, stack)
-  local known = CachedRules(auraData)[stack and "stack" or "duration"]
-  local rules = known[propertyPath]
-  if not rules then
-    rules = CollectThresholdRules(auraData, propertyPath, stack)
-    known[propertyPath] = rules
-  end
-  return rules
-end
-
-local function RuleMatches(amount, rule)
-  local comparator = COMPARATORS[rule.op]
-  return comparator and comparator(amount, rule.threshold)
-end
-
-local function BaseTextVisible(auraData, propertyPath)
-  local position = propertyPath and propertyPath:match("^sub%.(%d+)%.text_color$")
-  local baseData = auraData.nativeConditionBaseData or auraData
-  local subRegion = position and baseData.subRegions and baseData.subRegions[tonumber(position)]
-  return not subRegion or subRegion.text_visible ~= false
-end
-
-local function DurationBreakpoints(thresholdRules, variableKind, window)
-  local points, seen = {0}, {[0] = true}
-  local function Add(point)
-    if seen[point] then return end
-    points[#points + 1] = point
-    seen[point] = true
-  end
-  for _, rule in ipairs(thresholdRules) do
-    if rule.kind ~= variableKind then return end
-    Add(rule.threshold)
-  end
-  local windowPoints = window and AuraDisplay.RemainingWindowPoints(window[1], window[2]) or {}
-  for _, point in ipairs(windowPoints) do Add(point) end
-  table.sort(points)
-  return points
-end
-
-local function StepColor(auraData, thresholdRules, baseColor, propertyPath, window, point)
-  local stepColor, shown = baseColor, BaseTextVisible(auraData, propertyPath)
-  for _, rule in ipairs(thresholdRules) do
-    if RuleMatches(point, rule) then
-      if rule.channel == "color" then
-        stepColor = rule.value
-      elseif rule.channel == "visible" then
-        shown = rule.value ~= false
-      end
-    end
-  end
-  if window and not AuraDisplay.InRemainingWindow(point, window[1], window[2]) then shown = false end
-  local color = ClampedColor(stepColor, STEP_COLOR)
-  if shown then return color end
-  local red, green, blue = color:GetRGB()
-  return CreateColor(red, green, blue, 0)
-end
-
-function AuraDisplay.DurationColorCondition(auraData, baseColor, propertyPath, window)
-  if not AuraDisplay.SupportsDurationColorCondition() then return end
-  local thresholdRules = ThresholdRules(auraData, propertyPath)
-  if #thresholdRules == 0 and not window then return end
-  local firstRule = thresholdRules[1]
-  local variableKind = firstRule and firstRule.kind or "faAuraRemaining"
-  if window and variableKind ~= "faAuraRemaining" then return end
-  local binding = Enum.DurationTextBindingProperty[durationDefinitions[variableKind].binding]
-  if binding == nil then return end
-  local points = DurationBreakpoints(thresholdRules, variableKind, window)
-  if not points then return end
-  local colorCurve = C_CurveUtil.CreateColorCurve()
-  colorCurve:SetType(Enum.LuaCurveType.Step)
-  for _, point in ipairs(points) do
-    local stepColor = StepColor(auraData, thresholdRules, baseColor, propertyPath, window, point)
-    colorCurve:AddPoint(point, stepColor)
-  end
-  return {curve = colorCurve, property = binding}
-end
-
-local function StackPoints(thresholdRules)
-  local points, seen = {0, 2}, {[0] = true, [2] = true}
-  for _, rule in ipairs(thresholdRules) do
-    local lower, upper = math.floor(rule.threshold), math.ceil(rule.threshold)
-    for _, point in ipairs({lower, upper, math.floor(rule.threshold) + 1}) do
-      if point >= 0 and not seen[point] then
-        points[#points + 1] = point
-        seen[point] = true
-      end
-    end
-  end
-  table.sort(points)
-  return points
-end
-
-local function ColoredFormat(color, pattern)
-  local red, green, blue = ClampedColor(color, STEP_COLOR):GetRGB()
-  local function Byte(channel) return math.floor(channel * 255 + 0.5) end
-  return ("|cff%02x%02x%02x"):format(Byte(red), Byte(green), Byte(blue)) .. pattern .. "|r"
-end
-
-local function StackStep(auraData, thresholdRules, propertyPath, point)
-  local pattern, shown, stepColor = "%d", point >= 2 and BaseTextVisible(auraData, propertyPath), nil
-  for _, rule in ipairs(thresholdRules) do
-    if RuleMatches(point, rule) then
-      if rule.channel == "color" then
-        stepColor = rule.value
-      elseif rule.channel == "visible" then
-        shown = rule.value ~= false
-      elseif rule.channel == "text" and type(rule.value) == "string" then
-        pattern = rule.value:gsub("%%", "%%%%")
-        shown = true
-      end
-    end
-  end
-  if not shown then return "" end
-  if stepColor then return ColoredFormat(stepColor, pattern) end
-  return pattern
-end
-
-local function StackBreakpoints(auraData, propertyPath)
-  local thresholdRules = ThresholdRules(auraData, propertyPath, true)
-  if #thresholdRules == 0 then return end
-  local steps = {}
-  for _, point in ipairs(StackPoints(thresholdRules)) do
-    steps[#steps + 1] = {threshold = point, format = StackStep(auraData, thresholdRules, propertyPath, point)}
-  end
-  return steps
-end
-
-function AuraDisplay.StackTextFor(auraData, propertyPath, count)
-  local steps = StackBreakpoints(auraData, propertyPath)
-  if not steps then return count >= 2 and tostring(count) or "" end
-  local pattern = ""
-  for position = #steps, 1, -1 do
-    local step = steps[position]
-    if step.threshold <= count then
-      pattern = step.format
-      break
-    end
-  end
-  local pieces = {}
-  for piece in (pattern .. "%%"):gmatch("(.-)%%%%") do
-    pieces[#pieces + 1] = (piece:gsub("%%d", tostring(count)))
-  end
-  return table.concat(pieces, "%")
-end
-
-function AuraDisplay.StackTextCondition(auraData, propertyPath)
-  local available = C_StringUtil and C_StringUtil.CreateNumericRuleFormatter
-  if not available then return end
-  local steps = StackBreakpoints(auraData, propertyPath)
-  if not steps then return end
-  local ruleFormatter = C_StringUtil.CreateNumericRuleFormatter()
-  ruleFormatter:SetBreakpoints(steps)
-  return ruleFormatter
-end
-
-local function ComputeOwnsDurationColor(auraData, propertyPath)
-  local durationTarget = TextProperty(auraData, propertyPath, "duration")
-  if durationTarget and AuraDisplay.SupportsDurationColorCondition() and #ThresholdRules(auraData, durationTarget) > 0 then
-    return true
-  end
-  local stackTarget = TextProperty(auraData, propertyPath, "stack")
-  return stackTarget and C_StringUtil and C_StringUtil.CreateNumericRuleFormatter
-    and #ThresholdRules(auraData, stackTarget, true) > 0
-end
-
-local function OwnsDurationColor(auraData, propertyPath)
-  local known = CachedRules(auraData).owns
-  local owns = known[propertyPath]
-  if owns == nil then
-    owns = ComputeOwnsDurationColor(auraData, propertyPath) and true or false
-    known[propertyPath] = owns
-  end
-  return owns
-end
-
-local function DetachedPropertyType(auraData, subRegion, key)
-  local subRegionType = AddonPrivate.subRegionTypes[subRegion.type]
-  local definitions = subRegionType and subRegionType.properties
-  definitions = type(definitions) == "function" and definitions(auraData, subRegion) or definitions
-  local definition = definitions and definitions[key]
-  if definition and not definition.valueFromBoolean and not definition.colorFromBoolean then return definition.type end
-end
-
-local function PropertyType(auraData, propertyPath)
-  if actionProperties[propertyPath] then return actionProperties[propertyPath] end
-  local position, key = propertyPath:match("^sub%.(%d+)%.(.+)$")
-  if not position then
-    if propertyPath == "displayText" and AuraDisplay.TextKind(auraData.displayText) ~= "literal" then return end
-    local typesForRegion = rootPropertyTypes[auraData.regionType]
-    return typesForRegion and typesForRegion[propertyPath]
-  end
-  local subRegion = auraData.subRegions and auraData.subRegions[tonumber(position)]
-  if AuraDisplay.IsDetachedElement(auraData, subRegion) then return DetachedPropertyType(auraData, subRegion, key) end
-  if subRegion and key == "text_text" and AuraDisplay.TextKind(subRegion.text_text) ~= "literal" then return end
-  local typesForSubRegion = subRegion and subRegionPropertyTypes[subRegion.type]
-  return typesForSubRegion and typesForSubRegion[key]
-end
-
-function AuraDisplay.IsNativeConditionProperty(auraData, propertyPath)
-  if actionProperties[propertyPath] or AuraDisplay.IsDetachedProperty(auraData, propertyPath) then return false end
-  return PropertyType(auraData, propertyPath) ~= nil
-end
-
-local HIGHLIGHT_DEFINITIONS = {
-  faAuraHighlightColor = {display = "Aura Highlight Color", type = "color", default = {1, 0.82, 0, 1}},
-  faAuraHighlightStyle = {
-    display = "Aura Highlight Style",
-    type = "list",
-    default = "border",
-    values = {
-      border = "Border",
-      glow = "Glow (Static)",
-      pulseBorder = "Border (Pulsing)",
-      pulseGlow = "Glow (Pulsing)",
-      overlay = "Overlay",
-      texture = "Custom Texture",
-    },
-  },
-  faAuraHighlightPulse = {
-    display = "Aura Highlight Pulse Duration", type = "number", default = 1, min = 0.2, max = 5, step = 0.1,
-  },
-  faAuraHighlightSize = {
-    display = "Aura Highlight Thickness / Padding", type = "number", default = 2, min = 1, max = 64, step = 1,
-  },
-  faAuraHighlightTexture = {
-    display = "Aura Highlight Texture", type = "string", default = "Interface\\Buttons\\UI-ActionButton-Border",
-  },
+local BORDER_SIDES = {
+  { "TOPLEFT", "TOPRIGHT", "SetHeight" },
+  { "BOTTOMLEFT", "BOTTOMRIGHT", "SetHeight" },
+  { "TOPLEFT", "BOTTOMLEFT", "SetWidth" },
+  { "TOPRIGHT", "BOTTOMRIGHT", "SetWidth" },
 }
 
-function AuraDisplay.FilterConditionProperties(auraData, definitions)
-  if not AuraDisplay.Enabled(auraData) then return definitions end
-  for key, definition in pairs(HIGHLIGHT_DEFINITIONS) do definitions[key] = definition end
-  return definitions
+local function LevelOf(frame)
+  return frame and frame:GetFrameLevel() or 0
 end
 
-function AuraDisplay.HighlightBorderLimit(auraData)
-  local frameWidth, frameHeight = AuraDisplay.Dimensions(auraData)
-  local quarter = math.floor(math.min(frameWidth, frameHeight) / 4)
-  return math.max(1, quarter)
-end
-
-function AuraDisplay.HighlightPropertyOptions(auraData, conditionEntry, propertyPath, definition)
-  if propertyPath ~= "faAuraHighlightSize" or not definition then return definition end
-  local highlightStyle = "border"
-  for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-    if propertyChange.property == "faAuraHighlightStyle" then highlightStyle = propertyChange.value end
+local function ReleaseHosts(native)
+  for _, carrier in pairs(native.conditionHosts) do
+    local owner = carrier.pulseOwner
+    if owner then
+      pcall(owner.RemoveAuraShownAnimation, owner, carrier.pulse)
+      carrier.pulseOwner = nil
+    end
+    if carrier.pulse then carrier.pulse:Stop() end
+    carrier:SetAlpha(1)
   end
-  local options = CopyTable(definition)
-  local bordered = highlightStyle == "border" or highlightStyle == "pulseBorder"
-  options.display = bordered and MESSAGES.borderDisplay or MESSAGES.paddingDisplay
-  options.max = bordered and AuraDisplay.HighlightBorderLimit(auraData) or 64
-  options.description = bordered and MESSAGES.borderHint or MESSAGES.paddingHint
-  return options
 end
 
-local function AlwaysTrue(label)
-  return {display = label, type = "alwaystrue"}
-end
-
-local function NativeSelect(label, choices)
-  return {display = label, type = "select", operator_types = "native_aura_dispel", values = choices}
-end
-
-local function OfferedDuration(auraData, triggerIndex, variableName)
-  if variableName ~= "faAuraStart" and variableName ~= "faAuraEnd" then return true end
-  local offered = false
-  for _, conditionEntry in ipairs(auraData.conditions or {}) do
-    offered = UsesVariable(conditionEntry.check, triggerIndex, variableName) or offered
+local function RegisterPandemicGlows(native, data)
+  local button = native.button
+  for _, frame in pairs(native.pandemicGlows or {}) do
+    if native.preview then
+      table.insert(native.conditionPreview, { texture = frame, kind = "faAuraPandemic" })
+    elseif type(button.AddPandemicRegion) == "function" then
+      button:AddPandemicRegion(frame)
+    end
   end
-  return offered
 end
 
-local function NativeTemplates(auraData, triggerIndex)
-  local templates = {
-    faAuraPandemic = AlwaysTrue("In Pandemic Window"),
-    faAuraStealable = AlwaysTrue("Buff Is Stealable"),
-    faAuraNotStealable = AlwaysTrue("Buff Is Not Stealable"),
-    faAuraPresent = AlwaysTrue("Aura Present"),
-    faAuraMissing = AlwaysTrue("Aura Missing"),
-    faAuraType = NativeSelect("Aura Type", {HELPFUL = "Buff", HARMFUL = "Debuff"}),
-    faAuraDispel = NativeSelect("Dispel Type", {
-      Magic = "Magic",
-      Curse = "Curse",
-      Disease = "Disease",
-      Poison = "Poison",
-      Bleed = "Bleed",
-      Enrage = "Enrage",
-      None = "None",
-    }),
+local function ResetIndicators(native, data)
+  local owner = native.button
+  local clear = owner.ClearPandemicRegions
+  if clear and not native.preview then clear(owner) end
+  for _, edges in pairs(Slot(native, "conditionIndicators")) do
+    for index = 1, #edges do edges[index]:Hide() end
+  end
+  Slot(native, "conditionHosts")
+  ReleaseHosts(native)
+  local attached = native.conditionDispelTextures or {}
+  for index = 1, #attached do owner:RemoveDispelTypeTexture(attached[index]) end
+  native.conditionDispelTextures, native.conditionPreview = {}, {}
+  native.conditionData = nil
+  if native.preview then native.conditionData = data end
+  RegisterPandemicGlows(native, data)
+end
+
+local function PlaceOverlay(native)
+  local button = native.button
+  local overlay = native.conditionOverlay
+  if not overlay then
+    overlay = CreateFrame("Frame", nil, native.gateClip or button)
+    native.conditionOverlay = overlay
+  end
+  overlay:ClearAllPoints()
+  overlay:SetAllPoints(native.button)
+  local base = native.elementFrames and native.elementFrames.sharedBase or button
+  overlay:SetFrameLevel(max(LevelOf(native.cooldown), LevelOf(native.bar), LevelOf(base)) + 1)
+end
+
+-- The condition's highlight settings (the last change of each property wins), or nil when the
+-- condition is not drawn at all.
+local function IndicatorPlan(native, data, condition)
+  local check = type(condition) == "table" and not condition.linked and condition.check
+  local name = check and AuraDisplay.NativeConditionKind(data, check)
+  local variable = name and VARIABLES[name]
+  local rule = variable and variable.indicator
+  if not rule or (rule.valid and not rule.valid(check, native)) then return nil end
+  local settings, found = {}, false
+  for _, change in Each(condition.changes) do
+    if HIGHLIGHT_SET[change.property] then
+      settings[change.property] = change.value
+      found = true
+    end
+  end
+  if not found then return nil end
+  return { name = name, variable = variable, check = check, settings = settings }
+end
+
+local function ResolveLook(settings, data)
+  local style, pulse = ResolveStyle(settings.faAuraHighlightStyle or "border")
+  local size = Bounded(settings.faAuraHighlightSize, 1, SIZE_MAX, 2)
+  if style.sides then size = min(size, AuraDisplay.HighlightBorderLimit(data)) end
+  local texture = style.texture or FLAT_TEXTURE
+  if style.custom then
+    local path = settings.faAuraHighlightTexture
+    if type(path) == "string" and path ~= "" then texture = path end
+  end
+  return {
+    sides = style.sides == true, glow = style.glow == true, pulse = pulse, size = size, texture = texture,
+    inset = (style.padding and size or 0) + (style.spill or 0),
+    period = Bounded(settings.faAuraHighlightPulse, PULSE_MIN, PULSE_MAX, 1),
+    color = ClampColor(settings.faAuraHighlightColor, HIGHLIGHT_COLOR),
   }
-  if AuraDisplay.SupportsDurationColorCondition() then
-    for variableName, variable in pairs(durationDefinitions) do
-      local offered = OfferedDuration(auraData, triggerIndex, variableName)
-      if offered and Enum.DurationTextBindingProperty[variable.binding] ~= nil then
-        templates[variableName] = {display = variable.label, type = "number", operator_types = "native_aura_duration"}
-      end
-    end
-  end
-  local stackFormatter = C_StringUtil and C_StringUtil.CreateNumericRuleFormatter
-  if stackFormatter then templates.faAuraApplications = {display = "Stack Count", type = "number"} end
-  return templates
 end
 
-function AuraDisplay.FilterConditionTemplates(auraData, templatesByTrigger)
-  if not AuraDisplay.Enabled(auraData) then return templatesByTrigger end
-  for triggerIndex, triggerTemplates in pairs(templatesByTrigger) do
-    local triggerEntry = auraData.triggers[triggerIndex]
-    local triggerSettings = triggerEntry and triggerEntry.trigger
-    local secret = triggerSettings and triggerSettings.type == SECRET_TRIGGER_TYPE
-    templatesByTrigger[triggerIndex] = secret and NativeTemplates(auraData, triggerIndex) or triggerTemplates
-  end
-  return templatesByTrigger
+local function HostAt(native, position)
+  local host = Cached(native.conditionHosts, position, function()
+    return CreateFrame("Frame", nil, native.conditionOverlay)
+  end)
+  host:ClearAllPoints()
+  host:SetAllPoints(native.button)
+  return host
 end
 
-local function ValidCheck(auraData, conditionCheck)
-  if not conditionCheck or not conditionCheck.variable then return true end
-  local variableName = conditionCheck.variable
-  if variableName == "AND" or variableName == "OR" then
-    for _, nested in ipairs(conditionCheck.checks or {}) do
-      if not ValidCheck(auraData, nested) then return false end
-    end
-    return true
-  end
-  if conditionCheck.trigger == -1 then return true end
-  local triggerEntry = auraData.triggers[conditionCheck.trigger]
-  local triggerSettings = triggerEntry and triggerEntry.trigger
-  return triggerSettings
-    and (triggerSettings.type ~= SECRET_TRIGGER_TYPE or AuraDisplay.NativeConditionKind(auraData, conditionCheck) ~= nil)
-end
-
-local function ConditionHeaderProblem(auraData, position, conditionEntry, variableKind)
-  local nextEntry = auraData.conditions[position + 1]
-  if not variableKind or conditionEntry.linked or (nextEntry and nextEntry.linked) then return MESSAGES.grouping end
-  local operator = conditionEntry.check.op
-  if durationDefinitions[variableKind] and operator and operator ~= "<" and operator ~= ">=" then
-    return MESSAGES.timeOperator
-  end
-  local typeKind = variableKind == "faAuraDispel" or variableKind == "faAuraType"
-  if typeKind and operator and operator ~= "==" and operator ~= "~=" then return MESSAGES.typeOperator end
-  if variableKind ~= "faAuraMissing" then return end
-  local showOn = AuraDisplay.ShowOn(AuraDisplay.GetTrigger(auraData))
-  if not AuraDisplay.missingRootProperties[auraData.regionType] then return MESSAGES.missingRegion end
-  if showOn ~= "showOnMissing" and showOn ~= "showAlways" then return MESSAGES.missingShowOn end
-end
-
-local function LateGlowConflict(auraData, propertyChange)
-  local _, _, lateGlowIndex = AuraDisplay.LateGlowSpec(auraData, AuraDisplay.GetTrigger(auraData))
-  if lateGlowIndex and propertyChange.property ~= "sub." .. lateGlowIndex .. ".glow" then return MESSAGES.lateGlow end
-end
-
-local GLOW_CHECKS = {
-  faAuraRemaining = function(auraData, conditionEntry, propertyChange)
-    if not IsGlowPath(auraData, propertyChange.property) then return end
-    if conditionEntry.check.op ~= "<" or propertyChange.value ~= true then return MESSAGES.remainingGlow end
-    return LateGlowConflict(auraData, propertyChange)
-  end,
-  faAuraElapsed = function(auraData, conditionEntry, propertyChange)
-    if not IsGlowPath(auraData, propertyChange.property) then return end
-    if conditionEntry.check.op ~= "<" or propertyChange.value ~= true then return MESSAGES.elapsedGlow end
-    return LateGlowConflict(auraData, propertyChange)
-  end,
-  faAuraPandemic = function(auraData, _, propertyChange)
-    if not IsGlowPath(auraData, propertyChange.property) then return end
-    if propertyChange.value ~= true then return MESSAGES.pandemicGlow end
-    local _, _, lateGlowIndex = AuraDisplay.LateGlowSpec(auraData, AuraDisplay.GetTrigger(auraData))
-    if lateGlowIndex and propertyChange.property == "sub." .. lateGlowIndex .. ".glow" then return MESSAGES.lateGlow end
-  end,
-}
-
-local function ChangeProblem(auraData, conditionEntry, propertyChange, variableKind, timeBases)
-  local glowCheck = GLOW_CHECKS[variableKind]
-  local problem = glowCheck and glowCheck(auraData, conditionEntry, propertyChange)
-  if problem then return problem end
-  local propertyPath = propertyChange.property
-  if durationDefinitions[variableKind] and propertyPath then
-    local target = TextProperty(auraData, propertyPath, "duration")
-    if target then
-      local previous = timeBases[target]
-      if previous and previous ~= variableKind then return MESSAGES.timeBasis end
-      timeBases[target] = variableKind
-    end
-  end
-  if propertyPath and not AuraDisplay.NativeConditionAllowsProperty(auraData, conditionEntry.check, propertyPath) then
-    return MESSAGES.property
-  end
-end
-
-local function NativeConditionProblem(auraData, position, conditionEntry, timeBases)
-  local variableKind = AuraDisplay.NativeConditionKind(auraData, conditionEntry.check)
-  local headerProblem = ConditionHeaderProblem(auraData, position, conditionEntry, variableKind)
-  if headerProblem then return headerProblem end
-  for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-    local changeProblem = ChangeProblem(auraData, conditionEntry, propertyChange, variableKind, timeBases)
-    if changeProblem then return changeProblem end
-  end
-end
-
-function AuraDisplay.ValidateConditions(auraData)
-  local timeBases = {}
-  for position, conditionEntry in ipairs(auraData.conditions or {}) do
-    if AuraDisplay.ContainsNativeCondition(auraData, conditionEntry.check) then
-      local problem = NativeConditionProblem(auraData, position, conditionEntry, timeBases)
-      if problem then return problem end
-    end
-    if not ValidCheck(auraData, conditionEntry.check) then return MESSAGES.foreignTrigger end
-  end
-end
-
-local function CopyForAppearance(auraData)
-  local copy = {}
-  for field, fieldValue in pairs(auraData) do copy[field] = fieldValue end
-  copy.subRegions = {}
-  for position, subRegion in ipairs(auraData.subRegions) do copy.subRegions[position] = subRegion end
-  return copy
-end
-
-function AuraDisplay.PrepareConditionAppearance(auraData)
-  local appearance
-  for _, conditionEntry in ipairs(auraData.conditions or {}) do
-    for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-      local propertyPath = propertyChange.property
-      local rawPosition, key = (propertyPath or ""):match("^sub%.(%d+)%.(.+)$")
-      local position = tonumber(rawPosition)
-      local forcedOn = position and not AuraDisplay.IsDetachedProperty(auraData, propertyPath)
-        and (key == "glow" or key == "text_visible") and PropertyType(auraData, propertyPath)
-      if forcedOn then
-        appearance = appearance or CopyForAppearance(auraData)
-        local original = auraData.subRegions[position]
-        if appearance.subRegions[position] == original then
-          appearance.subRegions[position] = CopyTable(auraData.subRegions[position])
-        end
-        appearance.subRegions[position][key] = true
-      end
-    end
-  end
-  if not appearance then return auraData end
-  appearance.nativeConditionBaseData = auraData
-  return appearance
-end
-
-local function SetFontSize(fontString, fontSize)
-  local fontPath, _, fontFlags = fontString:GetFont()
-  fontString:SetFont(fontPath, fontSize, fontFlags)
-end
-
-local function ApplyTextAlpha(sharedEntry, auraData, position, _, overrides)
-  local label = sharedEntry.text
-  if not label then return end
-  local prefix = "sub." .. position .. "."
-  local shown = overrides[prefix .. "text_visible"]
-  if shown == nil then shown = auraData.subRegions[position].text_visible ~= false end
-  local opacity = overrides[prefix .. "text_alpha"] or auraData.subRegions[position].text_alpha or 1
-  label:SetAlpha(shown and opacity or 0)
-end
-
-local function AnchorOffsetApplier(horizontal)
-  return function(sharedEntry, _, _, offset)
-    local label = sharedEntry.text
-    if not label then return end
-    local anchorPoint, relativeTo, relativePoint, offsetX, offsetY = label:GetPoint(1)
-    label:ClearAllPoints()
-    if horizontal then offsetX = offset or offsetX else offsetY = offset or offsetY end
-    label:SetPoint(anchorPoint, relativeTo, relativePoint, offsetX, offsetY)
-  end
-end
-AuraDisplay.AnchorOffsetApplier = AnchorOffsetApplier
-
-local SUB_APPLIERS = {
-  text_color = function(sharedEntry, _, _, color)
-    if sharedEntry.text then sharedEntry.text:SetTextColor(unpack(color)) end
-  end,
-  text_visible = ApplyTextAlpha,
-  text_alpha = ApplyTextAlpha,
-  text_text = function(sharedEntry, _, _, text)
-    if sharedEntry.text then sharedEntry.text:SetText((text:gsub("%%%%", "%%"))) end
-  end,
-  text_fontSize = function(sharedEntry, _, _, fontSize)
-    if sharedEntry.text then SetFontSize(sharedEntry.text, fontSize) end
-  end,
-  text_anchorXOffset = AnchorOffsetApplier(true),
-  text_anchorYOffset = AnchorOffsetApplier(false),
-  glow = function(sharedEntry, _, _, enabled)
-    local glowFrame = sharedEntry.elementFrames and sharedEntry.elementFrames.glow
-    if glowFrame then glowFrame:SetAlpha(enabled and 1 or 0) end
-  end,
-}
-
-local ROOT_APPLIERS = {
-  color = function(auraButton, auraData, color)
-    if auraData.regionType ~= "text" then
-      auraButton.icon:SetVertexColor(unpack(color))
-    elseif auraButton.mainText then
-      auraButton.mainText:SetTextColor(unpack(color))
-    end
-  end,
-  foregroundColor = function(auraButton, _, color)
-    if auraButton.progressTexture then auraButton.progressTexture.texture:SetVertexColor(unpack(color)) end
-  end,
-  desaturateForeground = function(auraButton, _, enabled)
-    if auraButton.progressTexture then auraButton.progressTexture.texture:SetDesaturated(enabled) end
-  end,
-  backgroundColor = function(auraButton, _, color)
-    if auraButton.progressBackground then
-      auraButton.progressBackground:SetColor(unpack(color))
-    elseif auraButton.barBackground then
-      auraButton.barBackground:SetColorTexture(unpack(color))
-    end
-  end,
-  barColor = function(auraButton, _, color)
-    if auraButton.bar then auraButton.bar:SetStatusBarColor(unpack(color)) end
-  end,
-  desaturate = function(auraButton, _, enabled) auraButton.icon:SetDesaturated(enabled) end,
-  icon_color = function(auraButton, _, color) auraButton.icon:SetVertexColor(unpack(color)) end,
-  zoom = function(auraButton, auraData, zoom) AuraDisplay.StyleIconTexCoords(auraButton, auraData, zoom) end,
-  inverse = function(auraButton, _, enabled) auraButton.cooldown:SetReverse(enabled) end,
-  cooldownSwipe = function(auraButton, _, enabled) auraButton.cooldown:SetDrawSwipe(enabled) end,
-  cooldownEdge = function(auraButton, _, enabled) auraButton.cooldown:SetDrawEdge(enabled) end,
-  cooldownTextDisabled = function(auraButton, _, enabled) auraButton.cooldown:SetHideCountdownNumbers(enabled) end,
-  fontSize = function(auraButton, _, fontSize)
-    if auraButton.mainText then SetFontSize(auraButton.mainText, fontSize) end
-  end,
-  displayText = function(auraButton, _, text)
-    if auraButton.mainText then auraButton.mainText:SetText((text:gsub("%%%%", "%%"))) end
-  end,
-}
-
-local function ApplyProperty(auraButton, auraData, propertyPath, propertyValue, overrides)
-  if OwnsDurationColor(auraData, propertyPath) then return end
-  if not auraButton.preview and WeakAuras.IsRestricted() then return end
-  local rawPosition, key = propertyPath:match("^sub%.(%d+)%.(.+)$")
-  if not rawPosition then
-    local rootApplier = ROOT_APPLIERS[propertyPath]
-    if rootApplier then rootApplier(auraButton, auraData, propertyValue) end
-    return
-  end
-  local position = tonumber(rawPosition)
-  local sharedEntry = auraButton.sharedElements and auraButton.sharedElements[position]
-  if not sharedEntry then return end
-  local subApplier = SUB_APPLIERS[key]
-  if subApplier then subApplier(sharedEntry, auraData, position, propertyValue, overrides) end
-end
-
-function AuraDisplay.ApplyMissingConditions(nativeDisplay, auraData)
-  local missingValues = {}
-  for _, conditionEntry in ipairs(auraData.conditions or {}) do
-    if AuraDisplay.NativeConditionKind(auraData, conditionEntry.check) == "faAuraMissing" then
-      for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-        local propertyPath = propertyChange.property
-        local accepted = propertyPath and not highlightProperties[propertyPath] and propertyChange.value ~= nil
-          and AuraDisplay.NativeConditionAllowsProperty(auraData, conditionEntry.check, propertyPath)
-        if accepted then missingValues[propertyPath] = propertyChange.value end
-      end
-    end
-  end
-  for propertyPath, propertyValue in pairs(missingValues) do
-    ApplyProperty(nativeDisplay, auraData, propertyPath, propertyValue, missingValues)
-  end
-end
-
-function AuraDisplay.ApplyConditionAppearance(auraButton, region, auraData)
-  local overrides = region.secretAuraConditionValues or {}
-  for position, subRegion in ipairs(auraData.subRegions or {}) do
-    if not AuraDisplay.IsDetachedElement(auraData, subRegion) then
-      local prefix = "sub." .. position .. "."
-      local subRegionType = subRegion.type
-      if subRegionType == "subglow" then
-        ApplyProperty(auraButton, auraData, prefix .. "glow", subRegion.glow == true, overrides)
-      elseif subRegionType == "subtext" then
-        ApplyProperty(auraButton, auraData, prefix .. "text_visible", subRegion.text_visible ~= false, overrides)
-      end
-    end
-  end
-  local stored = region.secretAuraConditionValues or {}
-  for propertyPath, propertyValue in pairs(stored) do
-    ApplyProperty(auraButton, auraData, propertyPath, propertyValue, overrides)
-  end
-end
-
-local function ForEachInstance(nativeDisplay, visit)
-  for _, displayInstance in ipairs(nativeDisplay.instances) do visit(displayInstance) end
-end
-
-local function MissingNative(displayInstance)
-  local missing = displayInstance.single and displayInstance.single.missing
-  return missing and missing.native
-end
-
-local function SameConditionValue(previous, wanted)
-  if previous == nil or AddonPrivate.IsSecret(previous, wanted) then return false end
-  if type(previous) ~= "table" or type(wanted) ~= "table" then return previous == wanted end
-  if #previous ~= #wanted then return false end
-  for index = 1, #wanted do
-    if AddonPrivate.IsSecret(wanted[index]) or previous[index] ~= wanted[index] then return false end
-  end
-  return true
-end
-
-function AuraDisplay.SetConditionProperty(region, propertyPath, ...)
-  local nativeDisplay = region.blizzardAuraDisplay
-  if not nativeDisplay or not nativeDisplay.active then return end
-  local auraData = nativeDisplay.data
-  local valueType = PropertyType(auraData, propertyPath)
-  if not valueType then return end
-  local propertyValue
-  if valueType == "color" then propertyValue = {...} else propertyValue = (...) end
-  local stored = region.secretAuraConditionValues or {}
-  region.secretAuraConditionValues = stored
-  if SameConditionValue(stored[propertyPath], propertyValue) then return end
-  stored[propertyPath] = propertyValue
-  ForEachInstance(nativeDisplay, function(displayInstance)
-    for _, auraButton in ipairs(displayInstance.buttons) do
-      ApplyProperty(auraButton, nativeDisplay.data, propertyPath, propertyValue, region.secretAuraConditionValues)
-    end
-    local missingButton = MissingNative(displayInstance)
-    if missingButton then
-      ApplyProperty(missingButton, nativeDisplay.data, propertyPath, propertyValue, region.secretAuraConditionValues)
-      AuraDisplay.KeepMissingDesaturated(missingButton, nativeDisplay.data)
-    end
+local function EdgesAt(native, position, host)
+  return Cached(native.conditionIndicators, position, function()
+    local set = {}
+    for slot = 1, 4 do set[slot] = host:CreateTexture(nil, "OVERLAY", nil, 7) end
+    return set
   end)
 end
 
-function AuraDisplay.RefreshConditionAppearance(region)
-  local nativeDisplay = region.blizzardAuraDisplay
-  local ready = nativeDisplay and nativeDisplay.active and region.secretAuraConditionValues
-  if not ready then return end
-  ForEachInstance(nativeDisplay, function(displayInstance)
-    for _, auraButton in ipairs(displayInstance.buttons) do
-      AuraDisplay.ApplyConditionAppearance(auraButton, region, nativeDisplay.data)
-    end
-    local missingButton = MissingNative(displayInstance)
-    if missingButton then
-      AuraDisplay.ApplyConditionAppearance(missingButton, region, nativeDisplay.data)
-      AuraDisplay.KeepMissingDesaturated(missingButton, nativeDisplay.data)
-    end
-  end)
+local function StartPulse(host, button, period)
+  if not host.pulse then
+    local cycle = host:CreateAnimationGroup()
+    cycle:SetLooping("REPEAT")
+    host.fadeOut, host.fadeIn = cycle:CreateAnimation("Alpha"), cycle:CreateAnimation("Alpha")
+    host.fadeOut:SetOrder(1)
+    host.fadeOut:SetFromAlpha(1)
+    host.fadeOut:SetToAlpha(0.2)
+    host.fadeIn:SetOrder(2)
+    host.fadeIn:SetFromAlpha(0.2)
+    host.fadeIn:SetToAlpha(1)
+    host.pulse = cycle
+  end
+  host.fadeOut:SetDuration(period / 2)
+  host.fadeIn:SetDuration(period / 2)
+  if not host.pulseOwner and button.AddAuraShownAnimation then
+    button:AddAuraShownAnimation(host.pulse)
+    host.pulseOwner = button
+  end
+  host.pulse:Play()
 end
 
-local function ClearIndicatorState(nativeDisplay, auraData, auraButton)
-  if not nativeDisplay.preview and auraButton.ClearPandemicRegions then auraButton:ClearPandemicRegions() end
-  for _, edgeTextures in pairs(nativeDisplay.conditionIndicators or {}) do
-    for _, edge in ipairs(edgeTextures) do edge:Hide() end
-  end
-  nativeDisplay.conditionIndicators = nativeDisplay.conditionIndicators or {}
-  local hosts = nativeDisplay.conditionHosts or {}
-  nativeDisplay.conditionHosts = hosts
-  for _, indicatorFrame in pairs(nativeDisplay.conditionHosts) do
-    local pulse = indicatorFrame.pulse
-    local owner = indicatorFrame.pulseOwner
-    if owner then pcall(owner.RemoveAuraShownAnimation, owner, pulse) end
-    indicatorFrame.pulseOwner = nil
-    if pulse then pulse:Stop() end
-    indicatorFrame:SetAlpha(1)
-  end
-  for _, dispelTexture in ipairs(nativeDisplay.conditionDispelTextures or {}) do
-    auraButton:RemoveDispelTypeTexture(dispelTexture)
-  end
-  nativeDisplay.conditionDispelTextures = {}
-  local previewEntries = {}
-  nativeDisplay.conditionPreview = previewEntries
-  nativeDisplay.conditionData = nativeDisplay.preview and auraData or nil
-  for _, glowFrame in pairs(nativeDisplay.pandemicGlows or {}) do
-    if nativeDisplay.preview then
-      previewEntries[#previewEntries + 1] = {texture = glowFrame, kind = "faAuraPandemic"}
-    elseif auraButton.AddPandemicRegion then
-      auraButton:AddPandemicRegion(glowFrame)
-    end
-  end
+local function PaintEdge(edge, look)
+  local color = look.color
+  edge:SetTexture(look.texture)
+  edge:SetVertexColor(color[1], color[2], color[3], 1)
+  edge:SetAlpha(color[4])
+  edge:SetDesaturated(look.glow)
+  edge:SetBlendMode(look.glow and "ADD" or "BLEND")
 end
 
-local function EnsureOverlay(nativeDisplay, auraButton)
-  local overlay = nativeDisplay.conditionOverlay or CreateFrame("Frame", nil, nativeDisplay.gateClip or auraButton)
-  nativeDisplay.conditionOverlay = overlay
-  overlay:SetAllPoints(auraButton)
-  local sharedBase = nativeDisplay.elementFrames and nativeDisplay.elementFrames.sharedBase
-  local cooldownLevel = nativeDisplay.cooldown:GetFrameLevel()
-  local barLevel = nativeDisplay.bar and nativeDisplay.bar:GetFrameLevel() or 0
-  local baseLevel = sharedBase and sharedBase:GetFrameLevel() or auraButton:GetFrameLevel()
-  overlay:SetFrameLevel(math.max(cooldownLevel, barLevel, baseLevel) + 1)
-end
-
-local function IndicatorSettings(conditionEntry)
-  local highlight, configured = {}, false
-  for _, propertyChange in ipairs(conditionEntry.changes or {}) do
-    local propertyPath = propertyChange.property
-    if highlightProperties[propertyPath] then
-      highlight[propertyPath] = propertyChange.value
-      configured = true
-    end
-  end
-  return highlight, configured
-end
-
-local function IsIndicatorValid(nativeDisplay, variableKind, conditionCheck)
-  local comparable = conditionCheck.op == "==" or conditionCheck.op == "~="
-  if variableKind == "faAuraType" then
-    return comparable and (conditionCheck.value == "HELPFUL" or conditionCheck.value == "HARMFUL")
-  end
-  if variableKind == "faAuraDispel" then return comparable and type(conditionCheck.value) == "string" end
-  if variableKind == "faAuraMissing" then return nativeDisplay.preview end
-  return true
-end
-
-local function EnsureHost(nativeDisplay, position, auraButton)
-  local indicatorFrame = nativeDisplay.conditionHosts[position]
-  if not indicatorFrame then
-    indicatorFrame = CreateFrame("Frame", nil, nativeDisplay.conditionOverlay)
-    indicatorFrame:SetAllPoints(auraButton)
-    nativeDisplay.conditionHosts[position] = indicatorFrame
-  end
-  return indicatorFrame
-end
-
-local function EnsureTextures(nativeDisplay, position, indicatorFrame)
-  local edgeTextures = nativeDisplay.conditionIndicators[position]
-  if not edgeTextures then
-    edgeTextures = {}
-    for side = 1, 4 do edgeTextures[side] = indicatorFrame:CreateTexture(nil, "OVERLAY", nil, 7) end
-    nativeDisplay.conditionIndicators[position] = edgeTextures
-  end
-  return edgeTextures
-end
-
-local function EnsurePulse(indicatorFrame)
-  if indicatorFrame.pulse then return end
-  local group = indicatorFrame:CreateAnimationGroup()
-  indicatorFrame.pulse = group
-  group:SetLooping("REPEAT")
-  local fadeOut = group:CreateAnimation("Alpha")
-  indicatorFrame.fadeOut = fadeOut
-  fadeOut:SetOrder(1)
-  fadeOut:SetFromAlpha(1)
-  fadeOut:SetToAlpha(0.2)
-  local fadeIn = group:CreateAnimation("Alpha")
-  indicatorFrame.fadeIn = fadeIn
-  fadeIn:SetOrder(2)
-  fadeIn:SetFromAlpha(0.2)
-  fadeIn:SetToAlpha(1)
-end
-
-local function StartPulse(indicatorFrame, highlight, auraButton)
-  local period = tonumber(highlight.faAuraHighlightPulse) or 1
-  if period == period then
-    period = math.max(PULSE_BOUNDS.min, math.min(PULSE_BOUNDS.max, period))
+local function PlaceEdge(edge, button, look, index)
+  if look.sides then
+    local first, second, setSize = unpack(BORDER_SIDES[index])
+    edge:SetPoint(first, button, first)
+    edge:SetPoint(second, button, second)
+    edge[setSize](edge, look.size)
   else
-    period = 1
+    edge:SetPoint("TOPLEFT", button, "TOPLEFT", -look.inset, look.inset)
+    edge:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", look.inset, -look.inset)
   end
-  EnsurePulse(indicatorFrame)
-  local half = period / 2
-  indicatorFrame.fadeOut:SetDuration(half)
-  indicatorFrame.fadeIn:SetDuration(half)
-  if not indicatorFrame.pulseOwner and auraButton.AddAuraShownAnimation then
-    auraButton:AddAuraShownAnimation(indicatorFrame.pulse)
-    indicatorFrame.pulseOwner = auraButton
-  end
-  indicatorFrame.pulse:Play()
 end
 
-local function IndicatorAsset(highlightStyle, highlight)
-  if highlightStyle == "glow" then return "Interface\\Buttons\\UI-ActionButton-Border" end
-  local customPath = highlight.faAuraHighlightTexture
-  if highlightStyle == "texture" and type(customPath) == "string" and customPath ~= "" then return customPath end
-  return "Interface\\Buttons\\WHITE8X8"
-end
-
-local function IndicatorSize(highlight, highlightStyle, auraData)
-  local thickness = tonumber(highlight.faAuraHighlightSize) or 2
-  if thickness == thickness then thickness = math.max(1, math.min(64, thickness)) else thickness = 2 end
-  if highlightStyle ~= "border" then return thickness end
-  return math.min(thickness, AuraDisplay.HighlightBorderLimit(auraData))
-end
-
-local function PlaceTexture(edge, anchor, highlightStyle, side, thickness)
-  if highlightStyle == "border" then
-    if side <= 2 then
-      local edgeName = side == 1 and "TOP" or "BOTTOM"
-      edge:SetPoint(edgeName .. "LEFT", anchor, edgeName .. "LEFT")
-      edge:SetPoint(edgeName .. "RIGHT", anchor, edgeName .. "RIGHT")
-      edge:SetHeight(thickness)
-    else
-      local edgeName = side == 3 and "LEFT" or "RIGHT"
-      edge:SetPoint("TOP" .. edgeName, anchor, "TOP" .. edgeName)
-      edge:SetPoint("BOTTOM" .. edgeName, anchor, "BOTTOM" .. edgeName)
-      edge:SetWidth(thickness)
-    end
-    return
-  end
-  local inset = 0
-  if highlightStyle == "glow" then inset = thickness + 8 elseif highlightStyle == "texture" then inset = thickness end
-  edge:SetPoint("TOPLEFT", anchor, "TOPLEFT", -inset, inset)
-  edge:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", inset, -inset)
-end
-
-local function DispelOptions(variableKind, conditionCheck, equal, asset, red, green, blue)
+local function DispelOptions(plan, look, equal)
   local options = {
-    showWhenHelpful = true,
-    showWhenHarmful = true,
-    showWithoutDispelType = true,
+    showWhenHelpful = true, showWhenHarmful = true, showWithoutDispelType = true,
     style = Enum.CustomAuraButtonDispelTypeTextureStyle.CustomAsset,
-    customDispelAssetMap = {},
-    customDispelColorMap = {},
+    customDispelAssetMap = {}, customDispelColorMap = {},
   }
-  local stealable = variableKind == "faAuraStealable" or variableKind == "faAuraNotStealable"
-  if variableKind == "faAuraType" then
-    local auraFilter = conditionCheck.value
-    if not equal then
-      if auraFilter == "HELPFUL" then auraFilter = "HARMFUL" else auraFilter = "HELPFUL" end
-    end
-    options.showWhenHelpful = auraFilter == "HELPFUL"
-    options.showWhenHarmful = auraFilter == "HARMFUL"
-  elseif stealable then
-    options.showWhenHarmful = false
-    local filterName = variableKind == "faAuraStealable" and "Stealable" or "NotStealable"
-    options.stealableFilter = Enum.CustomAuraButtonDispelTypeStealableFilter[filterName]
-  end
-  for _, dispelName in ipairs(DISPEL_KEYS) do
-    local wanted = conditionCheck.value
-    if wanted == "Enrage" then wanted = "" end
-    local included = variableKind ~= "faAuraDispel" or (wanted == dispelName) == equal
-    if included then
-      options.customDispelAssetMap[dispelName] = {asset = asset}
-      options.customDispelColorMap[dispelName] = CreateColor(red, green, blue, 1)
+  local rule = plan.variable.indicator
+  local includes = rule.configure and rule.configure(options, plan.check, equal)
+  local color = look.color
+  for _, key in ipairs(DISPEL_KEYS) do
+    if not includes or includes(key) then
+      options.customDispelAssetMap[key] = { asset = look.texture }
+      options.customDispelColorMap[key] = CreateColor(color[1], color[2], color[3], 1)
     end
   end
   return options
 end
 
-local function AttachTexture(nativeDisplay, auraButton, edge, indicator)
-  local variableKind, conditionCheck, equal = indicator.kind, indicator.check, indicator.equal
-  if nativeDisplay.preview then
-    local previewEntries = nativeDisplay.conditionPreview
-    previewEntries[#previewEntries + 1] = {texture = edge, kind = variableKind, value = conditionCheck.value, equal = equal}
-    return
+-- How an edge joins the button, per mode: preview only records it, otherwise the native button
+-- owns it (pandemic region for the pandemic variable, dispel texture for the others).
+local ATTACHMENTS = {
+  preview = function(native, plan, _, edge, equal)
+    table.insert(native.conditionPreview,
+      { texture = edge, kind = plan.name, value = plan.check.value, equal = equal })
+  end,
+  pandemic = function(native, _, _, edge)
+    native.button:AddPandemicRegion(edge)
+  end,
+  dispel = function(native, plan, look, edge, equal)
+    native.button:AddDispelTypeTexture(edge, DispelOptions(plan, look, equal))
+    table.insert(native.conditionDispelTextures, edge)
+  end,
+}
+
+local function AttachEdge(native, plan, look, edge, equal)
+  local button = native.button
+  local mode
+  if native.preview then
+    mode = "preview"
+  elseif plan.name == "faAuraPandemic" and button.AddPandemicRegion then
+    mode = "pandemic"
+  elseif type(button.AddDispelTypeTexture) == "function" then
+    mode = "dispel"
   end
-  if variableKind == "faAuraPandemic" and auraButton.AddPandemicRegion then
-    auraButton:AddPandemicRegion(edge)
-    return
-  end
-  if not auraButton.AddDispelTypeTexture then return end
-  local options = DispelOptions(variableKind, conditionCheck, equal, indicator.asset, indicator.red, indicator.green, indicator.blue)
-  auraButton:AddDispelTypeTexture(edge, options)
-  local dispelTextures = nativeDisplay.conditionDispelTextures
-  dispelTextures[#dispelTextures + 1] = edge
+  if mode then ATTACHMENTS[mode](native, plan, look, edge, equal) end
 end
 
-local function DrawIndicator(nativeDisplay, auraData, auraButton, position, variableKind, conditionCheck, highlight)
-  local indicatorFrame = EnsureHost(nativeDisplay, position, auraButton)
-  local edgeTextures = EnsureTextures(nativeDisplay, position, indicatorFrame)
-  local highlightStyle = highlight.faAuraHighlightStyle or "border"
-  if highlightStyle == "pulseBorder" then
-    highlightStyle = "border"
-    StartPulse(indicatorFrame, highlight, auraButton)
-  elseif highlightStyle == "pulseGlow" then
-    highlightStyle = "glow"
-    StartPulse(indicatorFrame, highlight, auraButton)
-  end
-  local red, green, blue, alpha = ClampedColor(highlight.faAuraHighlightColor, HIGHLIGHT_COLOR):GetRGBA()
-  local thickness = IndicatorSize(highlight, highlightStyle, auraData)
-  local indicator = {
-    kind = variableKind,
-    check = conditionCheck,
-    equal = conditionCheck.op == "==",
-    asset = IndicatorAsset(highlightStyle, highlight),
-    red = red,
-    green = green,
-    blue = blue,
-  }
-  local glowing = highlightStyle == "glow"
-  for side, edge in ipairs(edgeTextures) do
+local function DrawIndicator(native, data, position, plan)
+  local look = ResolveLook(plan.settings, data)
+  local host = HostAt(native, position)
+  local edges = EdgesAt(native, position, host)
+  if look.pulse then StartPulse(host, native.button, look.period) end
+  local equal = plan.check.op == "=="
+  for index, edge in ipairs(edges) do
     edge:ClearAllPoints()
     edge:Hide()
-    if highlightStyle == "border" or side == 1 then
-      edge:SetTexture(indicator.asset)
-      edge:SetVertexColor(red, green, blue, 1)
-      edge:SetAlpha(alpha)
-      edge:SetDesaturated(glowing)
-      edge:SetBlendMode(glowing and "ADD" or "BLEND")
-      PlaceTexture(edge, auraButton, highlightStyle, side, thickness)
-      AttachTexture(nativeDisplay, auraButton, edge, indicator)
+    if look.sides or index == 1 then
+      PaintEdge(edge, look)
+      PlaceEdge(edge, native.button, look, index)
+      AttachEdge(native, plan, look, edge, equal)
     end
   end
 end
 
 function AuraDisplay.StyleNativeConditionIndicators(nativeDisplay, auraData)
-  local auraButton = nativeDisplay.button
-  ClearIndicatorState(nativeDisplay, auraData, auraButton)
-  EnsureOverlay(nativeDisplay, auraButton)
-  for position, conditionEntry in ipairs(auraData.conditions or {}) do
-    local variableKind = AuraDisplay.NativeConditionKind(auraData, conditionEntry.check)
-    local drawable = variableKind and not durationDefinitions[variableKind] and variableKind ~= "faAuraApplications"
-      and not conditionEntry.linked
-    if drawable then
-      local highlight, configured = IndicatorSettings(conditionEntry)
-      if configured and IsIndicatorValid(nativeDisplay, variableKind, conditionEntry.check) then
-        DrawIndicator(nativeDisplay, auraData, auraButton, position, variableKind, conditionEntry.check, highlight)
-      end
-    end
+  ResetIndicators(nativeDisplay, auraData)
+  PlaceOverlay(nativeDisplay)
+  for position, condition in ipairs(type(auraData.conditions) == "table" and auraData.conditions or {}) do
+    local plan = IndicatorPlan(nativeDisplay, auraData, condition)
+    if plan then DrawIndicator(nativeDisplay, auraData, position, plan) end
   end
-  if not nativeDisplay.preview then return end
-  AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, AuraDisplay.PREVIEW_SAMPLE_DURATION)
+  if nativeDisplay.preview then AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, AuraDisplay.PREVIEW_SAMPLE_DURATION) end
 end
 
-local PREVIEW_RULES = {
-  faAuraPresent = function() return true end,
-  faAuraType = function(previewEntry, helpful)
-    local expected = helpful and "HELPFUL" or "HARMFUL"
-    return (previewEntry.value == expected) == (previewEntry.equal ~= false)
-  end,
-  faAuraDispel = function(previewEntry)
-    return (previewEntry.value == "Magic") == (previewEntry.equal ~= false)
-  end,
-  faAuraNotStealable = function(_, helpful) return helpful end,
-  faAuraPandemic = function(_, _, remaining)
-    return remaining <= AuraDisplay.PREVIEW_SAMPLE_DURATION * PANDEMIC_FRACTION and remaining > 0
-  end,
-}
-
-function AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, remaining)
-  local triggerSettings = AuraDisplay.GetTrigger(auraData)
-  local helpful = not triggerSettings or triggerSettings.debuffType ~= "HARMFUL"
-  for _, previewEntry in ipairs(nativeDisplay.conditionPreview or {}) do
-    local previewRule = PREVIEW_RULES[previewEntry.kind]
-    local shown = previewRule and previewRule(previewEntry, helpful, remaining)
-    previewEntry.texture:SetShown(shown == true)
+function AuraDisplay.UpdateConditionPreview(nativeDisplay, auraData, remainingTime)
+  local entries = nativeDisplay.conditionPreview
+  if not entries then return end
+  local source = AuraDisplay.GetTrigger(auraData)
+  local isBuff = not (source and source.debuffType == "HARMFUL")
+  for _, entry in ipairs(entries) do
+    local variable = VARIABLES[entry.kind]
+    local rule = variable and variable.preview
+    entry.texture:SetShown(rule ~= nil and rule(entry, remainingTime, isBuff) == true)
   end
 end

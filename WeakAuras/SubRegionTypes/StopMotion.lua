@@ -59,17 +59,23 @@ local properties = {
   stopmotionVisible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
   stopmotionDesaturate = {
     display = L["Desaturate"],
     setter = "SetDesaturated",
+    secretSetter = "SetSecretDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   stopmotionColor = {
     display = L["Color"],
     setter = "SetColor",
+    secretCapable = true,
     type = "color"
   },
 }
@@ -82,6 +88,13 @@ local funcs = {
   SetDesaturated = function(self, b)
     self.stopMotion:SetDesaturated(b)
   end,
+  SetSecretDesaturation = function(self, value)
+    self.stopMotion:SetDesaturation(value)
+  end,
+  SetSecretVisible = function(self, value)
+    Private.SetSecretSubRegionVisible(self, self.visible, value)
+  end,
+  ClearSecretVisible = Private.ClearSecretSubRegionVisible,
   SetColor = function(self, ...)
     self.stopMotion:SetColor(...)
   end,

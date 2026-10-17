@@ -5,15 +5,420 @@ a Classic client running on the modern 12.x engine (interface 16001).
 
 Original work: The WeakAuras Team, GPL-2.0 (see `WeakAuras/LICENSE`).
 Modifications: dldvlpr, GPL-2.0.
-Portions derived from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever, and still in this fork:
-the talent data reader and the talent picker widget, see 2026-09-30; the secret value handling, Aura (Modern),
-Cooldown Viewer triggers, load options and options panels listed on 2026-10-03. The rewrites of 2026-10-12 changed
-local names and equivalent expressions only: those files remain derived from ForeverAuras code.
+Portions derived from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever, are in this fork. The
+rewrites listed below replaced most of them. A comparison with ForeverAuras 0.87.6 on 2026-10-17 still finds short
+shared sequences (call order, default values, color values), listed in the 2026-10-17 section.
+The rewrites of 2026-10-04 changed local names and equivalent expressions only. The features "also found in
+ForeverAuras" listed on 2026-10-04 were written for this fork, with ForeverAuras as the behavior reference only.
+Rewritten without ForeverAuras code:
+- on 2026-10-10: `WeakAuras/DurationText.lua`, `WeakAuras/SubRegionTypes/CDMDispel.lua`,
+  `WeakAuras/SubRegionTypes/CDMDispelBorder.lua`, `WeakAuras/DispelTypeDisplay.lua`, `WeakAuras/CDMAuraProgress.lua`
+  and `WeakAuras/CooldownViewerCatalog.lua`;
+- on 2026-10-15: `WeakAuras/CDMBackground.lua`, `WeakAuras/CDMSetup.lua` and `WeakAuras/CooldownViewerTrigger.lua`,
+  with the new `WeakAuras/CooldownViewerSelection.lua` and `WeakAuras/CooldownViewerStates.lua`;
+  `WeakAuras/RegionTypes/AuraBarNative.lua` and `WeakAuras/ProgressTextureNative.lua` (without M33kAuras code
+  either), around the new `WeakAuras/NativeProgressPainter.lua`; `WeakAurasOptions/AuraDisplayOptions.lua`,
+  `WeakAurasOptions/ColorPalette.lua`, `WeakAurasOptions/CooldownViewerOptions.lua`,
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`, `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasMiniTalent.lua`
+  and the Cooldown Manager blocks of `WeakAurasOptions/GenericTrigger.lua`;
+- on 2026-10-16: `WeakAuras/PrototypeSecretHelpers.lua`, `WeakAuras/SecretConditions.lua`,
+  `WeakAuras/SecretAuraTrigger.lua`, `WeakAuras/SecretSpellCooldown.lua`, `WeakAuras/GenericTriggerRestricted.lua`,
+  `WeakAuras/ClassicEraTriggers.lua`, `WeakAuras/TextStyle.lua`, the code of `WeakAuras/PlayerSpecialization.lua`,
+  `WeakAurasOptions/AuraTriggerOptions.lua`, `WeakAurasOptions/TriggerSecretWarnings.lua`,
+  `WeakAurasOptions/VersionCheck.lua`, `WeakAurasOptions/RegionOptions/GroupModernFlow.lua`,
+  `WeakAurasOptions/SubRegionOptions/CDMDispel.lua`, `WeakAurasOptions/SubRegionOptions/CDMDispelBorder.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasColorPicker.lua` (still based on the AceGUI-3.0 ColorPicker
+  widget), `WeakAuras/SecretAuraGlow.lua`, `WeakAuras/SecretAuraPreview.lua`, `WeakAuras/SecretAuraAppearance.lua`,
+  `WeakAuras/SecretAuraConditions.lua`, `WeakAuras/SecretAuraFlow.lua` with the new `WeakAuras/SecretAuraAnchor.lua`,
+  `WeakAuras/SecretAuraFlowShadow.lua`, `WeakAuras/SecretAuraFlowUnits.lua`, `WeakAuras/SecretAuraFlowGrid.lua` and
+  `WeakAuras/SecretAuraFlowPreview.lua`, `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAuras/SecretAuraSingle.lua`,
+  the code of `WeakAuras/SecretAuraRanks.lua`, the talent data reader of `WeakAuras/Prototypes.lua`, and the fork
+  code in the WeakAuras files listed on 2026-10-16, including the glow start check of
+  `WeakAuras/SubRegionTypes/Glow.lua`;
+- on 2026-10-17: `WeakAuras/CooldownViewerCatalog.lua` and `WeakAuras/SecretAuraAppearance.lua` again, and the fork
+  blocks of `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/RegionTypes/Icon.lua`, `WeakAuras/CDMSetup.lua`,
+  `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/ColorPalette.lua`, `WeakAurasOptions/CooldownViewerOptions.lua` and
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`.
+`WeakAuras/RegionTypes/ProgressTextureSecret.lua`, `WeakAuras/SubRegionTypes/SubTextNative.lua` and
+`WeakAuras/BuffTriggerRestrictedAuras.lua`, created by the moves of 2026-10-04, hold code written for this fork only.
+`WeakAuras/SecretRestrictions.lua`, created the same day, held code derived from ForeverAuras until 2026-10-16.
+The rewritten files keep the saved field names and trigger types of ForeverAuras, so that its auras import as they
+are. Thanks to Neroxrw for ForeverAuras.
+Code derived from M33kAuras (m33shoq, GPL-2.0) was in `WeakAuras/RegionTypes/AuraBarNative.lua` and
+`WeakAuras/ProgressTextureNative.lua` until their rewrite of 2026-10-15. Thanks to m33shoq for M33kAuras.
 Specialization data in `WeakAuras/PlayerSpecialization.lua` comes from talentsforever.com under CC-BY 4.0, see `WeakAuras/SpecializationData-LICENSE.txt`, and the spell rank data in `WeakAuras/SecretAuraRanks.lua`
 too, see `WeakAuras/SpellRankData-LICENSE.txt`.
-`WeakAuras/RegionTypes/AuraBarNative.lua` contains code from M33kAuras (m33shoq, GPL-2.0).
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
+
+## 2026-10-17
+
+Released as 1.10.0. Headless test bench: 53 scenarios, 0 failed.
+
+### Added
+- Conditions on a secret health or power value: "Health", "Health (%)", "Health Deficit", "Power", "Power (%)" and
+  "Power Deficit" with `<`, `<=`, `>` or `>=` now drive the secret capable properties (Alpha, Color, Desaturate)
+  when the value is secret, in
+  combat and, for mana, out of combat. The engine reads the unit percent through a step curve
+  (`UnitHealthPercent` or `UnitPowerPercent`); a raw value or a deficit is turned into a percent with the readable
+  maximum, and stays ignored when the maximum is secret. In an AND or OR, the percent test is placed last, after the
+  tests without a curve. Limits: a curve condition (percent or timer) placed after another secret condition on the
+  same property does not stack on it, two curve tests in one AND or OR do not combine, and the other properties
+  still ignore the condition while the value is secret. A bool condition placed after a curve condition stacks on it.
+  Files: `WeakAuras/SecretConditions.lua` (test kind "percent", `Private.ExecEnv.SecretPercentSelect`),
+  `WeakAuras/PrototypeSecretHelpers.lua` (`Private.ExecEnv.UnitPercentStep`, step curves shared with
+  `ThresholdAlpha`), `WeakAuras/Prototypes.lua` (`conditionSecretPercent` on the six arguments),
+  `WeakAuras/GenericTrigger.lua` (copied to the condition template as `secretPercent`).
+- Text region: Alpha property (default 1), usable in conditions. File: `WeakAuras/RegionTypes/Text.lua`.
+- Secret conditions on sub elements: Visibility of the sub text, border, glow, texture, circular and linear progress
+  textures, stop motion and tick follows a secret condition through the sub element alpha (a hidden sub element is
+  shown at alpha 0), and is restored when the value turns readable or the sub element is released. Desaturate of
+  the texture, circular and linear progress texture, stop motion and tick sub elements, and of the foreground and
+  background of the Progress Texture and Stop Motion regions, takes a secret value. Color of the sub text, border,
+  glow, texture, progress textures, stop motion, tick, and the icon, background and spark colors of the bar region,
+  takes a secret value. A secret alpha on the color of an Action Button glow is replaced by 1, the glow computes
+  with it. Limits: the bar gradient end color (`barColor2`), the Model sub element, the dispel sub elements, the
+  bar icon visibility, and size, position and visibility through `SetShown` stay on the readable path. A sub
+  element shown at alpha 0 runs its start animation hidden: a timed stop motion in "once" mode can be on its last
+  frame when the condition turns true, and restarts from frame 0 when the value turns readable; the Action Button
+  glow entry animation and the Proc glow start animation play hidden the same way.
+  Files: `WeakAuras/SecretConditions.lua` (`secretSetter` for any property type, `secretRestore`,
+  `Private.SetSecretSubRegionVisible`, `Private.ClearSecretSubRegionVisible`), `WeakAuras/WeakAuras.lua` (sub
+  element release), `WeakAuras/BaseRegions/Texture.lua`, `WeakAuras/BaseRegions/CircularProgressTexture.lua`,
+  `WeakAuras/BaseRegions/LinearProgressTexture.lua`, `WeakAuras/BaseRegions/StopMotion.lua` (`SetDesaturation`),
+  `WeakAuras/SubRegionTypes/Texture.lua`, `WeakAuras/SubRegionTypes/CircularProgressTexture.lua`,
+  `WeakAuras/SubRegionTypes/LinearProgressTexture.lua`, `WeakAuras/SubRegionTypes/StopMotion.lua`,
+  `WeakAuras/SubRegionTypes/Tick.lua`, `WeakAuras/SubRegionTypes/Border.lua`, `WeakAuras/SubRegionTypes/SubText.lua`,
+  `WeakAuras/SubRegionTypes/Glow.lua`, `WeakAuras/RegionTypes/ProgressTexture.lua`,
+  `WeakAuras/RegionTypes/StopMotion.lua`, `WeakAuras/RegionTypes/AuraBar.lua`.
+- Text region: a condition that changes the text follows a secret condition. The base text and each condition text
+  are drawn as layered font strings with the main text style; a secret alpha shows the one the conditions select.
+  Each layer alpha is a product of factors, one per later condition, carried by parent frames, so several curve
+  conditions on the text stack. The main text comes back when the value turns readable. Limits: the region size
+  follows the main text only, and `%c` in a condition text uses the custom text computed for the main text.
+  A call to `Color` from custom code, or a color animation, repaints the layers at once, without waiting for the next
+  text update.
+  Files: `WeakAuras/RegionTypes/Text.lua` (`SetSecretTextLayers`, `ClearSecretTextLayers`, `Color`, `ColorAnim`),
+  `WeakAuras/SecretConditions.lua` (layer properties).
+- `Tests/Harness/Units.lua`: `UnitHealthPercent` and `UnitPowerPercent` with a curve.
+- `Tests/Harness/Frames.lua`: `SetDesaturation`, `GetDesaturation`, `SetTextColor` and `GetTextColor`;
+  `SetDesaturated` also sets the desaturation read by `GetDesaturation`. `SetGradient` keeps its colors, and
+  `SetVertexColor` clears them, as in game.
+- `Tests/Harness/WowApi.lua`: `table.indexof`, used by `tIndexOf`.
+- `Tests/Harness/Secret.lua`: `Secret.Wrap` returns a value that is already secret as it is, without a second wrap.
+- `Tests/Scenarios/55_SecretSubRegionConditions.lua`: sub text, border, glow and texture visibility, colors and
+  desaturation from a secret power percent; tick, circular progress, linear progress and stop motion sub elements
+  of a bar, bar color with a gradient (plain secret color), bar icon desaturation, bar icon, background and spark
+  colors, and Action Button glow color with its secret alpha replaced by 1; text layers with two curve conditions,
+  their color after `Color`, and the number of layers changed by a modification; release of the sub elements on a
+  modification; a "spell usable" bool condition stacked on a secret power percent condition, through a real
+  cooldown trigger; in and out of combat, and the readable restore of the icon sub elements, of the bar gradient
+  and icon desaturation, and of the text.
+- `Tests/Scenarios/54_SecretPercentConditions.lua`: alpha on text and icon from a secret power percent, raw value and
+  deficit, AND with a readable test, color from a secret health percent, in and out of combat, and the "Warlock - LOW
+  MANA" aura of the ForeverAuras warlock pack hidden at full mana.
+- Condition property "Looping Animation" (`conditionAnimation`): while the condition is true, the aura plays the
+  chosen main animation preset instead of its own main animation, which comes back when the condition turns false.
+  A running start or finish animation is not cut: the condition animation starts when the start animation ends.
+  In combat, on a condition that reads a secret value, the property waits for the end of combat like the other
+  properties that are not secret capable. A preset that needs scale or rotation is ignored on a region without it.
+  Files: `WeakAuras/RegionTypes/RegionPrototype.lua` (property, setter `SetConditionAnimation`, main animation
+  start), `WeakAuras/WeakAuras.lua` (main animation restart after a simple change in the options),
+  `WeakAuras/Animations.lua` (`Private.IsMainAnimationReplaceable`),
+  `WeakAuras/Conditions.lua` (a setter property can give a `resetValue` used when the aura data has no value),
+  `WeakAuras/Locales/enUS.lua` and `WeakAuras/Locales/frFR.lua`.
+- `Tests/Scenarios/53_ConditionAnimation.lua`: condition animation start and stop, main animation restored, start
+  and finish animations kept, simple change, preset not supported by the region.
+- `Tests/Scenarios/52_RemovedFunctionReplacements.lua`: replacements of the removed functions in custom code.
+- `Tests/Scenarios/49_CooldownViewerCatalogContract.lua`: Cooldown Manager catalog exports, categories, identity,
+  aura and cooldown state, refresh event and countdown text.
+- `Tests/Scenarios/50_AppearanceContract.lua`: Aura (Modern) appearance exports, migration, frame levels, icon,
+  cooldown, bar, text, sub elements, border and Masque.
+- `Tests/Scenarios/51_Lot7cBlocksContract.lua`: fork blocks of the Cooldown Manager aura progress, icon region,
+  Cooldown Manager setup, `pAdd` warnings, color palette and Cooldown Manager and secret aura trigger options.
+
+### Changed
+- `.luacheckrc`: `CANCEL` is a known game global, used by the backup restore popup in `WeakAuras/WeakAuras.lua`.
+- `WeakAuras/WeakAuras.lua`: `CLASS_PACK_VERSION` is 1.10.0, so the login popup offers the class pack update once.
+- `WeakAuras/CooldownViewerCatalog.lua` and `WeakAuras/SecretAuraAppearance.lua`: rewritten from a behavior
+  specification, without reading the previous code or ForeverAuras. Behavior unchanged. The border texture
+  coordinates follow `Blizzard_SharedXML/Backdrop.lua`.
+- `WeakAuras/CDMAuraProgress.lua` (native container, `Modify`, `Style`, `Update`), `WeakAuras/RegionTypes/Icon.lua`
+  (cooldown draw state, `UpdateValue`, `UpdateTime`, `PreShow`), `WeakAuras/CDMSetup.lua` (detached layout),
+  `WeakAuras/WeakAuras.lua` (Blizzard aura display warnings in `pAdd`), `WeakAurasOptions/ColorPalette.lua` (palette
+  panel), `WeakAurasOptions/CooldownViewerOptions.lua` (options context) and
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua` (options assembly): fork blocks rewritten the same way. Behavior
+  unchanged. Comments removed from `WeakAuras/CDMSetup.lua` and `WeakAurasOptions/ColorPalette.lua`.
+- Lines still shared with ForeverAuras after these rewrites, where the shared behavior fixes the code: cooldown
+  setter calls and texture element defaults, style call order and duration text migration defaults in
+  `WeakAuras/SecretAuraAppearance.lua`; cooldown completion, frame cache and item name fallback in
+  `WeakAuras/CooldownViewerCatalog.lua`; cooldown setters in `WeakAuras/CDMAuraProgress.lua`; native progress guards
+  in `WeakAuras/RegionTypes/Icon.lua`; Blizzard layout manager setup in `WeakAuras/CDMSetup.lua`; warning resets in
+  `WeakAuras/WeakAuras.lua`; backdrop colors in `WeakAurasOptions/ColorPalette.lua`; options assembly in
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`.
+- `Tests/GenerateSpellData.py`: reads files with Windows line endings and writes each file back with its own line
+  endings.
+- `WeakAuras/SecretAuraGlow.lua`: the glow size check tests for a missing width or height before the secret check,
+  without comparing a value that may be secret.
+- `Tests/Scenarios/48_Lot6aContract.lua`: checks that hiding the preview notice leaves its text unchanged.
+  `Tests/Scenarios/39_AppearanceContract.lua`: no longer passes an unused fifth argument to `StyleAppearance`.
+- Comments removed from `WeakAurasOptions/CooldownViewerOptions.lua` and
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`. `WeakAuras/CDMAuraProgress.lua` gets the fork header.
+- `CHANGES.md`: the header gives the M33kAuras history.
+- `Tests/Packs/PackBuilder.lua`: the shaman totem buff icons mark their display as shared, so loading the pack no
+  longer replaces their sub-elements, and keep `inverse` like the other icons. `Tests/Packs/Chaman/PackChaman.txt`,
+  `Tests/Packs/Chaman/PackChamanForeverAuras.txt` and `WeakAurasOptions/ClassPacks.lua`
+  regenerated.
+- `Tests/Packs/Guerrier/PackTestGuerrier10.lua`: new level 10 warrior test pack, with its import string.
+- `WeakAuras/AuraEnvironment.lua`: custom code gets replacements for `UnitAura`, `UnitBuff`, `UnitDebuff`,
+  `GetSpellInfo`, `GetSpellTexture`, `IsUsableSpell`, `GetSpellCooldown` and `GetSpellCharges`, which do not exist
+  on WoW Forever. They are built on `C_UnitAuras`, `AuraUtil` and `C_Spell` and return the values of the original
+  functions in the same order, and return nothing for a spell book slot. A function still defined by the game is
+  used instead.
+  `WeakAurasOptions/OptionsFrames/Update.lua`: the import compatibility report says when a call is replaced. New
+  locale key in `WeakAuras/Locales/enUS.lua` and `WeakAuras/Locales/frFR.lua`. `GUIDE.md` updated.
+
+### Fixed
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasMiniTalent.lua`: the widget registered its reload
+  callbacks when the file loaded, before the options received `Private`, so `/wa` failed with "attempt to index
+  field 'Private' (a nil value)". The callbacks are now registered when the options open.
+
+## 2026-10-16
+
+Released as 1.10.0. Headless test bench: 46 scenarios, 0 failed.
+
+### Added
+- `Tests/Scenarios/32_SecretTriggerContract.lua`: secret aura trigger, secret conditions, spell cooldown state and
+  secret prototype helpers, through their public exports.
+- `Tests/Scenarios/33_RestrictedTriggersContract.lua`: restricted triggers (totems), Classic Era triggers, text style
+  and the specialization code.
+- `Tests/Scenarios/34_OptionsFilesContract.lua`: aura trigger options, trigger secret warnings, version check, Aura
+  (Modern) group options and icon, CDM dispel sub element options and the color picker widget.
+- `Tests/Scenarios/35_RegionBlocksContract.lua`: fork code in the icon, sub text, dynamic group, text, region
+  prototype and group regions.
+- `Tests/Scenarios/36_OptionsBlocksContract.lua`: fork code in the action, trigger, buff trigger, sub element, group,
+  common, display and condition options.
+- `Tests/Scenarios/37_CoreBlocksContract.lua`: fork code in the core files, including the BigWigs encounter load
+  option and the "Spell in Range" trigger.
+- `Tests/Scenarios/38_GlowPreviewContract.lua`: native element glow (deferred build queue, cache key, settings
+  normalization, cleanup), options preview of the native aura display, and the glow start check of the glow sub
+  element.
+- `Tests/Scenarios/39_AppearanceContract.lua`: appearance of the native aura display (supported and detached
+  elements, validation, migration of the old element types, text bindings, styling of the icon, bar and sub elements).
+- `Tests/Scenarios/40_UnitGlowContract.lua`: glow on unit frames (pulse and Proc types, color, padding, first
+  display through the deferred build queue, cleanup, single shown animation per button).
+- `Tests/Scenarios/43_ConditionsContract.lua`, `Tests/Scenarios/44_FlowAnchorContract.lua`,
+  `Tests/Scenarios/45_SingleContract.lua` and `Tests/Scenarios/46_FlowLayoutContract.lua`: native aura display
+  conditions, flow and anchoring, single aura display, and flow layout (screen centering, grids, editor preview).
+- `Tests/Scenarios/47_DisplayCoreContract.lua`: native aura display core (apply, activate, modify, release and
+  restore, budgeted apply and instance queues, unit status and alpha, unit glow, nameplate tokens, event filters per
+  unit mode, combat replay, sounds, text style).
+- `Tests/Scenarios/48_Lot6aContract.lua`: spell rank families (content and rank order, catalog, unknown IDs), talent
+  data reader (config ID, load data, events, subtrees) and head of the native aura display (label and filter tables,
+  saved trigger, units, validation, migration, sounds, preview notice).
+- `WeakAuras/AuraBackups.lua`: a daily copy of the saved auras in WeakAurasArchive, taken after a login that went to
+  the end, never for an empty aura list, three copies kept. `/wa backups` lists them and `/wa restore <number>` puts one
+  back after a confirmation, then reloads the UI (`WeakAuras/WeakAuras.lua`, `WeakAuras/WeakAuras.toc`). A disabled
+  archive addon skips the copy silently, a copy that fails half-way leaves no entry, and a restore saves the custom
+  data of the running auras first so the reload can't write it into the copy.
+- `Tests/Scenarios/41_AuraBackups.lua`: daily copies (one per day, three kept, frozen content, empty list skipped),
+  the slash commands, the restore and a copy that fails half-way. `Tests/Scenarios/25_SavedVariablesSurviveLogin.lua` also checks that a login
+  that died takes no copy.
+- `Tests/Scenarios/42_ForeverAurasRealExport.lua` and `Tests/Fixtures/ForeverAurasExport1.txt`: a real ForeverAuras
+  export (Simonize Forever Rogue Auras, ForeverAuras 0.44.0-BETA.1, 37 auras) decoded, converted and saved before the
+  login, then loaded for a rogue of specialization 1488 and played through a combat without any Lua error.
+- `Tests/CompareWithForeverAuras.py`: `--base <WeakAuras release>` leaves out the lines also found in upstream
+  WeakAuras.
+
+### Changed
+- Rewritten from a behavior specification, without ForeverAuras code: `WeakAuras/PrototypeSecretHelpers.lua`,
+  `WeakAuras/SecretConditions.lua`, `WeakAuras/SecretAuraTrigger.lua`, `WeakAuras/SecretSpellCooldown.lua`,
+  `WeakAuras/GenericTriggerRestricted.lua`, `WeakAuras/ClassicEraTriggers.lua`, `WeakAuras/TextStyle.lua`, the code of
+  `WeakAuras/PlayerSpecialization.lua` (same CC-BY data), `WeakAurasOptions/AuraTriggerOptions.lua`,
+  `WeakAurasOptions/TriggerSecretWarnings.lua`, `WeakAurasOptions/VersionCheck.lua`,
+  `WeakAurasOptions/RegionOptions/GroupModernFlow.lua`, `WeakAurasOptions/SubRegionOptions/CDMDispel.lua`,
+  `WeakAurasOptions/SubRegionOptions/CDMDispelBorder.lua` and
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasColorPicker.lua`, `WeakAuras/SecretAuraGlow.lua` (glow
+  builders per type, part pool and deferred build queue) and `WeakAuras/SecretAuraPreview.lua` (sample button methods
+  generated from one binding table), `WeakAuras/SecretAuraAppearance.lua` (one styler per sub element type, one
+  migration per old element type), `WeakAuras/SecretAuraConditions.lua` (condition variables, properties and highlight
+  fields declared in tables, validation through ordered validators) and `WeakAuras/SecretAuraFlow.lua` (split into
+  the new `WeakAuras/SecretAuraFlowShadow.lua`, `WeakAuras/SecretAuraFlowUnits.lua`, `WeakAuras/SecretAuraFlowGrid.lua`
+  and `WeakAuras/SecretAuraFlowPreview.lua`). The six copies of the anchor lookup, protected-frame guard, growth tables,
+  reparenting and group position in `WeakAuras/SecretAuraFlow.lua` and `WeakAuras/BlizzardAuraDisplay.lua` are merged
+  into the new `WeakAuras/SecretAuraAnchor.lua` (`WeakAuras/WeakAuras.toc`); unit frame and nameplate anchoring goes
+  through its combat guard too. `WeakAuras/SecretAuraSingle.lua` (trigger checks, stack and duration ranges declared
+  in rule tables, validation through an ordered step list); ten of its validation messages are reworded. The display
+  core of `WeakAuras/BlizzardAuraDisplay.lua` (region life cycle, budgeted queues, unit status, unit glow, nameplate
+  tokens, events declared in rule tables per event and per unit mode) and its head (label and filter tables built
+  from catalogs, saved trigger, units, validation, migration, sounds, preview notice). The code of
+  `WeakAuras/SecretAuraRanks.lua` (one table of rank families per label, same CC BY 4.0 data, regenerated as is by
+  `Tests/GenerateSpellData.py`) and the talent data reader of `WeakAuras/Prototypes.lua`. Their
+  ForeverAuras header is replaced by
+  the Musca Auras header, except `VersionCheck.lua` and `Prototypes.lua`, WeakAuras files, which have none. The color picker keeps its
+  credit to the AceGUI-3.0 ColorPicker widget.
+- Fork code rewritten the same way, without ForeverAuras code, in `WeakAuras/SecretRestrictions.lua` (a fork file)
+  and in the WeakAuras files `WeakAuras/WeakAuras.lua`, `WeakAuras/Prototypes.lua` (its ForeverAuras header is removed with the
+  talent data reader rewrite), `WeakAuras/GenericTrigger.lua`, `WeakAuras/Conditions.lua`, `WeakAuras/BossMods.lua`,
+  `WeakAuras/Modernize.lua`, `WeakAuras/BuffTrigger2.lua`, `WeakAuras/RegionTypes/Icon.lua`,
+  `WeakAuras/RegionTypes/Text.lua`, `WeakAuras/RegionTypes/DynamicGroup.lua`, `WeakAuras/RegionTypes/Group.lua`,
+  `WeakAuras/RegionTypes/RegionPrototype.lua`, `WeakAuras/SubRegionTypes/SubText.lua`,
+  `WeakAuras/SubRegionTypes/Glow.lua`,
+  `WeakAurasOptions/ActionOptions.lua`, `WeakAurasOptions/TriggerOptions.lua`, `WeakAurasOptions/BuffTrigger2.lua`,
+  `WeakAurasOptions/SubRegionOptions/SubRegionCommon.lua`, `WeakAurasOptions/RegionOptions/Group.lua`,
+  `WeakAurasOptions/CommonOptions.lua`, `WeakAurasOptions/DisplayOptions.lua`, `WeakAurasOptions/ConditionOptions.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`,
+  `WeakAurasOptions/OptionsFrames/OptionsFrame.lua` and `WeakAurasOptions/WeakAurasOptions.lua`. Comments added by
+  this fork in these files are removed; four upstream comments of `WeakAuras/RegionTypes/Icon.lua` are restored.
+  Same option trees and saved fields. Code lines outside locales also found in ForeverAuras 0.87.6 and not in
+  WeakAuras 5.22.0: 1781 in 76 files before, 1276 in 71 files after.
+- `WeakAuras/SecretAuraGlow.lua` gains a stretched mode (the glow fills its anchor when no size is given, widened by
+  the X and Y offsets) and an internal `pulse` type. The glow on unit frames of `WeakAuras/BlizzardAuraDisplay.lua`
+  now goes through it instead of its own Proc and pulse layers; the unused main glow code is removed.
+- `WeakAuras/SecretAuraGlow.lua`: the alpha fade of `pulse` and Shine and the action button alert halo of
+  `buttonOverlay` and `pulse` are each written once (`Builder:Fade`, `Builder:Alert`). Same calls in the same order,
+  same rendering. `Tests/Scenarios/38_GlowPreviewContract.lua` now checks the halo sizes (1.4 times the icon, ants
+  1.2 times, pulse follows the scale).
+- Behavior changes:
+  - the property blocks of the generated trigger code are sorted by name;
+  - `IsNeverSecretSpell` returns false when `NeverSecret` is missing;
+  - a color component given as a string is read with `tonumber`;
+  - `Private.ApplyTextFont` replaces a nil font flag with `""`;
+  - the "Charge count checks" warning no longer fires on a secret `maxCharges`;
+  - `ColorPickerFrame` is read again on each call;
+  - the secret remaining time default (`secretRem = "5"`) is set only when the option is turned on;
+  - a unit whose power type is secret is ignored;
+  - trigger entries without a trigger table are skipped, and a name that is not a string or is secret is refused;
+  - without BigWigs, `WeakAuras.IsBossModEnabled` returns nil;
+  - an unknown name pattern operator adds no filter;
+  - `MigrateCDMCooldownTrigger` does nothing when the trigger is nil;
+  - the "Enabled BossMod ID(BW Only)" load option is now labeled "BigWigs Module Loaded for Encounter ID" and listens
+    to `WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED` (was `WA_BOSSMOD_ENABLED_STATE_CHANGED`); the saved field
+    `enabledBossModID` is unchanged;
+  - "Spell in Range": a spell saved by ID shows its name when known and its ID otherwise; the trigger icon and the
+    name in the options look a saved ID up as an ID, in exact mode or not; in exact mode a name that is not an ID
+    gives no icon, and a trigger without a spell has no icon (was the icon of spell 0);
+  - the generated stat code checks again that `GetSpellBonusHealing`, `UnitSpellHaste` and `GetExpertise` exist;
+  - reworded combat status of the "Cast" trigger: "Fully usable in combat.", "Other units' casts: shown in combat,
+    never filtered." and "Ignored in combat: ... (other units' casts are unreadable)";
+  - the glow on unit frames appears through the deferred build queue, one frame later on its first display;
+  - the native element glow resets the tint of reused textures, so the Pixel border background no longer keeps the
+    color of a former dot;
+  - the display options no longer raise an error when a sub element removed from the aura is read back;
+  - the "Hide Blizzard's CDM" check box reads its value again each time it is shown;
+  - the rank families are listed in the order of their labels, and the rank order inside each family is unchanged;
+  - the talent data reader treats a subtree that `C_Traits.GetSubTreeInfo` does not describe as inactive (was a Lua
+    error);
+  - the classification messages of the native aura display are reworded, except "Choose a supported unit and Buff or
+    Debuff." and the two messages checked by `Tests/Scenarios/31_OptionsContract.lua`; three
+    unreachable messages and `HasAdditionalFilters` are removed, and `ResolveFojjiRecordedSound` is no longer
+    exported;
+  - reworded messages of the native aura display: the FojjiCore recorded sound warnings, "Pick a sound file in the
+    Actions tab.", the warning when the client refuses an aura sound, and the preview notice; the tooltips of the
+    "Marked for all nameplates" and "Marked for personal debuff display" filters take the longer text already shown
+    by the options;
+  - the native aura display skips a unit name that is not a string;
+  - reworded help texts: "Add Detached", the Blizzard text codes `p`, `s` and `n`, the "When Aura (Modern) Filters Are Not Met, Use" option, the Cooldown
+    Manager tooltip and the Aura (Modern) group button.
+- Texts written by this fork in the options files are now localized through `L[]`, with the same English text:
+  `WeakAurasOptions/AuraDisplayOptions.lua`, `CooldownViewerOptions.lua`, `SecretAuraTriggerOptions.lua`,
+  `AuraTriggerOptions.lua`, `TriggerOptions.lua`, `OptionsFrames/OptionsFrame.lua`, `DisplayOptions.lua`,
+  `WeakAurasOptions.lua`, `CommonOptions.lua`, `RegionOptions/Group.lua`,
+  `AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`, `TriggerSecretWarnings.lua`,
+  `RegionOptions/GroupModernFlow.lua`, `SubRegionOptions/CDMDispel.lua`, `SubRegionOptions/CDMDispelBorder.lua` and
+  `ColorPalette.lua`.
+- `WeakAuras/CHANGELOG.md` and `WeakAurasOptions/Changelog.lua`: new label of the BigWigs load option.
+- `Tests/Scenarios/36_OptionsBlocksContract.lua`: table addresses printed as `0x...` (Linux) are recognized.
+
+### Removed
+- `WeakAuras/Libs/LibSpellRange-1.0` (`WeakAuras/embeds.xml`, `WeakAuras/Init.lua`, `WeakAuras/Prototypes.lua`): only a
+  fallback of `WeakAuras.IsSpellInRange` for a client without `C_Spell.IsSpellInRange`, which WoW Forever has. Without
+  that API the function now returns nil. This ends the dead code cleanup started on 2026-10-15. Kept on purpose: the public
+  `WeakAuras.IsWrathOrRetail`, `IsWrathOrMistsOrRetail`, `IsWrathOrMists`, `IsClassicOrWrath`, `ProfileFrames`,
+  `ProfileDisplays`, `ToggleProfile` and `SetupClassPackCDM`, which the custom code of imported auras and the class
+  packs can call, and the `isSecret` / `IsSecret` upvalues, which are used.
+
+## 2026-10-15
+
+Released as 1.10.0. Headless test bench: 29 scenarios, 0 failed.
+
+### Added
+- `Tests/Scenarios/25_SavedVariablesSurviveLogin.lua`: an error in the middle of login and an aura with corrupt data
+  leave `WeakAurasSaved` unchanged on logout.
+- `Tests/Harness/Loader.lua`: `Loader.LoadAddon` takes a `beforeLogin` hook that runs between `ADDON_LOADED` and
+  `PLAYER_LOGIN`.
+- `Tests/Scenarios/26_CDMSetup.lua`: the class pack Cooldown Manager setup rejects bad input, gives up after its retry
+  limit, skips a layout that already matches, waits for the end of combat, then saves the layout and its backup.
+- `Tests/Scenarios/27_SecretAuraFlow.lua`: flow settings, sort order, flow problems, flow start and end frames, and
+  chaining deferred until the end of combat.
+- `Tests/Scenarios/28_SecretAuraPreview.lua`: preview samples per spell, layout by growth direction, bindings filled
+  and ticking, hidden when the options close, and the missing mode.
+- `Tests/Scenarios/29_CooldownViewerTriggerBehavior.lua`: Cooldown Manager trigger states per type, spell and buff
+  selection by ID and by name, picker, remaining time and stack filters with secret values, and migration.
+- `WeakAuras/CooldownViewerSelection.lua` (catalog, queries, spell resolution, picker, migration) and
+  `WeakAuras/CooldownViewerStates.lua` (state filling per type, buff filters), loaded before
+  `WeakAuras/CooldownViewerTrigger.lua` in `WeakAuras/WeakAuras.toc`.
+- `Tests/Scenarios/30_NativeProgressPainting.lua`: native painting of aura bars (secret value, timer, mask per
+  orientation, additional bars, Cooldown Manager bar), of secret progress textures (linear and radial) and of the
+  Aura (Modern) progress texture. `Tests/Harness/Frames.lua`: status bar, mask and radial methods that record their
+  arguments.
+- `WeakAuras/NativeProgressPainter.lua`: native widget painting shared by aura bars, secret progress textures and
+  Aura (Modern): driver bar, edge mask, fill direction, secret value, timer, color, art and radial progress. Loaded
+  before `WeakAuras/ProgressTextureNative.lua` in `WeakAuras/WeakAuras.toc`.
+- `Tests/Scenarios/31_OptionsContract.lua`: option trees, values read and written, and callbacks of the aura
+  display options, the secret aura trigger options and the Cooldown Manager trigger options. In this scenario and in
+  `Tests/Scenarios/17_SpellNameInput.lua`, `OptionsPrivate.Private` is set after the options files load, as in game.
+- `Tests/CompareWithForeverAuras.py`: counts the code lines of given files also found in a ForeverAuras release.
+
+### Changed
+- `CHANGES.md`: the header lists the files no longer derived from ForeverAuras, dates the name-only rewrites to
+  2026-10-04, covers the code moved into new files that day, and says that the features "also found in ForeverAuras"
+  only used it as a behavior reference.
+- Two-line header crediting ForeverAuras (Neroxrw, GPL-2.0) at the top of the 24 files still derived from it:
+  `WeakAuras/` BlizzardAuraDisplay, ClassicEraTriggers, GenericTriggerRestricted, PlayerSpecialization, Prototypes,
+  PrototypeSecretHelpers, SecretAuraAppearance, SecretAuraConditions, SecretAuraFlow, SecretAuraGlow, SecretAuraPreview, SecretAuraRanks,
+  SecretAuraSingle, SecretAuraTrigger, SecretConditions, SecretSpellCooldown, TextStyle;
+  `WeakAurasOptions/` AuraTriggerOptions, TriggerSecretWarnings, VersionCheck, RegionOptions/GroupModernFlow,
+  SubRegionOptions/CDMDispel, SubRegionOptions/CDMDispelBorder, AceGUI-Widgets/AceGUIWidget-WeakAurasColorPicker.
+- `WeakAuras/RegionTypes/AuraBarNative.lua` and `WeakAuras/ProgressTextureNative.lua`: rewritten from a behavior
+  specification, without M33kAuras or ForeverAuras code, on top of `WeakAuras/NativeProgressPainter.lua`.
+  `WeakAuras/RegionTypes/ProgressTextureSecret.lua` uses that module too. Every write to the Blizzard Cooldown Manager
+  bar goes through one combat guard. An Aura (Modern) progress texture without a foreground color is drawn white
+  instead of raising an error.
+- `WeakAurasOptions/AuraDisplayOptions.lua`, `WeakAurasOptions/SecretAuraTriggerOptions.lua`,
+  `WeakAurasOptions/CooldownViewerOptions.lua`, `WeakAurasOptions/ColorPalette.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasMiniTalent.lua` and the Cooldown Manager blocks of
+  `WeakAurasOptions/GenericTrigger.lua`: rewritten from a behavior specification, without ForeverAuras code. Same
+  option trees and saved fields. Behavior changes: the Aura (Modern) options no longer raise an error when the aura has
+  no `blizzardAuraDisplay` table, which is created on the first write; a secret aura name made only of spaces is saved
+  as an empty name instead of being refused; the color palette adds a color to the recent colors on OK only, not on
+  Cancel, accepts an alpha typed as "50 %", and its Alpha field sits under the picker when the picker has no
+  `Content` frame.
+- `WeakAuras/CHANGELOG.md` and `WeakAurasOptions/Changelog.lua`: ForeverAuras credited to Neroxrw instead of m33shoq.
+- `WeakAuras/CDMBackground.lua` and `WeakAuras/CDMSetup.lua`: rewritten from a behavior specification, without
+  ForeverAuras code. Same behavior: Cooldown Manager background, class pack layout setup with its backup, retries and
+  end-of-combat wait.
+- `WeakAuras/CooldownViewerTrigger.lua`: rewritten from a behavior specification, without ForeverAuras code, and split
+  into three files. Behavior changes: states are rebuilt on each pass and no longer shared between two identical auras;
+  on a key collision the first visible state wins; Cooldown Manager data changes are coalesced into one refresh, and
+  `SPELL_UPDATE_COOLDOWN` queues one too; a secret target counts as no target; spell cooldown times come from
+  `SpellCooldownState` instead of the Cooldown Manager frame; a buff selected by name with no known candidate keeps all
+  matches; the remaining time filter and the boolean properties no longer offer `only_equal`, and only spell ID, name,
+  item ID and Cooldown Manager category are stored for conditions. A buff selected by name now tracks every spell ID
+  of that name and gets one clone per Cooldown Manager entry; an item selected by text must be known; a spell counts
+  as known when another rank of the same name is known.
+- `WeakAurasOptions/ConditionOptions.lua`: the error lines under custom condition code (custom check, custom text
+  function, run custom code) load the code through `Private.LoadFunction` in the built-in sandbox environment, like the other
+  custom code fields, instead of a bare `loadstring`. An error raised while the code loads now shows too.
+
+### Removed
+- Functions without any caller: `Private.CanConvertBuffTrigger2` and `Private.ConvertBuffTrigger2`
+  (`WeakAuras/BuffTrigger2.lua`), `Private.SetAllStatesHiddenExcept` and `Private.CreatingRegions`
+  (`WeakAuras/WeakAuras.lua`), `Private.UsesDurationText` and `Private.GetTextDuration` (`WeakAuras/DurationText.lua`),
+  `Private.RestoreFromHistory` (`WeakAuras/History.lua`), `Private.IsEnvironmentInitialized`
+  (`WeakAuras/AuraEnvironment.lua`), `OptionsPrivate.AddDisplayButton` (`WeakAurasOptions/WeakAurasOptions.lua`), and
+  the `WeakAuras.IsLibsOk` override (`WeakAurasOptions/VersionCheck.lua`).
+- `Private.CDMNativeSelections` (`WeakAuras/CooldownViewerTrigger.lua`), replaced by states rebuilt on each pass.
 
 ## 2026-10-14
 

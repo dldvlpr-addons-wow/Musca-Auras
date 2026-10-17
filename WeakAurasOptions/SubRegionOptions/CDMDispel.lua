@@ -1,35 +1,39 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
-local _, OptionsPrivate = ...
+local AddonName, OptionsPrivate = ...
 
-local SUBTYPE = "subcdmdispel"
+local L = WeakAuras.L
 
-local function collectAnchors(parentData)
-  local pointAnchors, areaAnchors = {}, {}
-  local Private = OptionsPrivate.Private
-  for child in Private.TraverseLeafsOrAura(parentData) do
-    Mixin(pointAnchors, Private.GetAnchorsForData(child, "point"))
-    Mixin(areaAnchors, Private.GetAnchorsForData(child, "area"))
+-- Shared by the dispel icon and the dispel border: both have their own entries, then the usual
+-- position block (anchored to any child of the parent) and the move, delete and duplicate buttons.
+function OptionsPrivate.RegisterDispelSubRegionOptions(layout)
+  local function createOptions(parentData, data, index, subIndex)
+    local Private = OptionsPrivate.Private
+    local anchors = { point = {}, area = {} }
+    for child in Private.TraverseLeafsOrAura(parentData) do
+      for kind, collected in pairs(anchors) do
+        Mixin(collected, Private.GetAnchorsForData(child, kind))
+      end
+    end
+
+    local options = { __title = layout.title .. " " .. subIndex, __order = 1 }
+    for key, entry in pairs(layout.entries) do
+      local option = { width = WeakAuras.normalWidth }
+      for field, value in pairs(entry) do option[field] = value end
+      options[key] = option
+    end
+    OptionsPrivate.commonOptions.PositionOptionsForSubElement(data, options, 10, anchors.area, anchors.point)
+    OptionsPrivate.AddUpDownDeleteDuplicate(options, parentData, index, layout.subRegion)
+    return options
   end
-  return pointAnchors, areaAnchors
+  WeakAuras.RegisterSubRegionOptions(layout.subRegion, createOptions, layout.description)
 end
 
-local function createOptions(parentData, data, index, subIndex)
-  local pointAnchors, areaAnchors = collectAnchors(parentData)
-
-  local options = {}
-  options.__title = "CDM Dispel Type Icon " .. subIndex
-  options.__order = 1
-  options.dispelVisible = {
-    type = "toggle",
-    name = "Show Icon",
-    order = 1,
-    width = WeakAuras.normalWidth,
-  }
-
-  OptionsPrivate.commonOptions.PositionOptionsForSubElement(data, options, 10, areaAnchors, pointAnchors)
-  OptionsPrivate.AddUpDownDeleteDuplicate(options, parentData, index, SUBTYPE)
-  return options
-end
-
-WeakAuras.RegisterSubRegionOptions(SUBTYPE, createOptions,
-  "Shows the dispel type of a Cooldown Manager buff trigger.")
+OptionsPrivate.RegisterDispelSubRegionOptions({
+  subRegion = "subcdmdispel",
+  title = L["CDM Dispel Type Icon"],
+  description = L["Shows the dispel type of a Cooldown Manager buff trigger."],
+  entries = {
+    dispelVisible = { type = "toggle", name = L["Show Icon"], order = 1 },
+  },
+})

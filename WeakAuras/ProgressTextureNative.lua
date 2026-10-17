@@ -1,253 +1,215 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-local NativeProgress = {}
-Private.ProgressTextureNative = NativeProgress
+-- Progress texture of the Aura (Modern) display. A StatusBar handed to the Blizzard aura button
+-- (SetDurationBar) animates the fill; this module only styles it and its backdrop.
+-- Two shapes share the widget: a band (linear fill cutting the art through a mask) and a ring
+-- (the art itself is the radial fill of the StatusBar).
+local Painter = Private.NativeProgressPainter
+local ProgressTextureNative = {}
+Private.ProgressTextureNative = ProgressTextureNative
 
-local SOLID_WHITE = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite"
+local circularOrientations = { CLOCKWISE = true, ANTICLOCKWISE = true }
 
-local isRing = {CLOCKWISE = true, ANTICLOCKWISE = true}
-local isUpright = {VERTICAL = true, VERTICAL_INVERSE = true}
-local isBackward = {HORIZONTAL_INVERSE = true, VERTICAL_INVERSE = true}
-
-function NativeProgress.IsCircular(direction)
-  return isRing[direction] == true
+function ProgressTextureNative.IsCircular(orientation)
+  return circularOrientations[orientation] == true
 end
 
-function NativeProgress.Create(host)
-  local statusBar = CreateFrame("StatusBar", nil, host)
-  statusBar:SetAllPoints(host)
-  local art = statusBar:CreateTexture(nil, "ARTWORK")
-  local clipMask = statusBar:CreateMaskTexture()
-  clipMask:SetTexture(SOLID_WHITE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-  statusBar:SetStatusBarTexture(SOLID_WHITE)
-  local widget = {
-    bar = statusBar,
+-- Widget: the StatusBar, its art texture, a mask for the band, texture coordinates of the art,
+-- and the plain fill texture of the StatusBar used by the band.
+function ProgressTextureNative.Create(host)
+  local bar = Painter.CreateDriverBar(host, true)
+  local art = bar:CreateTexture(nil, "ARTWORK")
+  return {
+    bar = bar,
     texture = art,
-    mask = clipMask,
+    mask = Painter.CreateClampMask(bar),
     coord = Private.TextureCoords.create(art),
-    linearTexture = statusBar:GetStatusBarTexture(),
+    linearTexture = bar:GetStatusBarTexture(),
   }
-  statusBar:Hide()
-  return widget
 end
 
-function NativeProgress.SupportsRadial(widget)
-  return Enum.StatusBarRenderMode and widget.bar.SetRenderMode and widget.texture.SetRadialProgressBarPercent
-end
-
-local function ResolveColor(look)
-  local red = look.color_anim_r or look.color_r or 1
-  local green = look.color_anim_g or look.color_g or 1
-  local blue = look.color_anim_b or look.color_b or 1
-  local alpha = look.color_anim_a or look.color_a or 1
-  return red, green, blue, alpha
-end
-
-local function PaintArt(widget, look, ring)
-  local art = widget.texture
-  art:RemoveMaskTexture(widget.mask)
-  art:ClearAllPoints()
-  art:SetAllPoints(widget.bar)
-  Private.SetTextureOrAtlas(art, look.currentTexture, look.textureWrapMode, look.textureWrapMode)
-  art:SetBlendMode(look.blendMode or "BLEND")
-  art:SetDesaturated(look.desaturateForeground == true)
-  art:SetRotation(math.rad(look.auraRotation or 0))
-
-  local texCoord = widget.coord
-  texCoord:SetFull()
-  local mirrorX = (look.mirror and true or false) ~= (look.mirror_h and true or false)
-  local shiftX, shiftY = look.user_x, look.user_y
-  if ring then
-    shiftX, shiftY = 0, 0
+-- Adds or removes the band mask on the art, only when that changes.
+local function MaskArt(widget, masked)
+  if widget.artMasked == masked then
+    return
   end
-  local cropX, cropY = look.crop_x or 1, look.crop_y or 1
-  local turn = look.effectiveTexRotation or look.texRotation or 0
-  texCoord:Transform(cropX, cropY, turn, mirrorX, look.mirror_v, shiftX, shiftY)
-  texCoord:Apply()
-  art:SetVertexColor(ResolveColor(look))
-end
-
-local function AngleToOffset(degrees)
-  return (degrees + 180) % 360 / 360
-end
-
-local function PrepareRing(widget, look)
-  local statusBar, art = widget.bar, widget.texture
-  statusBar:SetRenderMode(Enum.StatusBarRenderMode.Radial)
-  statusBar:SetStatusBarTexture(art)
-  statusBar:SetReverseFill(false)
-  statusBar:SetStatusBarColor(ResolveColor(look))
-  widget.linearTexture:Hide()
-  art:SetRadialProgressBarStartOffset(AngleToOffset(look.startAngle or 0))
-  art:SetRadialProgressBarEndOffset(AngleToOffset(look.endAngle or 360))
-  art:SetRadialProgressBarReverse(look.orientation == "ANTICLOCKWISE")
-  art:SetRadialProgressBarFeather(0)
-end
-
-local function PinInvertedMask(clipMask, statusBar, fillTexture, upright, backward)
-  if not upright then
-    if backward then
-      clipMask:SetPoint("TOPLEFT", fillTexture, "TOPRIGHT", -0.01, 0.01)
-      clipMask:SetPoint("BOTTOMRIGHT", statusBar, "BOTTOMRIGHT")
-    else
-      clipMask:SetPoint("TOPLEFT", statusBar, "TOPLEFT", -0.01, 0.01)
-      clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "BOTTOMLEFT")
-    end
-  elseif backward then
-    clipMask:SetPoint("TOPLEFT", statusBar, "TOPLEFT", -0.01, 0.01)
-    clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "TOPRIGHT")
+  widget.artMasked = masked
+  if masked then
+    widget.texture:AddMaskTexture(widget.mask)
   else
-    clipMask:SetPoint("TOPLEFT", fillTexture, "BOTTOMLEFT", -0.01, 0.01)
-    clipMask:SetPoint("BOTTOMRIGHT", statusBar, "BOTTOMRIGHT")
+    widget.texture:RemoveMaskTexture(widget.mask)
   end
 end
 
-local function PrepareStrip(widget, look, inverted)
-  local statusBar, art = widget.bar, widget.texture
-  local clipMask, fillTexture = widget.mask, widget.linearTexture
-  if statusBar.SetRenderMode and Enum.StatusBarRenderMode then
-    statusBar:SetRenderMode(Enum.StatusBarRenderMode.Linear)
+-- Hands a fill texture to the StatusBar in the given render mode, tinted.
+local function UseFill(widget, renderMode, fill, ...)
+  local bar = widget.bar
+  if Painter.CanSwitchRenderMode(bar) then
+    bar:SetRenderMode(Enum.StatusBarRenderMode[renderMode])
   end
-  if art.ClearRadialProgressBar then
-    art:ClearRadialProgressBar()
-  end
-  statusBar:SetStatusBarTexture(fillTexture)
-  statusBar:SetStatusBarColor(1, 1, 1, 0)
-
-  local direction = look.orientation
-  local upright = isUpright[direction] == true
-  local backward = isBackward[direction] == true
-  statusBar:SetOrientation(upright and "VERTICAL" or "HORIZONTAL")
-  statusBar:SetReverseFill(backward ~= (inverted and true or false))
-
-  clipMask:ClearAllPoints()
-  if not inverted then
-    clipMask:SetPoint("TOPLEFT", fillTexture, "TOPLEFT", -0.01, 0.01)
-    clipMask:SetPoint("BOTTOMRIGHT", fillTexture, "BOTTOMRIGHT")
-  else
-    PinInvertedMask(clipMask, statusBar, fillTexture, upright, backward)
-  end
-
-  if not look.compress then
-    art:AddMaskTexture(clipMask)
-  else
-    art:ClearAllPoints()
-    art:SetAllPoints(clipMask)
-  end
+  bar:SetStatusBarTexture(fill)
+  bar:SetStatusBarColor(...)
 end
 
-function NativeProgress.Style(widget, look, inverted)
-  local ring = NativeProgress.IsCircular(look.orientation)
-  if ring and not NativeProgress.SupportsRadial(widget) then
-    widget.bar:Hide()
-    return false
-  end
-  widget.circular = ring
-  PaintArt(widget, look, ring)
-  if not ring then
-    PrepareStrip(widget, look, inverted)
-  else
-    PrepareRing(widget, look)
-  end
-  widget.texture:Show()
+local Band = { backdrop = Private.LinearProgressTextureBase }
+
+function Band.Supported()
   return true
 end
 
-local function MakeAuraLook(auraData)
-  local tint = auraData.foregroundColor
-  return {
-    orientation = auraData.orientation,
-    currentTexture = auraData.foregroundTexture,
+-- The fill stays invisible; the mask follows it. A compressed art is stretched over the mask instead.
+-- Once released by the StatusBar, the art drops any radial setup left by a ring.
+function Band.Draw(widget, look)
+  local bar, art = widget.bar, widget.texture
+  MaskArt(widget, not look.compress)
+  UseFill(widget, "Linear", widget.linearTexture, 1, 1, 1, 0)
+  if art.ClearRadialProgressBar then
+    art:ClearRadialProgressBar()
+  end
+  art:ClearAllPoints()
+  art:SetAllPoints(look.compress and widget.mask or bar)
+  Painter.PaintArt(art, widget.coord, look, true)
+  local direction = Painter.ProgressTextureOrientation[look.orientation] or Painter.ProgressTextureOrientation.default
+  Painter.AnchorMaskToFill(widget.mask, widget.linearTexture, bar, direction.axis, direction.reverseFill, false,
+    Painter.FillMaskMargins)
+  Painter.ApplyLinearDirection(bar, direction.axis, direction.reverseFill, false)
+end
+
+function Band.FillBackdrop(backdrop, auraData)
+  backdrop:SetOrientation(auraData.orientation)
+  backdrop:SetValue(0, 1)
+end
+
+local Ring = { backdrop = Private.CircularProgressTextureBase }
+
+function Ring.Supported(widget)
+  return Painter.CanRenderRadialBar(widget.bar)
+end
+
+-- The art is painted and placed before it becomes the StatusBar fill; its radial shape follows.
+function Ring.Draw(widget, look)
+  local bar, art = widget.bar, widget.texture
+  widget.linearTexture:Hide()
+  bar:SetReverseFill(false)
+  MaskArt(widget, false)
+  Painter.PaintArt(art, widget.coord, look, false)
+  art:ClearAllPoints()
+  art:SetAllPoints(bar)
+  UseFill(widget, "Radial", art, Painter.ResolveColor(look))
+  art:SetRadialProgressBarFeather(0)
+  Painter.ApplyRadialShape(art, look, true)
+end
+
+-- Backdrop progress runs from the start angle to the end angle, a full turn when they meet.
+function Ring.FillBackdrop(backdrop, auraData)
+  local from = (auraData.startAngle or 0) % 360
+  local span = ((auraData.endAngle or 360) - from) % 360
+  backdrop:SetProgress(from, from + (span == 0 and 360 or span))
+end
+
+local function ShapeOf(orientation)
+  return ProgressTextureNative.IsCircular(orientation) and Ring or Band
+end
+
+-- Returns false, with the StatusBar hidden, when the shape cannot be drawn here.
+function ProgressTextureNative.Style(widget, look)
+  local shape = ShapeOf(look.orientation)
+  local drawable = shape.Supported(widget)
+  if drawable then
+    shape.Draw(widget, look)
+    widget.texture:Show()
+  else
+    widget.bar:Hide()
+  end
+  return drawable
+end
+
+-- Aura data seen as a painter look.
+local function Channel(index)
+  return function(auraData)
+    local color = auraData.foregroundColor
+    return color and color[index]
+  end
+end
+local auraLookReaders = {
+  orientation = "orientation",
+  texture = "foregroundTexture",
+  wrapMode = "textureWrapMode",
+  blendMode = "blendMode",
+  desaturate = function(auraData) return auraData.desaturateForeground == true end,
+  spin = "auraRotation",
+  cropX = function(auraData) return (auraData.crop_x or 0) + 1 end,
+  cropY = function(auraData) return (auraData.crop_y or 0) + 1 end,
+  textureRotation = "rotation",
+  flipX = "mirror",
+  -- The display offset runs opposite to the texture coordinate shift on x.
+  shiftX = function(auraData) return 0 - (auraData.user_x or 0) end,
+  shiftY = "user_y",
+  compress = "compress",
+  startAngle = "startAngle",
+  endAngle = "endAngle",
+  red = Channel(1), green = Channel(2), blue = Channel(3), alpha = Channel(4),
+}
+
+-- One backdrop per shape and per aura, made on first use.
+local function BackdropOf(native, host, shape)
+  native.backdropByShape = native.backdropByShape or {}
+  local backdrop = native.backdropByShape[shape]
+  if not backdrop then
+    backdrop = shape.backdrop.create(host, "BACKGROUND", 0)
+    native.backdropByShape[shape] = backdrop
+  end
+  return backdrop
+end
+
+-- Shows the backdrop of the shape; the backdrop of the other shape, if it was active, goes away.
+local function StyleBackdrop(native, auraData, host, look, shape)
+  local backdrop = BackdropOf(native, host, shape)
+  if native.progressBackground and native.progressBackground ~= backdrop then
+    native.progressBackground:Hide()
+  end
+  native.progressBackground = backdrop
+  backdrop:Hide()
+  backdrop:SetColor(unpack(auraData.backgroundColor, 1, 4))
+  shape.backdrop.modify(backdrop, {
+    texture = auraData.sameTexture and auraData.foregroundTexture or auraData.backgroundTexture,
     textureWrapMode = auraData.textureWrapMode,
     blendMode = auraData.blendMode,
-    desaturateForeground = auraData.desaturateForeground,
-    auraRotation = auraData.auraRotation,
-    crop_x = 1 + (auraData.crop_x or 0),
-    crop_y = 1 + (auraData.crop_y or 0),
-    texRotation = auraData.rotation,
-    mirror = auraData.mirror,
-    user_x = -(auraData.user_x or 0),
-    user_y = auraData.user_y or 0,
-    compress = auraData.compress,
-    startAngle = auraData.startAngle,
-    endAngle = auraData.endAngle,
-    color_r = tint[1],
-    color_g = tint[2],
-    color_b = tint[3],
-    color_a = tint[4],
-  }
-end
-
-local function BackdropFor(widget, host, ring)
-  local cache = widget.progressBackgrounds
-  if not cache then
-    cache = {}
-    widget.progressBackgrounds = cache
-  end
-  local backdropType = ring and Private.CircularProgressTextureBase or Private.LinearProgressTextureBase
-  local cacheKey = ring and "circular" or "linear"
-  local backdrop = cache[cacheKey]
-  if not backdrop then
-    backdrop = backdropType.create(host, "BACKGROUND", 0)
-    cache[cacheKey] = backdrop
-  end
-  return backdrop, backdropType
-end
-
-function NativeProgress.StyleAura(widget, auraData, host)
-  if widget.progressBackground then
-    widget.progressBackground:Hide()
-  end
-  local foregroundWidget = widget.progressTexture
-  if not foregroundWidget then
-    foregroundWidget = NativeProgress.Create(host)
-    widget.progressTexture = foregroundWidget
-  end
-  local look = MakeAuraLook(auraData)
-  if not NativeProgress.Style(foregroundWidget, look, false) then
-    return
-  end
-
-  local ring = NativeProgress.IsCircular(auraData.orientation)
-  local backdrop, backdropType = BackdropFor(widget, host, ring)
-  widget.progressBackground = backdrop
-  local backdropTexture = auraData.sameTexture and auraData.foregroundTexture or auraData.backgroundTexture
-  backdropType.modify(backdrop, {
-    crop_x = look.crop_x,
-    crop_y = look.crop_y,
-    mirror = auraData.mirror,
-    texRotation = auraData.rotation or 0,
-    texture = backdropTexture,
-    blendMode = auraData.blendMode,
     desaturated = auraData.desaturateBackground,
-    auraRotation = math.rad(auraData.auraRotation or 0),
     width = auraData.width,
     height = auraData.height,
     offset = auraData.backgroundOffset or 0,
-    user_x = look.user_x,
-    user_y = look.user_y,
-    textureWrapMode = auraData.textureWrapMode,
+    auraRotation = math.rad(look.spin),
+    texRotation = look.textureRotation,
+    mirror = auraData.mirror,
+    crop_x = look.cropX,
+    crop_y = look.cropY,
+    user_x = look.shiftX,
+    user_y = look.shiftY,
   })
-
-  if not ring then
-    backdrop:SetOrientation(auraData.orientation)
-    backdrop:SetValue(0, 1)
-  else
-    local fromAngle = (auraData.startAngle or 0) % 360
-    local toAngle = (auraData.endAngle or 360) % 360
-    if toAngle <= fromAngle then
-      toAngle = toAngle + 360
-    end
-    backdrop:SetProgress(fromAngle, toAngle)
-  end
-  backdrop:SetColor(unpack(auraData.backgroundColor))
+  shape.FillBackdrop(backdrop, auraData)
   backdrop:Show()
+end
 
-  local fgBar = foregroundWidget.bar
-  widget.bar = fgBar
-  local timerDirection = Enum.StatusBarTimerDirection
-  local barDirection = auraData.inverse and timerDirection.ElapsedTime or timerDirection.RemainingTime
-  widget.button:SetDurationBar(fgBar, {direction = barDirection})
-  fgBar:Show()
+function ProgressTextureNative.StyleAura(native, auraData, host)
+  local widget = native.progressTexture
+  if not widget then
+    widget = ProgressTextureNative.Create(host)
+    native.progressTexture = widget
+  end
+  local look = Painter.LookView(auraData, auraLookReaders)
+  if not ProgressTextureNative.Style(widget, look) then
+    if native.progressBackground then
+      native.progressBackground:Hide()
+    end
+    return
+  end
+  native.bar = widget.bar
+  widget.bar:Show()
+  native.button:SetDurationBar(widget.bar, {
+    direction = Enum.StatusBarTimerDirection[Painter.FillDirection(auraData.inverse)],
+  })
+  StyleBackdrop(native, auraData, host, look, ShapeOf(look.orientation))
 end

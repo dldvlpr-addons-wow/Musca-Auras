@@ -2512,11 +2512,15 @@ function Private.Modernize(data, oldSnapshot)
 
   for _, triggerData in ipairs(data.triggers or {}) do
     local trigger = triggerData.trigger
-    if trigger and trigger.type == "spell" and trigger.event == "Blizzard Cooldown Manager" then
-      trigger.type = "cdm"
-      if trigger.cdmSource == "buff" then trigger.event = "Blizzard CDM Buff" end
+    if trigger then
+      if trigger.type == "spell" and trigger.event == "Blizzard Cooldown Manager" then
+        trigger.type = "cdm"
+        if trigger.cdmSource == "buff" then
+          trigger.event = "Blizzard CDM Buff"
+        end
+      end
+      Private.MigrateCDMCooldownTrigger(trigger)
     end
-    Private.MigrateCDMCooldownTrigger(trigger)
   end
 
   if data.regionType == "icon" and data.cooldownTextDisabled == false and type(data.uid) == "string"

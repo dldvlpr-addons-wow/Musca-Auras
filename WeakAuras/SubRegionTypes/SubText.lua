@@ -71,6 +71,9 @@ local properties = {
   text_visible = {
     display = L["Visibility"],
     setter = "SetVisible",
+    secretSetter = "SetSecretVisible",
+    secretRestore = "ClearSecretVisible",
+    secretCapable = true,
     type = "bool",
     defaultProperty = true
   },
@@ -83,6 +86,7 @@ local properties = {
   text_color = {
     display = L["Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color",
   },
   text_fontSize = {
@@ -138,6 +142,13 @@ local function animRotate(object, degrees, anchor)
     rotate:SetSmoothProgress(1);
     group:Pause();
   end
+end
+
+local function CDMTokenState(parent, triggerIndex)
+  if not triggerIndex then
+    return parent.state
+  end
+  return parent.states and parent.states[triggerIndex]
 end
 
 -- Calculate offset after rotation
@@ -332,27 +343,31 @@ local function modify(parent, region, parentData, data, first)
   function region:ConfigureTextUpdate()
     UnbindDurationText(region)
     Private.CDMAuraProgress.HideText(region)
-    local nativeKind, nativeTrigger = Private.ParseCDMText(region.text_text)
-    if nativeKind == "bp" or nativeKind == "bs" then
-      region.Update = function()
-        if not text:GetFont() then return end
-        local state = nativeTrigger and parent.states and parent.states[nativeTrigger] or not nativeTrigger and parent.state
-        if Private.CDMAuraProgress.UpdateText(parent, region, data, nativeKind, nativeTrigger) then return end
-        Private.CopyCDMCountdownText(text, state, nativeKind)
+    local cdmKind, cdmTrigger = Private.ParseCDMText(region.text_text)
+    if cdmKind == "bp" or cdmKind == "bs" then
+      local function UpdateBuffText()
+        if not text:GetFont()
+           or Private.CDMAuraProgress.UpdateText(parent, region, data, cdmKind, cdmTrigger) then
+          return
+        end
+        Private.CopyCDMCountdownText(text, CDMTokenState(parent, cdmTrigger), cdmKind)
       end
-      region.FrameTick = region.Update
+      region.Update = UpdateBuffText
+      region.FrameTick = UpdateBuffText
       return
     end
     local UpdateText
     if region.text_text and Private.ContainsAnyPlaceHolders(region.text_text) then
       UpdateText = function()
-        if Private.CDMAuraProgress.UpdateText(parent, region, data, nativeKind, nativeTrigger) then return end
-        if nativeKind then
-          local state = nativeTrigger and parent.states and parent.states[nativeTrigger] or not nativeTrigger and parent.state
-          if state and state.cdmBuff then
-            if text:GetFont() then Private.CopyCDMCountdownText(text, state, nativeKind) end
-            return
+        if Private.CDMAuraProgress.UpdateText(parent, region, data, cdmKind, cdmTrigger) then
+          return
+        end
+        local cdmState = cdmKind and CDMTokenState(parent, cdmTrigger)
+        if cdmState and cdmState.cdmBuff then
+          if text:GetFont() then
+            Private.CopyCDMCountdownText(text, cdmState, cdmKind)
           end
+          return
         end
         if UpdateNativeText(region, parent, region.text_text or "", self.subTextFormatters) then
           return
@@ -382,8 +397,8 @@ local function modify(parent, region, parentData, data, first)
     end
 
     local FrameTick
-    if (nativeKind and Private.IsCDMBuffText(region.text_text, parentData))
-       or Private.ContainsPlaceHolders(region.text_text, "p")
+    if Private.ContainsPlaceHolders(region.text_text, "p")
+       or Private.IsCDMBuffText(region.text_text, parentData)
        or Private.AnyEveryFrameFormatters(region.text_text, region.everyFrameFormatters)
     then
       FrameTick = UpdateText
@@ -446,6 +461,8 @@ local function modify(parent, region, parentData, data, first)
   region.text_text = data.text_text
   region.durationTimeFormat = data.text_text_format_p_time_format
   region.durationThreshold = data.text_text_format_p_time_dynamic_threshold
+  region.durationPrecision = data.text_text_format_p_time_precision
+  region.durationLegacyFloor = data.text_text_format_p_time_legacy_floor
   region:ConfigureTextUpdate()
 
   function region:SetTextHeight(size)
@@ -459,6 +476,12 @@ local function modify(parent, region, parentData, data, first)
     region:UpdateAnchorOnTextChange();
     Private.CDMAuraProgress.StyleText(region)
   end
+
+  function region:SetSecretVisible(value)
+    Private.SetSecretSubRegionVisible(self, self:IsShown(), value)
+  end
+
+  region.ClearSecretVisible = Private.ClearSecretSubRegionVisible
 
   function region:SetVisible(visible)
     if visible then
@@ -512,13 +535,14 @@ local function modify(parent, region, parentData, data, first)
 
   local textDegrees = data.rotateText == "LEFT" and 90 or data.rotateText == "RIGHT" and -90 or 0;
 
-  region.AnchorNativeText = function(self, nativeText)
+  function region:AnchorNativeText(nativeText)
     nativeText:ClearAllPoints()
     nativeText:SetPoint(selfPoint, text, selfPoint)
   end
 
   region.Anchor = function(self)
-    local xo, yo = getRotateOffset(text, Private.IsCDMBuffText(region.text_text, parentData) and 0 or textDegrees, selfPoint)
+    local degrees = Private.IsCDMBuffText(region.text_text, parentData) and 0 or textDegrees
+    local xo, yo = getRotateOffset(text, degrees, selfPoint)
     parent:AnchorSubRegion(text, "point", data.anchor_point, selfPoint,
                            (self.text_anchorXOffset or 0) + xo, (self.text_anchorYOffset or 0) + yo)
     Private.CDMAuraProgress.StyleText(region)

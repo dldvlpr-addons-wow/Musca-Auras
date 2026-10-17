@@ -17,26 +17,50 @@ local hiddenAll = OptionsPrivate.commonOptions.CreateHiddenAll("region")
 local getAll = OptionsPrivate.commonOptions.CreateGetAll("region")
 local setAll = OptionsPrivate.commonOptions.CreateSetAll("region", getAll)
 
+local modernStartValues = {
+  subglow = { glowType = "Proc" },
+  subtext = { text_text = "Text" },
+}
+
+local function BuildSubRegionData(subRegionName, regionType, detached, modern)
+  local default = OptionsPrivate.Private.subRegionTypes[subRegionName].default
+  local built = type(default) == "function" and default(regionType) or CopyTable(default)
+  built.type = subRegionName
+  if detached then
+    built.secretAuraDetached = true
+  end
+  if modern then
+    for key, value in pairs(modernStartValues[subRegionName] or {}) do
+      built[key] = value
+    end
+  end
+  return built
+end
+
+local function NewSwipeColorOption()
+  return {
+    type = "color",
+    name = L["Swipe Color"],
+    hasAlpha = true,
+    order = 11.9,
+    width = WeakAuras.normalWidth,
+  }
+end
+
 local function AddSubRegion(data, subRegionName, detached)
+  local Display = OptionsPrivate.Private.BlizzardAuraDisplay
   for data in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
     data.subRegions = data.subRegions or {}
     if OptionsPrivate.Private.subRegionTypes[subRegionName] and OptionsPrivate.Private.subRegionTypes[subRegionName] then
-      if OptionsPrivate.Private.subRegionTypes[subRegionName].supports(data.regionType) and OptionsPrivate.Private.BlizzardAuraDisplay.CanAddElement(data, subRegionName) then
-        local default = OptionsPrivate.Private.subRegionTypes[subRegionName].default
-        local subRegionData = type(default) == "function" and default(data.regionType) or CopyTable(default)
-        subRegionData.type = subRegionName
-        if detached then subRegionData.secretAuraDetached = true end
-        if OptionsPrivate.Private.BlizzardAuraDisplay.Enabled(data) then
-          if subRegionName == "subglow" then subRegionData.glowType = "Proc"
-          elseif subRegionName == "subtext" then subRegionData.text_text = "Text" end
-        end
-        tinsert(data.subRegions, subRegionData)
+      local subRegionType = OptionsPrivate.Private.subRegionTypes[subRegionName]
+      if Display.CanAddElement(data, subRegionName) and subRegionType.supports(data.regionType) then
+        tinsert(data.subRegions, BuildSubRegionData(subRegionName, data.regionType, detached, Display.Enabled(data)))
         WeakAuras.Add(data)
         OptionsPrivate.ClearOptions(data.id)
       end
     end
   end
-  if OptionsPrivate.Private.BlizzardAuraDisplay.Enabled(data) then
+  if Display.Enabled(data) then
     OptionsPrivate.QueueOptionsRefresh(data.id)
   else
     WeakAuras.ClearAndUpdateOptions(data.id)
@@ -78,15 +102,19 @@ local function AddOptionsForSupportedSubRegion(regionOption, data, supported)
     end
   end
   if OptionsPrivate.Private.BlizzardAuraDisplay.Enabled(data) then
-    for _, kind in ipairs({"subtext", "subtexture"}) do
+    local detachableKinds = { "subtext", "subtexture" }
+    for position = 1, #detachableKinds do
+      local kind = detachableKinds[position]
       if supported[kind] then
         result[kind .. "Detached"] = {
           type = "execute",
           width = WeakAuras.normalWidth,
-          name = "Add Detached " .. OptionsPrivate.Private.subRegionTypes[kind].displayName,
-          desc = "Appears once at this display's anchor. Conditions from other triggers can change it in combat. It does not follow individual secret auras. To show it only under a condition, turn off Show Text or Show Texture, then use a Visibility condition.",
+          name = L["Add Detached %s"]:format(OptionsPrivate.Private.subRegionTypes[kind].displayName),
+          desc = L["Adds an element that stays visible on the display while Aura (Modern) draws the auras."],
           order = order,
-          func = function() AddSubRegion(data, kind, true) end,
+          func = function()
+            AddSubRegion(data, kind, true)
+          end,
         }
         order = order + 1
       end
@@ -191,13 +219,14 @@ function OptionsPrivate.GetDisplayOptions(data)
       get = function(info)
         local base, property = parsePrefix(info[#info], data);
         if(info.type == "color") then
-          local c = base and base[property] or {};
-          return c[1] or 1, c[2] or 1, c[3] or 1, c[4] or 1;
-        elseif not base then
-          return nil
-        else
-          return base[property];
+          local color = base and base[property]
+          local red, green, blue, alpha = 1, 1, 1, 1
+          if color then
+            red, green, blue, alpha = color[1] or 1, color[2] or 1, color[3] or 1, color[4] or 1
+          end
+          return red, green, blue, alpha
         end
+        return base and base[property]
       end,
       set = function(info, v, g, b, a)
         local base, property = parsePrefix(info[#info], data, true);
@@ -301,11 +330,11 @@ function OptionsPrivate.GetDisplayOptions(data)
     local Display = OptionsPrivate.Private.BlizzardAuraDisplay
     for child in OptionsPrivate.Private.TraverseLeafs(data) do
       if Display.Enabled(child) then
-        if not allOptions.secretAura and not Display.FlowGroup(child) then
+        if not (allOptions.secretAura or Display.FlowGroup(child)) then
           allOptions.secretAura = OptionsPrivate.GetSecretAuraSettings(child)
         end
-        if child.regionType == "icon" and allOptions.icon and not allOptions.icon.secretSwipeColor then
-          allOptions.icon.secretSwipeColor = {type = "color", name = "Swipe Color", hasAlpha = true, order = 11.9, width = WeakAuras.normalWidth}
+        if child.regionType == "icon" and allOptions.icon and allOptions.icon.secretSwipeColor == nil then
+          allOptions.icon.secretSwipeColor = NewSwipeColorOption()
         end
       end
     end

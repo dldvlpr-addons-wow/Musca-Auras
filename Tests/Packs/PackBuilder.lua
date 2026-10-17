@@ -518,8 +518,8 @@ function Pack.Build(spec)
       trigger.nativeFilters = nil
       local glow = Icon(totems, "Totem " .. slot .. " buff", trigger, { size = SIZES.totem })
       table.remove(glow.subRegions, 1)
-      glow.blizzardAuraDisplay = { maxIcons = 1 }
-      glow.xOffset, glow.color, glow.cooldown = (slot - 2.5) * totemColumn, {1, 1, 1, 0}, false
+      glow.blizzardAuraDisplay = { maxIcons = 1, sharedDisplay = true }
+      glow.xOffset, glow.color, glow.cooldown, glow.inverse = (slot - 2.5) * totemColumn, {1, 1, 1, 0}, false, true
     end
   end
 

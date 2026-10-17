@@ -207,6 +207,9 @@ local funcs = {
   SetDesaturated = function(self, b)
     self.texture:SetDesaturated(b)
   end,
+  SetDesaturation = function(self, value)
+    self.texture:SetDesaturation(value)
+  end,
   --- @type fun(self: StopMotionBaseInstance, r: number, g: number, b: number, a: number?)
   SetColor = function(self, r, g, b, a)
     self.texture:SetVertexColor(r, g, b, a)

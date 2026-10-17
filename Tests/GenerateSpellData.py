@@ -13,33 +13,34 @@ import re
 import sys
 
 REPOSITORY = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LINE_WIDTH = 108
+LINE_WIDTH = 90
 CONSUMABLES = (("Food", "Nutritious Food"), ("Drink", "Nutritious Drink"))
 
 
 def read_text(path):
     with open(path, encoding="utf-8", newline="") as handle:
-        return handle.read()
+        text = handle.read()
+    return text.replace("\r\n", "\n"), "\r\n" if "\r\n" in text else "\n"
 
 
-def write_text(path, text):
+def write_text(path, text, eol):
     with open(path, "w", encoding="utf-8", newline="") as handle:
-        handle.write(text)
+        handle.write(text.replace("\n", eol))
 
 
-def wrap_ids(ids, label, suffix):
+def wrap_ids(ids, label, key):
     if not ids:
         sys.exit("empty spell family: " + label)
-    lines, line = [], "  {"
+    lines, line = [], '  ["%s"] = {' % key
     for index, spell_id in enumerate(ids):
         item = str(spell_id) + ("}," if index == len(ids) - 1 else ",")
         candidate = line + ("" if line.endswith("{") else " ") + item
         if len(candidate) > LINE_WIDTH and not line.endswith("{"):
             lines.append(line)
-            line = "    " + item
+            line = "      " + item
         else:
             line = candidate
-    lines.append(line + suffix)
+    lines.append(line)
     return "\n".join(lines)
 
 
@@ -55,11 +56,11 @@ def rank_families(data, spell_names):
     blocks = []
     for key in sorted(families):
         label = " / ".join(part for part in key if part)
-        blocks.append(wrap_ids(families[key], label, " -- " + label))
+        blocks.append(wrap_ids(families[key], label, label))
     consumables = {}
     for names in CONSUMABLES:
         consumables[names[0]] = sorted(i for i, n in spell_names.items() if n in names)
-        blocks.append(wrap_ids(consumables[names[0]], names[0], ""))
+        blocks.append(wrap_ids(consumables[names[0]], names[0], names[0]))
     return families, consumables, "\n".join(blocks)
 
 
@@ -98,14 +99,10 @@ def table_body(text, opening):
 
 
 def current_families(text):
-    labelled, unlabelled = {}, []
-    for ids, label in re.findall(r"\{([\d,\s]+)\},?(?:[ \t]*--[ \t]*(.*))?", table_body(text, "local families = {")):
-        ids = [int(i) for i in re.findall(r"\d+", ids)]
-        if label:
-            labelled[label.strip()] = ids
-        else:
-            unlabelled.append(ids)
-    return labelled, unlabelled
+    labelled = {}
+    for label, ids in re.findall(r'\["([^"]+)"\]\s*=\s*\{([\d,\s]+)\}', table_body(text, "local rankTables = {")):
+        labelled[label] = [int(i) for i in re.findall(r"\d+", ids)]
+    return labelled, [labelled.pop(name, []) for name, _ in CONSUMABLES]
 
 
 def current_specializations(text):
@@ -119,33 +116,33 @@ def main():
     data_folder = sys.argv[1]
     output = sys.argv[2] if len(sys.argv) > 2 else os.path.join(REPOSITORY, "WeakAuras")
     source = os.path.join(REPOSITORY, "WeakAuras")
-    data = json.loads(read_text(os.path.join(data_folder, "data.json")))
+    data = json.loads(read_text(os.path.join(data_folder, "data.json"))[0])
     with open(os.path.join(data_folder, "SpellName.csv"), encoding="utf-8", newline="") as handle:
         spell_names = {int(row["ID"]): row["Name_lang"] for row in csv.DictReader(handle)}
     generated = data["generated"]
 
     outputs = {}
-    ranks_text = read_text(os.path.join(source, "SecretAuraRanks.lua"))
+    ranks_text, ranks_eol = read_text(os.path.join(source, "SecretAuraRanks.lua"))
     before, before_consumables = current_families(ranks_text)
     families, consumables, body = rank_families(data, spell_names)
-    ranks_text = replace_table(ranks_text, "local families = {", body)
+    ranks_text = replace_table(ranks_text, "local rankTables = {", body)
     ranks_text = re.sub(r"data\.json, generated \d{4}-\d{2}-\d{2}", "data.json, generated " + generated, ranks_text)
-    outputs["SecretAuraRanks.lua"] = ranks_text
+    outputs["SecretAuraRanks.lua"] = ranks_text, ranks_eol
 
-    spec_text = read_text(os.path.join(source, "PlayerSpecialization.lua"))
+    spec_text, spec_eol = read_text(os.path.join(source, "PlayerSpecialization.lua"))
     before_specs = current_specializations(spec_text)
     fallbacks, specs, body = specializations(data, spell_names)
     spec_text = replace_table(spec_text, "local specializations = {", body)
     spec_text = re.sub(r"data\.json, generated \d{4}-\d{2}-\d{2}", "data.json, generated " + generated, spec_text)
-    outputs["PlayerSpecialization.lua"] = spec_text
+    outputs["PlayerSpecialization.lua"] = spec_text, spec_eol
 
     for name in ("SpellRankData-LICENSE.txt", "SpecializationData-LICENSE.txt"):
-        text = read_text(os.path.join(source, name))
+        text, eol = read_text(os.path.join(source, name))
         text = re.sub(r"Source generated: \d{4}-\d{2}-\d{2}", "Source generated: " + generated, text)
-        outputs[name] = text.replace("Modified for ForeverAuras", "Modified for Musca Auras")
+        outputs[name] = text.replace("Modified for ForeverAuras", "Modified for Musca Auras"), eol
 
-    for name, text in outputs.items():
-        write_text(os.path.join(output, name), text)
+    for name, (text, eol) in outputs.items():
+        write_text(os.path.join(output, name), text, eol)
 
     after = {" / ".join(p for p in key if p): ids for key, ids in families.items()}
     print("data.json generated %s, %d families" % (generated, len(after)))

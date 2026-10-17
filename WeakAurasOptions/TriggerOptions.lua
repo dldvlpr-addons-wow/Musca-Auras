@@ -85,41 +85,40 @@ local function GetGlobalOptions(data)
     },
     secretFallback = {
       type = "select",
-      name = "When Aura (Modern) Filters Are Not Met, Use",
+      name = L["When Aura (Modern) Filters Are Not Met, Use"],
       desc = function()
-        local text = "Aura (Modern) triggers are always active. When their filters are not met, the display can use another trigger's information as a fallback. Select that trigger here."
-        local display = OptionsPrivate.Private.BlizzardAuraDisplay
-        if not display.GetSavedTrigger(data) then
-          text = text .. "\n\n|cffff9900Dynamic Information does not come from an Aura (Modern) trigger, so this has no effect.|r"
+        local lines = { L["Trigger that supplies Dynamic Information while no aura passes the Aura (Modern) filters."] }
+        if not OptionsPrivate.Private.BlizzardAuraDisplay.GetSavedTrigger(data) then
+          lines[#lines + 1] = "|cffff9900" .. L["Ignored while the progress source is not an Aura (Modern) trigger."] .. "|r"
         end
-        return text
+        return table.concat(lines, "\n\n")
       end,
       width = WeakAuras.doubleWidth,
       order = 2.35,
       values = function()
-        local vals = {next = "Next Active Trigger", none = "None"}
-        for i, entry in ipairs(data.triggers) do
-          if type(entry) == "table" and entry.trigger and entry.trigger.type ~= "secretAura" then
-            vals[i] = ("Trigger %i"):format(i)
+        local choices = { next = L["Next Active Trigger"], none = L["None"] }
+        for index, entry in ipairs(data.triggers) do
+          if entry.trigger.type ~= "secretAura" then
+            choices[index] = L["Trigger %i"]:format(index)
           end
         end
-        return vals
+        return choices
       end,
       get = function()
         return OptionsPrivate.Private.BlizzardAuraDisplay.FallbackChoice(data)
       end,
       set = function(info, v)
-        data.triggers.secretFallback = v ~= "next" and v or nil
-        WeakAuras.Add(data);
+        if v == "next" then
+          data.triggers.secretFallback = nil
+        else
+          data.triggers.secretFallback = v
+        end
+        WeakAuras.Add(data)
       end,
       hidden = function()
-        if #data.triggers <= 1 then return true end
-        for _, entry in ipairs(data.triggers) do
-          if type(entry) == "table" and entry.trigger and entry.trigger.type == "secretAura" then return false end
-        end
-        return true
-      end
-    }
+        return #data.triggers < 2 or not OptionsPrivate.Private.BlizzardAuraDisplay.HasTrigger(data)
+      end,
+    },
   }
 
   local function hideTriggerCombiner()
@@ -336,7 +335,7 @@ function OptionsPrivate.GetTriggerTitle(data, triggernum)
       local triggerType = trigger.type
       local name
       if triggerType == "secretAura" then
-        name = "Aura (Modern)"
+        name = L["Aura (Modern)"]
       elseif triggerType == "aura2" then
         name = L["Aura"]
       elseif triggerType == "custom" then

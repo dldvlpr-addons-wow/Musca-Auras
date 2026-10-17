@@ -1876,45 +1876,41 @@ Private.event_prototypes["Boss Mod Timer"] = {
 }
 Private.category_event_prototype.addons["Boss Mod Timer"] = L["Boss Mod Timer"]
 
-function WeakAuras.IsBossModEnabled(encounterIDs) end
+local bigWigsPresent = BigWigsLoader ~= nil
 
-if BigWigsLoader then
-  local bossModEnabledListener = {}
-  local function FireBossModEnabledStateChanged()
-    Private.callbacks:Fire("WA_BOSSMOD_ENABLED_STATE_CHANGED")
+function WeakAuras.IsBossModEnabled(wantedEncounters)
+  if not (bigWigsPresent and BigWigs and BigWigs:IsEnabled()) then
+    return nil
   end
-  BigWigsLoader.RegisterMessage(bossModEnabledListener, "BigWigs_OnBossEnable", function(_, module)
-    if module.engageId then
-      FireBossModEnabledStateChanged()
-    end
-  end)
-  BigWigsLoader.RegisterMessage(bossModEnabledListener, "BigWigs_OnBossDisable", function(_, module)
-    if module.engageId then
-      FireBossModEnabledStateChanged()
-    end
-  end)
-  BigWigsLoader.RegisterMessage(bossModEnabledListener, "BigWigs_CoreEnabled", FireBossModEnabledStateChanged)
-  BigWigsLoader.RegisterMessage(bossModEnabledListener, "BigWigs_CoreDisabled", FireBossModEnabledStateChanged)
-  function WeakAuras.IsBossModEnabled(encounterIDs)
-    if BigWigs and BigWigs:IsEnabled() then
-      for _, mod in BigWigs:IterateBossModules() do
-        if mod:IsEnabled() and mod.engageId and encounterIDs[mod.engageId] then
-          return true
-        end
-      end
+  for _, module in BigWigs:IterateBossModules() do
+    local engageId = module.engageId
+    if engageId and wantedEncounters[engageId] and module:IsEnabled() then
+      return true
     end
   end
+  return nil
 end
 
-function Private.ExecEnv.ParseBossModCheck(input)
-  local matcher = {
-    encounterIds = {},
-    Check = function(self)
-      return WeakAuras.IsBossModEnabled(self.encounterIds)
-    end,
-  }
-  for encounterId in (input or ""):gmatch("%d+") do
-    matcher.encounterIds[tonumber(encounterId)] = true
+if bigWigsPresent then
+  local bigWigsListener = {}
+  local function NotifyStateChanged()
+    Private.callbacks:Fire("WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED")
   end
-  return matcher
+  local function OnEncounterModule(_, module)
+    if module.engageId then
+      NotifyStateChanged()
+    end
+  end
+  BigWigsLoader.RegisterMessage(bigWigsListener, "BigWigs_CoreEnabled", NotifyStateChanged)
+  BigWigsLoader.RegisterMessage(bigWigsListener, "BigWigs_CoreDisabled", NotifyStateChanged)
+  BigWigsLoader.RegisterMessage(bigWigsListener, "BigWigs_OnBossEnable", OnEncounterModule)
+  BigWigsLoader.RegisterMessage(bigWigsListener, "BigWigs_OnBossDisable", OnEncounterModule)
+end
+
+function Private.ExecEnv.EncounterIdSet(input)
+  local set = {}
+  for digits in tostring(input or ""):gmatch("%d+") do
+    set[tonumber(digits)] = true
+  end
+  return set
 end

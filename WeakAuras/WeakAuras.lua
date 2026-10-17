@@ -215,6 +215,8 @@ function Private.PrintHelp()
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
   print(L["/wa repair - Repair tool"])
+  print("/wa backups - List the daily copies of your auras")
+  print("/wa restore <number> - Replace your auras with a daily copy and reload the UI")
   print(L["If you require additional assistance, please open a ticket on GitHub or visit our Discord at https://discord.gg/weakauras!"])
 end
 
@@ -250,6 +252,21 @@ function SlashCmdList.WEAKAURAS(input)
     Private.PrintHelp();
   elseif msg == "repair" then
     StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "user"})
+  elseif msg == "backups" or msg == "restore" then
+    local backups, reason = Private.ListBackups()
+    local chosen = backups and msg == "restore" and backups[tonumber(args[1] or "")]
+    if not backups then
+      prettyPrint(reason)
+    elseif chosen then
+      StaticPopup_Show("WEAKAURAS_CONFIRM_RESTORE", date(nil, chosen.timestamp), chosen.auraCount, chosen.key)
+    elseif #backups == 0 then
+      prettyPrint("No daily copy of your auras yet. One is taken after each login, once a day.")
+    else
+      for index, backup in ipairs(backups) do
+        print(("%d. %s, %d auras"):format(index, date(nil, backup.timestamp), backup.auraCount))
+      end
+      prettyPrint("/wa restore <number> replaces your auras with that copy.")
+    end
   elseif msg == "ff" or msg == "feat" or msg == "feature" then
     if #args < 2 then
       local features = Private.Features:ListFeatures()
@@ -334,7 +351,7 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.9.1"
+local CLASS_PACK_VERSION = "1.10.0"
 
 local function HasClassPack()
   local _, playerClass = UnitClass("player")
@@ -429,10 +446,20 @@ Private.triggerTypesOptions = {};
 local triggerState = {}
 function Private.GetActiveTriggerFor(id)
   local state = triggerState[id]
-  if not state then return end
-  if state.activeTriggerMode and state.activeTriggerMode > 0 then return state.activeTriggerMode end
-  for index = 1, state.numTriggers or 0 do
-    if state.triggers and state.triggers[index] then return index end
+  if not (state and state.triggers) then
+    return nil
+  end
+  local mode = state.activeTriggerMode
+  if type(mode) == "number" and mode > 0 then
+    return mode
+  end
+  local count = state.numTriggers or 0
+  local index = 1
+  while index <= count do
+    if state.triggers[index] then
+      return index
+    end
+    index = index + 1
   end
 end
 
@@ -604,6 +631,7 @@ function WeakAuras.RegisterSubRegionType(name, displayName, supportFunction, cre
         return subRegion
       end,
       release = function(subRegion)
+        Private.ClearSecretSubRegionVisible(subRegion)
         onRelease(subRegion)
         pool:Release(subRegion)
       end
@@ -1399,6 +1427,8 @@ function Private.Login(takeNewSnapshots)
     end
 
     loginFinished = true
+    -- A failed copy must not stop the rest of the login. A disabled archive addon only skips it.
+    xpcall(Private.BackupDisplays, geterrorhandler(), db.displays)
     -- Tell Dynamic Groups that we are done with login
     for _, region in pairs(Private.regions) do
       if (region.region and region.region.RunDelayedActions) then
@@ -2025,9 +2055,9 @@ Private.callbacks:RegisterCallback("RestrictionChanged", function()
   Private.StopProfileSystem("load");
 end)
 
-Private.callbacks:RegisterCallback("WA_BOSSMOD_ENABLED_STATE_CHANGED", function()
+Private.callbacks:RegisterCallback("WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED", function()
   Private.StartProfileSystem("load");
-  Private.ScanForLoads(nil, "WA_BOSSMOD_ENABLED_STATE_CHANGED")
+  Private.ScanForLoads(nil, "WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED")
   Private.StopProfileSystem("load");
 end)
 
@@ -2623,6 +2653,19 @@ StaticPopupDialogs["WEAKAURAS_ACTION_BLOCKED"] = {
   button1 = OKAY,
   timeout = 0,
   whileDead = true,
+  hideOnEscape = true,
+}
+
+StaticPopupDialogs["WEAKAURAS_CONFIRM_RESTORE"] = {
+  text = "Replace all your auras with the copy of %s (%d auras)?\nChanges made since then are lost. The UI reloads.",
+  button1 = ACCEPT,
+  button2 = CANCEL,
+  OnAccept = function(self)
+    Private.RestoreBackup(self.data, db)
+  end,
+  whileDead = true,
+  showAlert = true,
+  timeout = 0,
   hideOnEscape = true,
 }
 
@@ -3370,17 +3413,38 @@ local function cycleCheck(data)
   end
 end
 
-function pAdd(data, simpleChange)
-  if data.cdmDispelIndicator then
-    data.subRegions = data.subRegions or {}
-    table.insert(data.subRegions, {
-      type = "subcdmdispel", dispelVisible = true, dispelStyle = "Border",
-      anchor_mode = "area", anchor_area = data.regionType == "aurabar" and "bar" or "ALL",
-      self_point = "CENTER", anchor_point = "CENTER", width = 32, height = 32,
-      xOffset = 0, yOffset = 0,
-    })
-    data.cdmDispelIndicator = nil
+local legacyDispelBorder = {
+  type = "subcdmdispel",
+  dispelStyle = "Border",
+  dispelVisible = true,
+  anchor_mode = "area",
+  anchor_point = "CENTER",
+  self_point = "CENTER",
+  xOffset = 0,
+  yOffset = 0,
+  width = 32,
+  height = 32,
+}
+
+local function ConvertLegacyDispelFlag(data)
+  if not data.cdmDispelIndicator then
+    return
   end
+  local border = {}
+  for field, value in pairs(legacyDispelBorder) do
+    border[field] = value
+  end
+  border.anchor_area = "ALL"
+  if data.regionType == "aurabar" then
+    border.anchor_area = "bar"
+  end
+  data.cdmDispelIndicator = nil
+  data.subRegions = data.subRegions or {}
+  data.subRegions[#data.subRegions + 1] = border
+end
+
+function pAdd(data, simpleChange)
+  ConvertLegacyDispelFlag(data)
   Private.DispelTypeDisplay.Migrate(data)
   local id = data.id;
   if not(id) then
@@ -3405,7 +3469,6 @@ function pAdd(data, simpleChange)
     Private.AuraWarnings.UpdateWarning(data.uid, "blizzard_aura_sound", nil)
     Private.AuraWarnings.UpdateWarning(data.uid, "blizzard_aura_single", nil)
   end
-
   local otherID = UIDtoID[data.uid]
   if not otherID then
     UIDtoID[data.uid] = id
@@ -3681,7 +3744,7 @@ function Private.SetRegion(data, cloneId)
       Private.CDMAuraProgress.AddSpareClone(clonePool[regionType], regionType, data,
         function() return regionTypes[regionType].create(WeakAurasFrame, data) end, parent)
       if(anim_cancelled) then
-        Private.Animate("display", data.uid, "main", data.animation.main, region, false, nil, true, cloneId);
+        Private.Animate("display", data.uid, "main", region.conditionAnimation or data.animation.main, region, false, nil, true, cloneId);
       end
       return region;
     end
@@ -3713,12 +3776,6 @@ local function EnsureClone(id, cloneId)
     Private.SetRegion(data, cloneId)
   end
   return clones[id][cloneId]
-end
-
-local creatingRegions = false
-
-function Private.CreatingRegions()
-  return creatingRegions
 end
 
 --- Ensures that a region exists
@@ -3801,15 +3858,6 @@ function Private.SetAllStatesHidden(id, triggernum)
     triggerState[cloneId] = nil
   end
   return changed
-end
-
-function Private.SetAllStatesHiddenExcept(id, triggernum, list)
-  local triggerState = WeakAuras.GetTriggerStateForTrigger(id, triggernum);
-  for cloneId in pairs(triggerState) do
-    if (not (list[cloneId])) then
-      triggerState[cloneId] = nil
-    end
-  end
 end
 
 local pendingProtectedReleases = {}
@@ -4136,10 +4184,11 @@ function Private.HandleGlowAction(actions, region)
 end
 
 function Private.PerformActions(data, when, region)
-  if when == "finish" and data.actions.finish.hide_all_glows and Private.BlizzardAuraDisplay then
-    Private.BlizzardAuraDisplay.HideUnitGlows(region)
+  local blizzardDisplay = Private.BlizzardAuraDisplay
+  if blizzardDisplay and when == "finish" and data.actions.finish.hide_all_glows then
+    blizzardDisplay.HideUnitGlows(region)
   end
-  local nativeAura = Private.BlizzardAuraDisplay.Enabled(data)
+  local nativeAura = blizzardDisplay and blizzardDisplay.Enabled(data)
   if (paused or WeakAuras.IsOptionsOpen()) then
     return;
   end;
@@ -4155,12 +4204,16 @@ function Private.PerformActions(data, when, region)
     return;
   end
 
-  if(not nativeAura and actions.do_message and actions.message_type and actions.message) then
-    local customFunc = not nativeAura and Private.customActionsFunctions[data.id][when .. "_message"];
-    Private.HandleChatAction(actions.message_type, actions.message, actions.message_dest, actions.message_dest_isunit, actions.message_channel, actions.r, actions.g, actions.b, region, {customFunc = customFunc}, when, formatters);
+  if nativeAura then
+    return
   end
 
-  if nativeAura then return end
+  if actions.do_message and actions.message_type and actions.message then
+    local customFunctions = Private.customActionsFunctions[data.id]
+    local customCache = { customFunc = customFunctions and customFunctions[when .. "_message"] }
+    Private.HandleChatAction(actions.message_type, actions.message, actions.message_dest, actions.message_dest_isunit,
+      actions.message_channel, actions.r, actions.g, actions.b, region, customCache, when, formatters)
+  end
 
   if (actions.stop_sound) then
     if (region.SoundStop) then
@@ -6508,6 +6561,26 @@ local HiddenFrames = CreateFrame("Frame", "WeakAurasHiddenFrames")
 HiddenFrames:Hide()
 WeakAuras.HiddenFrames = HiddenFrames
 
+local function IsNativeUnitAnchor(data)
+  local anchorFrameType = data.anchorFrameType
+  return (anchorFrameType == "UNITFRAME" or anchorFrameType == "NAMEPLATE")
+    and Private.BlizzardAuraDisplay.Enabled(data)
+end
+
+local function CanReparentNow()
+  if InCombatLockdown() then
+    return false
+  end
+  return WeakAuras.IsOptionsOpen()
+end
+
+local function NativeHome(parent)
+  if parent then
+    return parent
+  end
+  return UIParent
+end
+
 local function GetAnchorFrame(data, region, parent)
   local id = region.id
   local anchorFrameType = data.anchorFrameType
@@ -6521,11 +6594,12 @@ local function GetAnchorFrame(data, region, parent)
     mouseFrame:anchorFrame(id, anchorFrameType);
   end
 
-  if (anchorFrameType == "UNITFRAME" or anchorFrameType == "NAMEPLATE")
-    and Private.BlizzardAuraDisplay and Private.BlizzardAuraDisplay.Enabled(data)
-    and not (WeakAuras.IsOptionsOpen() and not InCombatLockdown()) then
-    if anchor_unitframe_monitor then anchor_unitframe_monitor[region] = nil end
-    return parent or UIParent
+  local nativeUnitAnchor = IsNativeUnitAnchor(data)
+  if nativeUnitAnchor and not CanReparentNow() then
+    if anchor_unitframe_monitor then
+      anchor_unitframe_monitor[region] = nil
+    end
+    return NativeHome(parent)
   end
 
   if (anchorFrameType == "SCREEN") then
@@ -6562,16 +6636,19 @@ local function GetAnchorFrame(data, region, parent)
   end
 
   if (anchorFrameType == "UNITFRAME") then
-    local unit = region.state and region.state.unit
-    if WeakAuras.IsOptionsOpen() and Private.BlizzardAuraDisplay.Enabled(data) then
+    local unit
+    if nativeUnitAnchor then
       unit = Private.BlizzardAuraDisplay.GetPreviewUnit(data)
+    elseif region.state then
+      unit = region.state.unit
     end
     if unit then
       local frame = WeakAuras.GetUnitFrame(unit)
-      if not frame and WeakAuras.IsOptionsOpen() and Private.BlizzardAuraDisplay.Enabled(data) then
-        frame = parent or UIParent
+      if not frame and nativeUnitAnchor then
+        frame = NativeHome(parent)
+      elseif not frame then
+        frame = HiddenFrames
       end
-      frame = frame or WeakAuras.HiddenFrames
       if frame then
         anchor_unitframe_monitor = anchor_unitframe_monitor or {}
         anchor_unitframe_monitor[region] = {
@@ -6629,6 +6706,18 @@ end
 
 local anchorFrameDeferred = {}
 
+local function SettleAnchoredRegion(data, region)
+  local strata = data.frameStrata
+  if strata == 1 then
+    strata = region:GetParent():GetFrameStrata()
+  else
+    strata = Private.frame_strata_types[strata]
+  end
+  region:SetFrameStrata(strata)
+  Private.ApplyFrameLevel(region)
+  anchorFrameDeferred[data.id] = nil
+end
+
 function Private.AnchorFrame(data, region, parent, force)
   if data.anchorFrameType == "CUSTOM"
   and (data.regionType == "group" or data.regionType == "dynamicgroup")
@@ -6644,24 +6733,20 @@ function Private.AnchorFrame(data, region, parent, force)
       postponeAnchor(data.id, region.cloneId)
       return
     end
-    local flowPreview = data.regionType == "group" and Private.BlizzardAuraDisplay.FlowPreviewFrame
-      and Private.BlizzardAuraDisplay.FlowPreviewFrame(data)
-    if flowPreview then
+    local layoutFrame
+    if data.regionType == "group" then
+      layoutFrame = Private.BlizzardAuraDisplay.FlowPreviewFrame(data)
+    end
+    if layoutFrame then
       region:SetParent(parent or WeakAurasFrame)
-      region:SetAnchor(data.selfPoint, flowPreview, data.anchorPoint)
-      if data.frameStrata == 1 then
-        region:SetFrameStrata(region:GetParent():GetFrameStrata())
-      else
-        region:SetFrameStrata(Private.frame_strata_types[data.frameStrata])
-      end
-      Private.ApplyFrameLevel(region)
-      anchorFrameDeferred[data.id] = nil
+      region:SetAnchor(data.selfPoint, layoutFrame, data.anchorPoint)
+      SettleAnchoredRegion(data, region)
       return
     end
     local anchorParent = GetAnchorFrame(data, region, parent);
     if not anchorParent then return end
-    if Private.BlizzardAuraDisplay.Enabled(data) and (data.anchorFrameType == "UNITFRAME" or data.anchorFrameType == "NAMEPLATE") then
-      region:SetParent(parent or WeakAurasFrame);
+    if IsNativeUnitAnchor(data) then
+      region:SetParent(parent or WeakAurasFrame)
     elseif (data.anchorFrameParent or data.anchorFrameParent == nil
         or data.anchorFrameType == "SCREEN" or data.anchorFrameType == "UIPARENT" or data.anchorFrameType == "MOUSE") then
       xpcall(region.SetParent, Private.GetErrorHandlerId(data.id, L["Anchoring"]), region, anchorParent);
@@ -6681,14 +6766,7 @@ function Private.AnchorFrame(data, region, parent, force)
     end
 
     region:SetAnchor(data.selfPoint, anchorParent, anchorPoint);
-
-    if(data.frameStrata == 1) then
-      region:SetFrameStrata(region:GetParent():GetFrameStrata());
-    else
-      region:SetFrameStrata(Private.frame_strata_types[data.frameStrata]);
-    end
-    Private.ApplyFrameLevel(region)
-    anchorFrameDeferred[data.id] = nil
+    SettleAnchoredRegion(data, region)
   end
 end
 

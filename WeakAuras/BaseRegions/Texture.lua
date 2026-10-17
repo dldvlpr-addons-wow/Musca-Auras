@@ -123,6 +123,10 @@ local funcs = {
     self.texture:SetDesaturated(b)
   end,
 
+  SetDesaturation = function(self, value)
+    self.texture:SetDesaturation(value)
+  end,
+
   --- @class TextureBaseInstance
   --- @field SetAnimRotation fun(self: TextureBaseInstance, degrees: number?)
   SetAnimRotation = function(self, degrees)

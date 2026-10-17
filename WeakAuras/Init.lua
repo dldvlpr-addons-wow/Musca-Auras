@@ -573,7 +573,6 @@ do
     "LibSharedMedia-3.0",
     "LibDataBroker-1.1",
     "LibCompress",
-    "SpellRange-1.0",
     "LibCustomGlow-1.0",
     "LibDBIcon-1.0",
     "LibGetFrame-1.0",

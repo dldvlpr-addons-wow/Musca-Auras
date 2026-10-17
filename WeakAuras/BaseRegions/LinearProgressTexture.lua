@@ -323,6 +323,9 @@ local funcs = {
   SetDesaturated = function(self, desaturate)
     self.texture:SetDesaturated(desaturate)
   end,
+  SetDesaturation = function(self, value)
+    self.texture:SetDesaturation(value)
+  end,
   --- @type fun(self: LinearProgressTextureInstance, blendMode: BlendMode)
   SetBlendMode = function(self, blendMode)
     self.texture:SetBlendMode(blendMode)

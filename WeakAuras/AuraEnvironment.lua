@@ -244,10 +244,6 @@ local aura_environments = {}
 local environment_initialized = {}
 local getDataCallCounts = {}
 
-function Private.IsEnvironmentInitialized(id)
-  return environment_initialized[id] == 2
-end
-
 function Private.DeleteAuraEnvironment(id)
   aura_environments[id] = nil
   environment_initialized[id] = nil
@@ -569,6 +565,49 @@ local FakeWeakAurasMixin = {
 
 local FakeWeakAuras = MakeReadOnly(WeakAuras, FakeWeakAurasMixin)
 
+local function UnpackAura(auraData)
+  if auraData then
+    return AuraUtil.UnpackAuraData(auraData)
+  end
+end
+
+local function SpellOnly(func)
+  return function(spell, bookType)
+    if bookType == nil then
+      return func(spell)
+    end
+  end
+end
+
+local removedFunctionReplacements = {
+  UnitAura = UnitAura,
+  UnitBuff = function(unit, index, filter)
+    return UnpackAura(C_UnitAuras.GetBuffDataByIndex(unit, index, filter))
+  end,
+  UnitDebuff = function(unit, index, filter)
+    return UnpackAura(C_UnitAuras.GetDebuffDataByIndex(unit, index, filter))
+  end,
+  GetSpellInfo = SpellOnly(Private.ExecEnv.GetSpellInfo),
+  GetSpellTexture = SpellOnly(Private.ExecEnv.GetSpellIcon),
+  IsUsableSpell = SpellOnly(Private.ExecEnv.IsUsableSpell),
+  GetSpellCooldown = function(spell, bookType)
+    local info = spell and bookType == nil and C_Spell.GetSpellCooldown(spell)
+    if info then
+      return info.startTime, info.duration, info.isEnabled and 1 or 0, info.modRate
+    end
+  end,
+  GetSpellCharges = function(spell)
+    local info = spell and C_Spell.GetSpellCharges(spell)
+    if info then
+      return info.currentCharges, info.maxCharges, info.cooldownStartTime, info.cooldownDuration, info.chargeModRate
+    end
+  end,
+}
+
+function Private.HasRemovedFunctionReplacement(name)
+  return _G[name] == nil and removedFunctionReplacements[name] ~= nil
+end
+
 local overridden = {
   WA_GetUnitAura = WA_GetUnitAura,
   WA_GetUnitBuff = WA_GetUnitBuff,
@@ -625,6 +664,8 @@ local exec_env_custom = setmetatable(CopyTable(mixins),
       return overridden[k]
     elseif _G[k] then
       return _G[k]
+    elseif removedFunctionReplacements[k] then
+      return removedFunctionReplacements[k]
     elseif k:find(".", 1, true) then
       -- e.g. "PlayerFrame.healthbar" from the frame chooser. The first segment
       -- goes through the sandbox so "_G.loadstring" stays blocked.

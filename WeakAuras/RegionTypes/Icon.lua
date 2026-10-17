@@ -309,16 +309,30 @@ local function create(parent, data)
   return region;
 end
 
-local cooldownAlphaCurve = C_CurveUtil and C_CurveUtil.CreateCurve()
-if cooldownAlphaCurve then
-  cooldownAlphaCurve:AddPoint(0, 0)
-  cooldownAlphaCurve:AddPoint(0.001, 1)
+local function CreateCountdownAlphaCurve()
+  if not (C_CurveUtil and C_CurveUtil.CreateCurve) then
+    return nil
+  end
+  local curve = C_CurveUtil.CreateCurve()
+  if curve then
+    curve:AddPoint(0, 0)
+    curve:AddPoint(0.001, 1)
+  end
+  return curve
+end
+local countdownAlphaCurve = CreateCountdownAlphaCurve()
+
+local function IsCDMSpellCooldown(progressState)
+  if progressState == nil or progressState.cdmBuff then
+    return false
+  end
+  return progressState.cooldownID and true or false
 end
 
 local function RefreshCountdownAlpha(region)
-  local textDuration = region.countdownTextDuration
-  if textDuration then
-    region.cooldown:GetCountdownFontString():SetAlpha(textDuration:EvaluateRemainingDuration(cooldownAlphaCurve))
+  local tracked = region.countdownTextDuration
+  if tracked then
+    region.cooldown:GetCountdownFontString():SetAlpha(tracked:EvaluateRemainingDuration(countdownAlphaCurve))
   end
 end
 
@@ -439,60 +453,67 @@ local function modify(parent, region, data)
   end
 
   function region:UpdateEffectiveInverse()
-    -- If cooldown.inverse == false then effectiveReverse = not inverse
-    -- If cooldown.inverse == true then effectiveReverse = inverse
-    local effectiveReverse = not region.inverseDirection == not cooldown.inverse
-    local progressState = region.cdmProgressState
-    if progressState and progressState.cooldownID and not progressState.cdmBuff then
-      effectiveReverse = region.inverseDirection == true
+    local reverse
+    if IsCDMSpellCooldown(region.cdmProgressState) then
+      reverse = region.inverseDirection == true
+    else
+      -- If cooldown.inverse == false then effectiveReverse = not inverse
+      -- If cooldown.inverse == true then effectiveReverse = inverse
+      reverse = not region.inverseDirection == not cooldown.inverse
     end
-    local reverseChanged = cooldown.durationObject and not cooldown:GetReverse() ~= not effectiveReverse
-    cooldown:SetReverse(effectiveReverse)
+    local durationObject = cooldown.durationObject
+    local directionChanged = durationObject ~= nil and not cooldown:GetReverse() ~= not reverse
+    cooldown:SetReverse(reverse)
     Private.CDMAuraProgress.Style(region)
-    if cooldown.durationObject then
-      if reverseChanged and cooldown:IsShown() then
+
+    if not cooldown:IsShown() then
+      return
+    end
+    if durationObject then
+      if directionChanged then
         -- WORKAROUND SetReverse not applying until next frame
         cooldown:SetCooldown(0, 0)
-        Private.ApplyCooldownDuration(cooldown, cooldown.durationObject)
+        Private.ApplyCooldownDuration(cooldown, durationObject)
       end
-    elseif (Private.IsReadableNumber(cooldown.expirationTime, cooldown.duration) and cooldown:IsShown()) then
+    elseif Private.IsReadableNumber(cooldown.expirationTime, cooldown.duration) then
       -- WORKAROUND SetReverse not applying until next frame
       cooldown:SetCooldown(0, 0)
       Private.ApplyCooldown(cooldown, cooldown.expirationTime, cooldown.duration,
                             cooldown.useCooldownModRate and cooldown.modRate or nil)
     end
   end
-
   region:SetInverse(data.inverse)
 
   function region:SetHideCountdownNumbers(cooldownTextDisabled)
-    self.cdmConfiguredHideNumbers = cooldownTextDisabled
-    Private.CDMAuraProgress.Style(self)
-    local state = self.cdmProgressState or self.state
-    cooldownTextDisabled = cooldownTextDisabled or Private.ShouldHideDurationText(state) or false
-    local countdown = cooldown:GetCountdownFontString()
-    local textDuration = state and state.cdmHideGCDText and state.cdmTextDurationObject
-    if textDuration and cooldownAlphaCurve then
-      self.countdownTextDuration = textDuration
-      countdown:SetAlpha(textDuration:EvaluateRemainingDuration(cooldownAlphaCurve))
-      Private.SetNativeRefresh(self, "countdownAlpha", RefreshCountdownAlpha)
+    region.cdmConfiguredHideNumbers = cooldownTextDisabled
+    Private.CDMAuraProgress.Style(region)
+    local state = region.cdmProgressState or region.state
+    local tracked = countdownAlphaCurve and state and state.cdmHideGCDText and state.cdmTextDurationObject
+    if tracked then
+      region.countdownTextDuration = tracked
+      RefreshCountdownAlpha(region)
+      Private.SetNativeRefresh(region, "countdownAlpha", RefreshCountdownAlpha)
     else
-      countdown:SetAlpha(1)
-      if self.countdownTextDuration then
-        self.countdownTextDuration = nil
-        Private.SetNativeRefresh(self, "countdownAlpha", nil)
+      cooldown:GetCountdownFontString():SetAlpha(1)
+      if region.countdownTextDuration then
+        region.countdownTextDuration = nil
+        Private.SetNativeRefresh(region, "countdownAlpha", nil)
       end
+    end
+    local hideNumbers = cooldownTextDisabled
+    if not hideNumbers then
+      hideNumbers = Private.ShouldHideDurationText(state) and true or false
     end
     if OmniCC and OmniCC.Cooldown and OmniCC.Cooldown.SetNoCooldownCount then
       cooldown:SetHideCountdownNumbers(true)
-      OmniCC.Cooldown.SetNoCooldownCount(cooldown, cooldownTextDisabled)
+      OmniCC.Cooldown.SetNoCooldownCount(cooldown, hideNumbers)
     elseif ElvUI and ElvUI[1] and ElvUI[1].CooldownEnabled
            and ElvUI[1].ToggleCooldown and ElvUI[1]:CooldownEnabled()
     then
       cooldown:SetHideCountdownNumbers(true)
-      ElvUI[1]:ToggleCooldown(cooldown, not cooldownTextDisabled);
+      ElvUI[1]:ToggleCooldown(cooldown, not hideNumbers);
     else
-      cooldown:SetHideCountdownNumbers(cooldownTextDisabled);
+      cooldown:SetHideCountdownNumbers(hideNumbers);
     end
   end
   region:SetHideCountdownNumbers(data.cooldownTextDisabled)
@@ -610,22 +631,25 @@ local function modify(parent, region, data)
 
 
   function region:UpdateCooldownDrawState()
-    local suppressed = self.cdmProgressState and self.cdmProgressState.cdmSuppressGCD or false
-    cooldown:SetDrawSwipeOrg(not suppressed and not not self.cooldownSwipe)
-    cooldown:SetDrawEdge(not suppressed and self.cooldownEdge == true)
+    local state = self.cdmProgressState
+    local suppressed = (state and state.cdmSuppressGCD) and true or false
+    cooldown:SetDrawSwipeOrg((not suppressed) and (self.cooldownSwipe and true or false))
+    cooldown:SetDrawEdge((not suppressed) and self.cooldownEdge == true)
     return suppressed
   end
 
-  function region:SetCooldownSwipe(cooldownSwipe)
-    region.cooldownSwipe = cooldownSwipe;
-    self:UpdateCooldownDrawState()
+  local function SetDrawOption(field, value)
+    region[field] = value
+    region:UpdateCooldownDrawState()
     Private.CDMAuraProgress.Style(region)
   end
 
+  function region:SetCooldownSwipe(cooldownSwipe)
+    SetDrawOption("cooldownSwipe", cooldownSwipe)
+  end
+
   function region:SetCooldownEdge(cooldownEdge)
-    region.cooldownEdge = cooldownEdge;
-    self:UpdateCooldownDrawState()
-    Private.CDMAuraProgress.Style(region)
+    SetDrawOption("cooldownEdge", cooldownEdge)
   end
 
   region:SetCooldownSwipe(data.cooldownSwipe)
@@ -644,8 +668,11 @@ local function modify(parent, region, data)
   cooldown:Hide()
   if(data.cooldown) then
     function region:UpdateValue()
-      if region.cdmNativeProgress then return end
-      if self:UpdateCooldownDrawState() then cooldown:Hide(); return end
+      if self.cdmNativeProgress then return end
+      if self:UpdateCooldownDrawState() then
+        cooldown:Hide()
+        return
+      end
       self:SetHideCountdownNumbers(self.cdmConfiguredHideNumbers)
       cooldown.expirationTime = nil
       cooldown.duration = nil
@@ -655,23 +682,27 @@ local function modify(parent, region, data)
         cooldown:Hide()
         return
       end
-      cooldown.value = self.value
-      cooldown.total = self.total
-      if Private.IsReadableNumber(self.value, self.total) and self.value >= 0 and self.value <= self.total then
+      local value, total = self.value, self.total
+      cooldown.value = value
+      cooldown.total = total
+      if Private.IsReadableNumber(value, total) and value >= 0 and value <= total then
         cooldown:Show()
-        if Private.ApplyCooldown(cooldown, GetTime() + self.value, self.total) then
+        if Private.ApplyCooldown(cooldown, GetTime() + value, total) then
           cooldown:Pause()
         else
           cooldown:Hide()
         end
       else
-        cooldown:Hide();
+        cooldown:Hide()
       end
     end
 
     function region:UpdateTime()
-      if region.cdmNativeProgress then return end
-      if self:UpdateCooldownDrawState() then cooldown:Hide(); return end
+      if self.cdmNativeProgress then return end
+      if self:UpdateCooldownDrawState() then
+        cooldown:Hide()
+        return
+      end
       self:SetHideCountdownNumbers(self.cdmConfiguredHideNumbers)
       cooldown.value = nil
       cooldown.total = nil
@@ -680,56 +711,68 @@ local function modify(parent, region, data)
       else
         cooldown:Resume()
       end
-      if self.durationObject and cooldown.SetCooldownFromDurationObject then
+
+      local durationObject = self.durationObject
+      if durationObject and cooldown.SetCooldownFromDurationObject then
         cooldown.expirationTime = nil
         cooldown.duration = nil
         cooldown.modRate = nil
-        cooldown.durationObject = self.durationObject
+        cooldown.durationObject = durationObject
         cooldown.inverse = self.inverse
         cooldown:Show()
-        region:UpdateEffectiveInverse()
-        if not Private.ApplyCooldownDuration(cooldown, self.durationObject) then
+        self:UpdateEffectiveInverse()
+        if not Private.ApplyCooldownDuration(cooldown, durationObject) then
           cooldown:Hide()
           return
         end
-        if self.cdmProgressState and self.cdmProgressState.cdmNativePaused then cooldown:Pause() end
+        local state = self.cdmProgressState
+        if state and state.cdmNativePaused then
+          cooldown:Pause()
+        end
         return
       end
+
       cooldown.durationObject = nil
-      if (Private.IsReadableNumber(self.duration, self.expirationTime)
-          and self.duration > 0 and self.expirationTime > GetTime() and self.expirationTime ~= math.huge) then
-        cooldown:Show();
-        cooldown.expirationTime = self.expirationTime
-        cooldown.duration = self.duration
-        cooldown.modRate = self.modRate
+      local duration, expirationTime, modRate = self.duration, self.expirationTime, self.modRate
+      if Private.IsReadableNumber(duration, expirationTime) and duration > 0
+        and expirationTime > GetTime() and expirationTime ~= math.huge then
+        cooldown:Show()
+        cooldown.expirationTime = expirationTime
+        cooldown.duration = duration
+        cooldown.modRate = modRate
         cooldown.inverse = self.inverse
-        region:UpdateEffectiveInverse()
-        if not Private.ApplyCooldown(cooldown, self.expirationTime, self.duration,
-                                     cooldown.useCooldownModRate and self.modRate or nil) then
+        self:UpdateEffectiveInverse()
+        if not Private.ApplyCooldown(cooldown, expirationTime, duration,
+                                     cooldown.useCooldownModRate and modRate or nil) then
           cooldown:Hide()
         end
       else
-        cooldown.expirationTime = self.expirationTime
-        cooldown.duration = self.duration
-        cooldown.modRate = self.modRate
-        cooldown:Hide();
+        cooldown.expirationTime = expirationTime
+        cooldown.duration = duration
+        cooldown.modRate = modRate
+        cooldown:Hide()
       end
     end
 
     function region:PreShow()
-      if region.cdmNativeProgress then return end
-      if self:UpdateCooldownDrawState() then cooldown:Hide(); return end
-      if cooldown.durationObject then
+      if self.cdmNativeProgress then return end
+      if self:UpdateCooldownDrawState() then
+        cooldown:Hide()
+        return
+      end
+      local durationObject = cooldown.durationObject
+      local duration, expirationTime = cooldown.duration, cooldown.expirationTime
+      if durationObject then
         cooldown:Show()
-        if Private.ApplyCooldownDuration(cooldown, cooldown.durationObject) then
+        if Private.ApplyCooldownDuration(cooldown, durationObject) then
           cooldown:Resume()
         else
           cooldown:Hide()
         end
-      elseif (Private.IsReadableNumber(cooldown.duration, cooldown.expirationTime) and cooldown.duration > 0.01
-              and cooldown.duration ~= math.huge and cooldown.expirationTime ~= math.huge) then
-        cooldown:Show();
-        if Private.ApplyCooldown(cooldown, cooldown.expirationTime, cooldown.duration,
+      elseif Private.IsReadableNumber(duration, expirationTime) and duration > 0.01
+        and duration ~= math.huge and expirationTime ~= math.huge then
+        cooldown:Show()
+        if Private.ApplyCooldown(cooldown, expirationTime, duration,
                                  cooldown.useCooldownModRate and cooldown.modRate or nil) then
           cooldown:Resume()
         else

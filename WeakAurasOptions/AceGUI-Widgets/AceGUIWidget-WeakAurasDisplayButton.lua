@@ -40,64 +40,94 @@ local ignoreForCopyingDisplay = {
   tocversion = true
 }
 
-local function NativeDisplayKind(data)
+local nativeRegionFields = {
+  "width", "height", "alpha", "color", "barColor", "backgroundColor", "foregroundColor", "texture",
+  "cooldown", "cooldownSwipe", "cooldownEdge", "cooldownTextDisabled", "inverse", "zoom", "desaturate",
+  "font", "fontSize", "outline", "justify", "shadowColor", "shadowXOffset", "shadowYOffset",
+}
+local nativeSubRegionFields = {
+  "text_font", "text_fontSize", "text_fontType", "text_color", "text_shadowColor", "text_shadowXOffset",
+  "text_shadowYOffset", "text_justify", "text_justifyV", "border_color", "border_size", "border_offset",
+}
+
+local function HasTriggerOfType(data, triggerType)
   for _, entry in ipairs(data.triggers or {}) do
-    if entry.trigger.type == "secretAura" then return "aura" end
+    if entry.trigger and entry.trigger.type == triggerType then
+      return true
+    end
   end
-  for _, entry in ipairs(data.triggers or {}) do
-    if entry.trigger.type == "cdm" then return "cdm" end
+  return false
+end
+
+local function NativeKind(data)
+  if HasTriggerOfType(data, "secretAura") then return "aura" end
+  if HasTriggerOfType(data, "cdm") then return "cdm" end
+end
+
+local function CopyFields(fields, from, to)
+  for _, field in ipairs(fields) do
+    local value = from[field]
+    if type(value) == "table" then
+      to[field] = CopyTable(value)
+    elseif value ~= nil then
+      to[field] = value
+    end
   end
 end
 
-local nativeAppearance = {
-  width = true, height = true, alpha = true, color = true, barColor = true,
-  backgroundColor = true, foregroundColor = true, texture = true,
-  cooldown = true, cooldownSwipe = true, cooldownEdge = true, cooldownTextDisabled = true,
-  inverse = true, zoom = true, desaturate = true,
-  font = true, fontSize = true, outline = true, justify = true,
-  shadowColor = true, shadowXOffset = true, shadowYOffset = true,
-}
-local nativeElementAppearance = {
-  text_font = true, text_fontSize = true, text_fontType = true, text_color = true,
-  text_shadowColor = true, text_shadowXOffset = true, text_shadowYOffset = true,
-  text_justify = true, text_justifyV = true,
-  border_color = true, border_size = true, border_offset = true,
-}
-local function CopyNativeAppearance(source, destination)
-  for key in pairs(nativeAppearance) do
-    local value = source[key]
-    if value ~= nil then destination[key] = type(value) == "table" and CopyTable(value) or value end
+local function CopySubRegionAppearance(source, destination)
+  if not source.subRegions or not destination.subRegions then return end
+  local targetsByType = {}
+  for _, subRegion in ipairs(destination.subRegions) do
+    local list = targetsByType[subRegion.type] or {}
+    list[#list + 1] = subRegion
+    targetsByType[subRegion.type] = list
   end
-  local elements, occurrences = {}, {}
-  for _, sub in ipairs(source.subRegions or {}) do
-    elements[sub.type] = elements[sub.type] or {}
-    tinsert(elements[sub.type], sub)
-  end
-  for _, sub in ipairs(destination.subRegions or {}) do
-    occurrences[sub.type] = (occurrences[sub.type] or 0) + 1
-    local other = elements[sub.type] and elements[sub.type][occurrences[sub.type]]
-    if other then
-      for key in pairs(nativeElementAppearance) do
-        local value = other[key]
-        if value ~= nil then sub[key] = type(value) == "table" and CopyTable(value) or value end
-      end
+  local seen = {}
+  for _, subRegion in ipairs(source.subRegions) do
+    local rank = (seen[subRegion.type] or 0) + 1
+    seen[subRegion.type] = rank
+    local target = targetsByType[subRegion.type] and targetsByType[subRegion.type][rank]
+    if target then
+      CopyFields(nativeSubRegionFields, subRegion, target)
     end
+  end
+end
+
+local secretSortFields = { "sortMethod", "sortReverse" }
+
+local function CopySecretSort(source, destination)
+  local Display = OptionsPrivate.Private.BlizzardAuraDisplay
+  local sourceTrigger = Display.GetSavedTrigger(source)
+  local destinationTrigger = sourceTrigger and Display.GetSavedTrigger(destination)
+  if not destinationTrigger then
+    return
+  end
+  for _, field in ipairs(secretSortFields) do
+    destinationTrigger[field] = sourceTrigger[field]
+  end
+end
+
+local function CopyNativeAppearance(source, destination, bothModernAuras)
+  CopyFields(nativeRegionFields, source, destination)
+  CopySubRegionAppearance(source, destination)
+  if bothModernAuras then
+    if source.blizzardAuraDisplay then
+      destination.blizzardAuraDisplay = CopyTable(source.blizzardAuraDisplay)
+    end
+    CopySecretSort(source, destination)
   end
 end
 
 local function copyAuraPart(source, destination, part)
   local all = (part == "all");
-  local sourceKind, destinationKind = NativeDisplayKind(source), NativeDisplayKind(destination)
-  local sameNative = sourceKind ~= nil and sourceKind == destinationKind and source.regionType == destination.regionType
-  if part == "display" and (destinationKind or sourceKind) and not sameNative then
-    CopyNativeAppearance(source, destination)
-    if NativeDisplayKind(source) == "aura" and NativeDisplayKind(destination) == "aura" then
-      if source.blizzardAuraDisplay then destination.blizzardAuraDisplay = CopyTable(source.blizzardAuraDisplay) end
-      local Display = OptionsPrivate.Private.BlizzardAuraDisplay
-      local from, to = Display.GetSavedTrigger(source), Display.GetSavedTrigger(destination)
-      if from and to then to.sortMethod, to.sortReverse = from.sortMethod, from.sortReverse end
-    end
-  elseif (part == "display" or all) then
+  local sourceNative, destinationNative = NativeKind(source), NativeKind(destination)
+  local sharesNativeKind = source.regionType == destination.regionType
+    and sourceNative ~= nil and destinationNative == sourceNative
+  local copyDisplay = part == "display"
+  if copyDisplay and not sharesNativeKind and (sourceNative or destinationNative) then
+    CopyNativeAppearance(source, destination, sourceNative == "aura" and destinationNative == "aura")
+  elseif copyDisplay or all then
     for k, v in pairs(source) do
       if (not ignoreForCopyingDisplay[k]) then
         if (type(v) == "table") then
@@ -107,10 +137,8 @@ local function copyAuraPart(source, destination, part)
         end
       end
     end
-    if part == "display" and sameNative and sourceKind == "aura" then
-      local Display = OptionsPrivate.Private.BlizzardAuraDisplay
-      local from, to = Display.GetSavedTrigger(source), Display.GetSavedTrigger(destination)
-      if from and to then to.sortMethod, to.sortReverse = from.sortMethod, from.sortReverse end
+    if copyDisplay and sharesNativeKind and sourceNative == "aura" then
+      CopySecretSort(source, destination)
     end
   end
   if (part == "trigger" or all) and not IsRegionAGroup(source) then
@@ -1114,7 +1142,7 @@ local methods = {
     tinsert(namestable, {" ", "|cFF00FFFF"..L["Shift-click to create chat link"]});
     local regionData = OptionsPrivate.Private.regionOptions[data.regionType or ""]
     local displayName = regionData and regionData.displayName or "";
-    if data.regionType == "group" and data.blizzardFlow then displayName = "Modern Aura Group" end
+    if data.regionType == "group" and data.blizzardFlow then displayName = L["Modern Aura Group"] end
     self:SetDescription({data.id, displayName}, unpack(namestable));
   end,
   ["ReloadTooltip"] = function(self)

@@ -661,8 +661,10 @@ end
 
 local function RunTriggerFunc(allStates, data, id, triggernum, event, arg1, arg2, ...)
   local optionsEvent = event == "OPTIONS";
-  if not optionsEvent and data.prototype and data.prototype.cooldownViewerProgress
-      and WeakAuras.IsOptionsOpen() then return false end
+  local prototype = data.prototype
+  if prototype and prototype.cooldownViewerProgress and WeakAuras.IsOptionsOpen() and not optionsEvent then
+    return false
+  end
   local errorHandler = (optionsEvent and data.ignoreOptionsEventErrors) and ignoreErrorHandler or Private.GetErrorHandlerId(id, L["Trigger %s"]:format(triggernum))
   local updateTriggerState = false;
 
@@ -1173,7 +1175,10 @@ end
 ---@type fun(data: auraData, triggernum: integer, state: state, eventData: table)
 local function AddFakeInformation(data, triggernum, state, eventData)
   state.autoHide = false
-  if eventData.prototype and eventData.prototype.cooldownViewerProgress then return end
+  local prototype = eventData.prototype
+  if prototype and prototype.cooldownViewerProgress then
+    return
+  end
   if ProgressType(data, triggernum) == "timed" and state.expirationTime == nil then
     state.progressType = "timed"
   end
@@ -5118,7 +5123,14 @@ end
 function GenericTrigger.GetProgressSources(data, triggernum, values)
   local prototype = GenericTrigger.GetPrototype(data.triggers[triggernum].trigger)
   if prototype and prototype.cooldownViewerProgress then
-    tinsert(values, {trigger = triggernum, property = "expirationTime", type = "timer", display = "Cooldown / aura duration", total = "duration", modRate = "modRate"})
+    tinsert(values, {
+      display = L["Cooldown / aura duration"],
+      type = "timer",
+      trigger = triggernum,
+      modRate = "modRate",
+      total = "duration",
+      property = "expirationTime",
+    })
     return
   end
   local variables = GenericTrigger.GetTriggerConditions(data, triggernum)
@@ -5284,7 +5296,7 @@ function GenericTrigger.GetTriggerConditions(data, triggernum)
     local result = {};
 
     local progressType, modRated = ProgressType(data, triggernum);
-    if progressType == "timed" and not prototype.cooldownViewerProgress then
+    if not prototype.cooldownViewerProgress and progressType == "timed" then
       if modRated then
         result.expirationTime = commonConditions.expirationTimeModRate;
         result.duration = commonConditions.durationModRate;
@@ -5351,6 +5363,9 @@ function GenericTrigger.GetTriggerConditions(data, triggernum)
           end
           if v.conditionSecretSelect then
             result[v.name].secretSelect = v.conditionSecretSelect
+          end
+          if v.conditionSecretPercent then
+            result[v.name].secretPercent = v.conditionSecretPercent
           end
           if v.conditionRecheckTime then
             result[v.name].recheckTime = v.conditionRecheckTime

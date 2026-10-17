@@ -1,281 +1,331 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, OptionsPrivate = ...
 
-local FAVORITE_SLOTS, RECENT_SLOTS = 16, 8
-local SWATCH_SIZE, SWATCH_STEP, SWATCH_COLUMNS = 22, 26, 8
+local L = WeakAuras.L
+
+local CreateFrame, GameTooltip, C_Timer = CreateFrame, GameTooltip, C_Timer
+local floor, format, tonumber = math.floor, string.format, tonumber
+local tinsert, tremove, sort = table.insert, table.remove, table.sort
+
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local CONTROL = "WeakAurasColorPicker"
+local SWATCH_SIZE, SWATCH_STEP, COLUMNS, LEFT = 22, 26, 8, 12
+local FAVOURITE_LIMIT, RECENT_LIMIT = 16, 8
+local INVALID_COLOR = {1, 0.3, 0.3}
 
-local ui
-local activeSession
+local picker = ColorPickerFrame
+local content = picker.Content
+local colorSelect = content and content.ColorPicker or picker
 
-local function getStore()
-  local saved = WeakAurasOptionsSaved
-  if not saved.colorPalette then
-    saved.colorPalette = { favorites = {}, recent = {} }
-  end
-  return saved.colorPalette
+
+local function channelToByte(channel)
+  local scaled = channel * 255
+  local byte = floor(scaled)
+  if scaled - byte >= 0.5 then byte = byte + 1 end
+  return byte
 end
 
-local function toHex(rgb)
-  local parts = {}
-  for index = 1, 3 do
-    parts[index] = string.format("%02X", math.floor(rgb[index] * 255 + 0.5))
+local function toHex(...)
+  local digits = {}
+  for i = 1, 3 do
+    digits[i] = format("%02X", channelToByte((select(i, ...))))
   end
-  return table.concat(parts)
+  return table.concat(digits)
 end
 
-local function pushFront(list, rgb, capacity)
-  local wanted = toHex(rgb)
-  for position = #list, 1, -1 do
-    if toHex(list[position]) == wanted then
-      table.remove(list, position)
+local function parseHex(text)
+  local digits = text:match("^%s*#?(%x%x%x%x%x%x)%s*$")
+  if not digits then return end
+  local channels = {}
+  for pair in digits:gmatch("..") do
+    channels[#channels + 1] = tonumber("0x" .. pair) / 255
+  end
+  return unpack(channels)
+end
+
+local function parsePercent(text)
+  local number = text:match("^%s*([%d%.]+)%s*%%?%s*$")
+  if not number or not number:match("^%d*%.?%d+$") then return end
+  local value = tonumber(number)
+  if value and value >= 0 and value <= 100 then return value end
+end
+
+local function formatPercent(alpha)
+  local text = format("%.4f", alpha * 100):gsub("0+$", "")
+  return (text:gsub("%.$", ""))
+end
+
+
+local function palette()
+  local saved = WeakAurasOptionsSaved.colorPalette
+  if not saved then
+    saved = { favorites = {}, recent = {} }
+    WeakAurasOptionsSaved.colorPalette = saved
+  end
+  return saved
+end
+
+local function pushFront(list, limit, r, g, b)
+  local hex = toHex(r, g, b)
+  for i = #list, 1, -1 do
+    if toHex(list[i][1], list[i][2], list[i][3]) == hex then tremove(list, i) end
+  end
+  tinsert(list, 1, { r, g, b })
+  for i = #list, limit + 1, -1 do list[i] = nil end
+end
+
+
+local function pickerAlpha()
+  return picker.GetColorAlpha and picker:GetColorAlpha() or 1
+end
+
+local function setPickerColor(r, g, b)
+  colorSelect:SetColorRGB(r, g, b)
+end
+
+local function setPickerAlpha(alpha)
+  if colorSelect.SetColorAlpha then colorSelect:SetColorAlpha(alpha) end
+end
+
+
+local activeRequest
+local panel, hexBox, alphaBox, favouriteSwatches, recentSwatches
+
+local function alphaEditable()
+  return activeRequest ~= nil and activeRequest.hasOpacity and not activeRequest.cancelled
+end
+
+local function refreshAlpha(force)
+  if not alphaBox or (not force and alphaBox:HasFocus()) then return end
+  alphaBox:SetText(formatPercent(pickerAlpha()))
+  alphaBox:SetTextColor(1, 1, 1)
+end
+
+local function fillSwatches(swatches, list)
+  for i, swatch in ipairs(swatches) do
+    local color = list[i]
+    swatch.color = color
+    if color then
+      swatch.texture:SetColorTexture(color[1], color[2], color[3])
     end
+    swatch:SetShown(color ~= nil)
   end
-  table.insert(list, 1, { rgb[1], rgb[2], rgb[3] })
-  while #list > capacity do
-    table.remove(list)
-  end
-end
-
-local function parseOpacity(text)
-  local digits = text:match("^%s*(.-)%s*%%?%s*$")
-  if not digits or not digits:match("^%d*%.?%d+$") then return nil end
-  local percent = tonumber(digits)
-  if percent and percent >= 0 and percent <= 100 then
-    return percent / 100
-  end
-end
-
-local function syncOpacityBox(force)
-  if not ui or not activeSession or not activeSession.hasOpacity then return end
-  local box = ui.alpha
-  if not force and box:HasFocus() then return end
-  local percent = (ColorPickerFrame:GetColorAlpha() or 1) * 100
-  local formatted = string.format("%.4f", percent):gsub("0+$", ""):gsub("%.$", "")
-  box:SetText(formatted)
-  box:SetTextColor(1, 1, 1)
-end
-
-local function applyColor(rgb)
-  ColorPickerFrame.Content.ColorPicker:SetColorRGB(rgb[1], rgb[2], rgb[3])
 end
 
 local function redraw()
-  local store = getStore()
-  for _, listName in ipairs({ "favorites", "recent" }) do
-    local saved = store[listName]
-    for slot, button in ipairs(ui[listName]) do
-      local rgb = saved[slot]
-      button.color = rgb
-      if rgb then
-        button.texture:SetColorTexture(unpack(rgb))
-        button:Show()
-      else
-        button:Hide()
-      end
-    end
+  local saved = palette()
+  fillSwatches(favouriteSwatches, saved.favorites)
+  fillSwatches(recentSwatches, saved.recent)
+  hexBox:SetText(toHex(picker:GetColorRGB()))
+  refreshAlpha(false)
+end
+
+
+local function swatchOnClick(self, button)
+  if button == "RightButton" and self.onRightClick then
+    self.onRightClick(self)
+  else
+    setPickerColor(self.color[1], self.color[2], self.color[3])
   end
-  ui.hex:SetText(toHex({ ColorPickerFrame:GetColorRGB() }))
-  syncOpacityBox()
+  redraw()
 end
 
-local function addCaption(parent, text, offsetY)
-  local caption = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  caption:SetPoint("TOPLEFT", 12, offsetY)
-  caption:SetText(text)
-  return caption
+local function swatchOnEnter(self)
+  GameTooltip:SetOwner(self, "ANCHOR_TOP")
+  local text = self.label or ("#" .. toHex(self.color[1], self.color[2], self.color[3]))
+  if self.hint then text = text .. "\n" .. self.hint end
+  GameTooltip:SetText(text)
+  GameTooltip:Show()
 end
 
-local tooltipHints = {
-  favorites = "\nRight-click to remove",
-  recent = "\nRight-click to favourite",
-}
-
-local function addSwatch(parent, slot, offsetY, listName)
-  local button = CreateFrame("Button", nil, parent)
-  button:SetSize(SWATCH_SIZE, SWATCH_SIZE)
-  local column = (slot - 1) % SWATCH_COLUMNS
-  local row = math.floor((slot - 1) / SWATCH_COLUMNS)
-  button:SetPoint("TOPLEFT", 12 + column * SWATCH_STEP, offsetY - row * SWATCH_STEP)
-  button.texture = button:CreateTexture(nil, "ARTWORK")
-  button.texture:SetAllPoints()
-  button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
-  button:SetScript("OnClick", function(_, mouseButton)
-    local rightClick = mouseButton == "RightButton"
-    if rightClick and listName == "favorites" then
-      table.remove(getStore().favorites, slot)
-    elseif rightClick and listName == "recent" then
-      pushFront(getStore().favorites, button.color, FAVORITE_SLOTS)
-    else
-      applyColor(button.color)
-    end
-    redraw()
-  end)
-  button:SetScript("OnEnter", function()
-    GameTooltip:SetOwner(button, "ANCHOR_TOP")
-    local heading = button.title or ("#" .. toHex(button.color))
-    GameTooltip:SetText(heading .. (tooltipHints[listName] or ""))
-    GameTooltip:Show()
-  end)
-  button:SetScript("OnLeave", function() GameTooltip:Hide() end)
-  return button
+local function swatchOnLeave()
+  GameTooltip:Hide()
 end
 
-local function buildClassRow(parent)
-  local names = {}
-  for token in pairs(RAID_CLASS_COLORS) do
-    names[#names + 1] = token
+local function createSwatch(index, top)
+  local swatch = CreateFrame("Button", nil, panel)
+  swatch:SetSize(SWATCH_SIZE, SWATCH_SIZE)
+  swatch:SetPoint("TOPLEFT", LEFT + ((index - 1) % COLUMNS) * SWATCH_STEP, top - floor((index - 1) / COLUMNS) * SWATCH_STEP)
+  swatch.texture = swatch:CreateTexture(nil, "ARTWORK")
+  swatch.texture:SetAllPoints()
+  swatch.index = index
+  swatch:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  swatch:SetScript("OnClick", swatchOnClick)
+  swatch:SetScript("OnEnter", swatchOnEnter)
+  swatch:SetScript("OnLeave", swatchOnLeave)
+  return swatch
+end
+
+local function createSwatchRow(count, top, hint, onRightClick)
+  local swatches = {}
+  for i = 1, count do
+    local swatch = createSwatch(i, top)
+    swatch.hint, swatch.onRightClick = hint, onRightClick
+    swatches[i] = swatch
   end
-  table.sort(names)
-  for slot, token in ipairs(names) do
-    local source = RAID_CLASS_COLORS[token]
-    local button = addSwatch(parent, slot, -32)
-    button.color = { source.r, source.g, source.b }
-    button.title = LOCALIZED_CLASS_NAMES_MALE[token] or token
-    button.texture:SetColorTexture(unpack(button.color))
+  return swatches
+end
+
+local function createHeader(text, top)
+  local header = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  header:SetPoint("TOPLEFT", LEFT, top)
+  header:SetText(text)
+end
+
+local function createInputBox(parent, maxLetters)
+  local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+  box:SetAutoFocus(false)
+  box:SetMaxLetters(maxLetters)
+  return box
+end
+
+local function buildClassSwatches()
+  local tokens = {}
+  for token in pairs(RAID_CLASS_COLORS) do tokens[#tokens + 1] = token end
+  sort(tokens)
+  for i, token in ipairs(tokens) do
+    local classColor = RAID_CLASS_COLORS[token]
+    local swatch = createSwatch(i, -32)
+    swatch.color = { classColor.r, classColor.g, classColor.b }
+    swatch.label = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[token] or token
+    swatch.texture:SetColorTexture(classColor.r, classColor.g, classColor.b)
   end
 end
 
-local function buildHexEntry(parent)
-  local entry = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
-  entry:SetSize(84, 24)
-  entry:SetPoint("BOTTOMLEFT", 18, 12)
-  entry:SetAutoFocus(false)
-  entry:SetMaxLetters(7)
-  entry:SetScript("OnEnterPressed", function(self)
-    local code = self:GetText():gsub("#", "")
-    if #code == 6 and code:match("^%x+$") then
-      local rgb = {}
-      for index = 1, 3 do
-        rgb[index] = tonumber(code:sub(index * 2 - 1, index * 2), 16) / 255
-      end
-      applyColor(rgb)
-    end
+local function buildHexBox()
+  hexBox = createInputBox(panel, 7)
+  hexBox:SetSize(84, 24)
+  hexBox:SetPoint("BOTTOMLEFT", 18, 12)
+  hexBox:SetScript("OnEnterPressed", function(self)
+    local r, g, b = parseHex(self:GetText())
+    if r then setPickerColor(r, g, b) end
     self:ClearFocus()
     redraw()
   end)
-  entry:SetScript("OnEscapePressed", function(self)
+  hexBox:SetScript("OnEscapePressed", function(self)
     self:ClearFocus()
     redraw()
   end)
-  return entry
 end
 
-local function buildOpacityEntry()
-  local content = ColorPickerFrame.Content
-  local entry = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
-  entry:SetHeight(20)
-  entry:SetPoint("BOTTOMLEFT", content.HexBox, "TOPLEFT", 0, 8)
-  entry:SetPoint("BOTTOMRIGHT", content.HexBox, "TOPRIGHT", 0, 8)
-  entry:SetAutoFocus(false)
-  entry:SetMaxLetters(12)
-  entry:SetScript("OnTextChanged", function(self, fromUser)
-    if not fromUser or not activeSession then return end
-    if activeSession.cancelled or not activeSession.hasOpacity then return end
-    local value = parseOpacity(self:GetText())
-    local channel = value and 1 or 0.3
-    self:SetTextColor(1, channel, channel)
+local function buildAlphaBox()
+  local nativeHexBox = content and content.HexBox
+  alphaBox = createInputBox(content or picker, 12)
+  alphaBox:SetHeight(20)
+  if nativeHexBox then
+    alphaBox:SetPoint("BOTTOMLEFT", nativeHexBox, "TOPLEFT", 0, 8)
+    alphaBox:SetPoint("BOTTOMRIGHT", nativeHexBox, "TOPRIGHT", 0, 8)
+  else
+    alphaBox:SetWidth(84)
+    alphaBox:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 18, -22)
+  end
+  local label = alphaBox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  label:SetPoint("BOTTOMLEFT", alphaBox, "TOPLEFT", 0, 2)
+  label:SetText(L["Alpha (%)"])
+  alphaBox:Hide()
+
+  alphaBox:SetScript("OnTextChanged", function(self, userInput)
+    if not (userInput and alphaEditable()) then return end
+    local value = parsePercent(self:GetText())
     if value then
-      ColorPickerFrame.Content.ColorPicker:SetColorAlpha(value)
+      self:SetTextColor(1, 1, 1)
+      setPickerAlpha(value / 100)
+    else
+      self:SetTextColor(INVALID_COLOR[1], INVALID_COLOR[2], INVALID_COLOR[3])
     end
   end)
-  entry:SetScript("OnEnterPressed", function(self)
+  local function settle(self)
     self:ClearFocus()
-    syncOpacityBox(true)
-  end)
-  entry:SetScript("OnEscapePressed", function(self)
-    self:ClearFocus()
-    syncOpacityBox(true)
-  end)
-  entry:SetScript("OnEditFocusLost", function() syncOpacityBox(true) end)
-  local caption = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-  caption:SetPoint("BOTTOMLEFT", entry, "TOPLEFT", 0, 2)
-  caption:SetText("Alpha (%)")
-  return entry, caption
+    refreshAlpha(true)
+  end
+  alphaBox:SetScript("OnEnterPressed", settle)
+  alphaBox:SetScript("OnEscapePressed", settle)
+  alphaBox:SetScript("OnEditFocusLost", settle)
 end
 
-local function onPickerHidden()
-  local finished = activeSession
-  activeSession = nil
-  ui:Hide()
-  ui.alpha:Hide()
-  ui.alphaLabel:Hide()
-  if not finished then return end
-  local final = { ColorPickerFrame:GetColorRGB() }
+local function onPickerHide()
+  local closed = activeRequest
+  activeRequest = nil
+  panel:Hide()
+  alphaBox:Hide()
+  if not closed then return end
+  local r, g, b = picker:GetColorRGB()
   C_Timer.After(0, function()
-    if not finished.cancelled then
-      pushFront(getStore().recent, final, RECENT_SLOTS)
-    end
+    if not closed.cancelled then pushFront(palette().recent, RECENT_LIMIT, r, g, b) end
   end)
 end
 
-local function buildPalette()
-  local frame = CreateFrame("Frame", nil, ColorPickerFrame, "BackdropTemplate")
-  ui = frame
-  frame:SetSize(236, 270)
-  frame:SetPoint("TOPLEFT", ColorPickerFrame, "TOPRIGHT", 6, 0)
-  frame:SetClampedToScreen(true)
-  frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-  frame:SetBackdropColor(0.055, 0.055, 0.065, 0.98)
-  frame:SetBackdropBorderColor(0.3, 0.3, 0.35, 1)
+local function buildPanel()
+  panel = CreateFrame("Frame", nil, picker, "BackdropTemplate")
+  panel:SetSize(236, 270)
+  panel:SetPoint("TOPLEFT", picker, "TOPRIGHT", 6, 0)
+  panel:SetClampedToScreen(true)
+  panel:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+  panel:SetBackdropColor(0.055, 0.055, 0.065, 0.98)
+  panel:SetBackdropBorderColor(0.3, 0.3, 0.35, 1)
 
-  addCaption(frame, "Class colours", -12)
-  buildClassRow(frame)
-  addCaption(frame, "Favourites", -88)
-  addCaption(frame, "Recent colours", -162)
+  createHeader(L["Class colours"], -12)
+  buildClassSwatches()
 
-  frame.favorites, frame.recent = {}, {}
-  for slot = 1, FAVORITE_SLOTS do
-    frame.favorites[slot] = addSwatch(frame, slot, -108, "favorites")
-  end
-  for slot = 1, RECENT_SLOTS do
-    frame.recent[slot] = addSwatch(frame, slot, -182, "recent")
-  end
+  createHeader(L["Favourites"], -88)
+  favouriteSwatches = createSwatchRow(FAVOURITE_LIMIT, -108, L["Right-click to remove"], function(swatch)
+    tremove(palette().favorites, swatch.index)
+  end)
 
-  local saveButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+  createHeader(L["Recent colours"], -162)
+  recentSwatches = createSwatchRow(RECENT_LIMIT, -182, L["Right-click to favourite"], function(swatch)
+    local color = swatch.color
+    pushFront(palette().favorites, FAVOURITE_LIMIT, color[1], color[2], color[3])
+  end)
+
+  local saveButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
   saveButton:SetSize(116, 24)
   saveButton:SetPoint("BOTTOMRIGHT", -10, 12)
-  saveButton:SetText("Save favourite")
+  saveButton:SetText(L["Save favourite"])
   saveButton:SetScript("OnClick", function()
-    pushFront(getStore().favorites, { ColorPickerFrame:GetColorRGB() }, FAVORITE_SLOTS)
+    pushFront(palette().favorites, FAVOURITE_LIMIT, picker:GetColorRGB())
     redraw()
   end)
 
-  frame.hex = buildHexEntry(frame)
-  frame.alpha, frame.alphaLabel = buildOpacityEntry()
-  ColorPickerFrame:HookScript("OnHide", onPickerHidden)
+  buildHexBox()
+  buildAlphaBox()
+  picker:HookScript("OnHide", onPickerHide)
+end
+
+
+local function useColorPicker(option)
+  if option.type == "color" and not option.control and not option.dialogControl then
+    option.control = CONTROL
+  end
+  if option.args then
+    for _, child in pairs(option.args) do useColorPicker(child) end
+  end
 end
 
 function OptionsPrivate.UseColorPalette(options)
-  local unset = not options.control and not options.dialogControl
-  if options.type == "color" and unset then
-    options.control = "WeakAurasColorPicker"
-  end
-  for _, child in pairs(options.args or {}) do
-    OptionsPrivate.UseColorPalette(child)
-  end
+  useColorPicker(options)
 end
 
 function OptionsPrivate.PrepareColorPalette(info)
-  local mine = { cancelled = false, hasOpacity = info.hasOpacity == true }
-  activeSession = mine
-  local originalCancel, originalOpacity = info.cancelFunc, info.opacityFunc
-  info.cancelFunc = function(...)
-    mine.cancelled = true
-    if originalCancel then originalCancel(...) end
-  end
+  local ticket = { hasOpacity = info.hasOpacity == true, cancelled = false }
+  local originalOpacity, originalCancel = info.opacityFunc, info.cancelFunc
   info.opacityFunc = function(...)
     if originalOpacity then originalOpacity(...) end
-    if activeSession == mine then syncOpacityBox() end
+    if activeRequest ~= ticket then return end
+    refreshAlpha(false)
   end
+  info.cancelFunc = function(...)
+    ticket.cancelled = true
+    if originalCancel then return originalCancel(...) end
+  end
+  activeRequest = ticket
 end
 
 function OptionsPrivate.ShowColorPalette()
-  if not ui then buildPalette() end
-  local withOpacity = activeSession and activeSession.hasOpacity or false
-  ui.alpha:SetShown(withOpacity)
-  ui.alphaLabel:SetShown(withOpacity)
-  ui.alpha:ClearFocus()
+  if not panel then buildPanel() end
+  alphaBox:SetShown(activeRequest ~= nil and activeRequest.hasOpacity)
+  alphaBox:ClearFocus()
   redraw()
-  ui:Show()
+  panel:Show()
 end

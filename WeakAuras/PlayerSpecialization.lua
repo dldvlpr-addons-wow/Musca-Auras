@@ -1,11 +1,9 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 -- Talent tree data from talentsforever.com (https://talentsforever.com/data.json, generated 2026-10-13),
 -- licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Changed: final talent of each of the
 -- 27 trees and its beta spell IDs only. See SpecializationData-LICENSE.txt.
 if not WeakAuras.IsLibsOK() then return end
----@type string
-local AddonName = ...
----@class Private
-local Private = select(2, ...)
+local _, Private = ...
 
 local specializations = {
   {"WARRIOR_ARMS", "WARRIOR", "Arms", "ability_rogue_eviscerate", {12294, 21551, 21552, 21553}},
@@ -37,96 +35,109 @@ local specializations = {
   {"DRUID_RESTORATION", "DRUID", "Restoration", "spell_nature_healingtouch", {408120, 1238214, 1238215}},
 }
 
+local specByKey = {}
+
+local function DisplayClassName(classToken)
+  local names = LOCALIZED_CLASS_NAMES_MALE
+  return names ~= nil and names[classToken] or classToken
+end
 Private.forever_spec_types = {}
 Private.forever_specs_sorted = {}
-local byKey = {}
-local treeOrder = {}
-local treesPerClass = {}
-for _, entry in ipairs(specializations) do
-  local key, class, name, icon = entry[1], entry[2], entry[3], entry[4]
-  byKey[key] = entry
-  treeOrder[key] = treesPerClass[class] or 0
-  treesPerClass[class] = treeOrder[key] + 1
-  local className = LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[class] or class
-  Private.forever_spec_types[key] = "|TInterface\\Icons\\" .. icon .. ":0|t " .. className .. " - " .. name
-  Private.forever_specs_sorted[#Private.forever_specs_sorted + 1] = key
+
+do
+  local treesSeen = {}
+  for _, entry in ipairs(specializations) do
+    local key, class, treeName, icon, spellIDs = unpack(entry)
+    local className = DisplayClassName(class)
+    -- Tree order inside a class matches the game's orderIndex (0, 1, 2).
+    local treeIndex = treesSeen[class] or 0
+    treesSeen[class] = treeIndex + 1
+    specByKey[key] = { class = class, treeIndex = treeIndex, spellIDs = spellIDs }
+    Private.forever_spec_types[key] = string.format("|TInterface\\Icons\\%s:0|t %s - %s", icon, className, treeName)
+    table.insert(Private.forever_specs_sorted, key)
+  end
 end
 
-local function KnownByPlayer(spellID)
-  local api = C_SpellBook and C_SpellBook.IsSpellKnown or IsPlayerSpell or IsSpellKnown
-  if not api then
-    return false
+-- First spell-known API present, in order of preference.
+local function SpellKnownApi()
+  local candidates = { C_SpellBook and C_SpellBook.IsSpellKnown, IsPlayerSpell, IsSpellKnown }
+  for index = 1, 3 do
+    if candidates[index] then
+      return candidates[index]
+    end
   end
-  local ok, known = pcall(api, spellID)
-  if not ok or Private.IsSecret(known) then
-    return false
-  end
-  return known == true
 end
 
-local function ReadPointsByTree()
-  local specInfo = C_SpecializationInfo
-  local configID = specInfo.GetCombatConfigIDForSpecGroup(specInfo.GetActiveSpecGroup())
-  local config = configID and C_Traits.GetConfigInfo(configID)
-  local treeID = config and config.treeIDs and config.treeIDs[1]
-  if not treeID then
-    return nil
-  end
-  local groups = C_Traits.GetGroupDisplayInfoByTreeID(treeID) or {}
-  local groupIDs = {}
-  for index, group in ipairs(groups) do
-    groupIDs[index] = group.groupID
-  end
-  local spentByGroup = {}
-  for _, currency in ipairs(C_Traits.GetGroupCurrencyInfo(configID, groupIDs) or {}) do
-    local info = currency.currencyInfos and currency.currencyInfos[1]
-    if info then
-      spentByGroup[currency.traitNodeGroupID] = info.spent
-    end
-  end
-  local points = {}
-  for _, group in ipairs(groups) do
-    local spent = spentByGroup[group.groupID] or 0
-    if Private.IsSecret(spent) or Private.IsSecret(group.orderIndex) then
-      return nil
-    end
-    points[group.orderIndex] = spent
-  end
-  return next(points) and points or nil
-end
-
-local function PointsByTree()
-  if not (C_Traits and C_Traits.GetGroupCurrencyInfo and C_Traits.GetGroupDisplayInfoByTreeID
-          and C_SpecializationInfo and C_SpecializationInfo.GetCombatConfigIDForSpecGroup) then
-    return nil
-  end
-  local ok, points = pcall(ReadPointsByTree)
-  return ok and points or nil
-end
-
-function Private.ExecEnv.IsForeverSpecialization(key)
-  local entry = byKey[key]
-  if not entry then
-    return false
-  end
-  local _, class = UnitClass("player")
-  if Private.IsSecret(class) or class ~= entry[2] then
-    return false
-  end
-  local points = PointsByTree()
-  if points then
-    local most = 0
-    for _, spent in pairs(points) do
-      most = math.max(most, spent)
-    end
-    if most > 0 then
-      return points[treeOrder[key]] == most
-    end
-  end
-  for _, spellID in ipairs(entry[5]) do
-    if KnownByPlayer(spellID) then
+-- Only a readable, strict true counts; errors and secrets count as unknown.
+local function KnowsAnySpell(spellIDs)
+  local api = SpellKnownApi()
+  for _, spellID in ipairs(api and spellIDs or {}) do
+    local ok, answer = pcall(api, spellID)
+    if ok and not Private.IsSecret(answer) and answer == true then
       return true
     end
   end
   return false
+end
+
+local function ReadTreePoints()
+  local configID = C_SpecializationInfo.GetCombatConfigIDForSpecGroup(C_SpecializationInfo.GetActiveSpecGroup())
+  if not configID then
+    return
+  end
+  local treeIDs = (C_Traits.GetConfigInfo(configID) or {}).treeIDs
+  local treeID = treeIDs and treeIDs[1]
+  if not treeID then
+    return
+  end
+  local pointsByTree, treeByGroup, groupIDs = {}, {}, {}
+  for _, group in ipairs(C_Traits.GetGroupDisplayInfoByTreeID(treeID) or {}) do
+    if Private.IsSecret(group.orderIndex) then
+      return
+    end
+    treeByGroup[group.groupID] = group.orderIndex
+    pointsByTree[group.orderIndex] = 0
+    table.insert(groupIDs, group.groupID)
+  end
+  for _, currency in ipairs(C_Traits.GetGroupCurrencyInfo(configID, groupIDs) or {}) do
+    local tree = treeByGroup[currency.traitNodeGroupID]
+    local spent = tree and currency.currencyInfos and currency.currencyInfos[1] and currency.currencyInfos[1].spent
+    if Private.IsSecret(spent) then
+      return
+    end
+    if spent then
+      pointsByTree[tree] = spent
+    end
+  end
+  return next(pointsByTree) and pointsByTree
+end
+
+-- Forever only: these talent APIs do not exist on retail.
+local function TreePoints()
+  if not (C_SpecializationInfo and C_SpecializationInfo.GetCombatConfigIDForSpecGroup
+          and C_Traits and C_Traits.GetGroupDisplayInfoByTreeID and C_Traits.GetGroupCurrencyInfo) then
+    return
+  end
+  local ok, points = pcall(ReadTreePoints)
+  return ok and points or nil
+end
+
+function Private.ExecEnv.IsForeverSpecialization(key)
+  local spec = key and specByKey[key]
+  if not spec then
+    return false
+  end
+  local _, playerClass = UnitClass("player")
+  if Private.IsSecret(playerClass) or playerClass ~= spec.class then
+    return false
+  end
+  local points = TreePoints()
+  local mostSpent = 0
+  for _, spent in pairs(points or {}) do
+    mostSpent = math.max(mostSpent, spent)
+  end
+  if mostSpent > 0 then
+    return points[spec.treeIndex] == mostSpent
+  end
+  return KnowsAnySpell(spec.spellIDs)
 end

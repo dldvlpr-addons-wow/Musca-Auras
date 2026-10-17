@@ -18,20 +18,6 @@ function Private.ShouldHideDurationText(state)
   return state.cdmTextDurationRequired and not state.cdmTextDurationObject
 end
 
-function Private.GetTextDuration(state)
-  return state.cdmTextDurationObject or state.durationObject
-end
-
-function Private.UsesDurationText(state)
-  if not state then
-    return false
-  end
-  if state.cdmHideGCDText and not state.cdmTextPreview then
-    return Private.IsDurationObject(state.cdmTextDurationObject)
-  end
-  return state.progressType == "durationObject" and Private.IsDurationObject(state.durationObject) and true or false
-end
-
 local function LongStyleBreakpoints(breakpoints, minuteStart, rounding, timeFormat)
   local hourStart = max(3600, minuteStart)
   if timeFormat == 1 then

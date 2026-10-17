@@ -17,21 +17,28 @@ function Private.IsSecret(...)
   return false
 end
 
-local lastUnitIsUnit = {}
+-- Last readable UnitIsUnit answer per ordered pair of plain unit tokens, given back while the client
+-- keeps the comparison secret.
+local knownUnitComparisons = {}
+
+local function ComparisonKey(unitA, unitB)
+  if type(unitA) == "string" and type(unitB) == "string" and not Private.IsSecret(unitA, unitB) then
+    return unitA .. ":" .. unitB
+  end
+end
+
 function Private.UnitIsUnit(unitA, unitB)
-  local result = UnitIsUnit(unitA, unitB)
-  local key = type(unitA) == "string" and type(unitB) == "string" and not Private.IsSecret(unitA, unitB)
-    and (unitA .. "\0" .. unitB)
-  if Private.IsSecret(result) then
+  local answer = UnitIsUnit(unitA, unitB)
+  local key = ComparisonKey(unitA, unitB)
+  if not Private.IsSecret(answer) then
     if key then
-      return lastUnitIsUnit[key]
+      knownUnitComparisons[key] = answer
     end
-    return nil
+    return answer
   end
-  if key then
-    lastUnitIsUnit[key] = result
+  if key ~= nil then
+    return knownUnitComparisons[key]
   end
-  return result
 end
 
 local restrictionQueries = {

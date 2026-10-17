@@ -135,7 +135,7 @@ function Loader.LoadBlizzard(addOnsRoot, names)
   end
 end
 
-function Loader.LoadAddon(tocPath, addonName, savedVariables)
+function Loader.LoadAddon(tocPath, addonName, savedVariables, beforeLogin)
   local private = {}
   Loader.private = private
   Loader.files = Loader.ReadToc(tocPath, Loader.loadErrors)
@@ -147,6 +147,9 @@ function Loader.LoadAddon(tocPath, addonName, savedVariables)
   end
   _G.WeakAurasSaved = savedVariables
   Frames.Fire("ADDON_LOADED", addonName)
+  if beforeLogin then
+    beforeLogin(private)
+  end
   WowApi.loggedIn = true
   Frames.Fire("PLAYER_LOGIN")
   Frames.Fire("PLAYER_ENTERING_WORLD", true, false)

@@ -72,21 +72,27 @@ local properties = {
   desaturateForeground = {
     display = L["Desaturate Foreground"],
     setter = "SetForegroundDesaturated",
+    secretSetter = "SetSecretForegroundDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   desaturateBackground = {
     display = L["Desaturate Background"],
     setter = "SetBackgroundDesaturated",
+    secretSetter = "SetSecretBackgroundDesaturation",
+    secretCapable = true,
     type = "bool",
   },
   foregroundColor = {
     display = L["Foreground Color"],
     setter = "Color",
+    secretCapable = true,
     type = "color"
   },
   backgroundColor = {
     display = L["Background Color"],
     setter = "SetBackgroundColor",
+    secretCapable = true,
     type = "color"
   },
   width = {
@@ -371,6 +377,14 @@ local function modify(parent, region, data)
     --- @field SetBackgroundDesaturated fun(self: StopMotionRegion, b: boolean)
     function region:SetBackgroundDesaturated(b)
       self.background:SetDesaturated(b)
+    end
+
+    function region:SetSecretForegroundDesaturation(value)
+      self.foreground:SetDesaturation(value)
+    end
+
+    function region:SetSecretBackgroundDesaturation(value)
+      self.background:SetDesaturation(value)
     end
 
     Private.regionPrototype.modifyFinish(parent, region, data)

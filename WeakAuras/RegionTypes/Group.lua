@@ -95,10 +95,33 @@ local function getRect(data, region)
   return blx, bly, trx, try;
 end
 
+local function FlowSelfPoint(data)
+  if not (data.blizzardFlow and data.blizzardFlowFrames) then
+    return nil
+  end
+  if data.selfPoint ~= nil then
+    return data.selfPoint
+  end
+  return "CENTER"
+end
+
+local function RechainFlowGroup(data)
+  local display = Private.BlizzardAuraDisplay
+  local rechain = display and display.RechainFlow
+  if not rechain then
+    return
+  end
+  rechain(data)
+  if WeakAuras.IsOptionsOpen() then
+    display.ArrangeFlowPreview(data)
+  end
+end
+
 -- Modify a given region/display
 local function modify(parent, region, data)
-  if data.blizzardFlow and data.blizzardFlowFrames then
-    data.selfPoint = data.selfPoint or "CENTER"
+  local flowSelfPoint = FlowSelfPoint(data)
+  if flowSelfPoint then
+    data.selfPoint = flowSelfPoint
   elseif data.information.groupOffset then
     data.selfPoint = "BOTTOMLEFT";
   else
@@ -202,9 +225,8 @@ local function modify(parent, region, data)
   end
 
   Private.regionPrototype.modifyFinish(parent, region, data);
-  if data.blizzardFlow and Private.BlizzardAuraDisplay and Private.BlizzardAuraDisplay.RechainFlow then
-    Private.BlizzardAuraDisplay.RechainFlow(data)
-    if WeakAuras.IsOptionsOpen() then Private.BlizzardAuraDisplay.ArrangeFlowPreview(data) end
+  if data.blizzardFlow then
+    RechainFlowGroup(data)
   end
 end
 

@@ -1,404 +1,477 @@
+-- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, OptionsPrivate = ...
 
-local viewStates = setmetatable({}, {__mode = "k"})
+local L = WeakAuras.L
 
-local EXPECTED_EVENT_BUFF = "Blizzard CDM Buff"
-local EXPECTED_EVENT_ITEM = "Blizzard CDM Item"
-local COMPARISON_OPERATORS = {"<", "<=", ">", ">="}
-local SECONDS_ERROR = "Enter a non-negative number of seconds."
+local PREFIX = "cdmPicker_"
+local EVENT_COOLDOWN = "Blizzard Cooldown Manager"
+local EVENT_BUFF = "Blizzard CDM Buff"
+local EVENT_ITEM = "Blizzard CDM Item"
+local VIEWER_ADDON = "Blizzard_CooldownViewer"
+local MAX_ID = 2147483647
+local STEP = 0.001
 
-local function NewOperatorValues(withEquality)
-  local values = {}
-  for _, symbol in ipairs(COMPARISON_OPERATORS) do values[symbol] = symbol end
-  if withEquality then
-    values["=="] = "="
-    values["~="] = "!="
-  end
-  return values
+local COMPARISONS = { ["<"] = "<", ["<="] = "<=", [">"] = ">", [">="] = ">=" }
+local STACK_COMPARISONS = { ["<"] = "<", ["<="] = "<=", [">"] = ">", [">="] = ">=", ["=="] = "=", ["~="] = "!=" }
+
+local SHOW_MODES = {
+  always = L["Always"], cooldown = L["On Cooldown"], ready = L["Not on Cooldown"], usable = L["Usable"], unusable = L["Not Usable"],
+}
+local BUFF_SHOW_MODES = { always = L["Always"], active = L["Aura Active"], missing = L["Aura Missing"] }
+local TRACK_MODES = { auto = L["Auto"], cooldown = L["Cooldown"], charges = L["Charge recharge"] }
+
+local function TimedFilterDesc(what)
+  return L["Filters active, timed auras using readable CDM %s time. Missing, permanent, or secret timers do not match."]:format(what)
 end
 
-local function ValidateSeconds(_, value)
-  local number = tonumber(value)
-  return (number and number >= 0 and number < math.huge) or SECONDS_ERROR
+local NUMERIC_FILTERS = {
+  { key = "remaining", label = L["Remaining Time"], desc = TimedFilterDesc(L["remaining"]),
+    enabled = "cdmUseRemaining", operator = "cdmRemainingOperator", defaultOperator = "<",
+    amount = "cdmRemainingTime", defaultAmount = 10 },
+  { key = "total", label = L["Total Duration"], desc = TimedFilterDesc(L["total"]),
+    enabled = "cdmUseTotal", operator = "cdmTotalOperator", defaultOperator = "<",
+    amount = "cdmTotalTime", defaultAmount = 10 },
+  { key = "elapsed", label = L["Elapsed Time"], desc = TimedFilterDesc(L["elapsed"]),
+    enabled = "cdmUseElapsed", operator = "cdmElapsedOperator", defaultOperator = ">=",
+    amount = "cdmElapsedTime", defaultAmount = 10 },
+  { key = "stacks", label = L["Stack Count"],
+    desc = L["Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match."],
+    enabled = "cdmUseStacks", operator = "cdmStackOperator", defaultOperator = ">=",
+    amount = "cdmStackCount", defaultAmount = 1, whole = true },
+}
+
+local SELECTION_GROUPS = {
+  { prefix = "name", label = L["Name(s)"], use = "cdmUseNames", list = "cdmNames", order = 21 },
+  { prefix = "spellid", label = L["Exact Spell ID(s)"], row = L["Spell ID"], use = "cdmUseExactIDs", list = "cdmExactIDs",
+    order = 25, invalid = L["Enter a positive whole-number Spell ID."] },
+  { prefix = "itemid", label = L["Exact Item ID(s)"], row = L["Item ID"], use = "cdmUseItemIDs", list = "cdmItemIDs",
+    order = 29, invalid = L["Enter a positive whole-number Item ID."], itemOnly = true },
+}
+
+local viewStates = setmetatable({}, { __mode = "k" })
+
+local function GetViewState(data, triggernum)
+  local perTrigger = viewStates[data]
+  if not perTrigger then
+    perTrigger = {}
+    viewStates[data] = perTrigger
+  end
+  perTrigger[triggernum] = perTrigger[triggernum] or { expanded = false, search = "", available = false, maxRank = false }
+  return perTrigger[triggernum]
 end
 
-local function ValidateWholeCount(_, value)
-  local number = tonumber(value)
-  return (number and number >= 0 and number < math.huge and number == math.floor(number))
-    or "Enter a non-negative whole number."
+local function EventKind(trigger)
+  if trigger.event == EVENT_BUFF then return "buff" end
+  if trigger.event == EVENT_ITEM then return "item" end
+  return "spell"
 end
 
-local function ValidateIdentifier(isItem)
-  return function(_, value)
-    if value == "" then return true end
-    local id = tonumber(value)
-    return (id and id > 0 and id < 2147483647 and id == math.floor(id))
-      or (isItem and "Enter a positive whole-number Item ID." or "Enter a positive whole-number Spell ID.")
-  end
+local function ParseAmount(text, whole)
+  local value = tonumber(text)
+  if not value or value ~= value or value < 0 or value == math.huge then return nil end
+  if whole and value % 1 ~= 0 then return nil end
+  return value
 end
 
-local function ResolveViewState(data, triggerIndex)
-  local perData = viewStates[data]
-  if not perData then
-    perData = {}
-    viewStates[data] = perData
-  end
-  local view = perData[triggerIndex]
-  if not view then
-    view = {}
-    perData[triggerIndex] = view
-  end
-  return view
+local function IsValidID(text)
+  local value = tonumber(text)
+  return value ~= nil and value > 0 and value < MAX_ID and value % 1 == 0
 end
 
-local function PurgeStaleOptions(options)
-  for key in pairs(options) do
-    if key:find("cdmSpells", 1, true) or key:find("cdmShowGCD", 1, true) then
-      options[key] = nil
-    end
+local LEGACY_TARGETS = {
+  [true] = { list = "cdmExactIDs", use = "cdmUseExactIDs" },
+  [false] = { list = "cdmNames", use = "cdmUseNames" },
+}
+
+local function LegacyQueryIsItem(Private, trigger)
+  if trigger.cdmSelection == "spell" or trigger.event ~= EVENT_COOLDOWN or not C_CooldownViewer then
+    return false
   end
+  local selection = Private.ResolveCDMSpell(trigger, "OPTIONS")
+  if not selection or #selection ~= 1 then return false end
+  local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(selection[1])
+  return info ~= nil and (info.equipSlot ~= nil or info.spellCategoryID ~= nil)
 end
 
-local function MigrateLegacySpell(Private, trigger, data)
-  if trigger.cdmSpell == nil then return end
-  if trigger.cdmSelection ~= "spell" and trigger.event == "Blizzard Cooldown Manager" then
-    local resolved = Private.ResolveCDMSpell(trigger, "OPTIONS")
-    local catalog = Private.CDMCatalog()
-    local known = #resolved == 1 and catalog[resolved[1]]
-    local info = known and C_CooldownViewer.GetCooldownViewerCooldownInfo(resolved[1])
-    if info and (info.equipSlot or info.spellCategoryID) then
-      trigger.event = EXPECTED_EVENT_ITEM
-    end
-  end
-  if tostring(trigger.cdmSpell):find("%S") then
-    local text = tostring(trigger.cdmSpell)
-    if trigger.cdmExact then
-      trigger.cdmExactIDs = trigger.cdmExactIDs or {text}
-      trigger.cdmUseExactIDs = true
-    else
-      trigger.cdmNames = trigger.cdmNames or {text}
-      trigger.cdmUseNames = true
-    end
+local function MigrateLegacySpell(Private, data, trigger)
+  local text = tostring(trigger.cdmSpell)
+  local target = LEGACY_TARGETS[trigger.cdmExact and true or false]
+  if LegacyQueryIsItem(Private, trigger) then
+    trigger.event = EVENT_ITEM
   end
   trigger.cdmSpell, trigger.cdmExact = nil, nil
+
+  if text:find("%S") then
+    trigger[target.list] = trigger[target.list] or { text }
+    trigger[target.use] = true
+  end
+
   C_Timer.After(0, function()
     WeakAuras.Add(data)
     Private.UpdateFakeStatesFor(data.id)
   end)
 end
 
-local function BuildEntryRows(Private, trigger, catalog)
-  local rows, highestRank = {}, {}
-  local isItem = trigger.event == EXPECTED_EVENT_ITEM
-  for id, entry in pairs(catalog) do
-    local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
-    if info and Private.CDMEntryMatches(trigger, entry, info) then
-      local identity = Private.CDMIdentity(id, entry, info)
-      local spellID = info.spellID or identity.spellID
-      local spell = spellID and C_Spell.GetSpellInfo(spellID)
-      local name = not isItem and spell and spell.name or identity.name
-      local rankText = not isItem and spellID and C_Spell.GetSpellSubtext and C_Spell.GetSpellSubtext(spellID)
-      local rank = rankText and tonumber(rankText:match("%d+")) or 0
-      local label = name
-      if rankText and rankText ~= "" then label = label .. " (" .. rankText .. ")" end
-      local shownID = isItem and identity.itemID or spellID
-      if shownID then label = label .. " [" .. shownID .. "]" end
-      rows[#rows + 1] = {
-        id = id,
-        name = name,
-        label = label,
-        rank = rank,
-        known = entry.known,
-        icon = not isItem and spell and spell.iconID or identity.icon,
-        category = Private.CDMCategoryName(entry.category),
-      }
-      highestRank[name] = math.max(highestRank[name] or 0, rank)
+local function PrepareTrigger(Private, data, trigger)
+  Private.MigrateCDMCooldownTrigger(trigger)
+  if trigger.cdmSpell ~= nil then
+    MigrateLegacySpell(Private, data, trigger)
+  end
+  trigger.cdmSource = trigger.event == EVENT_BUFF and "buff" or "cooldown"
+  trigger.cdmSpells = trigger.cdmSpells or {}
+  trigger.cdmSpells.multi = trigger.cdmSpells.multi or {}
+end
+
+local function Saved(context, option, field, default)
+  local trigger = context.trigger
+  option.get = function()
+    local value = trigger[field]
+    if value == nil then return default end
+    return value
+  end
+  option.set = function(_, value)
+    trigger[field] = value
+    context.commit()
+  end
+  return option
+end
+
+local function Viewed(context, option, field)
+  option.get = function() return context.view[field] end
+  option.set = function(_, value)
+    context.view[field] = value
+    context.refresh()
+  end
+  return option
+end
+
+local function Place(options, base, entries)
+  for index, entry in ipairs(entries) do
+    local option = entry[2]
+    option.order = base + (index - 1) * STEP
+    options[PREFIX .. entry[1]] = option
+  end
+end
+
+local function NumericFilterEntries(context, filter, entries)
+  local trigger = context.trigger
+  local N = WeakAuras.normalWidth
+  local function notBuff() return context.kind() ~= "buff" end
+  local function inactive() return notBuff() or not trigger[filter.enabled] end
+
+  entries[#entries + 1] = { filter.key .. "Enabled", Saved(context, {
+    type = "toggle", name = filter.label, desc = filter.desc, width = N, hidden = notBuff,
+  }, filter.enabled, false) }
+
+  entries[#entries + 1] = { filter.key .. "Operator", Saved(context, {
+    type = "select", name = "", width = 0.5, hidden = inactive,
+    values = filter.whole and STACK_COMPARISONS or COMPARISONS,
+  }, filter.operator, filter.defaultOperator) }
+
+  local invalid = filter.whole and L["Enter a non-negative whole number."] or L["Enter a non-negative number of seconds."]
+  entries[#entries + 1] = { filter.key .. (filter.whole and "Count" or "Seconds"), {
+    type = "input", name = filter.whole and L["Stacks"] or L["Seconds"], width = N - 0.5, hidden = inactive,
+    get = function()
+      local value = trigger[filter.amount]
+      if value == nil then value = filter.defaultAmount end
+      return tostring(value)
+    end,
+    set = function(_, text)
+      trigger[filter.amount] = tonumber(text)
+      context.commit()
+    end,
+    validate = function(_, text)
+      return ParseAmount(text, filter.whole) ~= nil or invalid
+    end,
+  } }
+end
+
+local function ExtraSummary(trigger)
+  local active = {}
+  if trigger.cdmTrack == "cooldown" or trigger.cdmTrack == "charges" then
+    active[#active + 1] = TRACK_MODES[trigger.cdmTrack]
+  end
+  if trigger.use_ignoreSpellKnown then active[#active + 1] = L["Disable Spell Known Check"] end
+  if trigger.use_cdmShowGCD then active[#active + 1] = L["Show GCD"] end
+  if trigger.cdmHideGCDText ~= false then active[#active + 1] = L["Hide GCD text"] end
+  return "|cFFffcc00" .. L["Extra Options:"] .. "|r " .. (#active > 0 and table.concat(active, "; ") or L["None"])
+end
+
+local function EnsureViewerAddOn()
+  return C_AddOns.IsAddOnLoaded(VIEWER_ADDON) or C_AddOns.LoadAddOn(VIEWER_ADDON)
+end
+
+local function OpenCooldownManager()
+  if InCombatLockdown() then return end
+  EnsureViewerAddOn()
+  local panel = CooldownViewerSettings
+  if panel then ShowUIPanel(panel) end
+end
+
+local function AddMainBlock(context, options)
+  local trigger, view = context.trigger, context.view
+  local N = WeakAuras.normalWidth
+  local function is(kind) return function() return context.kind() == kind end end
+  local function isNot(kind) return function() return context.kind() ~= kind end end
+  local function extraClosed() return context.kind() ~= "spell" or not view.expanded end
+
+  local entries = {
+    { "typeSpacer", { type = "description", name = " ", width = "full" } },
+    { "help", { type = "description", width = "full",
+      name = L["Spells must be active in the CDM to be displayed. Type /cdm and add them."] } },
+    { "open", { type = "execute", name = L["Open CDM"], width = N, func = OpenCooldownManager,
+      disabled = function() return InCombatLockdown() or not C_CooldownViewer end } },
+    { "refresh", { type = "execute", name = L["Refresh from Blizzard CDM"], width = N, func = context.refresh } },
+    { "display", { type = "header", name = L["Display"], hidden = is("item") } },
+    { "show", Saved(context, { type = "select", name = L["Show"], width = N, values = SHOW_MODES,
+      desc = L["Usable checks Blizzard's spell requirements, including reactive abilities and resources. It does not replace cooldown or range checks. If usability is unavailable, neither usability mode matches."],
+      hidden = isNot("spell") }, "cdmShow", "always") },
+    { "buffShow", Saved(context, { type = "select", name = L["Show"], width = N, values = BUFF_SHOW_MODES,
+      hidden = isNot("buff") }, "cdmBuffShow", "active") },
+    { "requireTarget", Saved(context, { type = "toggle", name = L["Require attackable target"], width = N,
+      desc = L["Only show this trigger's auras while you have a target you can attack. Applies to all selected entries and all Show modes."],
+      hidden = isNot("buff") }, "cdmRequireTarget", false) },
+  }
+
+  for _, filter in ipairs(NUMERIC_FILTERS) do
+    NumericFilterEntries(context, filter, entries)
+  end
+
+  entries[#entries + 1] = { "extra", {
+    type = "execute", control = "WeakAurasExpandSmall", width = "full", imageWidth = 15, imageHeight = 15,
+    name = function() return ExtraSummary(trigger) end,
+    image = function() return view.expanded and "expanded" or "collapsed" end,
+    hidden = isNot("spell"),
+    func = function()
+      view.expanded = not view.expanded
+      context.refresh()
+    end,
+  } }
+  entries[#entries + 1] = { "track", Saved(context, { type = "select", name = L["Track cooldowns"], width = N,
+    values = TRACK_MODES, hidden = extraClosed }, "cdmTrack", "auto") }
+  entries[#entries + 1] = { "trackSpacer", { type = "description", name = "", width = N, hidden = extraClosed } }
+  entries[#entries + 1] = { "includeGCD", Saved(context, { type = "toggle", name = L["Show global cooldown"],
+    width = "full", hidden = extraClosed }, "use_cdmShowGCD", false) }
+  entries[#entries + 1] = { "hideGCDText", Saved(context, { type = "toggle", name = L["Hide global cooldown text"],
+    desc = L["Hides GCD countdown numbers, including %p and %t text. Spell cooldown and charge recharge text remain visible while the GCD swipe is shown."],
+    width = "full", hidden = extraClosed }, "cdmHideGCDText", true) }
+  entries[#entries + 1] = { "ignoreSpellKnown", Saved(context, { type = "toggle", name = L["Disable Spell Known Check"],
+    width = "full", hidden = extraClosed }, "use_ignoreSpellKnown", false) }
+
+  Place(options, 10.01, entries)
+end
+
+local function ItemIDAt(trigger, index)
+  local list = trigger.cdmItemIDs
+  return list and tonumber(list[index])
+end
+
+local function ItemName(Private, itemID)
+  if not itemID then return nil end
+  Private.CDMRequestItemData(itemID)
+  return C_Item.GetItemNameByID(itemID)
+end
+
+local function DecorateItemRows(context, options, prefix, size)
+  local Private, trigger = context.Private, context.trigger
+  for index = 1, size do
+    local icon = options[prefix .. "icon" .. index]
+    icon.name = function() return ItemName(Private, ItemIDAt(trigger, index)) or "" end
+    icon.image = function()
+      local itemID = ItemIDAt(trigger, index)
+      local texture = itemID and C_Item.GetItemIconByID(itemID)
+      return texture and tostring(texture) or "", 18, 18
+    end
+    icon.disabled = function() return ItemName(Private, ItemIDAt(trigger, index)) == nil end
+
+    options[prefix .. index].get = function()
+      local raw = trigger.cdmItemIDs and trigger.cdmItemIDs[index]
+      if not raw or raw == "" then return "" end
+      local name = ItemName(Private, tonumber(raw)) or L["Unknown Item"]
+      return ("%s (%s)"):format(raw, name) .. "\0" .. raw
     end
   end
-  table.sort(rows, function(left, right)
-    if left.name ~= right.name then return left.name < right.name end
-    if left.rank ~= right.rank then return left.rank > right.rank end
-    return left.id < right.id
-  end)
-  return rows, highestRank
+end
+
+local function AddSelectionGroup(context, options, group)
+  local trigger, data = context.trigger, context.data
+  local N = WeakAuras.normalWidth
+  local prefix = PREFIX .. group.prefix
+  local function enabled() return trigger[group.use] and true or false end
+
+  options[prefix .. "Toggle"] = Saved(context, {
+    type = "toggle", name = group.label, width = N - 0.2, order = group.order,
+  }, group.use, false)
+  options[prefix .. "DisabledSpace"] = {
+    type = "description", name = "", width = N + 0.2, order = group.order + STEP, hidden = enabled,
+  }
+
+  local rowLabel = group.row or (context.kind() == "buff" and L["Aura Name"] or L["Spell Name"])
+  local size = #(trigger[group.list] or {}) + 1
+  OptionsPrivate.CreateAuraSpellOptions(options, data, context.triggernum, size, group.invalid ~= nil, false,
+    prefix, group.order, group.use, group.list, rowLabel, nil, false, enabled, context.commit)
+
+  if group.invalid then
+    for index = 1, size do
+      options[prefix .. index].validate = function(_, text)
+        return text == "" or IsValidID(text) or group.invalid
+      end
+    end
+  end
+  if group.itemOnly then
+    DecorateItemRows(context, options, prefix, size)
+  end
+end
+
+local function AddSelectionGroups(context, options)
+  options[PREFIX .. "spellSelection"] = { type = "header", name = L["Spell Selection Filters"], order = 20 }
+  local isItem = context.kind() == "item"
+  for _, group in ipairs(SELECTION_GROUPS) do
+    if isItem or not group.itemOnly then
+      AddSelectionGroup(context, options, group)
+    end
+  end
+end
+
+local function DescribeEntry(Private, id, entry, info, isItem)
+  local identity = Private.CDMIdentity(id, entry, info) or {}
+  local name, icon, shownID, subtext = identity.name, identity.icon, identity.itemID, ""
+  if not isItem then
+    shownID = info.spellID or identity.spellID
+    local spell = shownID and C_Spell.GetSpellInfo(shownID)
+    if spell then
+      name = spell.name or name
+      icon = spell.iconID or icon
+    end
+    if shownID and C_Spell.GetSpellSubtext then
+      subtext = C_Spell.GetSpellSubtext(shownID) or ""
+    end
+  end
+  name = name or ""
+
+  local label = name
+  if subtext ~= "" then label = label .. " (" .. subtext .. ")" end
+  if shownID then label = label .. " [" .. shownID .. "]" end
+
+  local rank = tonumber(subtext:match("%d+")) or 0
+  return {
+    id = id, name = name, label = label, icon = icon, known = entry.known, rank = rank,
+    category = Private.CDMCategoryName(entry.category),
+    sortKey = { name, -rank, id },
+  }
+end
+
+local function BySortKey(left, right)
+  for index = 1, #left.sortKey do
+    local a, b = left.sortKey[index], right.sortKey[index]
+    if a ~= b then return a < b end
+  end
+  return false
+end
+
+local function ListEntries(context)
+  if not C_CooldownViewer then return {} end
+  local Private, trigger, view = context.Private, context.trigger, context.view
+  local isItem = context.kind() == "item"
+
+  local candidates, bestRank = {}, {}
+  for id, entry in pairs(Private.CDMCatalog() or {}) do
+    local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(id)
+    if info and Private.CDMEntryMatches(trigger, entry, info) then
+      local row = DescribeEntry(Private, id, entry, info, isItem)
+      candidates[#candidates + 1] = row
+      bestRank[row.name] = math.max(bestRank[row.name] or 0, row.rank)
+    end
+  end
+
+  local needle = view.search ~= "" and view.search:lower()
+  local rows = {}
+  for _, row in ipairs(candidates) do
+    if (not view.available or row.known)
+      and (not view.maxRank or row.rank == bestRank[row.name])
+      and (not needle or row.label:lower():find(needle, 1, true)) then
+      rows[#rows + 1] = row
+    end
+  end
+
+  table.sort(rows, BySortKey)
+  return rows
+end
+
+local function EntryOption(context, row)
+  local trigger = context.trigger
+  local key = tostring(row.id)
+  return {
+    type = "toggle", name = row.label, desc = row.category, width = "full",
+    image = row.icon, imageWidth = 18, imageHeight = 18,
+    get = function()
+      local multi = trigger.cdmSpells.multi
+      return (multi[row.id] or multi[key]) and true or false
+    end,
+    set = function(_, checked)
+      local multi = trigger.cdmSpells.multi
+      multi[row.id] = nil
+      multi[key] = checked and true or nil
+      context.commit()
+    end,
+  }
+end
+
+local function AddEntrySection(context, options)
+  local N = WeakAuras.normalWidth
+  local entries = {
+    { "filters", { type = "header", name = L["Blizzard CDM Filters"] } },
+    { "search", Viewed(context, { type = "input", name = L["Search"], width = "full" }, "search") },
+    { "available", Viewed(context, { type = "toggle", name = L["Show only available"], width = N }, "available") },
+    { "maxRank", Viewed(context, { type = "toggle", name = L["Show only max rank"], width = N }, "maxRank") },
+    { "entries", { type = "header", name = L["Blizzard CDM Entries"] } },
+  }
+  for _, row in ipairs(ListEntries(context)) do
+    entries[#entries + 1] = { "entry" .. row.id, EntryOption(context, row) }
+  end
+  Place(options, 35, entries)
+end
+
+local REPLACED_PROTOTYPE_FIELDS = { "cdmSpells", "cdmShowGCD" }
+
+local function DropReplacedPrototypeOptions(options)
+  local replaced = {}
+  for key in pairs(options) do
+    for _, field in ipairs(REPLACED_PROTOTYPE_FIELDS) do
+      if key:find(field, 1, true) then
+        replaced[#replaced + 1] = key
+        break
+      end
+    end
+  end
+  for _, key in ipairs(replaced) do
+    options[key] = nil
+  end
 end
 
 function OptionsPrivate.AddCooldownViewerOptions(options, data, triggernum)
   local Private = OptionsPrivate.Private
   local trigger = data.triggers[triggernum].trigger
-  Private.MigrateCDMCooldownTrigger(trigger)
-  if trigger.type == "cdm" then
-    trigger.cdmSource = trigger.event == EXPECTED_EVENT_BUFF and "buff" or "cooldown"
-  end
-  local view = ResolveViewState(data, triggernum)
-  PurgeStaleOptions(options)
+  PrepareTrigger(Private, data, trigger)
 
-  local function Refresh()
-    WeakAuras.ClearAndUpdateOptions(data.id)
-  end
+  DropReplacedPrototypeOptions(options)
 
-  local function Save(key, value)
-    trigger[key] = value
-    WeakAuras.Add(data)
-    Private.ScanForLoads({[data.id] = true})
-    WeakAuras.UpdateThumbnail(data)
-    Private.UpdateFakeStatesFor(data.id)
-    Refresh()
-  end
-
-  local nextOrder = 10.01
-  local function Add(key, option)
-    option.order = nextOrder
-    nextOrder = nextOrder + 0.001
-    options["cdmPicker_" .. key] = option
-  end
-
-  local function IsBuff() return trigger.cdmSource == "buff" end
-  local function IsItem() return trigger.event == EXPECTED_EVENT_ITEM end
-  local function IsNotBuffEvent() return trigger.event ~= EXPECTED_EVENT_BUFF end
-  local function HiddenOutsideExtras()
-    return IsBuff() or IsItem() or not view.extra
-  end
-
-  local function AddToggle(key, name, stateKey, width, extra)
-    local option = {
-      type = "toggle", name = name, width = width,
-      get = function() return trigger[stateKey] or false end,
-      set = function(_, value) Save(stateKey, value) end,
-    }
-    for field, value in pairs(extra or {}) do option[field] = value end
-    Add(key, option)
-  end
-
-  local function AddThresholdFilter(prefix, spec)
-    local halfWidth = WeakAuras.normalWidth - 0.5
-    local function HiddenUnlessEnabled()
-      return IsNotBuffEvent() or not trigger[spec.enableKey]
-    end
-    AddToggle(prefix .. "Enabled", spec.title, spec.enableKey, WeakAuras.normalWidth, {
-      hidden = IsNotBuffEvent,
-      desc = spec.desc,
-    })
-    Add(prefix .. "Operator", {
-      type = "select", name = "", width = 0.5,
-      values = NewOperatorValues(spec.withEquality),
-      hidden = HiddenUnlessEnabled,
-      get = function() return trigger[spec.operatorKey] or spec.defaultOperator end,
-      set = function(_, value) Save(spec.operatorKey, value) end,
-    })
-    Add(prefix .. spec.valueSuffix, {
-      type = "input", name = spec.valueLabel, width = halfWidth,
-      hidden = HiddenUnlessEnabled,
-      get = function() return tostring(trigger[spec.valueKey] or spec.defaultValue) end,
-      validate = spec.validate,
-      set = function(_, value) Save(spec.valueKey, tonumber(value)) end,
-    })
-  end
-
-  trigger.cdmSpells = trigger.cdmSpells or {multi = {}}
-  trigger.cdmSpells.multi = trigger.cdmSpells.multi or {}
-  local selected = trigger.cdmSpells.multi
-  MigrateLegacySpell(Private, trigger, data)
-
-  Add("typeSpacer", {type = "description", name = " ", width = "full"})
-  Add("help", {
-    type = "description", width = "full",
-    name = "Spells must be active in the CDM to be displayed. Type /cdm and add them.",
-  })
-  Add("open", {
-    type = "execute", name = "Open CDM", width = WeakAuras.normalWidth,
-    disabled = function() return InCombatLockdown() or not C_CooldownViewer end,
-    func = function()
-      if not C_AddOns.IsAddOnLoaded("Blizzard_CooldownViewer") then
-        C_AddOns.LoadAddOn("Blizzard_CooldownViewer")
-      end
-      if CooldownViewerSettings then ShowUIPanel(CooldownViewerSettings) end
+  local context = {
+    Private = Private, data = data, trigger = trigger, triggernum = triggernum,
+    view = GetViewState(data, triggernum),
+    kind = function() return EventKind(trigger) end,
+    refresh = function() WeakAuras.ClearAndUpdateOptions(data.id) end,
+    commit = function()
+      WeakAuras.Add(data)
+      Private.ScanForLoads({ [data.id] = true })
+      Private.UpdateFakeStatesFor(data.id)
+      WeakAuras.UpdateThumbnail(data)
+      WeakAuras.ClearAndUpdateOptions(data.id)
     end,
-  })
-  Add("refresh", {
-    type = "execute", name = "Refresh from Blizzard CDM", width = WeakAuras.normalWidth, func = Refresh,
-  })
-  Add("display", {type = "header", name = "Display", hidden = IsItem})
-  Add("show", {
-    type = "select", name = "Show", width = WeakAuras.normalWidth,
-    desc = "Usable checks Blizzard's spell requirements, including reactive abilities and resources. It does not replace cooldown or range checks. If usability is unavailable, neither usability mode matches.",
-    values = {always = "Always", cooldown = "On Cooldown", ready = "Not on Cooldown", usable = "Usable", unusable = "Not Usable"},
-    hidden = function() return IsBuff() or IsItem() end,
-    get = function() return trigger.cdmShow or "always" end,
-    set = function(_, value) Save("cdmShow", value) end,
-  })
-  Add("buffShow", {
-    type = "select", name = "Show", width = WeakAuras.normalWidth,
-    values = {always = "Always", active = "Aura Active", missing = "Aura Missing"},
-    hidden = function() return not IsBuff() end,
-    get = function() return trigger.cdmBuffShow or "active" end,
-    set = function(_, value) Save("cdmBuffShow", value) end,
-  })
-  AddToggle("requireTarget", "Require attackable target", "cdmRequireTarget", WeakAuras.normalWidth, {
-    hidden = function() return not IsBuff() end,
-    desc = "Only show this trigger's auras while you have a target you can attack. Applies to all selected entries and all Show modes.",
-  })
+  }
 
-  AddThresholdFilter("remaining", {
-    title = "Remaining Time", valueLabel = "Seconds", valueSuffix = "Seconds",
-    desc = "Filters active, timed auras using readable CDM remaining time. Missing, permanent, or secret timers do not match.",
-    enableKey = "cdmUseRemaining", operatorKey = "cdmRemainingOperator", defaultOperator = "<",
-    valueKey = "cdmRemainingTime", defaultValue = 10, validate = ValidateSeconds,
-  })
-  AddThresholdFilter("total", {
-    title = "Total Duration", valueLabel = "Seconds", valueSuffix = "Seconds",
-    desc = "Filters active, timed auras using readable CDM total time. Missing, permanent, or secret timers do not match.",
-    enableKey = "cdmUseTotal", operatorKey = "cdmTotalOperator", defaultOperator = "<",
-    valueKey = "cdmTotalTime", defaultValue = 10, validate = ValidateSeconds,
-  })
-  AddThresholdFilter("elapsed", {
-    title = "Elapsed Time", valueLabel = "Seconds", valueSuffix = "Seconds",
-    desc = "Filters active, timed auras using readable CDM elapsed time. Missing, permanent, or secret timers do not match.",
-    enableKey = "cdmUseElapsed", operatorKey = "cdmElapsedOperator", defaultOperator = ">=",
-    valueKey = "cdmElapsedTime", defaultValue = 10, validate = ValidateSeconds,
-  })
-  AddThresholdFilter("stacks", {
-    title = "Stack Count", valueLabel = "Stacks", valueSuffix = "Count",
-    desc = "Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match.",
-    enableKey = "cdmUseStacks", operatorKey = "cdmStackOperator", defaultOperator = ">=",
-    valueKey = "cdmStackCount", defaultValue = 1, validate = ValidateWholeCount, withEquality = true,
-  })
-
-  Add("extra", {
-    type = "execute", control = "WeakAurasExpandSmall", width = "full",
-    hidden = function() return IsBuff() or IsItem() end,
-    name = function()
-      local parts = {}
-      if trigger.cdmTrack == "cooldown" then
-        parts[#parts + 1] = "Cooldown"
-      elseif trigger.cdmTrack == "charges" then
-        parts[#parts + 1] = "Charge recharge"
-      end
-      if trigger.use_ignoreSpellKnown then parts[#parts + 1] = "Disable Spell Known Check" end
-      if trigger.use_cdmShowGCD then parts[#parts + 1] = "Show GCD" end
-      if trigger.cdmHideGCDText ~= false then parts[#parts + 1] = "Hide GCD text" end
-      return "|cFFffcc00Extra Options:|r " .. (#parts > 0 and table.concat(parts, "; ") or "None")
-    end,
-    image = function() return view.extra and "expanded" or "collapsed" end,
-    imageWidth = 15, imageHeight = 15,
-    func = function()
-      view.extra = not view.extra
-      Refresh()
-    end,
-  })
-  Add("track", {
-    type = "select", name = "Track cooldowns", width = WeakAuras.normalWidth,
-    hidden = HiddenOutsideExtras,
-    values = {auto = "Auto", cooldown = "Cooldown", charges = "Charge recharge"},
-    get = function() return trigger.cdmTrack or "auto" end,
-    set = function(_, value) Save("cdmTrack", value) end,
-  })
-  Add("trackSpacer", {type = "description", name = "", width = WeakAuras.normalWidth, hidden = HiddenOutsideExtras})
-  AddToggle("includeGCD", "Show global cooldown", "use_cdmShowGCD", "full", {hidden = HiddenOutsideExtras})
-  Add("hideGCDText", {
-    type = "toggle", name = "Hide global cooldown text", width = "full",
-    hidden = HiddenOutsideExtras,
-    desc = "Hides GCD countdown numbers, including %p and %t text. Spell cooldown and charge recharge text remain visible while the GCD swipe is shown.",
-    get = function() return trigger.cdmHideGCDText ~= false end,
-    set = function(_, value) Save("cdmHideGCDText", value) end,
-  })
-  AddToggle("ignoreSpellKnown", "Disable Spell Known Check", "use_ignoreSpellKnown", "full", {hidden = HiddenOutsideExtras})
-
-  nextOrder = 20
-  Add("spellSelection", {type = "header", name = "Spell Selection Filters"})
-
-  local function AddSelector(title, label, prefix, flag, storage, exact, baseOrder, isItem)
-    options[prefix .. "Toggle"] = {
-      type = "toggle", name = title, width = WeakAuras.normalWidth - 0.2, order = baseOrder,
-      get = function() return trigger[flag] or false end,
-      set = function(_, value) Save(flag, value) end,
-    }
-    options[prefix .. "DisabledSpace"] = {
-      type = "description", name = "", width = WeakAuras.normalWidth + 0.2, order = baseOrder + 0.001,
-      hidden = function() return trigger[flag] == true end,
-    }
-    local size = #(trigger[storage] or {}) + 1
-    OptionsPrivate.CreateAuraSpellOptions(options, data, triggernum, size, exact, false,
-      prefix, baseOrder, flag, storage, label, nil, false, function() return trigger[flag] == true end,
-      function() Save(storage, trigger[storage]) end)
-    for index = 1, size do
-      local input = options[prefix .. index]
-      if isItem then
-        local function LookupItemName()
-          local id = tonumber(trigger[storage] and trigger[storage][index])
-          Private.CDMRequestItemData(id)
-          return id and C_Item and C_Item.GetItemNameByID(id)
-        end
-        local icon = options[prefix .. "icon" .. index]
-        icon.name = function() return LookupItemName() or "" end
-        icon.image = function()
-          local id = tonumber(trigger[storage] and trigger[storage][index])
-          local texture = id and C_Item and C_Item.GetItemIconByID(id)
-          return texture and tostring(texture) or "", 18, 18
-        end
-        icon.disabled = function() return not LookupItemName() end
-        input.get = function()
-          local raw = trigger[storage] and trigger[storage][index]
-          if not raw then return "" end
-          return ("%s (%s)"):format(raw, LookupItemName() or "Unknown Item") .. "\0" .. raw
-        end
-      end
-      if exact then input.validate = ValidateIdentifier(isItem) end
-    end
-  end
-
-  AddSelector("Name(s)", IsBuff() and "Aura Name" or "Spell Name", "cdmPicker_name", "cdmUseNames", "cdmNames", false, 21)
-  AddSelector("Exact Spell ID(s)", "Spell ID", "cdmPicker_spellid", "cdmUseExactIDs", "cdmExactIDs", true, 25)
-  if IsItem() then
-    AddSelector("Exact Item ID(s)", "Item ID", "cdmPicker_itemid", "cdmUseItemIDs", "cdmItemIDs", true, 29, true)
-  end
-
-  nextOrder = 35
-  Add("filters", {type = "header", name = "Blizzard CDM Filters"})
-  Add("search", {
-    type = "input", name = "Search", width = "full",
-    get = function() return view.search or "" end,
-    set = function(_, value)
-      view.search = value
-      Refresh()
-    end,
-  })
-  Add("available", {
-    type = "toggle", name = "Show only available", width = WeakAuras.normalWidth,
-    get = function() return view.availableOnly or false end,
-    set = function(_, value)
-      view.availableOnly = value
-      Refresh()
-    end,
-  })
-  Add("maxRank", {
-    type = "toggle", name = "Show only max rank", width = WeakAuras.normalWidth,
-    get = function() return view.maxRank or false end,
-    set = function(_, value)
-      view.maxRank = value
-      Refresh()
-    end,
-  })
-  Add("entries", {type = "header", name = "Blizzard CDM Entries"})
-
-  local catalog = C_CooldownViewer and Private.CDMCatalog() or {}
-  local rows, highestRank = BuildEntryRows(Private, trigger, catalog)
-  local query = (view.search or ""):lower()
-  for _, row in ipairs(rows) do
-    local passesAvailability = not view.availableOnly or row.known
-    local passesRank = not view.maxRank or row.rank == highestRank[row.name]
-    if passesAvailability and row.label:lower():find(query, 1, true) and passesRank then
-      Add("entry" .. row.id, {
-        type = "toggle", name = row.label, desc = row.category, width = "full",
-        image = row.icon, imageWidth = 18, imageHeight = 18,
-        get = function() return selected[row.id] or selected[tostring(row.id)] or false end,
-        set = function(_, value)
-          selected[row.id] = nil
-          selected[tostring(row.id)] = value or nil
-          Save("cdmSpells", trigger.cdmSpells)
-        end,
-      })
-    end
-  end
+  AddMainBlock(context, options)
+  AddSelectionGroups(context, options)
+  AddEntrySection(context, options)
 end

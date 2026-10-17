@@ -105,6 +105,18 @@ function Private.regionPrototype.AddProperties(properties, defaultsForRegion)
     action = "GlowExternal",
     type = "glowexternal"
   }
+  local conditionAnimationValues = { none = L["None"] }
+  for preset, name in pairs(Private.anim_main_preset_types) do
+    conditionAnimationValues[preset] = name
+  end
+  properties["conditionAnimation"] = {
+    display = L["Looping Animation"],
+    setter = "SetConditionAnimation",
+    type = "list",
+    values = conditionAnimationValues,
+    default = "pulse",
+    resetValue = "none",
+  }
 
   if (defaultsForRegion and defaultsForRegion.alpha) then
     properties["alpha"] = {
@@ -399,6 +411,13 @@ local function GetMinMaxProgress(self)
   return self.minProgress or 0, self.maxProgress or 0
 end
 
+local function UsesDurationObject(state, progressType, property)
+  if progressType ~= "timer" or property ~= "expirationTime" or not state then
+    return false
+  end
+  return state.progressType == "durationObject" and Private.IsDurationObject(state.durationObject)
+end
+
 local function UpdateProgressFromState(self, minMaxConfig, state, progressSource)
   self.cdmProgressState = state
   local progressType = progressSource[2]
@@ -410,8 +429,7 @@ local function UpdateProgressFromState(self, minMaxConfig, state, progressSource
   local remainingProperty = progressSource[8]
   local useAdditionalProgress = progressSource[9]
 
-  if state and progressType == "timer" and property == "expirationTime"
-     and state.progressType == "durationObject" and Private.IsDurationObject(state.durationObject) then
+  if UsesDurationObject(state, progressType, property) then
     progressType = "durationObject"
   end
 
@@ -433,22 +451,8 @@ local function UpdateProgressFromState(self, minMaxConfig, state, progressSource
       self:SetAdditionalProgress(nil)
     end
   elseif progressType == "durationObject" then
-    local adjustMin, max
-    if minMaxConfig.adjustedMin then
-      adjustMin = minMaxConfig.adjustedMin
-    elseif minMaxConfig.adjustedMinRelPercent then
-      adjustMin = minMaxConfig.adjustedMinRelPercent
-    else
-      adjustMin = 0
-    end
-    if minMaxConfig.adjustedMax then
-      max = minMaxConfig.adjustedMax
-    elseif minMaxConfig.adjustedMaxRelPercent then
-      max = minMaxConfig.adjustedMaxRelPercent
-    else
-      max = 1
-    end
-    self.minProgress, self.maxProgress = adjustMin, max
+    self.minProgress = minMaxConfig.adjustedMin or minMaxConfig.adjustedMinRelPercent or 0
+    self.maxProgress = minMaxConfig.adjustedMax or minMaxConfig.adjustedMaxRelPercent or 1
     self.progressType = "timed"
     self.duration = 0
     self.expirationTime = math.huge
@@ -747,6 +751,19 @@ local function SetAnimAlpha(self, alpha)
   self.subRegionEvents:Notify("AlphaChanged")
 end
 
+local function SetConditionAnimation(self, preset)
+  local presetData = preset and Private.anim_presets[preset]
+  if presetData and ((presetData.use_scale and not self.Scale) or (presetData.use_rotate and not self.SetAnimRotation)) then
+    presetData = nil
+  end
+  self.conditionAnimation = presetData and { type = "preset", preset = preset } or nil
+  if self.toShow and Private.IsMainAnimationReplaceable(self) then
+    local data = Private.GetDataByUID(self.uid)
+    Private.Animate("display", self.uid, "main", self.conditionAnimation or (data and data.animation and data.animation.main),
+      self, false, nil, true, self.cloneId)
+  end
+end
+
 local function UpdateTick(self)
   if self.subRegionEvents:HasSubscribers("FrameTick") and self.toShow then
     Private.FrameTick:AddSubscriber("Tick", self)
@@ -838,6 +855,7 @@ function Private.regionPrototype.create(region)
   region.UpdateProgress = UpdateProgress
   region.GetMinMaxProgress = GetMinMaxProgress
   region.SetAnimAlpha = SetAnimAlpha;
+  region.SetConditionAnimation = SetConditionAnimation
 
   region.UpdateTick = UpdateTick
   region.Tick = Tick
@@ -1046,7 +1064,7 @@ function Private.regionPrototype.AddExpandFunction(data, region, cloneId, parent
   local inGroup = parentRegionType == "group";
 
   local startMainAnimation = function()
-    Private.Animate("display", uid, "main", data.animation.main, region, false, nil, true, cloneId);
+    Private.Animate("display", uid, "main", region.conditionAnimation or data.animation.main, region, false, nil, true, cloneId);
   end
 
   function region:OptionsClosed()
