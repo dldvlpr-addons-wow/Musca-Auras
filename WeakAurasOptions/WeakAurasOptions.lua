@@ -499,10 +499,34 @@ end
 
 function OptionsPrivate.ConfirmDelete(toDelete, parents)
   if toDelete then
-    local warningForm = L["You are about to delete %d aura(s). |cFFFF0000This cannot be undone!|r Would you like to continue?"]
+    local warningForm = OptionsPrivate.Private.ListDeletedAuras()
+      and L["You are about to delete %d aura(s). They can be imported again for 30 days with /wa deleted. Would you like to continue?"]
+      or L["You are about to delete %d aura(s). |cFFFF0000This cannot be undone!|r Would you like to continue?"]
     StaticPopupDialogs["WEAKAURAS_CONFIRM_DELETE"].text = warningForm:format(#toDelete)
     StaticPopup_Show("WEAKAURAS_CONFIRM_DELETE", "", "", {toDelete = toDelete, parents = parents})
   end
+end
+
+-- Lists in the chat the auras no character loaded for 30 days and the empty groups, then asks to delete them.
+function OptionsPrivate.ConfirmDeleteUnused()
+  if WeakAuras.IsImporting() then return end
+  local ids, trackingSince = OptionsPrivate.Private.FindUnusedAuras(30)
+  if #ids == 0 then
+    WeakAuras.prettyPrint(L["No aura unused for %d days. Loads are counted since %s."]:format(30, date("%Y-%m-%d", trackingSince)))
+    return
+  end
+  local toDelete, parents = {}, {}
+  for _, id in ipairs(ids) do
+    print((id:gsub("|", "||")))
+    local data = WeakAuras.GetData(id)
+    for child in OptionsPrivate.Private.TraverseAllChildren(data) do
+      tinsert(toDelete, child)
+    end
+    tinsert(toDelete, data)
+    addParents(parents, data)
+  end
+  WeakAuras.prettyPrint(L["Unused for %d days, listed above:"]:format(30))
+  OptionsPrivate.ConfirmDelete(toDelete, parents)
 end
 
 local function AfterScanForLoads()
@@ -609,6 +633,12 @@ if not WeakAuras.ToggleOptions then
           if button then
             button:UpdateParentWarning()
           end
+        end
+      end)
+
+      OptionsPrivate.Private.callbacks:RegisterCallback("ProfileCostsUpdated", function()
+        for _, button in pairs(displayButtons) do
+          button:UpdateWarning()
         end
       end)
 
@@ -801,10 +831,36 @@ function OptionsPrivate.DeleteAuras(auras, parents)
 
     frame.loadProgress:SetText(L["Deleting auras: "]..num.."/"..total)
 
+    -- Each deleted aura goes to the archive with its deleted children, a group kept for its children only is not
+    local deleting = {}
+    for _, auraData in pairs(auras) do
+      deleting[auraData.id] = true
+    end
+    -- An aura that could not be archived is kept, with its children
+    local kept = {}
+    for _, auraData in pairs(auras) do
+      local keepsChildren = false
+      for child in OptionsPrivate.Private.TraverseAllChildren(auraData) do
+        keepsChildren = keepsChildren or not deleting[child.id]
+      end
+      if not deleting[auraData.parent] and not keepsChildren then
+        if OptionsPrivate.Private.ArchiveDeletedAura(auraData.id) == false then
+          WeakAuras.prettyPrint(L["%s could not be archived and is not deleted."]:format(auraData.id))
+          kept[auraData.id] = true
+          for child in OptionsPrivate.Private.TraverseAllChildren(auraData) do
+            kept[child.id] = true
+          end
+        end
+        coroutine.yield()
+      end
+    end
+
     local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
     OptionsPrivate.massDelete = true
     for _, auraData in pairs(auras) do
-      WeakAuras.Delete(auraData)
+      if not kept[auraData.id] then
+        WeakAuras.Delete(auraData)
+      end
       num = num +1
       frame.loadProgress:SetText(L["Deleting auras: "]..num.."/"..total)
       coroutine.yield()
@@ -1040,6 +1096,64 @@ local function addButton(button, aurasMatchingFilter, visible)
   end
 end
 
+-- Names of spell and item IDs, kept between searches. Item names stay unknown until the item is cached.
+local searchSpellNames, searchItemNames = {}, {}
+local function SearchSpellName(id)
+  if searchSpellNames[id] == nil then
+    searchSpellNames[id] = OptionsPrivate.Private.ExecEnv.GetSpellName(id) or false
+  end
+  return searchSpellNames[id] or nil
+end
+local function SearchItemName(id)
+  if not searchItemNames[id] then
+    searchItemNames[id] = (C_Item.GetItemInfo(id))
+  end
+  return searchItemNames[id]
+end
+
+-- Search text of an aura: id, description, spells and items of its triggers, texts.
+-- Rebuilt on each refresh of the filtered list (about 9 µs per aura).
+local function AuraSearchText(data)
+  local parts = {}
+  local function add(value)
+    if type(value) == "string" or type(value) == "number" then
+      tinsert(parts, tostring(value):lower())
+    end
+  end
+  local function addList(list)
+    if type(list) == "table" then
+      for _, value in ipairs(list) do add(value) end
+    end
+  end
+  -- Spell and item fields hold an ID once validated: the ID and its name are both searchable.
+  local function addWithName(value, GetName)
+    add(value)
+    if type(value) == "number" then add(GetName(value)) end
+  end
+  add(data.id)
+  add(data.desc)
+  add(data.displayText)
+  for _, triggerData in ipairs(data.triggers or {}) do
+    local trigger = type(triggerData) == "table" and triggerData.trigger
+    if type(trigger) == "table" then
+      addList(trigger.auranames)
+      addList(trigger.auraspellids)
+      addList(trigger.spellNames)
+      addList(trigger.spellIds)
+      addList(trigger.cdmNames)
+      addList(trigger.cdmExactIDs)
+      addList(trigger.cdmItemIDs)
+      add(trigger.cdmSpell)
+      addWithName(trigger.spellName, SearchSpellName)
+      addWithName(trigger.itemName, SearchItemName)
+    end
+  end
+  for _, subRegion in ipairs(data.subRegions or {}) do
+    if type(subRegion) == "table" then add(subRegion.text_text) end
+  end
+  return table.concat(parts, "\n")
+end
+
 local previousFilter;
 local pendingUpdateButtons = {}
 local pendingInstallButtons = {}
@@ -1217,8 +1331,9 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
     end
 
     if useTextFilter then
+      local searchText = AuraSearchText(child.data)
       for _, word in ipairs(filterTable) do
-        if(id:lower():find(word, 1, true)) then
+        if(searchText:find(word, 1, true)) then
           aurasMatchingFilter[id] = true
           for parent in OptionsPrivate.Private.TraverseParents(child.data) do
             aurasMatchingFilter[parent.id] = true

@@ -217,6 +217,8 @@ function Private.PrintHelp()
   print(L["/wa repair - Repair tool"])
   print("/wa backups - List the daily copies of your auras")
   print("/wa restore <number> - Replace your auras with a daily copy and reload the UI")
+  print("/wa deleted - List the auras deleted in the last 30 days")
+  print("/wa undelete <number> - Import a deleted aura again")
   print(L["If you require additional assistance, please open a ticket on GitHub or visit our Discord at https://discord.gg/weakauras!"])
 end
 
@@ -266,6 +268,21 @@ function SlashCmdList.WEAKAURAS(input)
         print(("%d. %s, %d auras"):format(index, date(nil, backup.timestamp), backup.auraCount))
       end
       prettyPrint("/wa restore <number> replaces your auras with that copy.")
+    end
+  elseif msg == "deleted" or msg == "undelete" then
+    local deleted, days = Private.ListDeletedAuras()
+    local chosen = deleted and msg == "undelete" and deleted[tonumber(args[1] or "")]
+    if not deleted then
+      prettyPrint(days)
+    elseif chosen then
+      Private.RestoreDeletedAura(chosen.key)
+    elseif #deleted == 0 then
+      prettyPrint(("No aura deleted in the last %d days."):format(days))
+    else
+      for index, aura in ipairs(deleted) do
+        print(("%d. %s, %s"):format(index, aura.id, date(nil, aura.timestamp)))
+      end
+      prettyPrint("/wa undelete <number> opens the import window on that aura.")
     end
   elseif msg == "ff" or msg == "feat" or msg == "feature" then
     if #args < 2 then
@@ -351,7 +368,7 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.10.0"
+local CLASS_PACK_VERSION = "1.12.0"
 
 local function HasClassPack()
   local _, playerClass = UnitClass("player")
@@ -1483,6 +1500,9 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
       db.migrationCutoff = db.migrationCutoff or 730
       db.historyCutoff = db.historyCutoff or 730
       db.lastLoaded = {}
+      -- Date of the last load of each aura by uid, on any character, for the unused auras
+      db.lastLoadedDate = db.lastLoadedDate or {}
+      db.loadTrackingSince = db.loadTrackingSince or time()
 
       Private.SyncParentChildRelationships();
       local isFirstUIDValidation = db.dbVersion == nil or db.dbVersion < 26;
@@ -2185,10 +2205,12 @@ end
 
 function Private.LoadDisplays(toLoad, ...)
   local currentTime = GetTime()
+  local currentDate = time()
   for id in pairs(toLoad) do
     local data = WeakAuras.GetData(id)
     local uid = data.uid
     db.lastLoaded[uid] = currentTime
+    db.lastLoadedDate[uid] = currentDate
     Private.RegisterForGlobalConditions(uid);
     triggerState[id].triggers = {};
     triggerState[id].activationTime = {}
@@ -2363,6 +2385,7 @@ function WeakAuras.Delete(data)
 
   db.displays[id] = nil;
   db.lastLoaded[uid] = nil
+  db.lastLoadedDate[uid] = nil
 
   Private.DeleteAuraEnvironment(id)
   triggerState[id] = nil;
@@ -2624,7 +2647,7 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
     .. "- During combat, the game can hide combat data (buffs, casts, cooldowns) from addons. "
     .. "Buff and debuff triggers then keep their last state and update when combat ends.\n"
     .. "- The swing timer does not reset on melee hits.\n"
-    .. "- Talent load options are empty.\n"
+    .. "- Talent load options work for your own specialization only.\n"
     .. "- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs.\n"
     .. "- The \"Chat Message\" action may not send in instances or during combat.\n\n"
     .. "Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about WeakAuras here.\n\n"
@@ -3453,6 +3476,8 @@ function pAdd(data, simpleChange)
   end
 
   data.uid = data.uid or WeakAuras.GenerateUniqueID()
+  -- A new aura counts as loaded when it is added, so that it is not unused before its first load
+  db.lastLoadedDate[data.uid] = db.lastLoadedDate[data.uid] or time()
   if db.displays[id] and db.displays[id].uid ~= data.uid then
     print("Improper? arguments to WeakAuras.Add - id", id, "is assigned to a different uid.", data.uid, db.displays[id].uid)
   end
@@ -3571,6 +3596,8 @@ function pAdd(data, simpleChange)
       local triggerLogicFunc;
       if data.triggers.disjunctive == "custom" then
         triggerLogicFunc = WeakAuras.LoadFunction("return "..(data.triggers.customTriggerLogic or ""), data.id);
+      elseif data.triggers.disjunctive == "expression" then
+        triggerLogicFunc = Private.CompileTriggerExpression(data.triggers.triggerExpression, #data.triggers)
       end
 
       LoadCustomActionFunctions(data);
@@ -5383,6 +5410,8 @@ local function evaluateTriggerStateTriggers(id)
       local ok, returnValue = xpcall(triggerState[id].triggerLogicFunc, Private.GetErrorHandlerId(id, L["Custom Trigger Combination"]), triggerState[id].triggers);
       Private.ActivateAuraEnvironment()
       result = ok and returnValue;
+    elseif (triggerState[id].disjunctive == "expression" and triggerState[id].triggerLogicFunc) then
+      result = triggerState[id].triggerLogicFunc(triggerState[id].triggers)
     end
   end
 

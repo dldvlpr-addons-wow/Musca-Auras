@@ -190,7 +190,8 @@ end
 function Catalog:Info(cooldownID)
   local info = self.infos[cooldownID]
   if info == nil then
-    info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID) or false
+    local ok, result = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldownID)
+    info = ok and result or false
     self.infos[cooldownID] = info
   end
   return info or nil

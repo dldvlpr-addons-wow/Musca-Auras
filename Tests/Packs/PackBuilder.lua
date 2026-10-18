@@ -148,6 +148,8 @@ function Pack.Build(spec)
     if options.known then load.use_spellknown = true load.spellknown = options.known end
     if options.unknown then load.use_not_spellknown = true load.not_spellknown = options.unknown end
     if options.level then load.use_level, load.level, load.level_operator = true, { tostring(options.level) }, { ">=" } end
+    -- The ForeverAuras format of the specialization option is not verified: it loads in every specialization.
+    if options.spec and not FOREVER_AURAS then load.use_forever_spec, load.forever_spec = true, { single = options.spec } end
     return load
   end
 
@@ -159,8 +161,21 @@ function Pack.Build(spec)
     if options.needsPet then required[#required + 1] = Generic({ type = "unit", event = "Conditions", use_HasPet = true }) end
     if options.notResting then required[#required + 1] = Generic({ type = "unit", event = "Conditions", use_resting = false }) end
     if options.offhand then required[#required + 1] = OffhandTrigger() end
-    assert(not (#required > 0 and options.fallback), id .. ": gate, form, pet, rest or offhand and fallback cannot be combined")
-    if options.fallback then
+    assert(not (FOREVER_AURAS and #required > 0 and options.fallback),
+      id .. ": gate, form, pet, rest or offhand and fallback cannot be combined")
+    if options.fallback and #required > 0 then
+      -- The aura or its cooldown, but only under the requirements; the secret aura falls back on the cooldown only.
+      triggers[2] = { trigger = options.fallback, untrigger = {} }
+      local terms = {}
+      for index, extra in ipairs(required) do
+        triggers[index + 2] = { trigger = extra, untrigger = {} }
+        terms[index] = tostring(index + 2)
+      end
+      triggers.disjunctive, triggers.activeTriggerMode = "expression", 1
+      triggers.triggerExpression = "(1 or 2) and " .. table.concat(terms, " and ")
+      triggers.secretFallback = 2
+      required = {}
+    elseif options.fallback then
       triggers[2] = { trigger = options.fallback, untrigger = {} }
       triggers.disjunctive, triggers.activeTriggerMode = "any", 1
     end
@@ -230,7 +245,7 @@ function Pack.Build(spec)
     options.unknown, options.form, options.level, options.warn = entry.unknown, entry.form, entry.level, entry.warn
     options.gate, options.offhand, options.flash = options.gate or entry.gate, entry.offhand, entry.flash
     options.needsPet = entry.needsPet
-    options.texture = entry.texture
+    options.texture, options.spec = entry.texture, entry.spec
     return options
   end
 
@@ -286,7 +301,9 @@ function Pack.Build(spec)
   end
 
   local function SpellIcon(holder, entry, size)
-    if entry.aura then
+    -- ForeverAuras cannot combine a requirement with the fallback: its buff stays a separate icon (foreverAurasOnly).
+    local required = entry.gate or entry.form or entry.needsPet or entry.offhand
+    if entry.aura and not (FOREVER_AURAS and required) then
       local unit = entry.unit or "player"
       assert(({ player = 1, target = 1, focus = 1, pet = 1, targettarget = 1, focustarget = 1 })[unit],
         entry.name .. ": unit without fallback")
@@ -358,7 +375,10 @@ function Pack.Build(spec)
 
   local reminders = Group("Reminders", "dynamicgroup", 120, "UP")
   for _, entry in ipairs(spec.reminders or {}) do
-    local options = Requirements(entry, { size = SIZES.reminder, outOfCombat = not entry.lowPower and not entry.pet, notResting = not entry.lowPower })
+    -- combat = "in" loads a reminder in combat only, "always" in and out of combat.
+    local options = Requirements(entry, { size = SIZES.reminder,
+      outOfCombat = not entry.lowPower and not entry.pet and not entry.combat, notResting = not entry.lowPower })
+    options.inCombat = entry.combat == "in"
     assert(entry.lowPower or options.known ~= nil or options.level, entry.name .. ": a reminder needs known or level")
     local label, trigger, text, color = "Missing " .. entry.name, nil, "Missing: " .. entry.name, nil
     if entry.aura then
@@ -378,7 +398,23 @@ function Pack.Build(spec)
       label, text, color = entry.name, entry.name, BLUE
       trigger = PowerTrigger(entry.lowPower, entry.below)
     end
-    if entry.icon then Icon(reminders, label, trigger, options) else Label(reminders, label, trigger, text, color, options) end
+    local data = entry.icon and Icon(reminders, label, trigger, options) or Label(reminders, label, trigger, text, color, options)
+    -- Display.Validate rejects any animation on a secretAura, and a pulse on the alpha would override the native
+    -- threshold of a low power reminder: only the other reminders pulse. A text has no scale, it flashes.
+    if not entry.aura and not entry.lowPower then
+      data.animation.main = { type = "preset", preset = entry.icon and "pulse" or "alphaPulse", duration_type = "seconds" }
+    end
+  end
+
+  -- In range reads secret in combat: the text stays shown without alpha, and the condition lights it out of range.
+  -- ForeverAuras has no secret range test, its condition never fires: no range text for it.
+  local range = Group("Range", "group", 160, "FIXED")
+  for _, entry in ipairs(not FOREVER_AURAS and spec.meleeRange or {}) do
+    local trigger = Generic({ type = "spell", event = "Cooldown Progress (Spell)", spellName = entry.spell,
+      use_exact_spellName = false, genericShowOn = "showAlways", use_genericShowOn = true })
+    local data = Label(range, "Not in melee range (" .. entry.name .. ")", trigger, "Not in melee range", RED,
+      Requirements(entry, { inCombat = true, conditions = { Condition("spellInRange", 0, "alpha", 1) } }))
+    data.alpha, data.fontSize = 0, 20
   end
 
   local procs = Group("Procs", "dynamicgroup", 92)
@@ -397,7 +433,7 @@ function Pack.Build(spec)
     AuraIcon(effects, entry.name .. " (target)", entry, "target", "HARMFUL")
   end
   for _, entry in ipairs(spec.buffs or {}) do
-    AuraIcon(effects, entry.name, entry, entry.unit, entry.kind)
+    if FOREVER_AURAS or not entry.foreverAurasOnly then AuraIcon(effects, entry.name, entry, entry.unit, entry.kind) end
   end
   if spec.stance then
     local stance = Icon(effects, "Stance", Generic({ type = "unit", event = "Stance/Form/Aura" }),
@@ -438,9 +474,13 @@ function Pack.Build(spec)
     else
       local bar = Bar(resource, power.label, PowerTrigger(power.type, nil, nil, power.unit), { gate = power.gate },
         POWER_COLORS[power.type] or POWER_COLORS[0], "%p", 12)
-      if power.type == 0 and not power.gate then
-        -- The native threshold drives the alpha of its whole aura, not a trigger state: a red copy laid
-        -- over the mana bar is opaque below the value and transparent above, in combat too.
+      if power.type == 0 and not power.gate and not FOREVER_AURAS then
+        -- A secret power percent picks the bar colour through a curve, in combat too.
+        bar.conditions[#bar.conditions + 1] = Condition("percentpower", tostring(spec.manaWarning or 30), "barColor",
+          RED, "<")
+      elseif power.type == 0 and not power.gate then
+        -- ForeverAuras: the native threshold drives the alpha of its whole aura, not a trigger state: a red copy
+        -- laid over the mana bar is opaque below the value and transparent above, in combat too.
         local warning = Group(power.label .. " warning", "group", 0, "FIXED")
         warning.group.anchorFrameType, warning.group.anchorFrameFrame = "SELECTFRAME", "WeakAuras:" .. bar.id
         warning.group.anchorFrameParent = false

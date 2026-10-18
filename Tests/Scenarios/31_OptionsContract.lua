@@ -274,6 +274,11 @@ return function(test)
     Probe(lines, "swipe.set", function() swipe.set(nil, 0.1, 0.2, 0.3, 0.4) end)
     lines[#lines + 1] = "data: " .. Fmt(data.blizzardAuraDisplay)
     Probe(lines, "swipe.get saved", function() return swipe.get() end)
+    local auraEditor = { Private = private, QueueOptionsRefresh = Counter("QueueOptionsRefresh") }
+    assert(test.Loader.RunFile(optionsDirectory .. "AuraTriggerOptions.lua", "WeakAurasOptions", auraEditor))
+    Replace(displayPrivate, "AuraEditor", auraEditor.AuraEditor)
+    Probe(lines, "switchToClassic.func", function() groups.icon.secretSwitchToClassic.func() end)
+    lines[#lines + 1] = "trigger: " .. Fmt(data.triggers[1].trigger) .. " enabled=" .. Fmt(data.blizzardAuraDisplay.enabled)
   end)
 
   Case("display.prepare.group-flow-and-disabled", function(lines)
@@ -860,13 +865,14 @@ no trigger sortMethod.get -> "Default",false | calls: none
 [icon]
 __order = 1
 __title = "Icon"
-iconInset | desc="Not supported by Blizzard's native aura display." disabled=true name="Icon Inset" order=3 type="range"
+iconInset | desc="Aura (Modern) does not apply this effect." disabled=true name="Icon Inset" order=3 type="range"
 iconSource | name="Icon Source" order=1 type="select" values={-1="Automatic",0="Manual"}
 notAnOption = "text"
 secretSwipeColor | get=<fn> hasAlpha=true hidden=fn:false name="Swipe Color" order=11.900000000 set=<fn> type="color" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=12.900000000 type="description" width=2.600000000
-spark | desc="Not supported by Blizzard's native aura display." disabled=true name="Spark" order=4 type="toggle"
-useTooltip | desc="Not supported by Blizzard's native aura display." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
+secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=13.900000000 type="execute" width=1.300000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
+spark | desc="Aura (Modern) does not apply this effect." disabled=true name="Spark" order=4 type="toggle"
+useTooltip | desc="The Aura (Modern) display ignores the mouse, so it shows no tooltip." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
 [position]
 __order = 9
 __title = "Position"
@@ -890,8 +896,9 @@ __title = "Text"
 anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
 automaticWidth | desc="Native aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=14 type="description" width=2.600000000
-text_customTextUpdate | desc="Not supported by Blizzard's native aura display." disabled=true name="Update" order=11 type="select"
+secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=15 type="execute" width=1.300000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
+text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
 text_text_format_footer | name="Footer" order=7 type="toggle"
 text_text_format_header | name="Header" order=8 type="description"
@@ -899,22 +906,24 @@ text_text_format_n_title | name="Action" order=9 type="execute"
 text_text_format_p_format | name="Format" order=3 type="select" values={"timed"="Time Format"}
 text_text_format_p_time_format | name="Time" order=4 type="select" values={-1="Blizzard Default",-2="Seconds",0="Minutes and seconds"}
 text_text_format_p_time_precision | name="Precision" order=5 type="select"
-text_text_format_s_big_number | desc="Not supported by native aura text." disabled=true name="Big" order=6 type="toggle"
+text_text_format_s_big_number | desc="The game writes this value itself: only the time format applies." disabled=true name="Big" order=6 type="toggle"
 text_text_pChoose | name="Choose" order=2 type="toggle"
 [sub.2.subborder]
 __order = 3
 __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=4 type="description" width=2.600000000
-slanted | desc="Not supported by Blizzard's native aura display." disabled=true name="Slanted" order=3 type="toggle"
+secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5 type="execute" width=1.300000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
+slanted | desc="The game fills the bar or the swipe itself from secret values: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
 __title = "Glow"
 glowColor | name="Color" order=3.500000000 type="color"
-glowStartAnim | desc="Not supported by Blizzard's native aura display." disabled=true name="Start Anim" order=2 type="toggle"
+glowStartAnim | desc="The game starts this glow itself, without the start animation." disabled=true name="Start Anim" order=2 type="toggle"
 glowType | name="Glow Type" order=1 type="select" values={"ACShine"="Autocast Shine","Pixel"="Pixel Glow","Proc"="Proc Glow","buttonOverlay"="Action Button Glow"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=4.500000000 type="description" width=2.600000000
+secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5.500000000 type="execute" width=1.300000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
 [sub.4.subtext]
 __order = 5
 __title = "Detached Detached Candidate"
@@ -925,19 +934,21 @@ swipe.get default -> 0,0,0,0.800000000 | calls: none
 swipe.set ->  | calls: Add=1
 data: {"swipeColor"={1=0.100000000,2=0.200000000,3=0.300000000,4=0.400000000}}
 swipe.get saved -> 0.100000000,0.200000000,0.300000000,0.400000000 | calls: none
+switchToClassic.func ->  | calls: Add=1 QueueOptionsRefresh=1 UpdateThumbnail=1
+trigger: {"auraTracking"="readable","auraspellids"={1="1"},"debuffType"="HELPFUL","type"="aura2","unit"="player","useExactSpellId"=true} enabled=nil
 ]==],
     ["display.prepare.group-flow-and-disabled"] = [==[
 flow: secretAura=nil progressOptions=nil icon.swipe=true
 [icon]
 __order = 1
 __title = "Icon"
-iconInset | desc="Not supported by Blizzard's native aura display." disabled=true name="Icon Inset" order=3 type="range"
+iconInset | desc="Aura (Modern) does not apply this effect." disabled=true name="Icon Inset" order=3 type="range"
 iconSource | name="Icon Source" order=1 type="select" values={-1="Automatic",0="Manual"}
 notAnOption = "text"
 secretSwipeColor | get=<fn> hasAlpha=true hidden=fn:false name="Swipe Color" order=11.900000000 set=<fn> type="color" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=12.900000000 type="description" width=2.600000000
-spark | desc="Not supported by Blizzard's native aura display." disabled=true name="Spark" order=4 type="toggle"
-useTooltip | desc="Not supported by Blizzard's native aura display." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
+spark | desc="Aura (Modern) does not apply this effect." disabled=true name="Spark" order=4 type="toggle"
+useTooltip | desc="The Aura (Modern) display ignores the mouse, so it shows no tooltip." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
 [position]
 __order = 9
 __title = "Position"
@@ -949,8 +960,8 @@ __title = "Text"
 anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
 automaticWidth | desc="Native aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=14 type="description" width=2.600000000
-text_customTextUpdate | desc="Not supported by Blizzard's native aura display." disabled=true name="Update" order=11 type="select"
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
+text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
 text_text_format_footer | name="Footer" order=7 type="toggle"
 text_text_format_header | name="Header" order=8 type="description"
@@ -958,28 +969,28 @@ text_text_format_n_title | name="Action" order=9 type="execute"
 text_text_format_p_format | name="Format" order=3 type="select" values={"timed"="Time Format"}
 text_text_format_p_time_format | name="Time" order=4 type="select" values={-1="Blizzard Default",-2="Seconds",0="Minutes and seconds"}
 text_text_format_p_time_precision | name="Precision" order=5 type="select"
-text_text_format_s_big_number | desc="Not supported by native aura text." disabled=true name="Big" order=6 type="toggle"
+text_text_format_s_big_number | desc="The game writes this value itself: only the time format applies." disabled=true name="Big" order=6 type="toggle"
 text_text_pChoose | name="Choose" order=2 type="toggle"
 [sub.2.subborder]
 __order = 3
 __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=4 type="description" width=2.600000000
-slanted | desc="Not supported by Blizzard's native aura display." disabled=true name="Slanted" order=3 type="toggle"
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
+slanted | desc="The game fills the bar or the swipe itself from secret values: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
 __title = "Glow"
 glowColor | name="Color" order=3.500000000 type="color"
-glowStartAnim | desc="Not supported by Blizzard's native aura display." disabled=true name="Start Anim" order=2 type="toggle"
+glowStartAnim | desc="The game starts this glow itself, without the start animation." disabled=true name="Start Anim" order=2 type="toggle"
 glowType | name="Glow Type" order=1 type="select" values={"ACShine"="Autocast Shine","Pixel"="Pixel Glow","Proc"="Proc Glow","buttonOverlay"="Action Button Glow"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=4.500000000 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
 [sub.4.subtext]
 __order = 5
 __title = "Detached Candidate"
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking.|r" order=4 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
-text_text_format_s_big_number | desc="Not supported by native aura text." disabled=true name="Big" order=3 type="toggle"
+text_text_format_s_big_number | desc="The game writes this value itself: only the time format applies." disabled=true name="Big" order=3 type="toggle"
 text_text_pChoose | name="Choose" order=2 type="toggle"
 not enabled leaves groups untouched: true
 aurabar anchor_area: {"ALL"="Whole Area","bar"="Bar","icon"="Icon"} swipe=false

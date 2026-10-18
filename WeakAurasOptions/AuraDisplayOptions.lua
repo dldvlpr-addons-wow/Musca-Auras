@@ -214,20 +214,36 @@ end
 -- Display options restricted to what Blizzard's native aura display draws
 --------------------------------------------------------------------------------
 
-local unsupportedDisplayKeys = BuildSet({
-  "useTooltip", "toolTipArea", "useCooldownModRate", "iconInset", "useMasque", "smoothProgress",
-  "enableGradient", "gradientOrientation", "barColor2", "spark", "sparkTexture", "sparkChooseTexture",
-  "sparkDesaturate", "sparkColor", "sparkBlendMode", "sparkWidth", "sparkHeight", "sparkOffsetX",
-  "sparkOffsetY", "sparkRotationMode", "sparkRotation", "sparkMirror", "sparkHidden", "customTextUpdate",
-  "text_customTextUpdate", "text_customTextUpdateThrottle", "text_smoothScaling", "smoothScaling",
-  "rotateText", "glowStartAnim", "slanted", "slant", "slantFirst", "slantMode",
-})
+-- Why each option is greyed out, shown in its tooltip.
+local progressReason = L["The game fills the bar or the swipe itself from secret values: this effect needs to read the progress."]
+local customTextReason = L["The game writes this text itself: custom code cannot run on it."]
+local notAppliedReason = L["Aura (Modern) does not apply this effect."]
+local tooltipReason = L["The Aura (Modern) display ignores the mouse, so it shows no tooltip."]
+local unsupportedDisplayReasons = {
+  useTooltip = tooltipReason,
+  toolTipArea = tooltipReason,
+  glowStartAnim = L["The game starts this glow itself, without the start animation."],
+  customTextUpdate = customTextReason,
+  text_customTextUpdate = customTextReason,
+  text_customTextUpdateThrottle = customTextReason,
+}
+for _, key in ipairs({ "sparkHidden", "slanted", "slant", "slantFirst", "slantMode" }) do
+  unsupportedDisplayReasons[key] = progressReason
+end
+for _, key in ipairs({
+  "useCooldownModRate", "iconInset", "smoothProgress", "enableGradient", "gradientOrientation", "barColor2",
+  "spark", "sparkTexture", "sparkChooseTexture", "sparkDesaturate", "sparkColor", "sparkBlendMode", "sparkWidth",
+  "sparkHeight", "sparkOffsetX", "sparkOffsetY", "sparkRotationMode", "sparkRotation", "sparkMirror", "rotateText",
+  "smoothScaling", "text_smoothScaling",
+}) do
+  unsupportedDisplayReasons[key] = notAppliedReason
+end
 
 local supportedFormatSuffixes = BuildSet({
   "p_format", "p_time_format", "p_time_precision", "p_time_dynamic_threshold", "p_time_legacy_floor",
 })
 
-local unavailableNoteText = "|cff999999" .. L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Change the trigger type to Aura to use them, at the cost of combat tracking."] .. "|r"
+local unavailableNoteText = "|cff999999" .. L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."] .. "|r"
 
 local textCodesDesc = L["Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported."]
 
@@ -277,7 +293,7 @@ local function RestrictTextFormat(suffix, option)
   elseif not supportedFormatSuffixes[suffix] and not suffix:find("^footer")
     and option.type ~= "execute" and option.type ~= "description" then
     option.disabled = true
-    option.desc = L["Not supported by native aura text."]
+    option.desc = L["The game writes this value itself: only the time format applies."]
   end
 end
 
@@ -285,9 +301,9 @@ local function RestrictDisplayOption(key, option, data, isBorderGroup)
   if isBorderGroup and key == "border_ppscale" then
     option.disabled = false
     option.desc = L["Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border."]
-  elseif unsupportedDisplayKeys[key] then
+  elseif unsupportedDisplayReasons[key] then
     option.disabled = true
-    option.desc = L["Not supported by Blizzard's native aura display."]
+    option.desc = unsupportedDisplayReasons[key]
   elseif displayOptionAdjustments[key] then
     displayOptionAdjustments[key](option, data)
   end
@@ -311,6 +327,20 @@ local function MarkDetached(group)
   if group.text_text_pChoose then
     group.text_text_pChoose.disabled = true
   end
+end
+
+local function SwitchToClassic(data)
+  for triggernum, entry in ipairs(data.triggers) do
+    if entry.trigger.type == "secretAura" then
+      entry.trigger.auraTracking = "readable"
+      OptionsPrivate.AuraEditor.Resolve(data, triggernum)
+    end
+  end
+  if data.blizzardAuraDisplay then
+    data.blizzardAuraDisplay.enabled = nil
+  end
+  WeakAuras.Add(data)
+  WeakAuras.UpdateThumbnail(data)
 end
 
 local function RestrictGroup(groupKey, group, data)
@@ -340,6 +370,19 @@ local function RestrictGroup(groupKey, group, data)
       order = (highestOrder or 0) + 1,
       name = unavailableNoteText,
     }
+    -- A Flow group arranges Modern auras only, its members keep their trigger type
+    if not Display().FlowGroup(data) then
+      group.secretSwitchToClassic = {
+        type = "execute",
+        width = WeakAuras.normalWidth,
+        order = (highestOrder or 0) + 2,
+        name = L["Switch to classic mode"],
+        desc = L["Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options."],
+        confirm = true,
+        confirmText = L["Aura stops updating in combat once the aura turns secret. Switch to classic mode?"],
+        func = function() SwitchToClassic(data) end,
+      }
+    end
   end
 end
 

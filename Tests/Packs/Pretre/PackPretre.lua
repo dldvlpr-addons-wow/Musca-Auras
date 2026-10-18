@@ -51,7 +51,7 @@ return Pack.Build({
   reminders = {
     { name = "Power Word: Fortitude", aura = fortitude, known = 1243 },
     { name = "Inner Fire", aura = innerFire, known = 588 },
-    { name = "Shadowform", aura = { 15473 }, known = 15473 },
+    { name = "Shadowform", aura = { 15473 }, known = 15473, combat = "always" },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },
 })

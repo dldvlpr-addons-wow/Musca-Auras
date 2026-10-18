@@ -1712,6 +1712,7 @@ function GenericTrigger.Add(data, region)
   watched_trigger_events[id] = nil
 
   local warnAboutCLEUEvents = false
+  local warnAboutEveryFrame = false
 
   for triggernum, triggerData in ipairs(data.triggers) do
     local trigger, untrigger = triggerData.trigger, triggerData.untrigger
@@ -1879,6 +1880,16 @@ function GenericTrigger.Add(data, region)
             stacksFunc = WeakAuras.LoadFunction("return "..trigger.customStacks, data.id);
           end
 
+          -- Custom code run on each frame without a throttle
+          local onFrameUpdate = type(trigger.events) == "string" and trigger.events:find("FRAME_UPDATE", 1, true)
+          -- An event trigger has no Check On choice, its check field is unused
+          if trigger.custom_type == "event" and onFrameUpdate then
+            warnAboutEveryFrame = L["A custom trigger runs its code on each frame. Use a less frequent event to lower its CPU cost."]
+          elseif (trigger.custom_type == "status" or trigger.custom_type == "stateupdate")
+            and (trigger.check == "update" or trigger.check == "event" and onFrameUpdate)
+            and (tonumber(trigger.onUpdateThrottle) or 0) <= 0 then
+            warnAboutEveryFrame = L["A custom trigger runs its code on each frame. Set an update throttle to lower its CPU cost."]
+          end
           if((trigger.custom_type == "status" or trigger.custom_type == "stateupdate") and trigger.check == "update") then
             trigger_events = {"FRAME_UPDATE"};
           else
@@ -2005,6 +2016,44 @@ function GenericTrigger.Add(data, region)
                 L["|cFFFF0000Support for unfiltered COMBAT_LOG_EVENT_UNFILTERED is deprecated|r\nCOMBAT_LOG_EVENT_UNFILTERED without a filter are disabled as it’s very performance costly.\nFind more information:\nhttps://github.com/WeakAuras/WeakAuras2/wiki/Custom-Triggers#events"])
   else
     Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning")
+  end
+
+  if warnAboutEveryFrame then
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning", "warning", warnAboutEveryFrame)
+  else
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning")
+  end
+
+  -- Custom text (%c) run on each frame without a throttle
+  local customTextEveryFrame = false
+  if type(data.customText) == "string" and data.customText ~= "" and data.customTextUpdate == "update"
+    and (tonumber(data.customTextUpdateThrottle) or 0) <= 0 then
+    local function HasCustomText(text)
+      if type(text) == "string" and Private.ContainsCustomPlaceHolder(text) then
+        customTextEveryFrame = true
+      end
+    end
+    if data.regionType == "text" then
+      HasCustomText(data.displayText)
+    end
+    for _, subRegion in ipairs(type(data.subRegions) == "table" and data.subRegions or {}) do
+      HasCustomText(subRegion.text_text)
+    end
+    -- A condition can set a text with %c
+    for _, condition in ipairs(type(data.conditions) == "table" and data.conditions or {}) do
+      for _, change in ipairs(type(condition.changes) == "table" and condition.changes or {}) do
+        if change.property == "displayText"
+          or type(change.property) == "string" and change.property:find("^sub%.%d+%.text_text$") then
+          HasCustomText(change.value)
+        end
+      end
+    end
+  end
+  if customTextEveryFrame then
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_text_warning", "warning",
+      L["A custom text runs its code on each frame. Set an update throttle to lower its CPU cost."])
+  else
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_text_warning")
   end
 
   Private.UpdateRestrictedTriggerWarnings(data)

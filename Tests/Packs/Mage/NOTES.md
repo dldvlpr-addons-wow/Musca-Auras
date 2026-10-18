@@ -32,3 +32,6 @@ Fichiers : `PackMage.lua` (données, préfixe `mcMageV1`), `PackMage.txt` et `Pa
 - Debuffs cible (Ignite, Winter's Chill, Fire Vulnerability) : affichage et durée en combat.
 - Icône Arcane Blast (rang 1 par talent) : chargement conditionné à `spellknown`.
 - Rappels hors combat : Arcane Intellect, armure.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).

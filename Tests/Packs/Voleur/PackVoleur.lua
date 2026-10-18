@@ -61,6 +61,7 @@ return Pack.Build({
   swing = { "main", "off" },
   power = { { label = "Energy", type = 3 }, { label = "Combo Points", type = 4, segments = 5 } },
   castBar = true,
+  meleeRange = { { name = "Sinister Strike", spell = 1752 } },
   reminders = {
     { name = "main-hand poison", enchant = "main", known = 8681 },
     { name = "off-hand poison", enchant = "off", offhand = true, known = 8681 },

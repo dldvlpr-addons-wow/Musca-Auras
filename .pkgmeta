@@ -15,10 +15,12 @@ ignore:
   - TUTORIAL.md
   - GUIDE.md
   - SUIVI-BUGS-ET-TESTS.md
+  - SUIVI-EVOLUTIONS-PACKS.md
   - "ANALYSE-*"
   - "FICHE-*"
   - "EVOLUTIONS-*"
   - "PLAN-*"
+  - NOTES-INTERNES.md
   - "*.zip"
   - Tests
   - Classes

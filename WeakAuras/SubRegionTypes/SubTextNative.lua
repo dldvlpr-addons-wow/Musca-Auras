@@ -102,6 +102,14 @@ local function UpdateNativeText(holder, parent, textStr, formatters)
         unknown = true
         return ""
       end
+      -- Format chosen in the options (abbreviated number...), raw value when the format needs to read the number
+      local formatter = formatters and formatters[symbol]
+      if formatter then
+        local ok, formatted = pcall(formatter, secret, state, triggerNum and tonumber(triggerNum))
+        if ok and formatted then
+          secret = formatted
+        end
+      end
       values[#values + 1] = secret
       return ""
     end)

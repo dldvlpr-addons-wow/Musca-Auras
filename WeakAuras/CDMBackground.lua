@@ -23,9 +23,7 @@ local function IsHidingEnabled()
   return db ~= nil and db.cdmHideBlizzard == true
 end
 
-local function IsSecret(value)
-  return Private.IsSecret ~= nil and Private.IsSecret(value) and true or false
-end
+local IsSecret = Private.IsSecret
 
 local function IsForbidden(frame)
   return frame.IsForbidden ~= nil and frame:IsForbidden() and true or false

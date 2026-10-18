@@ -189,7 +189,9 @@ local simpleFormatters = {
   end,
   AbbreviateLargeNumbers = function(value)
     if type(value) == "string" then value = tonumber(value) end
-    return (type(value) == "number") and AbbreviateLargeNumbers(Round(value)) or value
+    if type(value) ~= "number" then return value end
+    -- A secret number cannot be rounded, AbbreviateLargeNumbers takes it as it is
+    return AbbreviateLargeNumbers(Private.IsSecret(value) and value or Round(value))
   end,
   BreakUpLargeNumbers = function(value)
     if type(value) == "string" then value = tonumber(value) end
@@ -616,6 +618,8 @@ Private.format_types = {
       end
       if pad then
         return function(input)
+          -- A secret text has no length to pad
+          if Private.IsSecret(input) then return formatterFunc(input) end
           return WeakAuras.PadString(formatterFunc(input), padMode, padLength)
         end
       end
@@ -683,6 +687,8 @@ Private.format_types = {
       end
       if pad then
         return function(input)
+          -- A secret text has no length to pad
+          if Private.IsSecret(input) then return formatterFunc(input) end
           return WeakAuras.PadString(formatterFunc(input), padMode, padLength)
         end
       end
@@ -1144,12 +1150,14 @@ Private.sound_condition_types = {
 Private.trigger_require_types = {
   any = L["Any Triggers"],
   all = L["All Triggers"],
+  expression = L["Trigger Expression"],
   custom = L["Custom Function"]
 }
 
 ---@type table<string, string>
 Private.trigger_require_types_one = {
   any = L["Trigger 1"],
+  expression = L["Trigger Expression"],
   custom = L["Custom Function"]
 }
 
@@ -3817,6 +3825,27 @@ Private.update_categories = {
     },
     default = false,
     label = L["Size & Position"],
+  },
+  {
+    name = "font",
+    fields = {
+      "font",
+      "outline",
+      "shadowColor",
+      "shadowXOffset",
+      "shadowYOffset",
+    },
+    -- Fields of each entry of subRegions, the rest of subRegions is display
+    subRegionFields = {
+      "text_font",
+      "text_fontSize",
+      "text_fontType",
+      "text_shadowColor",
+      "text_shadowXOffset",
+      "text_shadowYOffset",
+    },
+    default = false,
+    label = L["Fonts & Text Style"],
   },
   {
     name = "userconfig",

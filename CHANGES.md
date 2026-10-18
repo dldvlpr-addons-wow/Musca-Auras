@@ -51,6 +51,102 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-18
+
+Released as 1.11.0. Tested in game on WoW Forever with the Shaman test pack `Tests/Packs/Essai/PackTestChaman.lua`:
+partial import, trigger expression, search, condition copy and paste, greyed out options and classic mode, CPU
+warning, secret value text, `/wa pstart combat` with the window closed. Headless test bench: 60 scenarios, 0 failed. luacheck: 0 warnings in 232 files.
+
+### Changed
+- Class packs 1.12.0: the Shaman healing spells (Healing Wave, Lesser Healing Wave, Chain Heal, Healing Rain) load in
+  the Restoration specialization only, Lava Lash and Molten Blast in Enhancement only; a Druid cooldown limited to a
+  form (Dash, Enrage, Frenzied Regeneration) now shows its buff, then its cooldown, in one icon (trigger expression),
+  and its separate "(active)" buff icon is gone. The Warrior pack is unchanged: a stance buff outlives the stance, and
+  the merged icon would hide it after a stance change. The ForeverAuras packs keep the former layout. Files:
+  `Tests/Packs/PackBuilder.lua`, `Tests/Packs/VerificationPack.lua` (trigger expressions must compile),
+  `Tests/Packs/{Chaman,Druide}/Pack<Class>.lua`, the Shaman and Druid pack strings, `WeakAurasOptions/ClassPacks.lua`,
+  `WeakAuras/WeakAuras.lua` (`CLASS_PACK_VERSION`).
+- Class packs 1.11.0: the mana bar turns red under 30 % through a secret power percent condition, without the red
+  copy laid over it (the ForeverAuras packs keep the copy); reminders that do not track an aura pulse (icon) or
+  flash (text); a "Not in melee range" text for the melee specs (Shaman, Rogue, Paladin, Warrior, Druid cat and
+  bear), read in combat, Musca packs only; the Paladin "Missing: Seal" reminder loads in combat only, the Priest Shadowform reminder in
+  and out of combat. Files: `Tests/Packs/PackBuilder.lua`, `Tests/Packs/<Class>/Pack<Class>.lua` (Shaman, Rogue,
+  Paladin, Warrior, Druid, Priest), the 18 pack strings, `WeakAurasOptions/ClassPacks.lua`, `WeakAuras/WeakAuras.lua`
+  (`CLASS_PACK_VERSION`). Bench: `VerificationPack` OK on the 9 classes, 59 scenarios OK.
+- French translation of the 20 core texts and 2 options texts that had none (stats, cooldown desaturation, timer
+  hiding, threshold alpha, range check, class pack). Files: `WeakAuras/Locales/frFR.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`.
+- Talent load options are no longer described as empty: they list the talents of your own specialization. Files:
+  `README.md`, `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`, `WeakAuras/WeakAuras.lua` (first login popup).
+- `Tests/Packs/Chaman/NOTES.md`, `Tests/Packs/Paladin/NOTES.md`, `Tests/Packs/DurationText/NOTES.md`: the bench
+  commands set `TEMP` and `WOW_UI_SOURCE`.
+- The aura list search also matches the description, the spell names and IDs and item names of the
+  triggers (Aura, Cast, Cooldown Manager, spell and item triggers), and the texts of the aura. File: `WeakAurasOptions/WeakAurasOptions.lua`.
+- Aura update: new category "Fonts & Text Style", unchecked by default. It holds the font, outline and shadow
+  of the texts, and the size of the texts of icons and bars (a Text aura keeps its size in "Size & Position", in "Group Arrangement"
+  inside a group), so
+  an update of the display keeps your fonts. Files: `WeakAuras/Types.lua`,
+  `WeakAurasOptions/OptionsFrames/Update.lua`, `WeakAuras/Locales/enUS.lua`, `WeakAuras/Locales/frFR.lua`,
+  `Tests/Scenarios/56_UpdateFontCategory.lua`.
+- Copy and paste of a single trigger or condition: "Copy Trigger" at the end of each trigger, "Copy Condition"
+  at the end of each condition, then "Paste Trigger" or "Paste Condition" next to the add button of any aura adds
+  it after the existing ones. A pasted condition keeps its trigger numbers, a number past the triggers of the aura
+  is cleared. A paste that an Aura (Modern) cannot use is undone, with a message in the chat.
+  Files: `WeakAurasOptions/TriggerOptions.lua`, `WeakAurasOptions/ConditionOptions.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`,
+  `Tests/Scenarios/57_PasteConditionTriggers.lua`.
+- Trigger Expression: a new "Required for Activation" mode combines the triggers with an expression such as
+  `1 and (2 or not 3)`, without Lua code. The expression is checked when it is entered, an error is shown under the
+  field, and trigger numbers follow when a trigger is moved or deleted. Files: `WeakAuras/TriggerExpression.lua`,
+  `WeakAuras/WeakAuras.toc`, `WeakAuras/WeakAuras.lua`, `WeakAuras/Types.lua`, `WeakAuras/Locales/enUS.lua`,
+  `WeakAuras/Locales/frFR.lua`, `WeakAurasOptions/TriggerOptions.lua`, `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/58_TriggerExpression.lua`.
+- Unused Auras: a new toolbar button lists in the chat the auras no character of the account loaded for 30 days and
+  the empty groups, a whole unused group in place of its auras, then asks to delete them. Load dates are counted from
+  the first login with this version, and a new or imported aura counts as loaded when it is added. Every aura deleted
+  from the options is now kept for 30 days in WeakAurasArchive as an export string, and an aura that cannot be archived
+  is not deleted. `/wa deleted` lists them and `/wa undelete <number>` opens the import window on one. Files:
+  `WeakAuras/UnusedAuras.lua`, `WeakAuras/AuraBackups.lua`, `WeakAuras/WeakAuras.toc`, `WeakAuras/WeakAuras.lua`,
+  `WeakAurasOptions/WeakAurasOptions.lua`, `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/59_UnusedAuras.lua`.
+- CPU cost: after a profiling (`/wa pstart`, then `/wa pstop`), each aura that ran during it shows a badge colored by
+  its cost (green under 0.1 ms per second, yellow under 1 ms, red above), with the cost and the longest run in its
+  tooltip. A click opens the profiling window with its results. A custom trigger or custom text that runs its code on
+  each frame without an update throttle, or a custom event trigger on `FRAME_UPDATE`, gets a warning. Files:
+  `WeakAuras/Profiling.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/Locales/enUS.lua`,
+  `WeakAuras/Locales/frFR.lua`, `WeakAurasOptions/WeakAurasOptions.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`, `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/60_CpuCost.lua`.
+- Secret value text: a secret value or total in a text now takes the number format chosen in the
+  options (abbreviated number, precision). A format that needs to read the number, such as a time or a rounding, keeps
+  the raw value, and a secret number is not padded. Files: `WeakAuras/SubRegionTypes/SubTextNative.lua`,
+  `WeakAuras/Types.lua`, `Tests/Scenarios/61_SecretAbbreviatedText.lua`.
+- Greyed out options explained: each display option greyed out by Aura (Modern) now gives its own reason in its
+  tooltip, such as a display that ignores the mouse or a bar filled by the game. Under the note of the group, a "Switch to classic
+  mode" button changes the Aura (Modern) triggers to Aura after a confirmation, except in a Flow group. Files:
+  `WeakAurasOptions/AuraDisplayOptions.lua`, `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/31_OptionsContract.lua`.
+- Partial import: importing a new group, or a copy of a group, now lists its child auras with a checkbox each.
+  An unchecked aura is left out of the import, with its own children. Unchecking a group unchecks its content, and
+  checking an aura checks the groups above it. Updating an existing group does not change. Files:
+  `WeakAurasOptions/OptionsFrames/Update.lua`, `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/62_PartialImport.lua`.
+
+### Fixed
+- Aura (Modern) background follows every restyle: it takes the crop, rotation, mirror and offset of the aura, and a
+  partial ring no longer shows a full disc behind it. File: `WeakAuras/ProgressTextureNative.lua`.
+- A spell description whose only duration is 0 no longer counts as a known duration. File:
+  `WeakAuras/SecretAuraSingle.lua`.
+- Cooldown Manager catalog reads are protected against API errors. Files: `WeakAuras/CooldownViewerCatalog.lua`,
+  `WeakAuras/CooldownViewerSelection.lua`.
+- Secret checks: the element glow tests secrecy before the size, and `WeakAuras/CDMBackground.lua` uses the shared
+  helper. File: `WeakAuras/SecretAuraGlow.lua`.
+- `/wa pstart combat` and `/wa pstart encounter` now profile the next combat or encounter even when the profiling
+  window was never opened: the event handler was set when the window first showed. Opening the window
+  (`/wa pshow`, minimap button) now lists the results of the last profiling, also one that ran with the window
+  closed. The list fills when the window really shows, so the window also works when first opened with the
+  interface hidden (Alt+Z). Files: `WeakAuras/Profiling.lua`, `Tests/Scenarios/60_CpuCost.lua`.
+
 ## 2026-10-17
 
 Released as 1.10.0. Headless test bench: 53 scenarios, 0 failed.

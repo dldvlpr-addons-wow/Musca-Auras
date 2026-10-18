@@ -3,7 +3,7 @@
 Générateur : `PackPaladin.lua` (builder `../PackBuilder.lua`), chaîne d'import : `PackPaladin.txt`. IDs tous issus de `Classes/Paladin.md` (DB2 1.60.1.70245).
 
 ```
-PACK=Tests/Packs/Paladin/PackPaladin.lua lua Tests/run.lua --scenario Tests/Packs/VerificationPack.lua
+PACK=Tests/Packs/Paladin/PackPaladin.lua TEMP=$TMPDIR WOW_UI_SOURCE=$HOME/wow-ui-source/forever lua Tests/run.lua --scenario Tests/Packs/VerificationPack.lua
 lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Tests/Packs/Paladin/PackPaladin.txt
 ```
 
@@ -28,8 +28,8 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 ## Absent ou écarté
 
 - Absents de Forever (fichier) : Crusader Strike, Divine Storm, Avenging Wrath, Blessing of Sanctuary. Aucun n'est dans le pack.
-- Écartés : Lay on Hands (armure), sceau manquant (inutile hors combat).
-- Écarts Quazii écartés : runes SoD absentes du fichier (Crusader Strike, Divine Storm, Avenger's Shield, Rebuke, Hand of Reckoning, Divine Sacrifice, Horn of Lordaeron, procs SoD) ; Forbearance qui grise les bulles ; Exorcism / Holy Wrath selon le type de créature et Art of War (custom, overlay) ; texte unique de l'aura active et rappel de sceau en combat (custom, API secrète) ; texte « Not in melee range ».
+- Écartés : Lay on Hands (armure).
+- Écarts Quazii écartés : runes SoD absentes du fichier (Crusader Strike, Divine Storm, Avenger's Shield, Rebuke, Hand of Reckoning, Divine Sacrifice, Horn of Lordaeron, procs SoD) ; Forbearance qui grise les bulles ; Exorcism / Holy Wrath selon le type de créature et Art of War (custom, overlay) ; texte unique de l'aura active (custom, API secrète).
 - Absents du pack : Templar's Bulwark, Swift Judgement, Blessing of Salvation/Light/Sacrifice.
 
 ## À tester en jeu
@@ -42,3 +42,9 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 - Règle des 5 s : se relance sur les sorts listés (correspondance par nom).
 - Holy Wrath, Turn Undead, Divine Intervention : icônes de recharge visibles seulement une fois le sort appris.
 - Divine Protection (actif) : icône pendant la bulle (ID d'aura 498 / 5573 supposé = ID du sort).
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Texte « Not in melee range » (Holy Strike 679, ID à confirmer sur Forever) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.
+- Rappel « Missing: Seal » : chargé en combat seulement, affiché quand aucun sceau n'est actif.
+- Limite : en combat, sans sceau et sous 20 % de mana, le 2e rappel empilé peut recouvrir le texte de portée.

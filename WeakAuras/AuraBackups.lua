@@ -6,18 +6,23 @@ local _, Private = ...
 -- An empty aura list is never copied, so it can't push the good copies out.
 
 local KEEP = 3
-local repo
+local DELETED_DAYS = 30
+local repositories = {}
 
 -- nil and the reason when the archive addon can't load (disabled by the user).
-local function Backups()
-  if not repo then
-    local ok, loaded = pcall(WeakAuras.LoadFromArchive, "Repository", "backups")
+local function OpenRepository(storeID)
+  if not repositories[storeID] then
+    local ok, loaded = pcall(WeakAuras.LoadFromArchive, "Repository", storeID)
     if not ok then
       return nil, loaded
     end
-    repo = loaded
+    repositories[storeID] = loaded
   end
-  return repo
+  return repositories[storeID]
+end
+
+local function Backups()
+  return OpenRepository("backups")
 end
 
 -- Newest first.
@@ -73,5 +78,64 @@ function Private.RestoreBackup(key, db)
   end
   db.displays = CopyTable(displays)
   ReloadUI()
+  return true
+end
+
+-- Deleted auras stay in the archive as export strings for DELETED_DAYS, to be imported again.
+-- nil and the reason when the archive addon can't load.
+local function DeletedAuras()
+  local deleted, reason = OpenRepository("deleted")
+  if deleted then
+    deleted:Clean(time() - DELETED_DAYS * 86400)
+  end
+  return deleted, reason
+end
+
+-- Called before the deletion, with a group the export string holds its auras.
+-- false when it could not be kept, nil without the archive addon.
+function Private.ArchiveDeletedAura(id)
+  local deleted = DeletedAuras()
+  if not deleted then
+    return nil
+  end
+  local ok, export = pcall(Private.DisplayToString, id, true)
+  if not ok or type(export) ~= "string" or export == "" then
+    return false
+  end
+  -- An import keeps the uid, the same aura deleted twice gets two copies
+  local key = WeakAuras.GetData(id).uid .. "-" .. time()
+  local copy
+  ok, copy = pcall(deleted.Set, deleted, key, { id = id, export = export })
+  if not ok then
+    deleted.stores[key] = nil
+    return false
+  end
+  copy.auraId = id
+  copy:Close()
+  return true
+end
+
+-- Newest first.
+function Private.ListDeletedAuras()
+  local deleted, reason = DeletedAuras()
+  if not deleted then
+    return nil, reason
+  end
+  local list = {}
+  for key, subStore in pairs(deleted.stores) do
+    list[#list + 1] = { key = key, timestamp = subStore.timestamp, id = subStore.auraId }
+  end
+  table.sort(list, function(a, b) return a.timestamp > b.timestamp or a.timestamp == b.timestamp and a.key < b.key end)
+  return list, DELETED_DAYS
+end
+
+-- Opens the import window on the deleted aura.
+function Private.RestoreDeletedAura(key)
+  local deleted = DeletedAuras()
+  local copy = deleted and deleted:GetData(key)
+  if type(copy) ~= "table" or type(copy.export) ~= "string" then
+    return false
+  end
+  WeakAuras.Import(copy.export)
   return true
 end

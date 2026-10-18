@@ -171,7 +171,8 @@ local function StyleBackdrop(native, auraData, host, look, shape)
     native.progressBackground:Hide()
   end
   native.progressBackground = backdrop
-  backdrop:Hide()
+  -- Shown before modify: a hidden texture skips the texCoord update.
+  backdrop:Show()
   backdrop:SetColor(unpack(auraData.backgroundColor, 1, 4))
   shape.backdrop.modify(backdrop, {
     texture = auraData.sameTexture and auraData.foregroundTexture or auraData.backgroundTexture,
@@ -190,7 +191,6 @@ local function StyleBackdrop(native, auraData, host, look, shape)
     user_y = look.shiftY,
   })
   shape.FillBackdrop(backdrop, auraData)
-  backdrop:Show()
 end
 
 function ProgressTextureNative.StyleAura(native, auraData, host)

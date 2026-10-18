@@ -149,7 +149,27 @@ function Private.ProfileDeleteAura(id)
   RefreshProfileBars()
 end
 
+-- Cost of an aura during the last finished profiling: milliseconds per second and longest run in milliseconds
+function Private.GetProfileCost(id)
+  local time = profileData.systems and profileData.systems.time
+  local aura = profileData.auras and profileData.auras[id]
+  if not (aura and time.elapsed and time.elapsed > 0) then
+    return
+  end
+  return aura.elapsed * 1000 / time.elapsed, aura.spike
+end
+
+local function AutoStartStopProfiling(frame, event)
+  if event == "ENCOUNTER_START" or event == "PLAYER_REGEN_DISABLED" then
+    WeakAuras.StartProfile("autostart")
+  elseif event == "ENCOUNTER_END" or event == "PLAYER_REGEN_ENABLED" then
+    WeakAuras.StopProfile()
+  end
+end
+
 local RegisterProfile = function(startType)
+  -- Set here, not in OnShow: "/wa pstart combat" must work before the window was ever opened
+  WeakAurasProfilingFrame:SetScript("OnEvent", AutoStartStopProfiling)
   if startType == "boss" then
     startType = "encounter"
   end
@@ -212,6 +232,7 @@ function WeakAuras.StartProfile(startType)
   Private.StopProfileAura = StopProfileAura
   Private.StopProfileUID = StopProfileUID
   LGF.StartProfile()
+  Private.callbacks:Fire("ProfileCostsUpdated")
 end
 
 local function doNothing() end
@@ -246,6 +267,7 @@ function WeakAuras.StopProfile()
     WeakAuras.timer:CancelTimer(ProfilingTimer)
     ProfilingTimer = nil
   end
+  Private.callbacks:Fire("ProfileCostsUpdated")
 end
 
 function WeakAuras.ToggleProfile()
@@ -264,14 +286,6 @@ local function CancelScheduledProfile()
 end
 
 WeakAuras.CancelScheduledProfile = CancelScheduledProfile
-
-local function AutoStartStopProfiling(frame, event)
-  if event == "ENCOUNTER_START" or event == "PLAYER_REGEN_DISABLED" then
-    WeakAuras.StartProfile("autostart")
-  elseif event == "ENCOUNTER_END" or event == "PLAYER_REGEN_ENABLED" then
-    WeakAuras.StopProfile()
-  end
-end
 
 local function ColoredSpike(spike)
   local r, g, b
@@ -492,6 +506,8 @@ local MinPanelWidth, MinPanelHeight = 500, 300
 local MinPanelMinimizedWidth, MinPanelMinimizedHeight = 250, 80
 function WeakAurasProfilingMixin:OnShow()
   if self.initialised then
+    -- Lists the last results, also those of a profiling that ran with the window closed
+    RefreshProfileBars()
     return
   end
   self.initialised = true
@@ -578,14 +594,13 @@ function WeakAurasProfilingMixin:OnShow()
 
   self:InitDropDown()
   self:InitModeDropDown()
-  self:SetScript("OnEvent", AutoStartStopProfiling)
-
   self:SetScript("OnUpdate", function()
     if profileData.systems.time and profileData.systems.time.count > 0 then
       self:RefreshBars()
     end
   end)
   self:UpdateButtons()
+  RefreshProfileBars()
 end
 
 function WeakAurasProfilingResultButton_OnClick(self)
@@ -824,7 +839,9 @@ end
 function WeakAurasProfilingMixin:Stop()
   WeakAuras.StopProfile()
   self:UpdateButtons()
-  self:ResetBars()
+  if self.bars then
+    self:ResetBars()
+  end
 end
 
 function WeakAurasProfilingMixin:Toggle()

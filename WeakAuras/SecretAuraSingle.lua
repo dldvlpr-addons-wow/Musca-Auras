@@ -512,7 +512,7 @@ local function LongestDuration(caption)
       local number = tonumber((capture:gsub(",", ".")))
       if number then
         local seconds = number * rule.multiplier
-        if not longest or seconds > longest then longest = seconds end
+        if seconds > 0 and (not longest or seconds > longest) then longest = seconds end
       end
     end
   end
