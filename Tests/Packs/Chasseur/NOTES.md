@@ -34,3 +34,7 @@ IDs issus de `Classes/Hunter.md` (DB2 1.60.1.70245). Préfixe d'uid `mcHuntV1`.
 - Action Usable : Mongoose Bite et Counterattack n'apparaissent que lorsqu'ils sont utilisables.
 - Barre Familier : vie du familier, absente sans familier invoqué.
 - Rappel d'aspect : disparaît dès qu'un aspect est actif.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Rappels sans aura suivie (familier absent) : l'icône pulse, le texte clignote.

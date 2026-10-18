@@ -12,6 +12,8 @@ local L = WeakAuras.L
 	L[" rotated |cFFFF0000%s|r degrees"] = "degrés de |cFFFF0000%s|r  rotation"
 	L["% - To show a percent sign"] = "% - Pour afficher un signe de pourcentage"
 	L["% of Progress"] = "% de progression"
+	L["%.2f ms per second, longest run %.2f ms, during the last profiling. /wa pstart starts a new one."] = "%.2f ms par seconde, plus long passage %.2f ms, pendant le dernier profilage. /wa pstart en lance un nouveau."
+	L["%s could not be archived and is not deleted."] = "%s n'a pas pu être archivée et n'est pas supprimée."
 	L["%d |4aura:auras; added"] = "%d |4aura:auras; ajoutée(s)"
 	L["%d |4aura:auras; deleted"] = "%d |4aura:auras; supprimée(s)"
 	L["%d |4aura:auras; modified"] = "%d |4aura:auras; modifiée(s)"
@@ -188,10 +190,13 @@ Si la durée de l'animation est définie à |cFF00CC0010%|r, et le déclencheur 
 	L["Attach to Foreground"] = "Attacher au premier plan"
 	L[ [=[Aura is
 Off Screen]=] ] = "L’aura est hors écran"
+	L["Aura (Modern) does not apply this effect."] = "Aura (Modern) n'applique pas cet effet."
 	L["Aura Name Pattern"] = "Modèle de Nom de l'Aura"
 	L["Aura Order"] = "Ordre des auras"
 	L["Aura received from: %s"] = "Aura reçue de : %s"
+	L["Aura stops updating in combat once the aura turns secret. Switch to classic mode?"] = "Aura ne se met plus à jour en combat dès que l'aura devient secrète. Passer en mode classique ?"
 	L["Aura: '%s'"] = "Aura : '%s'"
+	L["Auras to Import"] = "Auras à importer"
 	L["Auto-Clone (Show All Matches)"] = "Clonage Automatique (Afficher tous les résultats)"
 	L["Automatic length"] = "Longueur automatique"
 	L["Backdrop Color"] = "Couleur de Fond"
@@ -233,6 +238,7 @@ Off Screen]=] ] = "L’aura est hors écran"
 	L["Categories to Update"] = "Categories to Update"
 	--[[Translation missing --]]
 	L["Changelog"] = "Changelog"
+	L["Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options."] = "Change les déclencheurs Aura (Modern) de cette aura en Aura, ce qui débloque les options grisées."
 	L["Chat with WeakAuras experts on our Discord server."] = "Discutez avec des experts de WeakAuras sur notre serveur Discord."
 	L["Check On..."] = "Vérifier sur..."
 	L["Check out our wiki for a large collection of examples and snippets."] = "Consultez notre wiki pour trouver une grande collection d'exemples et d'extraits."
@@ -240,6 +246,7 @@ Off Screen]=] ] = "L’aura est hors écran"
 	L["Choose"] = "Choisir"
 	--[[Translation missing --]]
 	L["Circular Texture %s"] = "Circular Texture %s"
+	L["Class Pack"] = "Pack de classe"
 	--[[Translation missing --]]
 	L["Clear Debug Logs"] = "Clear Debug Logs"
 	--[[Translation missing --]]
@@ -279,13 +286,16 @@ Off Screen]=] ] = "L’aura est hors écran"
 	--[[Translation missing --]]
 	L["Cooldown Numbers might be added by WoW. You can configure these in the game settings."] = "Cooldown Numbers might be added by WoW. You can configure these in the game settings."
 	L["Copy"] = "Copier"
+	L["Copy Condition"] = "Copier la condition"
 	L["Copy settings..."] = "Copier les paramètres..."
 	L["Copy to all auras"] = "Copier toutes les auras"
+	L["Copy Trigger"] = "Copier le déclencheur"
 	--[[Translation missing --]]
 	L["Could not parse '%s'. Expected a table."] = "Could not parse '%s'. Expected a table."
 	L["Counts the number of matches over all units."] = "Comptes de tout le nombre de correspondances sur toutes les unités."
 	--[[Translation missing --]]
 	L["Counts the number of matches per unit."] = "Counts the number of matches per unit."
+	L["CPU Cost"] = "Coût CPU"
 	--[[Translation missing --]]
 	L["Create a Copy"] = "Create a Copy"
 	L["Creating buttons: "] = "Création de boutons :"
@@ -303,8 +313,7 @@ Off Screen]=] ] = "L’aura est hors écran"
 	--[[Translation missing --]]
 	L["Custom Load"] = "Custom Load"
 	L["Custom Options"] = "Options personnalisées"
-	--[[Translation missing --]]
-	L["Custom Text Update Throttle"] = "Custom Text Update Throttle"
+	L["Custom Text Update Throttle"] = "Délai de mise à jour du texte personnalisé"
 	L["Custom Trigger"] = "Déclencheur personnalisé"
 	L["Custom trigger event tooltip"] = [=[
 Choisissez quels évènements peuvent activer le déclencheur.
@@ -321,8 +330,7 @@ Plusieurs évènements peuvent être spécifiés avec des virgules ou des espace
 |cFF4444FFPar exemple:|r
 UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED
 ]=]
-	--[[Translation missing --]]
-	L["Custom trigger Update Throttle"] = "Custom trigger Update Throttle"
+	L["Custom trigger Update Throttle"] = "Délai de mise à jour du déclencheur personnalisé"
 	--[[Translation missing --]]
 	L["Custom Trigger: Ignore Lua Errors on OPTIONS event"] = "Custom Trigger: Ignore Lua Errors on OPTIONS event"
 	--[[Translation missing --]]
@@ -342,6 +350,7 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED
 	L["Delete all"] = "Supprimer tout"
 	L["Delete children and group"] = "Supprimer enfants et groupe"
 	L["Delete Entry"] = "Supprimer l'entrée"
+	L["Deletes the auras no character of the account loaded for 30 days, and the empty groups.\nThe list is shown in the chat before the confirmation."] = "Supprime les auras qu'aucun personnage du compte n'a chargées depuis 30 jours, et les groupes vides.\nLa liste s'affiche dans le chat avant la confirmation."
 	--[[Translation missing --]]
 	L["Deleting auras: "] = "Deleting auras: "
 	L["Description Text"] = "Texte de Description"
@@ -508,6 +517,7 @@ Can use \ to escape -.]=]
 	--[[Translation missing --]]
 	L["Full Bar"] = "Full Bar"
 	L["Full Circle"] = "Cercle Complet"
+	L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"] = "Pack d'interface complet pour ta classe : rotation, temps de recharge, améliorations et ressources, prêt à jouer"
 	L["Global Conditions"] = "Conditions globales"
 	L["Glow %s"] = "Faire briller %s"
 	L["Glow Action"] = "Action de la brillance"
@@ -516,6 +526,7 @@ Can use \ to escape -.]=]
 	L["Glow Frame Type"] = "Type de cadre brillant"
 	L["Glow Type"] = "Type de la brillance"
 	L["Green Rune"] = "Rune verte"
+	L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."] = "Les options grisées sont indisponibles avec Aura (Modern) : le jeu dessine lui-même cet élément. Survolez une option pour voir pourquoi."
 	L["Grid direction"] = "Direction de la grille"
 	L["Group (verb)"] = "Groupe (verbe)"
 	--[[Translation missing --]]
@@ -749,6 +760,7 @@ Seule une unique valeur peut être choisie]=]
 	--[[Translation missing --]]
 	L["New Template"] = "New Template"
 	L["New Value"] = "Nouvelle Valeur"
+	L["No aura unused for %d days. Loads are counted since %s."] = "Aucune aura inutilisée depuis %d jours. Les chargements sont comptés depuis le %s."
 	L["No Children"] = "Aucun enfant"
 	--[[Translation missing --]]
 	L["No Logs saved."] = "No Logs saved."
@@ -817,6 +829,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Paste Action Settings"] = "Coller les paramètres d'actions"
 	L["Paste Animations Settings"] = "Coller les paramètres d'animations"
 	L["Paste Author Options Settings"] = "Coller les paramètres des options de l'auteur"
+	L["Paste Condition"] = "Coller la condition"
 	L["Paste Condition Settings"] = "Coller les paramètres de conditions"
 	L["Paste Custom Configuration"] = "Coller les Options personnalisées"
 	L["Paste Display Settings"] = "Coller les paramètres d'affichage"
@@ -824,6 +837,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Paste Load Settings"] = "Coller les paramètres de chargement"
 	L["Paste Settings"] = "Coller les paramètres"
 	L["Paste text below"] = "Coller le texte ci-dessous"
+	L["Paste Trigger"] = "Coller le déclencheur"
 	L["Paste Trigger Settings"] = "Coller les paramètres de déclencheurs"
 	--[[Translation missing --]]
 	L["Places a tick on the bar"] = "Places a tick on the bar"
@@ -1069,6 +1083,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	--[[Translation missing --]]
 	L["Subevent Suffix"] = "Subevent Suffix"
 	L["Swipe Overlay Settings"] = "Paramètres de la superposition des balayages"
+	L["Switch to classic mode"] = "Passer en mode classique"
 	--[[Translation missing --]]
 	L["Templates could not be loaded, the addon is %s"] = "Templates could not be loaded, the addon is %s"
 	L["Temporary Group"] = "Groupe temporaire"
@@ -1092,8 +1107,13 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["The addon ElvUI is enabled. It might add cooldown numbers to the swipe. You can configure these in the ElvUI settings."] = "The addon ElvUI is enabled. It might add cooldown numbers to the swipe. You can configure these in the ElvUI settings."
 	--[[Translation missing --]]
 	L["The addon OmniCC is enabled. It might add cooldown numbers to the swipe. You can configure these in the OmniCC settings."] = "The addon OmniCC is enabled. It might add cooldown numbers to the swipe. You can configure these in the OmniCC settings."
+	L["The Aura (Modern) display ignores the mouse, so it shows no tooltip."] = "L'affichage Aura (Modern) ignore la souris, il n'a donc pas d'infobulle."
 	L["The duration of the animation in seconds."] = "La durée de l'animation en secondes."
 	L["The duration of the animation in seconds. The finish animation does not start playing until after the display would normally be hidden."] = "La durée de l'animation en secondes. L'animation de fin ne commence qu'après le moment où l'affichage est normalement caché."
+	L["The game fills the bar or the swipe itself from secret values: this effect needs to read the progress."] = "Le jeu remplit lui-même la barre ou le balayage à partir de valeurs secrètes : cet effet doit lire la progression."
+	L["The game starts this glow itself, without the start animation."] = "Le jeu lance lui-même cette surbrillance, sans l'animation de départ."
+	L["The game writes this text itself: custom code cannot run on it."] = "Le jeu écrit lui-même ce texte : du code personnalisé ne peut pas s'y appliquer."
+	L["The game writes this value itself: only the time format applies."] = "Le jeu écrit lui-même cette valeur : seul le format de temps s'applique."
 	--[[Translation missing --]]
 	L["The group and all direct children will share the same base frame level."] = "The group and all direct children will share the same base frame level."
 	--[[Translation missing --]]
@@ -1183,6 +1203,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["Trigger %i: %s"] = "Trigger %i: %s"
 	--[[Translation missing --]]
 	L["Trigger Combination"] = "Trigger Combination"
+	L["Trigger numbers combined with and, or, not and parentheses, such as 1 and (2 or not 3). An Aura (Modern) trigger counts as active as long as its settings are valid and its unit exists, whether or not the aura is present: the actual presence of the aura is shown by the game and does not enter the expression."] = "Numéros de déclencheurs combinés par and (et), or (ou), not (non) et des parenthèses, par exemple 1 and (2 or not 3). Un déclencheur Aura (Modern) compte comme actif tant que ses réglages sont valides et que son unité existe, que l'aura soit présente ou non : la présence réelle de l'aura est affichée par le jeu et n'entre pas dans l'expression."
 	--[[Translation missing --]]
 	L["Type 'select' for '%s' requires a values member'"] = "Type 'select' for '%s' requires a values member'"
 	--[[Translation missing --]]
@@ -1200,6 +1221,8 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	--[[Translation missing --]]
 	L["Unknown Spell"] = "Unknown Spell"
 	L["Unlike the start or finish animations, the main animation will loop over and over until the display is hidden."] = "Contrairement aux animations de début et de fin, l'animation principale bouclera tant que l'affichage est visible."
+	L["Unused Auras"] = "Auras inutilisées"
+	L["Unused for %d days, listed above:"] = "Inutilisées depuis %d jours, listées ci-dessus :"
 	--[[Translation missing --]]
 	L["Update"] = "Update"
 	L["Update Auras"] = "Mettre à jour les auras"
@@ -1258,6 +1281,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["y-Offset"] = "y-Décalage"
 	--[[Translation missing --]]
 	L["You already have this group/aura. Importing will create a duplicate."] = "You already have this group/aura. Importing will create a duplicate."
+	L["You are about to delete %d aura(s). They can be imported again for 30 days with /wa deleted. Would you like to continue?"] = "Vous êtes sur le point de supprimer %d aura(s). Elles pourront être réimportées pendant 30 jours avec /wa deleted. Voulez-vous continuer ?"
 	L["You are about to delete %d aura(s). |cFFFF0000This cannot be undone!|r Would you like to continue?"] = "Vous êtes sur le point de supprimer %d aura(s). |cFFFF0000Cela ne peut pas être annulé !|r Voulez-vous continuer ?"
 	--[[Translation missing --]]
 	L["You are about to delete a trigger. |cFFFF0000This cannot be undone!|r Would you like to continue?"] = "You are about to delete a trigger. |cFFFF0000This cannot be undone!|r Would you like to continue?"

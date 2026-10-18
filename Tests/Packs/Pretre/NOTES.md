@@ -19,7 +19,7 @@ Source des IDs : `Classes/Priest.md` (DB2 1.60.1.70245).
 - Mind Flay 15407 (règle des 5 s) : rang 1 présent seulement dans wow-forever.gg ; les rangs 2 à 6 comptent aussi par nom.
 
 ## Ignoré
-- Weakened Soul grisant Power Word: Shield, rappel Shadowform en combat : le builder ne les permet pas (rappels hors combat seulement).
+- Weakened Soul grisant Power Word: Shield : `secretAura` ne pilote pas une condition depuis un second trigger.
 - Holy Concentration, Vampiric Touch, Psychic Horror, Hymn of Hope : écartés (absents de la liste).
 - Debuff Holy Fire et ralentissement de Mind Flay : aucun ID d'aura dans le fichier.
 - Smite, Flash Heal, etc. : sans recharge, utiles seulement pour la règle des 5 s.
@@ -30,3 +30,7 @@ Source des IDs : `Classes/Priest.md` (DB2 1.60.1.70245).
 - Shadowform : buff et rappel (le rappel doit disparaître une fois en forme).
 - Les icônes d'aura de cible en combat (valeurs secrètes) : Pain, Plague, Weaving, Embrace.
 - Règle des 5 s : se déclenche après un sort de la liste, pas sur Fade ni Inner Fire.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Rappel Shadowform : chargé en combat et hors combat.

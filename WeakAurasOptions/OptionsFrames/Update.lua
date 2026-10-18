@@ -226,6 +226,64 @@ local function FieldToCategory(field, isRoot)
   return category
 end
 
+local subRegionFieldToCategory
+
+-- Category of each changed entry of a subRegions diff: whole entries (added, removed or
+-- type changed) are display, fields listed in subRegionFields go to their category.
+local function ForEachSubRegionsDiffField(subRegionsDiff, callback)
+  if not subRegionFieldToCategory then
+    subRegionFieldToCategory = {}
+    for _, cat in ipairs(OptionsPrivate.Private.update_categories) do
+      for _, property in ipairs(cat.subRegionFields or {}) do
+        subRegionFieldToCategory[property] = cat.name
+      end
+    end
+  end
+  for index, entry in pairs(subRegionsDiff) do
+    if entry == deleted or type(entry) ~= "table" or entry.type ~= nil then
+      callback("display", index)
+    else
+      for field in pairs(entry) do
+        callback(subRegionFieldToCategory[field] or "display", index, field)
+      end
+    end
+  end
+end
+
+local function IsSubRegionsDiff(key, value)
+  return key == "subRegions" and type(value) == "table" and value ~= deleted
+end
+
+-- Keeps only the fields of the diff that belong to the given categories
+local function FilterDiff(diff, categories, isRoot)
+  for key, value in pairs(diff) do
+    if IsSubRegionsDiff(key, value) then
+      ForEachSubRegionsDiffField(value, function(category, index, field)
+        if not categories[category] then
+          if field then
+            value[index][field] = nil
+          else
+            value[index] = nil
+          end
+        end
+      end)
+      for index, entry in pairs(value) do
+        if entry ~= deleted and type(entry) == "table" and next(entry) == nil then
+          value[index] = nil
+        end
+      end
+      if next(value) == nil then
+        diff[key] = nil
+      end
+    else
+      local category = FieldToCategory(key, isRoot)
+      if category == nil or not categories[category] then
+        diff[key] = nil
+      end
+    end
+  end
+end
+
 local function recurseUpdate(data, chunk)
   for k,v in pairs(chunk) do
     if v == deleted then
@@ -767,12 +825,7 @@ local function BuildUidMap(data, children, type)
     end
     local diff = CopyDiff(self.map[uid].diff)
     local isRoot = not self.map[uid].parent
-    for key in pairs(diff) do
-      local category = FieldToCategory(key, isRoot)
-      if category == nil or not categories[category] then
-        diff[key] = nil
-      end
-    end
+    FilterDiff(diff, categories, isRoot)
     return diff
   end
 
@@ -942,6 +995,16 @@ local function BuildUidMap(data, children, type)
     end
   end
 
+  uidMap.RemoveWithChildren = function(self, uid)
+    local children = { unpack(self:GetChildren(uid)) }
+    for index = #children, 1, -1 do
+      if self:Contains(children[index]) then
+        self:RemoveWithChildren(children[index])
+      end
+    end
+    self:Remove(uid)
+  end
+
   uidMap.SetRootParent = function(self, parentId)
     self.rootParent = parentId
   end
@@ -958,6 +1021,15 @@ local function BuildUidMap(data, children, type)
   end
 
   return uidMap, uidMap.root
+end
+
+-- The children unchecked on the import screen leave the import with their own children
+local function RemoveExcludedChildren(uidMap, excludedChildren)
+  for child in pairs(excludedChildren) do
+    if uidMap:Contains(child.uid) then
+      uidMap:RemoveWithChildren(child.uid)
+    end
+  end
 end
 
 
@@ -1080,10 +1152,16 @@ end
 
 local function GetCategories(diff, isRoot)
   local categories = {}
-  for key in pairs(diff) do
-    local category = FieldToCategory(key, isRoot)
-    if category then
-      categories[category] = true
+  for key, value in pairs(diff) do
+    if IsSubRegionsDiff(key, value) then
+      ForEachSubRegionsDiffField(value, function(category)
+        categories[category] = true
+      end)
+    else
+      local category = FieldToCategory(key, isRoot)
+      if category then
+        categories[category] = true
+      end
     end
   end
 
@@ -1476,6 +1554,8 @@ local methods = {
 
     local matchInfo, errorMessage = MatchInfo(data, children, target)
     self.matchInfo = matchInfo
+    -- The list of children goes after the warnings, so they stay on screen
+    local showChildrenArea
 
     -- Cases:
     -- No match => Import
@@ -1487,6 +1567,7 @@ local methods = {
         self.userChoices.mode = "import"
         matchInfoResult:SetText(L["You already have this group/aura. Importing will create a duplicate."])
         self.importButton:SetText(L["Import as Copy"])
+        showChildrenArea = true
       else
         local oldRootId = matchInfo.oldUidMap:GetIdFor(matchInfo.oldUidMap:GetRootUID())
         local preferToUpdate = matchInfo.oldUidMap:GetRawData(matchInfo.oldUidMap:GetRootUID()).preferToUpdate
@@ -1570,6 +1651,7 @@ local methods = {
 
       matchInfoResult:SetText(matchInfoText)
       self.importButton:SetText(L["Import"])
+      showChildrenArea = true
     end
 
     local scamCheckResult = {}
@@ -1638,6 +1720,9 @@ local methods = {
       self.viewCodeButton:Hide()
     end
 
+    if showChildrenArea then
+      self:CreateChildrenArea(self)
+    end
     self:DoLayout()
   end,
   CreateUpdateArea = function(self, area, matchInfo)
@@ -1669,6 +1754,57 @@ local methods = {
 
     area:DoLayout()
   end,
+  CreateChildrenArea = function(self, area)
+    local children = self.pendingData.children
+    if #children == 0 then
+      return
+    end
+    area:AddChild(AceGUI:Create("WeakAurasSpacer"))
+    local childrenHeader = AceGUI:Create("Label")
+    childrenHeader:SetText(L["Auras to Import"])
+    childrenHeader:SetFontObject(GameFontNormalHuge)
+    childrenHeader:SetFullWidth(true)
+    area:AddChild(childrenHeader)
+
+    local excludedChildren = {}
+    self.userChoices.excludedChildren = excludedChildren
+    local depth = { [self.pendingData.data.id] = 0 }
+    local childById, buttons = {}, {}
+
+    -- Unchecking a group unchecks its content, checking an aura checks the groups above it
+    local function SetIncluded(child, included, withContent)
+      excludedChildren[child] = not included or nil
+      buttons[child]:SetValue(included)
+      if withContent then
+        for _, other in ipairs(children) do
+          if other.parent == child.id then
+            SetIncluded(other, included, true)
+          end
+        end
+      end
+    end
+
+    for _, child in ipairs(children) do
+      childById[child.id] = child
+      depth[child.id] = (depth[child.parent] or 0) + 1
+      local button = AceGUI:Create("CheckBox")
+      button:SetLabel(string.rep("    ", depth[child.id] - 1) .. child.id)
+      button:SetFullWidth(true)
+      button:SetValue(true)
+      buttons[child] = button
+      area:AddChild(button)
+      button:SetCallback("OnValueChanged", function(_, _, value)
+        SetIncluded(child, value, true)
+        local parent = value and childById[child.parent]
+        while parent do
+          SetIncluded(parent, true, false)
+          parent = childById[parent.parent]
+        end
+      end)
+    end
+
+    area:DoLayout()
+  end,
   SelectMode = function(self, mode)
     if self.userChoices.mode == mode then
       return
@@ -1678,12 +1814,15 @@ local methods = {
       self.importButton:SetText(L["Update"])
       self.updateRadioButton:SetValue(true)
       self.importCopyRadioButton:SetValue(false)
+      self.updateUiArea:ReleaseChildren()
+      self.userChoices.excludedChildren = nil
       self:CreateUpdateArea(self.updateUiArea, self.matchInfo)
     elseif mode == "import" then
       self.importButton:SetText(L["Import as Copy"])
       self.updateRadioButton:SetValue(false)
       self.importCopyRadioButton:SetValue(true)
       self.updateUiArea:ReleaseChildren()
+      self:CreateChildrenArea(self.updateUiArea)
     end
   end,
   Import = function(self)
@@ -1743,6 +1882,10 @@ local methods = {
 
       coroutine.yield(1, "build uid map")
       local uidMap = BuildUidMap(pendingData.data, pendingData.children, "new")
+      if userChoices.excludedChildren then
+        RemoveExcludedChildren(uidMap, userChoices.excludedChildren)
+        self:InitializeProgress(2 * uidMap:GetTotalCount())
+      end
 
       local phase2Order = {}
       coroutine.yield(1, "start phase 1")

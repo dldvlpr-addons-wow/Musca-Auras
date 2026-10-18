@@ -10,7 +10,7 @@ Vérifie en jeu `Private.GetDurationTextFormatter` (`WeakAuras/DurationText.lua`
 
 ```
 lua Tests/Packs/AuraTool.lua . encode Tests/Packs/DurationText/VerificationDurationText.lua > Tests/Packs/DurationText/PackDurationText.txt
-lua Tests/run.lua --scenario Tests/Packs/DurationText/VerificationPackDurationText.lua
+TEMP=$TMPDIR WOW_UI_SOURCE=$HOME/wow-ui-source/forever lua Tests/run.lua --scenario Tests/Packs/DurationText/VerificationPackDurationText.lua
 ```
 
 ## Réglages testés

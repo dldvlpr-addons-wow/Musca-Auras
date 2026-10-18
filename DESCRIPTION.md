@@ -1,8 +1,6 @@
 <h1 style="text-align: center;"><span style="color: #0cf;">Musca</span> <span style="color: #ffd100;">Auras</span></h1>
 
-<p style="text-align: center;"><strong>A ready-made combat HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></p>
-
-<p style="text-align: center;">The WeakAuras you know, rebuilt for the modern engine of WoW Forever.</p>
+<p style="text-align: center;"><strong>The WeakAuras you know, with a ready-made HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></p>
 
 <p style="text-align: center;"><a href="https://discord.gg/EyYpyMq2km"><strong>💬 Discord</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/GUIDE.md"><strong>📖 Guide</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/issues"><strong>🐞 Report a bug</strong></a></p>
 
@@ -22,6 +20,8 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span> and click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel.
 3. **Make it yours:** type <span style="color: #ffd100;"><strong>/wa</strong></span> to move, resize or change any aura. New to auras? Click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window.
 
+<span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
+
 ---
 
 ## <span style="color: #0cf;">⚡ Why Musca Auras?</span>
@@ -30,33 +30,30 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 | | Regular WeakAuras | Musca Auras |
 |---|:---:|:---:|
-| Buffs, debuffs and cooldowns keep ticking in combat | ✖ | ✔ |
+| Buffs, debuffs, cooldowns, health and power keep updating in combat | ✖ | ✔ |
 | No flood of Lua errors in combat | ✖ | ✔ |
 | Ready-made HUD for all nine classes | ✖ | ✔ |
 | Import check that warns about auras that cannot work on WoW Forever | ✖ | ✔ |
-| Your saved auras and `/wa` | ✔ | ✔ |
-
-<span style="color: #ffd100;"><strong>Coming from ForeverAuras?</strong></span> Its Aura (Modern) and Cooldown Manager auras import as they are.
 
 ---
 
 ## <span style="color: #0cf;">🧰 What you get</span>
 
-- <span style="color: #ffd100;"><strong>Timers that keep moving in combat.</strong></span> The game itself draws cooldown swipes, timer bars, health and power bars and texts, even when it hides the numbers from addons.
-- <span style="color: #ffd100;"><strong>Buffs and debuffs on screen, on your unit frames or on nameplates,</strong></span> with duration and stacks updated in combat.
 - <span style="color: #ffd100;"><strong>Low health and low resource alerts in combat,</strong></span> for example an icon when you have 80 energy or more.
 - <span style="color: #ffd100;"><strong>Colors that react in combat:</strong></span> interruptible casts, spells out of range, not enough mana or rage, a timer about to run out.
 - <span style="color: #ffd100;"><strong>Damage over time timers from your own casts,</strong></span> with no code to write.
 - <span style="color: #ffd100;"><strong>Type spells by name,</strong></span> in your game language: every rank of the spell is tracked.
-- <span style="color: #ffd100;"><strong>In-game guide:</strong></span> click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window, or type `/wa tutorial`.
 
 ---
 
-## <span style="color: #3c3;">🆕 New in 1.10.0</span>
+## <span style="color: #3c3;">🆕 New in the last releases (1.10 and 1.11)</span>
 
-- <span style="color: #ffd100;"><strong>Health and power conditions work in combat:</strong></span> they change transparency, color and grey-out, on the aura and on its border, glow, texts and bars.
-- <span style="color: #ffd100;"><strong>New Looping Animation condition:</strong></span> the aura plays the animation you choose while the condition is true.
-- <span style="color: #ffd100;"><strong>Daily backups of your auras:</strong></span> `/wa backups` lists them, `/wa restore <number>` puts one back.
+- <span style="color: #ffd100;"><strong>Health and power conditions in combat:</strong></span> Health (%), Power (%) and their siblings change alpha, color and desaturate even when the game hides the value. On an enemy, the % conditions work.
+- <span style="color: #ffd100;"><strong>Trigger Expression:</strong></span> combine triggers with an expression such as `1 and (2 or not 3)`, no code needed.
+- <span style="color: #ffd100;"><strong>Copy and paste a single trigger or condition,</strong></span> and pick which child auras to import from a group.
+- <span style="color: #ffd100;"><strong>Your auras are safe:</strong></span> a daily backup (`/wa backups`, `/wa restore`), and every deleted aura kept for 30 days (`/wa deleted`, `/wa undelete`).
+- <span style="color: #ffd100;"><strong>Find what costs CPU:</strong></span> after a profiling, each aura shows a badge colored by its cost, and an Unused Auras button cleans up what no character loads.
+- <span style="color: #ffd100;"><strong>Class packs:</strong></span> a "Not in melee range" text for melee specs, reminders that pulse, and a mana bar that turns red under 30 %.
 
 Full list in the **Files** tab.
 
@@ -78,27 +75,19 @@ Full list in the **Files** tab.
 
 ## <span style="color: #0cf;">🌐 Auras made elsewhere</span>
 
-<span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log need to be updated.</strong></span> Removed functions (`GetSpellInfo`, `UnitBuff`…) are replaced in custom code, but `UnitBuff` and `UnitDebuff` stop in combat on a hidden aura: the import report tells you which ones.
-
-<span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
+- <span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log need to be updated.</strong></span>
+- <span style="color: #4caf50;"><strong>Coming from ForeverAuras?</strong></span> Its Aura (Modern) and Cooldown Manager auras import as they are.
+- Some removed functions (`GetSpellInfo`, `UnitBuff`…) are replaced in custom code, but `UnitAura`, `UnitBuff` and `UnitDebuff` stop in combat on a hidden aura. Auras that call other removed functions need to be updated: the import report tells you which ones.
 
 ---
 
 ## <span style="color: #ff6b35;">🔄 Updating from an older version</span>
 
-1. Install **1.10.0**, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel, to update your HUD. Coming from **1.8.1** or older? **Restart the game**: the new logo is not loaded by a <span style="color: #ffd100;"><strong>/reload</strong></span>
-2. Coming from **1.8.0** or older? Open <span style="color: #ffd100;"><strong>/wa</strong></span>, **delete** the <span style="color: #ffd100;"><strong>&lt;Class&gt; (Musca)</strong></span> group, then click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel. Aura ids changed once in 1.8.1.
+Install the latest version, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel. Your positions and options are kept.
 
-- <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> The saved data format did not change. An aura that used the removed Energy Tick trigger becomes a Health trigger: delete it.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as in 1.9.1?</strong></span> Install **1.9.1** again from the **Files** tab, and report it on Discord, GitHub or CurseForge with the text of the error.
-
----
-
-## <span style="color: #0cf;">🐞 Support</span>
-
-<span style="color: #ffd100;"><strong>Found a bug?</strong></span> [Open an issue on GitHub](https://github.com/dldvlpr-addons-wow/Musca-Auras/issues).
-
-<span style="color: #ffd100;"><strong>Questions, ideas, news?</strong></span> [Join the Musca Auras Discord](https://discord.gg/EyYpyMq2km).
+- <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> The saved data format did not change.
+- <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab, and report it on Discord, GitHub or CurseForge with the text of the error.
 
 ---
 

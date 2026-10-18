@@ -72,6 +72,7 @@ return Pack.Build({
   stance = 2457,
   swing = { "main", "off" },
   castBar = true,
+  meleeRange = { { name = "Sunder Armor", spell = 7386 } },
   reminders = {
     { name = "Battle Shout", aura = battleShout, known = 6673 },
   },

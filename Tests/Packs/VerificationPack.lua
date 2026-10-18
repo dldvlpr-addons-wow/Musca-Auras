@@ -19,6 +19,10 @@ return function(test)
   local display = test.Loader.private.BlizzardAuraDisplay
   for _, child in ipairs(transmit.c) do
     assert(WeakAuras.GetData(child.id), child.id .. ": not loaded")
+    if child.triggers.disjunctive == "expression" then
+      local _, problem = test.Loader.private.CompileTriggerExpression(child.triggers.triggerExpression, #child.triggers)
+      assert(not problem, child.id .. ": " .. tostring(problem))
+    end
     if child.triggers[1].trigger.type == "secretAura" then
       local issue = display.Validate(WeakAuras.GetData(child.id))
       assert(issue == nil, child.id .. ": " .. tostring(issue))

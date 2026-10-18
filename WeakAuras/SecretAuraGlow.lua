@@ -433,7 +433,7 @@ function Display.StyleElementGlow(entry, button, parent, anchor, element, width,
     ClearGlow(entry)
     return
   end
-  if not width or not height or issecretvalue(width) or issecretvalue(height) then
+  if issecretvalue(width) or issecretvalue(height) or not width or not height then
     width, height = nil, nil
   end
   local request = {

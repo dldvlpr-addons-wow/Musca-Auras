@@ -30,3 +30,9 @@ Fichiers : `PackGuerrier.lua` (données), `PackGuerrier.txt` (chaîne encodée).
 - Auras cible en combat (secrètes) : Rend, Sunder Armor, Thunder Clap, Demoralizing Shout, Hamstring, Disarm, Concussion Blow, Mocking Blow, Deep Wounds, Mortal Strike.
 - Postures (règles Classic, sans table SpellShapeshift locale) : Taunt et Disarm visibles en Defensive seulement, Mocking Blow en Battle seulement, Shield Bash en Battle et Defensive.
 - Slam (1240193) : rang 1 propre à Forever, cooldown suivi par nom.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Texte « Not in melee range » (Sunder Armor 7386) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.
+
+## Pack 1.12.0 (2026-10-18)
+- Aucun changement. Fusion recharge et buff (E6) écartée : le buff de Recklessness, Shield Wall, Retaliation, Berserker Rage ou Sweeping Strikes survit au changement de posture, et l'icône limitée à la posture le cacherait (danse de postures). Les icônes « (active) » restent.

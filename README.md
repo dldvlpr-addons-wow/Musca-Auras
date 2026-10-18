@@ -18,7 +18,7 @@ Classic Era, SoD or Retail will not work as they are:
   and thresholds on that data wait until combat ends.
 - Some old game functions no longer exist. Custom code calling them errors
   and must be updated to the modern C_ API (`C_Spell`, `C_UnitAuras`, `C_Item`...).
-- Talent load options are empty (use the Class and Specialization load option). Aura (Modern)
+- Talent load options list the talents of your own specialization: select it alone in Class and Specialization. Aura (Modern)
   spell lists take a spell ID or a spell name; a name is replaced by the IDs of all its ranks.
 
 In short: expect to adapt most of the auras you import, especially the ones

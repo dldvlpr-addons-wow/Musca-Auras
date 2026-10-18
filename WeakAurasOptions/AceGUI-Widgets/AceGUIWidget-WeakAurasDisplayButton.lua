@@ -548,7 +548,9 @@ local tabsForWarning = {
   sound_condition = "conditions",
   tts_action = "action",
   sound_action = "action",
-  spammy_event_warning = "trigger"
+  spammy_event_warning = "trigger",
+  every_frame_warning = "trigger",
+  every_frame_text_warning = "region"
 }
 
 --[[-----------------------------------------------------------------------------
@@ -1509,6 +1511,7 @@ local methods = {
     else
       iconButton:SetNormalTexture(icon)
     end
+    iconButton:GetNormalTexture():SetVertexColor(1, 1, 1)
     if title then
       iconButton:SetScript("OnEnter", function()
         Show_Tooltip(
@@ -1523,6 +1526,7 @@ local methods = {
     end
     iconButton:SetScript("OnClick", onClick)
     iconButton:Show()
+    return iconButton
   end,
   ["ClearStatusIcon"] = function(self, key)
     for index, button in ipairs(self.statusIcons.buttons) do
@@ -1584,7 +1588,31 @@ local methods = {
         self:UpdateStatusIcon(severity, warning.prio, warning.icon, warning.title, warning.message, onClick)
       end
     end
+    self:UpdateProfileCost()
     self:SortStatusIcons()
+  end,
+  -- Badge colored by the CPU cost of the aura during the last profiling
+  ["UpdateProfileCost"] = function(self)
+    local cost, spike = OptionsPrivate.Private.GetProfileCost(self.data.id)
+    if not cost then
+      self:ClearStatusIcon("cpu_cost")
+      return
+    end
+    local iconButton = self:UpdateStatusIcon("cpu_cost", 20, "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Circle_White",
+      L["CPU Cost"], L["%.2f ms per second, longest run %.2f ms, during the last profiling. /wa pstart starts a new one."]:format(cost, spike),
+      function()
+        -- The window only fills its list while a profiling runs
+        WeakAurasProfilingFrame:Show()
+        WeakAurasProfilingFrame:ResetBars()
+        WeakAurasProfilingFrame:RefreshBars(nil, true)
+      end)
+    if cost >= 1 then
+      iconButton:GetNormalTexture():SetVertexColor(1, 0.2, 0.2)
+    elseif cost >= 0.1 then
+      iconButton:GetNormalTexture():SetVertexColor(1, 0.8, 0)
+    else
+      iconButton:GetNormalTexture():SetVertexColor(0.2, 1, 0.2)
+    end
   end,
   ["UpdateParentWarning"] = function(self)
     self:UpdateWarning()

@@ -18,7 +18,7 @@ Toujours le 2026-10-12, l'uid de chaque aura est un hachage de son id : il ne d�
 Commandes, depuis la racine du dépôt :
 
 ```
-PACK=Tests/Packs/Chaman/PackChaman.lua lua Tests/run.lua --scenario Tests/Packs/VerificationPack.lua
+PACK=Tests/Packs/Chaman/PackChaman.lua TEMP=$TMPDIR WOW_UI_SOURCE=$HOME/wow-ui-source/forever lua Tests/run.lua --scenario Tests/Packs/VerificationPack.lua
 lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Chaman/PackChaman.lua > Tests/Packs/Chaman/PackChaman.txt
 lua Tests/Packs/AuraTool.lua . decode <fichier contenant une chaîne>
 ```
@@ -68,3 +68,11 @@ Les identifiants de sorts suivent `Classes/Shaman.md` (DB2 client 1.60.1.70245),
 5. Retour sur le premier jet : une ligne par aura (marche, jamais affichée, affichée à tort, inutile) et le texte exact des erreurs BugSack.
 
 Le point 1 bloque le reste. Proposition en attente : préparer des commandes `/run` qui affichent en combat ce qui est secret ou lisible (API à faire vérifier par l'agent `wow-api` avant).
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Rappels sans aura suivie (enchantements main et off, Ankh) : l'icône pulse, le texte clignote.
+- Texte « Not in melee range » (Stormstrike 17364) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.
+
+## Pack 1.12.0 (2026-10-18), à tester en jeu
+- Chargement par spécialisation (`forever_spec`) : Healing Wave, Lesser Healing Wave, Chain Heal et Healing Rain en Restauration, Lava Lash et Molten Blast en Amélioration. Sans point de talent, la spé se lit sur un sort signature : Riptide (Restauration), Rage of the Farseer (Amélioration) ; sans l'un ni l'autre, ces sorts ne se chargent pas. La variante ForeverAuras les charge dans toutes les spés.

@@ -29,3 +29,7 @@ Fichiers : `PackVoleur.lua` (données), `PackVoleur.txt` (chaîne encodée). Pr�
 - Swing main gauche (`off`) avec deux armes.
 - Riposte (Action Usable) : apparition après une parade, sort connu.
 - Poisons : rappels hors combat et icônes d'enchantement, main droite et gauche.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Rappels sans aura suivie (poisons main droite et gauche) : l'icône pulse, le texte clignote.
+- Texte « Not in melee range » (Sinister Strike 1752) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.

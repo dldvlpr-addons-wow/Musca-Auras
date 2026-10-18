@@ -59,6 +59,8 @@ ForeverAurasImport.lua
 Animations.lua
 Conditions.lua
 SecretConditions.lua
+TriggerExpression.lua
+UnusedAuras.lua
 AnchorToWeakAuras.lua
 
 # Trigger systems

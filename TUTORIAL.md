@@ -66,7 +66,7 @@ Triggers that use the combat log (`CLEU`, "Combat Log") never fire. For damage t
   language: it becomes the IDs of all its ranks. Elsewhere, name search may not find spells: type the spell ID.
   Get the ID of your rank out of combat: `/dump C_Spell.GetSpellInfo("Corruption")`.
   Classic spells have one ID per rank.
-- **Talent load options** are empty. Use the **Class and Specialization** load option instead.
+- **Talent load options** list the talents of your own specialization only. Select it alone in the **Class and Specialization** load option first.
 - **Chat Message action** can be blocked during encounters and PvP matches.
 - **Old functions in custom code** no longer exist (`GetSpellInfo`, `GetSpellCooldown`, `UnitBuff`...).
   Use `C_Spell`, `C_UnitAuras`, `C_Item`.

@@ -360,10 +360,13 @@ function Private.CDMCatalog()
   local categories = Enum.CooldownViewerCategory
   for _, source in pairs(categories) do
     if type(source) == "number" and source >= 0 then
-      local identifiers = C_CooldownViewer.GetCooldownViewerCategorySet(source, true) or {}
+      local setOk, identifiers = pcall(C_CooldownViewer.GetCooldownViewerCategorySet, source, true)
+      if not setOk or type(identifiers) ~= "table" then identifiers = {} end
       for _, rawID in ipairs(identifiers) do
         local cooldownID = readNumber(rawID)
-        local info = cooldownID and C_CooldownViewer.GetCooldownViewerCooldownInfo(cooldownID)
+        local infoOk, info = false, nil
+        if cooldownID then infoOk, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldownID) end
+        info = infoOk and info or nil
         if info then
           local placement
           local displayed

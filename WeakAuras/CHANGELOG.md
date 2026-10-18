@@ -1,3 +1,54 @@
+# Musca Auras 1.11.0 (2026-10-18)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Trigger Expression: a new `Required for Activation` mode combines the triggers with an expression such as
+  `1 and (2 or not 3)`, without Lua code. The expression is checked when you enter it, and trigger numbers follow when
+  a trigger is moved or deleted.
+- Copy and paste of a single trigger or condition: `Copy Trigger` and `Copy Condition` at the end of each one, then
+  `Paste Trigger` or `Paste Condition` next to the add button of any aura. A paste that an Aura (Modern) cannot use is
+  undone, with a message in the chat.
+- Partial import: importing a new group, or a copy of a group, lists its child auras with a checkbox each. An
+  unchecked aura is left out of the import.
+- Unused Auras: a new toolbar button lists the auras no character of your account loaded for 30 days, and the empty
+  groups, then asks to delete them. Every aura you delete is now kept for 30 days: `/wa deleted` lists them and
+  `/wa undelete <number>` opens the import window on one. Load dates count from your first login with 1.11.0.
+- CPU cost: after a profiling (`/wa pstart`, then `/wa pstop`), each aura that ran shows a badge colored by its cost.
+  A click opens the profiling window. A custom trigger or custom text that runs its code on each frame without a
+  throttle gets a warning.
+- Greyed out options now explain why in their tooltip. A `Switch to classic mode` button changes the Aura (Modern)
+  triggers of an aura to Aura.
+- Aura update has a new category, `Fonts & Text Style`, unchecked by default, so updating a display keeps your fonts.
+- The aura list search also matches descriptions, spell names and IDs, item names and the texts of the aura.
+- Class packs: a `Not in melee range` text for the melee specs (Shaman, Rogue, Paladin, Warrior, Druid cat and bear),
+  read in combat. Reminders that do not track an aura pulse (icon) or flash (text).
+
+## Fixes
+
+- Aura (Modern) background follows every restyle (crop, rotation, mirror and offset), and a partial ring no longer
+  shows a full disc behind it.
+- `/wa pstart combat` and `/wa pstart encounter` now profile the next combat or encounter even when the profiling
+  window was never opened. Opening the window lists the results of the last profiling.
+
+## Changed
+
+- Class packs: the Shaman healing spells load in the Restoration specialization only, Lava Lash and Molten Blast in
+  Enhancement only. A Druid cooldown limited to a form (Dash, Enrage, Frenzied Regeneration) shows its buff, then its
+  cooldown, in one icon, and its separate "(active)" icon is gone. The mana bar turns red under 30 % without a red copy
+  laid over it. The Paladin "Missing: Seal" reminder loads in combat only, the Priest Shadowform reminder in and out
+  of combat.
+- Secret value text: a hidden value or total in a text now follows the number format chosen in the options.
+- The welcome popup and the tutorial no longer say that talent load options are empty: they list the talents of your
+  own specialization.
+- French translation of the texts that had none.
+
+## After the update
+
+- Click `Update <Class> HUD` in the message shown at login, or `Class Pack` at the top of the New Aura panel, to update
+  your HUD. Your positions and options are kept.
+
 # Musca Auras 1.10.0 (2026-10-18)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

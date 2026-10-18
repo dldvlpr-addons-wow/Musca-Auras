@@ -42,3 +42,7 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 - Règle des 5 s : le décompte repart sur chaque rang des sorts listés (correspondance par nom).
 - Barre familier : sans familier, la barre doit rester vide ou masquée.
 - Cooldowns Conflagrate / Shadowburn : icône affichée uniquement si le sort est connu.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Rappels sans aura suivie (Soul Shard à 0, familier absent) : l'icône pulse, le texte clignote.

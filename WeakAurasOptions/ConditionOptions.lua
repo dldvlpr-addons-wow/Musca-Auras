@@ -2332,6 +2332,19 @@ local function fixUpLinkedInFirstCondition(conditions)
   end
 end
 
+-- Condition kept by "Copy Condition", pasted as a new condition into any aura
+local copiedCondition
+
+-- A pasted condition keeps its trigger numbers, a number past the triggers of the aura is cleared
+local function ClearMissingTriggers(check, triggerCount)
+  if type(check.trigger) == "number" and check.trigger > triggerCount then
+    check.trigger = nil
+  end
+  for _, subCheck in ipairs(check.checks or {}) do
+    ClearMissingTriggers(subCheck, triggerCount)
+  end
+end
+
 local function formatConditionTitle(text, propertyType, value)
   if propertyType == "color" and type(value) == "table" then
     local r, g, b = unpack(value)
@@ -2695,6 +2708,28 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
   else
     order = addSpace(args, order)
   end
+
+  args["condition" .. i .. "_copy"] = {
+    type = "execute",
+    width = WeakAuras.normalWidth,
+    name = L["Copy Condition"],
+    order = order,
+    func = function()
+      local source = conditions[i]
+      if data.controlledChildren then
+        -- Condition of the first selected aura that has it
+        for child in OptionsPrivate.Private.TraverseLeafs(data) do
+          local reference = conditions[i].check.references[child.id]
+          if reference then
+            source = child[conditionVariable][reference.conditionIndex]
+            break
+          end
+        end
+      end
+      copiedCondition = CopyTable(source)
+    end
+  }
+  order = order + 1;
 
   return order;
 end
@@ -3230,6 +3265,41 @@ function OptionsPrivate.GetConditionOptions(data)
         OptionsPrivate.SetCollapsed(child.id, "condition", #child[conditionVariable], false);
         WeakAuras.Add(child);
         OptionsPrivate.ClearOptions(child.id)
+      end
+      WeakAuras.ClearAndUpdateOptions(data.id)
+    end
+  }
+  order = order + 1;
+
+  args["pasteCondition"] = {
+    type = "execute",
+    width = WeakAuras.normalWidth,
+    name = L["Paste Condition"],
+    order = order,
+    hidden = function()
+      return copiedCondition == nil
+    end,
+    func = function()
+      for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
+        local condition = CopyTable(copiedCondition)
+        condition.check = condition.check or {}
+        condition.changes = condition.changes or {}
+        condition.linked = nil
+        condition.category = category
+        ClearMissingTriggers(condition.check, #child.triggers)
+        -- An Aura (Modern) does not show at all with a condition it cannot use: such a paste is undone
+        local Display = OptionsPrivate.Private.BlizzardAuraDisplay
+        local problemBefore = Display.ValidateConditions(child)
+        tinsert(child[conditionVariable], condition)
+        local problem = not problemBefore and Display.Enabled(child) and Display.ValidateConditions(child)
+        if problem then
+          tremove(child[conditionVariable])
+          WeakAuras.prettyPrint(child.id .. ": " .. problem)
+        else
+          OptionsPrivate.SetCollapsed(child.id, "condition", #child[conditionVariable], false);
+          WeakAuras.Add(child);
+          OptionsPrivate.ClearOptions(child.id)
+        end
       end
       WeakAuras.ClearAndUpdateOptions(data.id)
     end

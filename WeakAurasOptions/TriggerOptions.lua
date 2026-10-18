@@ -55,8 +55,46 @@ local function GetGlobalOptions(data)
         end
       end,
       set = function(info, v)
+        if v == "expression" and not data.triggers.triggerExpression then
+          -- Start from the previous combination
+          local numbers = {}
+          for i = 1, #data.triggers do
+            numbers[i] = tostring(i)
+          end
+          data.triggers.triggerExpression = table.concat(numbers, data.triggers.disjunctive == "any" and " or " or " and ")
+        end
         data.triggers.disjunctive = v;
         WeakAuras.Add(data);
+      end
+    },
+    triggerExpression = {
+      type = "input",
+      name = L["Trigger Expression"],
+      desc = L["Trigger numbers combined with and, or, not and parentheses, such as 1 and (2 or not 3). An Aura (Modern) trigger counts as active as long as its settings are valid and its unit exists, whether or not the aura is present: the actual presence of the aura is shown by the game and does not enter the expression."],
+      width = WeakAuras.doubleWidth,
+      order = 2.1,
+      hidden = function()
+        return data.triggers.disjunctive ~= "expression"
+      end,
+      get = function()
+        return data.triggers.triggerExpression or ""
+      end,
+      set = function(info, v)
+        data.triggers.triggerExpression = v
+        WeakAuras.Add(data)
+      end
+    },
+    triggerExpressionError = {
+      type = "description",
+      name = function()
+        local _, message = OptionsPrivate.Private.CompileTriggerExpression(data.triggers.triggerExpression, #data.triggers)
+        return "|cFFFF0000" .. (message or "") .. "|r"
+      end,
+      width = WeakAuras.doubleWidth,
+      order = 2.2,
+      hidden = function()
+        return data.triggers.disjunctive ~= "expression"
+          or OptionsPrivate.Private.CompileTriggerExpression(data.triggers.triggerExpression, #data.triggers) ~= nil
       end
     },
     -- custom trigger combiner text editor added below
@@ -134,6 +172,8 @@ end
 
 local collapsedId = {}
 local maxTriggerNumForExpand = 0
+-- Trigger kept by "Copy Trigger", pasted as a new trigger into any aura
+local copiedTrigger
 
 local function AddOptions(allOptions, data)
   allOptions = union(allOptions, GetGlobalOptions(data))
@@ -175,6 +215,22 @@ local function AddOptions(allOptions, data)
             untrigger = {
             }
           })
+        WeakAuras.Add(data)
+        OptionsPrivate.SetCollapsed(collapsedId, "trigger", #data.triggers, false)
+        maxTriggerNumForExpand = max(maxTriggerNumForExpand, #data.triggers)
+        WeakAuras.ClearAndUpdateOptions(data.id)
+      end
+    },
+    pasteTrigger = {
+      type = "execute",
+      width = WeakAuras.normalWidth,
+      name = L["Paste Trigger"],
+      order = 2,
+      hidden = function()
+        return copiedTrigger == nil
+      end,
+      func = function()
+        tinsert(data.triggers, CopyTable(copiedTrigger))
         WeakAuras.Add(data)
         OptionsPrivate.SetCollapsed(collapsedId, "trigger", #data.triggers, false)
         maxTriggerNumForExpand = max(maxTriggerNumForExpand, #data.triggers)
@@ -296,6 +352,9 @@ local function moveTriggerDownImpl(data, i)
     return false;
   end
   data.triggers[i], data.triggers[i + 1] = data.triggers[i + 1], data.triggers[i]
+  data.triggers.triggerExpression = OptionsPrivate.Private.RenumberTriggerExpression(data.triggers.triggerExpression, function(number)
+    return number == i and i + 1 or number == i + 1 and i or number
+  end)
   for _, condition in ipairs(data.conditions) do
     moveTriggerDownConditionCheck(condition.check, i);
   end
@@ -399,6 +458,18 @@ function OptionsPrivate.AddTriggerMetaFunctions(options, data, triggernum)
     WeakAuras.Add(data)
     WeakAuras.ClearAndUpdateOptions(data.id)
   end
+  -- Last option of the trigger. With several auras selected, the trigger of the first one is copied.
+  options.copyTrigger = {
+    type = "execute",
+    width = WeakAuras.normalWidth,
+    name = L["Copy Trigger"],
+    order = 999,
+    func = function(info, button, secondCall)
+      if not secondCall then
+        copiedTrigger = CopyTable(data.triggers[triggernum])
+      end
+    end
+  }
   options.__delete = {
     disabled = function()
       return #data.triggers == 1
@@ -430,6 +501,10 @@ function OptionsPrivate.AddTriggerMetaFunctions(options, data, triggernum)
                 tremove(child.triggers, triggernum)
                 DeleteConditionsForTrigger(child, triggernum)
                 FixUpProgressSourceAfterDelete(child, triggernum)
+                -- The deleted trigger becomes 0, an error the expression field shows
+                child.triggers.triggerExpression = OptionsPrivate.Private.RenumberTriggerExpression(child.triggers.triggerExpression, function(number)
+                  return number == triggernum and 0 or number > triggernum and number - 1 or number
+                end)
                 WeakAuras.Add(child)
                 OptionsPrivate.RemoveCollapsed(collapsedId, "trigger", {triggernum})
                 OptionsPrivate.ClearOptions(child.id)

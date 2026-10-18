@@ -30,7 +30,7 @@ Source des IDs : `Classes/Druid.md` (DB2 1.60.1.70245). Préfixe d'uid `mcDruiV1
 
 ## Écarts Quazii écartés
 - Mangle, Starsurge, Sunfire, Savage Roar, Skull Bash, Survival Instincts, Lifebloom, Berserk, Éclipse : absents de Classes/Druid.md ou IDs non départagés.
-- Faerie Fire manquant sur la cible, texte « Not in melee range » : triggers que le générateur ne gère pas.
+- Faerie Fire manquant sur la cible : trigger que le générateur ne gère pas.
 - Mini-barre de mana en félin : la barre de mana Musca est déjà visible dans toutes les formes.
 
 ## À tester en jeu
@@ -40,3 +40,10 @@ Source des IDs : `Classes/Druid.md` (DB2 1.60.1.70245). Préfixe d'uid `mcDruiV1
 - Barre de mana visible en forme de félin et d'ours (déclencheur sans filtre de forme).
 - Barre de points de combo en félin hors combat et en combat.
 - Règle des 5 s : se relance sur les lancers listés.
+
+## Pack 1.11.0 (2026-10-18), à tester en jeu
+- Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
+- Texte « Not in melee range » (Claw 1082 en félin, Maul 6807 en ours) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.
+
+## Pack 1.12.0 (2026-10-18), à tester en jeu
+- Dash (félin), Enrage et Frenzied Regeneration (ours) : une seule icône, le buff puis la recharge, limitée à la forme (expression `(1 or 2) and 3` : le trigger 1 du joueur est toujours vrai, la forme décide seule ; repli sur le trigger 2). Les icônes « (active) » de ces trois sorts sont retirées ; la variante ForeverAuras les garde. À la mise à jour du pack, la case « Remove Obsolete Auras » (cochée par défaut) les supprime.
