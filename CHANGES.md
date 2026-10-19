@@ -51,6 +51,196 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-19
+
+Released as 1.12.0. Loaded in game on WoW Forever with the test pack
+`Tests/Packs/Essai/PackTestEvolutionsForeverAuras.lua` (warrior and shaman), which covers the form filters by spell,
+migration 92, specialization loads, the Caster Unit warning and the ForeverAuras imports. Not yet tested in game:
+tags, Aura Sets, Undo/Redo, Replace, Aura Shown, Edit Mode placement, group conditions, `/wa demo`, the frozen value
+padlock and Pixel Perfect. Headless test bench: 72 scenarios, 0 failed. luacheck: 0 warnings in 239 files.
+
+### Added
+- `/wa demo` opens the options and shows every loaded aura with its sample states, as the eye of the "Loaded/Standby"
+  header does, to set up a HUD without a fight. `/wa demo <aura name>` shows only that aura, with its children for a
+  group, and selects it. During combat, the command says to type it again after combat. Scenario 74 checks the
+  command. Files: `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/WeakAurasOptions.lua`,
+  `Tests/Scenarios/74_DemoCommand.lua`.
+- ForeverAuras imports: an anchor or a glow frame set to another ForeverAuras aura (`ForeverAuras:<id>`) is renamed
+  to `WeakAuras:<id>`. The `ForeverAuras` global points to `WeakAuras` when ForeverAuras is not loaded, for custom
+  code that reaches it without the import renaming; inside custom code, `ForeverAuras` is the same read-only table as
+  `WeakAuras`. An aura imported before this change keeps its `ForeverAuras:<id>` anchor: import it again. A condition whose trigger has no such condition shows
+  "Incompatible condition" in the options, instead of an empty line. Scenario 16 checks the import. Files:
+  `WeakAuras/ForeverAurasImport.lua`, `WeakAuras/AuraEnvironment.lua`, `WeakAurasOptions/ConditionOptions.lua`, `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `.luacheckrc`, `Tests/Scenarios/16_ForeverAurasImport.lua`.
+- Scenario 46 covers the centered growth with Limit on clones (one shadow per clone, capped by the limit) and with
+  Show On Missing (one shadow of one slot behind the center). File: `Tests/Scenarios/46_FlowLayoutContract.lua`.
+- Spell Cast Succeeded: the secret warning shows when the Caster Unit is neither the player nor the pet, since
+  `UNIT_SPELLCAST_SUCCEEDED` is secret for other casters, in or out of combat. The warning and the import report say
+  so. Scenario 34 checks it. Files: `WeakAurasOptions/TriggerSecretWarnings.lua`,
+  `WeakAurasOptions/OptionsFrames/Update.lua`, `WeakAuras/Locales/enUS.lua`, `WeakAuras/Locales/frFR.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/34_OptionsFilesContract.lua`.
+- Talents: `ACTIVE_COMBAT_CONFIG_CHANGED` also refreshes the talent and specialization load conditions. Scenario 48
+  checks it. Files: `WeakAuras/TalentReader.lua`, `Tests/Scenarios/48_Lot6aContract.lua`.
+- Stance/Form/Aura: the trigger stores the form spell ID instead of its position on the stance bar, so a stance learned
+  later no longer shifts the selection. Dire Bear Form counts as Bear Form, and every rank of Stealth, of the paladin
+  auras and of the hunter aspects counts as its first rank. The "Form by position" option keeps the old behaviour.
+  Migration 92 marks existing triggers as by position; during the login, an aura loaded only for the player's class
+  gets its positions and its form conditions converted from the player's stance bar, and stays by position when a
+  selected position does not resolve. The form value of the state, `%form` included, becomes the spell ID after the
+  conversion; custom code that reads it is not converted. Form conditions get their values from the trigger.
+  ForeverAuras imports now run the migrations from version 92. The warrior and druid templates use spell IDs.
+  Scenarios 04, 16 and 19 check it. Files: `WeakAuras/Types.lua`, `WeakAuras/Prototypes.lua`,
+  `WeakAuras/Modernize.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/WeakAuras.lua`,
+  `WeakAuras/ForeverAurasImport.lua`, `WeakAuras/Locales/enUS.lua`, `WeakAuras/Locales/frFR.lua`,
+  `WeakAurasTemplates/TriggerTemplatesDataClassicEra.lua`, `Tests/Scenarios/04_TemplateSpellIds.lua`,
+  `Tests/Scenarios/16_ForeverAurasImport.lua`, `Tests/Scenarios/19_Modernize.lua`.
+- Stance/Form/Aura: ForeverAuras imports convert the form ID filter into form spell IDs, from the game's form
+  constants, for the selected mode only; a form ID without equivalent is removed with a warning, and a single one
+  removes the filter. Form ID conditions get the form spell ID; a form condition by position or a form filter by
+  position replaced by the import gets a warning. An aura loaded only by Forever specializations
+  of the player's class gets its forms converted too. Migration 92 keeps a "Form by position" option already set.
+  The trigger name shows the current form spell name, or "Humanoid". Scenarios 16 and 19 check it. Files:
+  `WeakAuras/ForeverAurasImport.lua`, `WeakAuras/Modernize.lua`, `WeakAuras/PlayerSpecialization.lua`,
+  `WeakAuras/Prototypes.lua`, `Tests/Scenarios/16_ForeverAurasImport.lua`, `Tests/Scenarios/19_Modernize.lua`.
+
+### Changed
+- Credits: the README and the CurseForge description say the fork includes code from ForeverAuras (Neroxrw, GPL v2),
+  and that versions before 1.10 also held code from M33kAuras. Files: `README.md`, `DESCRIPTION.md`.
+- Locales: the 225 texts of the code that had no locale entry are added in English and French (41 in the core, 184 in
+  the options), so a French client shows them in French. The 91 entries no code uses any more are removed from every
+  language: 87 in the core (bosses and zones of other contents, former conversion warnings), 3 in the options (former
+  Discord and library credits) and "Bloodlust/Heroism" in the templates. Files: `WeakAuras/Locales/*.lua`,
+  `WeakAurasOptions/Locales/*.lua`, `WeakAurasTemplates/Locales/*.lua`.
+- Tags: a "Tags" field in the Information tab (comma separated, on every selected aura for a multi-selection). A
+  search for `#raid` in the aura list shows the auras tagged "raid" and the members of a group tagged "raid". Tags
+  are not exported, an update keeps them, and `/wa undelete` puts them back. Files: `WeakAurasOptions/InformationOptions.lua`,
+  `WeakAurasOptions/WeakAurasOptions.lua` (search text), `WeakAuras/Types.lua` (`non_transmissable_fields`),
+  `WeakAuras/AuraBackups.lua` (archive of a deleted aura), `WeakAurasOptions/Locales/enUS.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/59_UnusedAuras.lua`, `Tests/Scenarios/63_AuraTags.lua`.
+- Undo and redo: the Undo and Redo buttons of the options window are shown in every build, and they now cover every
+  tab, not only Information, Actions, Animations and Author. Each edit of a selected aura is compared with a copy taken
+  when it was selected; edits less than one second apart (a slider drag, a multi-selection) make one step, and the
+  history keeps the last 50 steps. Renaming, moving, deleting, converting and importing still clear the history, as
+  does an edit of an aura not selected since the options window was opened; the other auras changed by the same
+  operation are not recorded either. Undo and Redo also refresh the group, thumbnail and mover of the restored auras.
+  Files: `WeakAuras/TimeMachine.lua`, `WeakAuras/WeakAuras.lua` (`WeakAuras.Add`, `Private.Convert`),
+  `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `Tests/Scenarios/64_UndoRedo.lua`.
+- Find and replace: the Replace button of the options toolbar asks for a value and its kind (spell, texture, font or
+  sound), then its replacement, lists in the chat every value that would change, and replaces them after a
+  confirmation. It covers the selected auras and their children, or every aura when none is selected. A value matches
+  when it equals the searched text under a key of that kind (`auraspellids`, `auranames`, `cdmExactIDs`, `cdmNames`,
+  `displayIcon`, `texture`, `text_font`, `sound`...), or in a list held by such a key; the settings of the kind
+  (`text_fontSize`, `iconSource`, `sound_channel`...) are not. A number is only replaced by a number, and a value
+  changed between the preview and the confirmation is left out. The replacement is one step of the undo history, and
+  Undo and Redo now refresh the thumbnails of the auras they change. A condition change that sets one property
+  (`property` and `value` fields) is not searched, except the sound of a sound change. Files: `WeakAuras/ReplaceValues.lua` (new), `WeakAuras/WeakAuras.toc`,
+  `WeakAurasOptions/WeakAurasOptions.lua`, `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/65_ReplaceValues.lua`.
+- Trigger "Aura Shown" (Events category): active while another aura is shown, or hidden with Inverse. The watched
+  aura is stored by uid, so a rename keeps the link. The watcher follows one frame later: a change of shown state
+  queues the event `WA_AURA_SHOWN:<uid>` for the next frame, only when an aura watches it. Auras that watch each other
+  in a loop never show, Inverse included, whichever of their triggers closes the loop; an aura that only watches one of
+  them still follows it. Pause (options open) does not wake the watchers. An import as a copy, a duplicated group and
+  a uid change in /wa point the watch at the new uid of the watched aura. With no aura chosen, or a reference that is
+  not a uid, the trigger watches nothing and never shows, Inverse included. Files:
+  `WeakAuras/AuraShownTrigger.lua` (new), `WeakAuras/WeakAuras.toc`, `WeakAuras/GenericTrigger.lua`,
+  `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/OptionsFrames/Update.lua`,
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`, `WeakAuras/Locales/enUS.lua`,
+  `WeakAuras/Locales/frFR.lua`, `Tests/Scenarios/66_AuraShownTrigger.lua`.
+- Aura sets per character: the "Aura Set" button of the toolbar picks a tag for the current character, which then
+  loads only the auras that carry this tag, themselves or through one of their groups. "#pvp" names the same tag as
+  "pvp". An empty tag loads every aura again. While the name of the character is secret, every aura loads; the set
+  applies once the name is readable. The choice is kept in `WeakAurasSaved.characterAuraSets` by "Name-Realm", so
+  each character of the account keeps its own HUD from the same auras. WoW Forever has no specialization, so the set
+  is per character only. The tooltip of an unloaded aura names the set it is out of. Files: `WeakAuras/AuraSets.lua`
+  (new), `WeakAuras/WeakAuras.toc`,
+  `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/WeakAurasOptions.lua`, `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/67_AuraSets.lua`.
+- Placement with the Edit Mode: while the Edit Mode of Blizzard is open, each top-level aura anchored to the screen and
+  loaded, or waiting for a load condition such as combat, gets a labelled box, shown even when the aura is not.
+  Dragging the box moves the aura and saves its offsets, undoable in /wa. Auras anchored to a unit, a nameplate, the
+  mouse or a custom frame, groups spread over unit frames, and protected regions, get none. The boxes hide while a
+  settings panel of the Edit Mode is open, and stay under the selections of Blizzard. An aura added, loaded, renamed or
+  deleted meanwhile gets, keeps or loses its box. With Snap on and the grid shown, a dropped box sticks to the nearest
+  grid line by its edges or its center, within 8 pixels, like the frames of Blizzard. "Revert All Changes" also puts
+  back the auras moved since the Edit Mode opened or its layout was saved; a move enables the button. Leaving the Edit
+  Mode without saving keeps the auras where they were dropped. /wa, when open, shows the new offsets. The box of a
+  group with sub groups covers their children where they are drawn, at the scale of each sub group; the border of
+  such a group follows too. Files: `WeakAuras/EditModePlacement.lua`
+  (new), `WeakAuras/WeakAuras.toc`, `WeakAuras/RegionTypes/Group.lua`, `Tests/Scenarios/68_EditModePlacement.lua`.
+- Frozen value marker: while the combat restriction lasts, an aura with an Aura trigger shows a small padlock at its
+  top right corner, since what it shows may be out of date. The padlock is 14 pixels, down to 8 on a small icon. Health
+  and power triggers get none: they never freeze, they show the secret values or turn inactive. "Hide Frozen Value
+  Padlock" in Size & Position turns it
+  off per aura. Groups, empty regions, Aura (Modern) and CDM auras, and Aura triggers that use only native filters get
+  none, since they still follow the secret auras. Files: `WeakAuras/FrozenMarker.lua` (new),
+  `WeakAuras/BuffTrigger2.lua`, `WeakAuras/WeakAuras.toc`, `WeakAuras/RegionTypes/RegionPrototype.lua`,
+  `WeakAurasOptions/CommonOptions.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/69_FrozenMarker.lua`.
+- Pixel perfect option: "Pixel Perfect" in Size & Position snaps the textures of the aura to the screen pixels, for
+  sharp edges. Glows keep their own snapping, their textures are shared with other auras. Textures created after the
+  aura is loaded (extra bars, CDM and Modern aura buttons) snap when created. Off by default, since
+  progress and slides then move by whole pixels and existing auras would shift. Turned off again, each texture gets its
+  own snapping back. Files: `WeakAuras/PixelSnapping.lua` (new),
+  `WeakAuras/WeakAuras.toc`, `WeakAuras/WeakAuras.lua`, `WeakAuras/RegionTypes/AuraBar.lua`,
+  `WeakAuras/RegionTypes/AuraBarNative.lua`, `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/SecretAuraSingle.lua`,
+  `WeakAuras/SecretAuraFlowGrid.lua`, `WeakAuras/BlizzardAuraDisplay.lua`, `WeakAurasOptions/CommonOptions.lua`,
+  locales enUS and frFR, `Tests/Harness/Frames.lua` (snapping getters), `Tests/Scenarios/70_PixelSnapping.lua`.
+- Group conditions: the Conditions tab of a group shows "Group Conditions" above "Children Conditions". A condition
+  of the group uses the global checks (combat, etc.) and changes the group itself: alpha, offsets, sound, chat message
+  or custom code; the children follow its alpha and its offsets. A group runs its conditions while one of its children
+  is loaded and the options are closed; when they stop, the group gets its settings back and a sound or a message plays
+  again the next time. "Children Conditions" still edits the conditions of all the children at once. Files:
+  `WeakAuras/Conditions.lua`, `WeakAuras/WeakAuras.lua`, `WeakAuras/RegionTypes/RegionPrototype.lua`,
+  `WeakAuras/RegionTypes/Group.lua`, `WeakAuras/RegionTypes/DynamicGroup.lua`,
+  `WeakAurasOptions/ConditionOptions.lua`, locales enUS and frFR, `Tests/Scenarios/36_OptionsBlocksContract.lua`,
+  `Tests/Scenarios/71_GroupConditions.lua`.
+- Cleanup without effect on the game: the `Globe-Main` and `Globe-Post` lines of the four TOC files, the
+  commented-out blocks of `WeakAurasOptions/Libs/LibUIDropDownMenu/LibUIDropDownMenu.xml` and
+  `WeakAurasOptions/Libs/AceConfig-3.0/AceConfig-3.0.xml`, and an obsolete TODO of `WeakAuras/BuffTrigger2.lua`
+  are removed, with the unused textures `WeakAuras/Media/Textures/editdown.tga` and `logo_64_nobg.tga`.
+- The `## Notes-*` lines of the TOC files, upstream WeakAuras text in five languages, are removed; the English
+  `## Notes:` of Options, Model Paths and Templates now names Musca Auras. The unused textures
+  `WeakAuras/Media/Textures/logo_256_round.tga` and `logo_256_round_pride.tga` are removed.
+- Hot paths: `Private.ScanEvents` of `WeakAuras/GenericTrigger.lua` returns before building its profiling label
+  when no aura listens to the event, and the player movement watcher stops its `OnUpdate` once the last aura that
+  watches movement or speed is unloaded (it ran until the next reload before). Loading any aura that listens to
+  these events restarts it, custom triggers included. A new scenario checks the stop and the restart.
+- The talent reader leaves `WeakAuras/Prototypes.lua` for its own file, `WeakAuras/TalentReader.lua`, loaded after
+  `WeakAuras/PlayerSpecialization.lua`. The `Private.talentInfo` table, which nothing read, goes, and so does the
+  second read of the talents one second after login, whose result was thrown away. The talent check frame,
+  `WeakAuras.GetTalentById` and `WeakAuras.CheckTalentId` keep the WeakAuras code, credited in the file header.
+- `Private.Modernize` of `WeakAuras/Modernize.lua` is no longer one function of 2 300 lines: each version upgrade is
+  its own function in an ordered list, run on the data saved before that version, and the repair of data saved by
+  version 49 runs on that version only. The order and the code of the upgrades do not change: on the 1 404 auras of
+  the test packs of `Tests/Packs` and of a ForeverAuras export, started from every version between 1 and 92, the old and the new
+  code give the same data. Scenario 19 checks the version 49 repair.
+- Purge of the flavor branches: the add-on only runs on WoW Forever, so every branch for Retail, Mists, Cataclysm,
+  Wrath and TBC is removed from 27 files of `WeakAuras`, `WeakAurasOptions` and `WeakAurasTemplates`, and only the
+  Classic Era branch is kept (about 4 000 lines removed, 3 200 net). The trigger and load arguments disabled on
+  Forever are removed from `WeakAuras/Prototypes.lua`, except the hidden load arguments that the load function receives by
+  position, and the `enable = true` and `hidden = false` fields are left at their default. A new scenario checks that
+  the race and level load options still match. Also removed: the "Modern Blizzard" time formatter (the option already
+  fell back to the built-in formatter), the always hidden "Filter by Specialization", "Filter by Arena Spec" and
+  "Ignore out of casting range" options of the aura trigger, the Retail addon compartment entry, the pet battle guard
+  of the load scan, and the helpers left unused. The flavor functions of `WeakAuras/Init.lua` stay
+  defined for custom code, and five Retail globals leave `.luacheckrc`. The 125 locale entries only these branches
+  used are removed from every language (111 in `WeakAuras`, 14 in `WeakAurasOptions`).
+- The Currency trigger, already removed on Forever, loses its code: its prototype in `WeakAuras/Prototypes.lua`, the
+  currency list of `WeakAuras/Types.lua`, the two currency helpers of `WeakAuras/GenericTrigger.lua`, and its 20 entries
+  in every locale. The 40 global declarations that no file uses any more leave `.luacheckrc`, and an empty `if` of
+  `WeakAurasOptions/OptionsFrames/Update.lua` is removed.
+- Seven triggers that Classic never offered lose their prototype in `WeakAuras/Prototypes.lua`, which only deleted
+  them at load: Alternate Power, Spell Activation Overlay, PvP Talent Selected, Loot Specialization, Evoker Essence,
+  Death Knight Rune and Equipment Set. The rune and essence value lists of `WeakAuras/Types.lua`, which only these
+  triggers read, go too, and so do the unreachable currency branches of `WeakAurasOptions/LoadOptions.lua`. The 34
+  locale entries left unused leave every language (33 in `WeakAuras`, 1 in `WeakAurasOptions`). The matching public
+  `WeakAuras.*` functions stay for custom code.
+
+### Fixed
+- The nameplate target watcher of `WeakAuras/GenericTrigger.lua` is registered in `Private.frames` once created, so
+  `WeakAuras.ProfileFrames` lists it (it registered `nil` before).
+
 ## 2026-10-18
 
 Released as 1.11.0. Tested in game on WoW Forever with the Shaman test pack `Tests/Packs/Essai/PackTestChaman.lua`:

@@ -122,6 +122,11 @@ local function TreePoints()
   return ok and points or nil
 end
 
+function Private.ForeverSpecClass(key)
+  local spec = specByKey[key]
+  return spec and spec.class
+end
+
 function Private.ExecEnv.IsForeverSpecialization(key)
   local spec = key and specByKey[key]
   if not spec then

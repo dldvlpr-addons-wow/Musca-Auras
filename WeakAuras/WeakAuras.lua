@@ -3,7 +3,7 @@ local AddonName = ...
 ---@class Private
 local Private = select(2, ...)
 
-local internalVersion = 91
+local internalVersion = 92
 
 -- Lua APIs
 local insert = table.insert
@@ -215,6 +215,7 @@ function Private.PrintHelp()
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
   print(L["/wa repair - Repair tool"])
+  print("/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout")
   print("/wa backups - List the daily copies of your auras")
   print("/wa restore <number> - Replace your auras with a daily copy and reload the UI")
   print("/wa deleted - List the auras deleted in the last 30 days")
@@ -252,6 +253,24 @@ function SlashCmdList.WEAKAURAS(input)
     Private.ToggleCooldownManager()
   elseif msg == "help" then
     Private.PrintHelp();
+  elseif msg == "demo" then
+    -- The aura name keeps its case, unlike args.
+    local id = input:match("^%s*%S+%s+(.-)%s*$")
+    if id == "" then
+      id = nil
+    end
+    if id and not WeakAuras.GetData(id) then
+      prettyPrint(("No aura named %q."):format(id))
+    else
+      if not WeakAuras.IsOptionsOpen() then
+        WeakAuras.OpenOptions()
+      end
+      if WeakAuras.IsOptionsOpen() then
+        Private.ShowDemo(id)
+      elseif InCombatLockdown() then
+        prettyPrint("The demo does not start during combat. Type /wa demo again after combat.")
+      end
+    end
   elseif msg == "repair" then
     StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "user"})
   elseif msg == "backups" or msg == "restore" then
@@ -1048,6 +1067,12 @@ local function ConstructFunction(prototype, trigger, skipOptional)
 end
 
 function WeakAuras.GetActiveConditions(id, cloneId)
+  if not triggerState[id] then
+    -- A group has no trigger state: the conditions it meets are kept on its region.
+    local region = Private.regions[id].region
+    region.activatedConditions = region.activatedConditions or {}
+    return region.activatedConditions
+  end
   triggerState[id].activatedConditions[cloneId] = triggerState[id].activatedConditions[cloneId] or {};
   return triggerState[id].activatedConditions[cloneId];
 end
@@ -1105,31 +1130,12 @@ local function CreateTalentCache()
 
   Private.talent_types_specific[player_class] = Private.talent_types_specific[player_class] or {};
 
-  if WeakAuras.IsClassicOrCata() then
-    for tab = 1, GetNumTalentTabs and GetNumTalentTabs() or 0 do
-      for num_talent = 1, GetNumTalents(tab) do
-        local talentName, talentIcon = Private.ExecEnv.GetTalentInfo(tab, num_talent);
-        local talentId = (tab - 1) * MAX_NUM_TALENTS + num_talent
-        if (talentName and talentIcon) then
-          Private.talent_types_specific[player_class][talentId] = "|T"..talentIcon..":0|t "..talentName
-        end
-      end
-    end
-  elseif WeakAuras.IsTBCOrWrathOrMists() then
-    -- unused
-  else
-    local spec = GetSpecialization()
-    Private.talent_types_specific[player_class][spec] = Private.talent_types_specific[player_class][spec] or {};
-
-    for tier = 1, MAX_TALENT_TIERS do
-      for column = 1, NUM_TALENT_COLUMNS do
-        -- Get name and icon info for the current talent of the current class and save it
-        local _, talentName, talentIcon = Private.ExecEnv.GetTalentInfo(tier, column, 1)
-        local talentId = (tier-1)*3+column
-        -- Get the icon and name from the talent cache and record it in the table that will be used by WeakAurasOptions
-        if (talentName and talentIcon) then
-          Private.talent_types_specific[player_class][spec][talentId] = "|T"..talentIcon..":0|t "..talentName
-        end
+  for tab = 1, GetNumTalentTabs and GetNumTalentTabs() or 0 do
+    for num_talent = 1, GetNumTalents(tab) do
+      local talentName, talentIcon = Private.ExecEnv.GetTalentInfo(tab, num_talent);
+      local talentId = (tab - 1) * MAX_NUM_TALENTS + num_talent
+      if (talentName and talentIcon) then
+        Private.talent_types_specific[player_class][talentId] = "|T"..talentIcon..":0|t "..talentName
       end
     end
   end
@@ -1470,13 +1476,8 @@ loadedFrame:RegisterEvent("PLAYER_LOGOUT")
 loadedFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
 loadedFrame:RegisterEvent("LOADING_SCREEN_ENABLED");
 loadedFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
-if WeakAuras.IsRetail() then
-  loadedFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
-  loadedFrame:RegisterEvent("PLAYER_PVP_TALENT_UPDATE");
-else
-  loadedFrame:RegisterEvent("CHARACTER_POINTS_CHANGED");
-  loadedFrame:RegisterEvent("SPELLS_CHANGED");
-end
+loadedFrame:RegisterEvent("CHARACTER_POINTS_CHANGED");
+loadedFrame:RegisterEvent("SPELLS_CHANGED");
 loadedFrame:SetScript("OnEvent", function(self, event, ...)
   if(event == "ADDON_LOADED") then
     if(... == ADDON_NAME) then
@@ -1620,6 +1621,7 @@ function Private.Pause()
   end
 
   paused = true;
+  Private.PauseGroupConditions()
 end
 
 function WeakAuras.Toggle()
@@ -1743,18 +1745,6 @@ local function GetInstanceTypeAndSize()
     local difficultyInfo = Private.difficulty_info[difficultyIndex]
     if difficultyInfo then
       size, difficulty = difficultyInfo.size, difficultyInfo.difficulty
-    else
-      if WeakAuras.IsRetail() then
-        if size == "arena" then
-          if C_PvP.IsRatedArena() and not IsArenaSkirmish() then
-            size = "ratedarena"
-          end
-        elseif size == "pvp" then
-          if C_PvP.IsRatedBattleground() then
-            size = "ratedpvp"
-          end
-        end
-      end
     end
     return size, difficulty, instanceType, instanceId, difficultyIndex
   end
@@ -1785,11 +1775,6 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
 
   toCheck = toCheck or loadEvents[event or "SCAN_ALL"]
 
-  -- PET_BATTLE_CLOSE fires twice at the end of a pet battle. IsInBattle evaluates to TRUE during the
-  -- first firing, and FALSE during the second. I am not sure if this check is necessary, but the
-  -- following IF statement limits the impact of the PET_BATTLE_CLOSE event to the second one.
-  if (event == "PET_BATTLE_CLOSE" and C_PetBattles.IsInBattle()) then return end
-
   if (event == "PLAYER_LEVEL_UP") then
     playerLevel = arg1;
   end
@@ -1813,12 +1798,10 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
 
   local player, realm, zone = UnitName("player"), GetRealmName(), GetRealZoneText()
   local guild = GetGuildInfo("player")
-  --- @type boolean|number|nil, boolean|string|nil, boolean|string|nil, boolean|string
-  local specId, role, position, raidRole = false, false, false, false
-  --- @type boolean, boolean, boolean
-  local inPetBattle, vehicle, vehicleUi = false, false, false
+  --- @type boolean|number|nil, boolean|string|nil, boolean|string
+  local specId, role, raidRole = false, false, false
   --- @type boolean
-  local dragonriding
+  local vehicle = false
   local zoneId = C_Map.GetBestMapForUnit("player")
   local zonegroupId = zoneId and C_Map.GetMapGroupID(zoneId)
   local minimapText = GetMinimapZoneText()
@@ -1842,37 +1825,20 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
 
   local mounted = IsMounted()
   local addonRestrictionsActive = WeakAuras.IsSecretStateActive()
-  if WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists() then
-    local raidID = UnitInRaid("player")
-    if raidID then
-      raidRole = select(10, GetRaidRosterInfo(raidID))
-    end
-    role = "NONE"
-    if WeakAuras.IsClassicOrTBCOrWrath() then
-      role = Private.ReadableOrNil(UnitGroupRolesAssigned("player")) or "NONE"
-      if WeakAuras.IsWrathClassic() and role == "NONE" then
-        role = GetTalentGroupRole(GetActiveTalentGroup()) or "NONE"
-      end
-    end
+  local raidID = UnitInRaid("player")
+  if raidID then
+    raidRole = select(10, GetRaidRosterInfo(raidID))
   end
+  role = Private.ReadableOrNil(UnitGroupRolesAssigned("player")) or "NONE"
 
   vehicle = UnitInVehicle('player') or UnitOnTaxi('player') or false
-  vehicleUi = UnitHasVehicleUI('player') or HasOverrideActionBar() or HasVehicleActionBar() or false
 
-  if WeakAuras.IsCataOrMistsOrRetail() then
-    specId, role, position = Private.LibSpecWrapper.SpecRolePositionForUnit("player")
-  elseif Private.hasSpecializations then
+  if Private.hasSpecializations then
     local specIndex = Private.ExecEnv.GetSpecialization()
     specId = specIndex and Private.ExecEnv.GetSpecializationInfo(specIndex) or false
   end
-  if WeakAuras.IsMistsOrRetail() then
-    inPetBattle = C_PetBattles.IsInBattle()
-  end
-  if WeakAuras.IsRetail() then
-    dragonriding = Private.IsDragonriding()
-  end
 
-  local size, difficulty, instanceType, instanceId, difficultyIndex = GetInstanceTypeAndSize()
+  local size, _, instanceType, instanceId, difficultyIndex = GetInstanceTypeAndSize()
 
   if (WeakAuras.CurrentEncounter) then
     if (instanceId ~= WeakAuras.CurrentEncounter.zone_id and not inCombat) then
@@ -1884,22 +1850,14 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
   local group = Private.ExecEnv.GroupType()
   local groupSize = GetNumGroupMembers()
 
-  local affixes, warmodeActive, effectiveLevel = 0, false, 0
-  if WeakAuras.IsRetail() then
-    effectiveLevel = UnitEffectiveLevel("player")
-    affixes = C_ChallengeMode.IsChallengeModeActive() and select(2, C_ChallengeMode.GetActiveKeystoneInfo())
-    warmodeActive = C_PvP.IsWarModeDesired();
-  end
-
   local hardcore, runeEngraving = false, false
-  if WeakAuras.IsClassicEra() then
-    hardcore = C_GameRules.IsHardcoreActive()
-    runeEngraving = C_Engraving ~= nil and C_Engraving.IsEngravingEnabled()
-  end
+  hardcore = C_GameRules.IsHardcoreActive()
+  runeEngraving = C_Engraving ~= nil and C_Engraving.IsEngravingEnabled()
 
   local changed = 0;
   local shouldBeLoaded, couldBeLoaded;
   local parentsToCheck = {}
+  local auraSet = Private.GetCharacterAuraSet()
   wipe(toLoad);
   wipe(toUnload);
 
@@ -1911,24 +1869,12 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
       if Private.hasSpecializations then
         shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, specId, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
         couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, specId, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
-      elseif WeakAuras.IsClassicEra() then
+      else
         shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
         couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, mounted, addonRestrictionsActive, hardcore, runeEngraving, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficultyIndex)
-      elseif WeakAuras.IsTBC() then
-        shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-        couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-      elseif WeakAuras.IsWrathClassic() then
-        shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-        couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, player, realm, guild, race, faction, playerLevel, role, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-      elseif WeakAuras.IsCataClassic() then
-        shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, specId, player, realm, guild, race, faction, playerLevel, role, position, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-        couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, specId, player, realm, guild, race, faction, playerLevel, role, position, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-      elseif WeakAuras.IsMists() then
-        shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, inPetBattle, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, specId, player, realm, guild, race, faction, playerLevel, role, position, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-        couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, inPetBattle, vehicle, vehicleUi, mounted, addonRestrictionsActive, class, specId, player, realm, guild, race, faction, playerLevel, role, position, raidRole, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex)
-      elseif WeakAuras.IsRetail() then
-        shouldBeLoaded = loadFunc and loadFunc("ScanForLoads_Auras", inCombat, alive, inEncounter, pvp, warmodeActive, inPetBattle, vehicle, vehicleUi, dragonriding, mounted, addonRestrictionsActive, specId, player, realm, guild, race, faction, playerLevel, effectiveLevel, role, position, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex, affixes)
-        couldBeLoaded =  loadOpt and loadOpt("ScanForLoads_Auras",   inCombat, alive, inEncounter, pvp, warmodeActive, inPetBattle, vehicle, vehicleUi, dragonriding, mounted, addonRestrictionsActive, specId, player, realm, guild, race, faction, playerLevel, effectiveLevel, role, position, group, groupSize, raidMemberType, zone, zoneId, zonegroupId, instanceId, minimapText, encounter_id, size, difficulty, difficultyIndex, affixes)
+      end
+      if not Private.IsInAuraSet(data, auraSet) then
+        shouldBeLoaded, couldBeLoaded = false, false
       end
 
       if(shouldBeLoaded and not loaded[id]) then
@@ -1993,6 +1939,7 @@ function Private.ScanForLoadsGroup(toCheck)
         Private.EnsureRegion(id)
         loaded[id] = true;
       end
+      Private.UpdateGroupConditions(data)
     end
   end
 end
@@ -2010,38 +1957,14 @@ Private.frames["Display Load Handling"] = loadFrame;
 loadFrame:RegisterEvent("ENCOUNTER_START");
 loadFrame:RegisterEvent("ENCOUNTER_END");
 
-if WeakAuras.IsRetail() then
-  loadFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
-  loadFrame:RegisterEvent("PLAYER_PVP_TALENT_UPDATE");
-  loadFrame:RegisterEvent("PLAYER_DIFFICULTY_CHANGED");
-  loadFrame:RegisterEvent("PET_BATTLE_OPENING_START");
-  loadFrame:RegisterEvent("PET_BATTLE_CLOSE");
-  loadFrame:RegisterEvent("VEHICLE_UPDATE");
-  loadFrame:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR")
-  loadFrame:RegisterEvent("UPDATE_OVERRIDE_ACTIONBAR");
-  loadFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
-  loadFrame:RegisterEvent("CHALLENGE_MODE_START")
-  loadFrame:RegisterEvent("TRAIT_CONFIG_CREATED")
-  loadFrame:RegisterEvent("TRAIT_CONFIG_UPDATED")
-else
-  loadFrame:RegisterEvent("CHARACTER_POINTS_CHANGED")
-  loadFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
-  loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
-  if Private.hasSpecializations then
-    loadFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
-  end
+loadFrame:RegisterEvent("CHARACTER_POINTS_CHANGED")
+loadFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
+loadFrame:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED");
+if Private.hasSpecializations then
+  loadFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 end
 
-if WeakAuras.IsTBCOrWrathOrCataOrMists() then
-  loadFrame:RegisterEvent("VEHICLE_UPDATE");
-  loadFrame:RegisterEvent("UPDATE_VEHICLE_ACTIONBAR")
-  loadFrame:RegisterEvent("UPDATE_OVERRIDE_ACTIONBAR");
-end
 
-if WeakAuras.IsMists() then
-  loadFrame:RegisterEvent("PET_BATTLE_OPENING_START");
-  loadFrame:RegisterEvent("PET_BATTLE_CLOSE");
-end
 loadFrame:RegisterEvent("GROUP_ROSTER_UPDATE");
 loadFrame:RegisterEvent("ZONE_CHANGED");
 loadFrame:RegisterEvent("ZONE_CHANGED_INDOORS");
@@ -2060,13 +1983,6 @@ loadFrame:RegisterEvent("PARTY_LEADER_CHANGED")
 loadFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 loadFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
 
-if WeakAuras.IsRetail() then
-  Private.callbacks:RegisterCallback("WA_DRAGONRIDING_UPDATE", function ()
-    Private.StartProfileSystem("load");
-    Private.ScanForLoads(nil, "WA_DRAGONRIDING_UPDATE")
-    Private.StopProfileSystem("load");
-  end)
-end
 
 Private.callbacks:RegisterCallback("RestrictionChanged", function()
   Private.StartProfileSystem("load");
@@ -2085,11 +2001,6 @@ local unitLoadFrame = CreateFrame("Frame");
 Private.frames["Display Load Handling 2"] = unitLoadFrame;
 
 unitLoadFrame:RegisterUnitEvent("UNIT_FLAGS", "player");
-if WeakAuras.IsTBCOrWrathOrCataOrMistsOrRetail() then
-  unitLoadFrame:RegisterUnitEvent("UNIT_ENTERED_VEHICLE", "player");
-  unitLoadFrame:RegisterUnitEvent("UNIT_EXITED_VEHICLE", "player");
-  unitLoadFrame:RegisterUnitEvent("PLAYER_FLAGS_CHANGED", "player");
-end
 
 function Private.RegisterLoadEvents()
   loadFrame:SetScript("OnEvent", function(frame, ...)
@@ -2254,6 +2165,9 @@ function Private.UnloadDisplays(toUnload, ...)
         if (triggerState[id][i]) then
           wipe(triggerState[id][i])
         end
+      end
+      if triggerState[id].show then
+        Private.AuraShownChanged(db.displays[id].uid)
       end
       triggerState[id].show = nil
     end
@@ -2568,6 +2482,8 @@ function Private.Convert(data, newType)
 
 
   WeakAuras.Add(data);
+  -- An undo cannot release the regions of the former type.
+  Private.TimeMachine:DestroyTheUniverse(id)
 
   Private.FakeStatesFor(id, true)
 
@@ -3508,6 +3424,11 @@ function pAdd(data, simpleChange)
     cycleCheck(data)
     if WeakAuras.GetRegion(data.id) then
       Private.SetRegion(data)
+      if Private.IsGroupType(data) then
+        -- The region is back to its settings, the conditions of the group start over.
+        WeakAuras.GetRegion(data.id).activatedConditions = nil
+        Private.UpdateGroupConditions(data)
+      end
     end
     if clones[id] then
       for cloneId, region in pairs(clones[id]) do
@@ -3527,8 +3448,12 @@ function pAdd(data, simpleChange)
       db.displays[id] = data;
       cycleCheck(data)
 
+      Private.LoadConditionPropertyFunctions(data)
+      Private.LoadConditionFunction(data)
       if WeakAuras.GetRegion(data.id) then
         Private.SetRegion(data)
+        -- The region is back to its settings, the conditions start over.
+        WeakAuras.GetRegion(data.id).activatedConditions = nil
       end
       Private.ScanForLoadsGroup({[id] = true});
       loadEvents["GROUP"] = loadEvents["GROUP"] or {}
@@ -3673,7 +3598,7 @@ function Private.Add(data, simpleChange)
 end
 
 function WeakAuras.Add(data, simpleChange)
-  Private.TimeMachine:DestroyTheUniverse(data.id)
+  Private.TimeMachine:RecordEdit(data)
   Private.Add(data, simpleChange)
 end
 
@@ -3756,6 +3681,7 @@ function Private.SetRegion(data, cloneId)
       Private.BlizzardAuraDisplay.Restore(region)
       regionTypes[regionType].modify(parent, region, data);
       Private.BlizzardAuraDisplay.Modify(region, data)
+      Private.ApplyPixelSnapping(region, data)
       Private.regionPrototype.AddSetDurationInfo(region, data.uid)
       Private.regionPrototype.AddExpandFunction(data, region, cloneId, parent, parent.regionType)
 
@@ -4513,6 +4439,10 @@ end
 
 function Private.GetTriggerConditions(data)
   local conditions = {};
+  -- A group has no trigger of its own, its conditions only use the global checks.
+  if data.controlledChildren then
+    return conditions
+  end
   for i = 1, #data.triggers do
     local triggerSystem = GetTriggerSystem(data, i);
     if (triggerSystem) then
@@ -4685,20 +4615,11 @@ function Private.ParseTooltipText(tooltipText)
 end
 
 function WeakAuras.GetAuraTooltipInfo(unit, index, filter)
-  local tooltipText = ""
-  if WeakAuras.IsRetail() then
-    local tooltipData = C_TooltipInfo.GetUnitAura(unit, index, filter)
-    local secondLine = tooltipData and tooltipData.lines[2] -- This is the line we want
-    if secondLine and secondLine.leftText then
-      tooltipText = secondLine.leftText
-    end
-  else
-    local tooltip = WeakAuras.GetHiddenTooltip();
-    tooltip:ClearLines();
-    tooltip:SetUnitAura(unit, index, filter);
-    local tooltipTextLine = select(5, tooltip:GetRegions())
-    tooltipText = tooltipTextLine and tooltipTextLine:GetObjectType() == "FontString" and tooltipTextLine:GetText() or "";
-  end
+  local tooltip = WeakAuras.GetHiddenTooltip();
+  tooltip:ClearLines();
+  tooltip:SetUnitAura(unit, index, filter);
+  local tooltipTextLine = select(5, tooltip:GetRegions())
+  local tooltipText = tooltipTextLine and tooltipTextLine:GetObjectType() == "FontString" and tooltipTextLine:GetText() or "";
 
   return Private.ParseTooltipText(tooltipText)
 end
@@ -4871,7 +4792,7 @@ local threads = {
 };
 
 function Private.GetUrgentThreadBudget()
-  if WeakAuras.IsClassicEra() and C_GameRules.IsHardcoreActive() then
+  if C_GameRules.IsHardcoreActive() then
       return 100, 10
   else
     return 15000, 1000
@@ -5586,6 +5507,9 @@ function Private.UpdatedTriggerState(id)
 
   local oldShow = triggerState[id].show;
   triggerState[id].show = show;
+  if (show and true or false) ~= (oldShow and true or false) then
+    Private.AuraShownChanged(db.displays[id].uid)
+  end
   triggerState[id].fallbackStates = nil
 
   local activeTriggerState = WeakAuras.GetTriggerStateForTrigger(id, newActiveTrigger);

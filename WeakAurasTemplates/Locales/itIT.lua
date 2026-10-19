@@ -40,7 +40,6 @@ local L = WeakAuras.L
 	L["Basic Show On Cooldown"] = "Semplice Mostra in Ricarica"
 	--[[Translation missing --]]
 	L["Basic Show On Ready"] = "Basic Show On Ready"
-	L["Bloodlust/Heroism"] = "Brama di Sangue/Eroismo"
 	L["buff"] = "buff"
 	L["Buffs"] = "Buffs"
 	L["Charge and Buff Tracking"] = "Monitoraggio di cariche e potenziamenti"

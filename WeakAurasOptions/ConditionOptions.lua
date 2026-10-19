@@ -112,7 +112,7 @@ local function valueToString(a, propertytype)
 end
 
 local function isSubset(data, reference, totalAuraCount)
-  if (data.controlledChildren) then
+  if (reference.references) then
     if (totalAuraCount > reference.referenceCount) then
       return true;
     end
@@ -128,7 +128,7 @@ local function blueIfSubset(data, reference, totalAuraCount)
 end
 
 local function blueIfNoValue(data, object, variable, blueString, normalString)
-  if (data.controlledChildren) then
+  if (object.references) then
     if (object["same" .. variable] == false) then
       return "|cFF4080FF" .. blueString;
     end
@@ -137,7 +137,7 @@ local function blueIfNoValue(data, object, variable, blueString, normalString)
 end
 
 local function blueIfNoValue2(data, object, variable, subvariable, blueString, normalString)
-  if (data.controlledChildren) then
+  if (object.references) then
     if (not object["same" .. variable] or not object["same" .. variable][subvariable]) then
       return "|cFF4080FF" .. blueString;
     end
@@ -157,7 +157,7 @@ local function descIfSubset(data, reference, totalAuraCount)
 end
 
 local function descIfNoValue(data, object, variable, propertyType, values)
-  if (data.controlledChildren) then
+  if (object.references) then
     if (object["same" .. variable] == false) then
       local desc = "";
       for id, reference in pairs(object.references) do
@@ -195,7 +195,7 @@ local function descIfNoValue(data, object, variable, propertyType, values)
 end
 
 local function descIfNoValue2(data, object, variable, subvariable, type, values)
-  if (data.controlledChildren) then
+  if (object.references) then
     if (object["same" .. variable] and object["same" .. variable][subvariable] == false) then
       local desc = "";
       for id, reference in pairs(object.references) do
@@ -258,6 +258,8 @@ local function EqualityOperatorsFor(template)
 end
 
 local function addControlsForChange(args, order, data, conditionVariable, totalAuraCount, conditions, i, j, allProperties, usedProperties)
+  -- The conditions merged from the children of a group are a new list, the own conditions of an aura are its data.
+  local merged = conditions ~= data[conditionVariable]
   local thenText = (j == 1) and L["Then "] or L["And "];
   local display = isSubset(data, conditions[i].changes[j], totalAuraCount) and allProperties.displayWithCopy or allProperties.display;
   local valuesForProperty = filterUsedProperties(allProperties.indexToProperty, display, usedProperties, conditions[i].changes[j].property);
@@ -316,7 +318,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         WeakAuras.ClearAndUpdateOptions(data.id)
         return;
       elseif (property == "DELETE") then
-        if (data.controlledChildren) then
+        if (merged) then
           for id, reference in pairs(conditions[i].changes[j].references) do
             local auraData = WeakAuras.GetData(id);
             local conditionIndex = conditions[i].check.references[id].conditionIndex;
@@ -334,7 +336,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       end
 
       local default = allProperties.propertyMap[property].default;
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].changes[j].references) do
           local auraData = WeakAuras.GetData(id);
           local conditionIndex = conditions[i].check.references[id].conditionIndex;
@@ -360,7 +362,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
   local setValueColor;
   local setValueComplex;
   local setValueColorComplex;
-  if (data.controlledChildren) then
+  if (merged) then
     setValue = function(info, v)
       for id, reference in pairs(conditions[i].changes[j].references) do
         local auraData = WeakAuras.GetData(id);
@@ -571,7 +573,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
         width = 0.15,
         order = order,
         func = function()
-          if data.controlledChildren then
+          if merged then
             local paths = {}
             for id, reference in pairs(conditions[i].changes[j].references) do
               paths[id] = {"conditions", conditions[i].check.references[id].conditionIndex, "changes", reference.changeIndex}
@@ -612,7 +614,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       name = "",
       order = order,
       func = function()
-        if data.controlledChildren then
+        if merged then
           local paths = {}
           for id, reference in pairs(conditions[i].changes[j].references) do
             paths[id] = {"conditions", conditions[i].check.references[id].conditionIndex, "changes", reference.changeIndex, "value"}
@@ -934,18 +936,6 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       return false;
     end
 
-    if WeakAuras.IsRetail() then
-      args["condition" .. i .. "value" .. j .. "message type warning"] = {
-        type = "description",
-        width = WeakAuras.doubleWidth,
-        name = L["Note: Automated Messages to SAY and YELL are blocked outside of Instances."],
-        order = order,
-        hidden = function()
-          return not (anyMessageType("SAY") or anyMessageType("YELL") or anyMessageType("SMARTRAID"));
-        end
-      }
-      order = order + 1;
-    end
 
     args["condition" .. i .. "value" .. j .. "_indent"] = {
       type = "description",
@@ -1145,7 +1135,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
       OptionsPrivate.SetCollapsed("format_option", "conditions", i .. "#" .. j, hidden)
     end
 
-    if data.controlledChildren then
+    if merged then
       local ordered = {}
       for _, reference in pairs(conditions[i].changes[j].references) do
         tinsert(ordered, reference)
@@ -1193,7 +1183,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
           {
             buttonLabel = L["Expand"],
             func = function()
-              if (data.controlledChildren) then
+              if (merged) then
                 -- Collect multi paths
                 local multipath = {};
                 for id, reference in pairs(conditions[i].changes[j].references) do
@@ -1203,7 +1193,8 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
                 end
                 OptionsPrivate.OpenTextEditor(data, multipath, nil, true, nil, nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#chat-message---custom-code-1");
               else
-                OptionsPrivate.OpenTextEditor(data, {"conditions", i, "changes", j, "value", "custom"}, nil, nil, nil, nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#chat-message---custom-code-1");
+                -- The own conditions of a group are written on the group, not on its children.
+                OptionsPrivate.OpenTextEditor(data, {"conditions", i, "changes", j, "value", "custom"}, nil, nil, nil, data.controlledChildren ~= nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#chat-message---custom-code-1");
               end
             end
           }
@@ -1270,7 +1261,7 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
           {
             buttonLabel = L["Expand"],
             func = function()
-              if (data.controlledChildren) then
+              if (merged) then
                 -- Collect multi paths
                 local multipath = {};
                 for id, reference in pairs(conditions[i].changes[j].references) do
@@ -1283,7 +1274,8 @@ local function addControlsForChange(args, order, data, conditionVariable, totalA
                 OptionsPrivate.OpenTextEditor(data, multipath, true, true, nil, nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#run-custom-code");
               else
                 data.conditions[i].changes[j].value = data.conditions[i].changes[j].value or {};
-                OptionsPrivate.OpenTextEditor(data, {"conditions", i, "changes", j, "value", "custom"}, true, nil, nil, nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#run-custom-code");
+                -- The own conditions of a group are written on the group, not on its children.
+                OptionsPrivate.OpenTextEditor(data, {"conditions", i, "changes", j, "value", "custom"}, true, nil, nil, data.controlledChildren ~= nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#run-custom-code");
               end
             end
           }
@@ -1704,6 +1696,8 @@ local function removeSubCheck(base, path)
 end
 
 local function addControlsForIfLine(args, order, data, conditionVariable, totalAuraCount, conditions, i, path, conditionTemplates, conditionTemplateWithoutCombinations, allProperties, parentType)
+  -- The conditions merged from the children of a group are a new list, the own conditions of an aura are its data.
+  local merged = conditions ~= data[conditionVariable]
   local check = getSubCheck(conditions[i].check, path);
 
   local indentDepth = min(#path, 3); -- Be reasonable
@@ -1858,7 +1852,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
       end
 
       if (conditionTemplatesToUse.indexToTrigger[v] == "REMOVE") then
-        if (data.controlledChildren) then
+        if (merged) then
           for id, reference in pairs(conditions[i].check.references) do
             local auraData = WeakAuras.GetData(id);
             removeSubCheck(auraData[conditionVariable][reference.conditionIndex].check, path);
@@ -1879,7 +1873,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
         return;
       end
 
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auraData = WeakAuras.GetData(id);
           local childCheck = getOrCreateSubCheck(auraData[conditionVariable][reference.conditionIndex].check, path);
@@ -1965,7 +1959,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
 
   if (currentConditionTemplate and currentConditionTemplate.type and type(currentConditionTemplate.type) == "string") then
     local function makeSetter(field)
-      if (data.controlledChildren) then
+      if (merged) then
         return function(info, v)
           check = getOrCreateSubCheck(conditions[i].check, path);
           for id, reference in pairs(conditions[i].check.references) do
@@ -2260,7 +2254,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
             {
               buttonLabel = L["Expand"],
               func = function()
-                if (data.controlledChildren) then
+                if (merged) then
                   -- Collect multi paths
                   local multipath = {};
                   for id in pairs(conditions[i].check.references) do
@@ -2281,7 +2275,8 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
                   end
                   tinsert(fullPath, "value")
 
-                  OptionsPrivate.OpenTextEditor(data, fullPath, nil, nil, nil, nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#custom-check");
+                  -- The own conditions of a group are written on the group, not on its children.
+                  OptionsPrivate.OpenTextEditor(data, fullPath, nil, nil, nil, data.controlledChildren ~= nil, "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#custom-check");
                 end
               end
             }
@@ -2320,6 +2315,14 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
     else
       order = addSpace(args, order);
     end
+  elseif (trigger and variable) then
+    args["condition" .. i .. tostring(path) .. "_incompatible"] = {
+      type = "description",
+      name = "|cFFFF0000" .. L["Incompatible condition: %s"]:format(variable),
+      width = WeakAuras.doubleWidth,
+      order = order
+    }
+    order = order + 1
   else
     order = addSpace(args, order);
   end
@@ -2389,13 +2392,15 @@ local function GetConditionTitle(changes, conditionnum, allProperties)
 end
 
 local function addControlsForCondition(args, order, data, conditionVariable, totalAuraCount, conditions, i, conditionTemplates, conditionTemplateWithoutCombinations, allProperties)
+  -- The conditions merged from the children of a group are a new list, the own conditions of an aura are its data.
+  local merged = conditions ~= data[conditionVariable]
   if (not conditions[i].check) then
     return order;
   end
 
   local defaultCollapsed = #conditions > 2
   local collapsed = false;
-  if data.controlledChildren then
+  if merged then
     for id, reference in pairs(conditions[i].check.references) do
       local index = reference.conditionIndex;
       if OptionsPrivate.IsCollapsed(id, "condition", index, defaultCollapsed) then
@@ -2413,7 +2418,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     order = order,
     width = WeakAuras.doubleWidth - 0.6,
     func = function()
-      if data.controlledChildren then
+      if merged then
         for id, reference in pairs(conditions[i].check.references) do
           local index = reference.conditionIndex
           OptionsPrivate.SetCollapsed(id, "condition", index, not collapsed);
@@ -2437,7 +2442,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     name = L["Move Up"],
     order = order,
     disabled = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for _, reference in pairs(conditions[i].check.references) do
           local index = reference.conditionIndex;
           if (index > 1) then
@@ -2450,7 +2455,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
       end
     end,
     func = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auraData = WeakAuras.GetData(id);
           local index = reference.conditionIndex;
@@ -2490,7 +2495,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     name = L["Move Down"],
     order = order,
     disabled = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local index = reference.conditionIndex;
           local auraData = WeakAuras.GetData(id);
@@ -2504,7 +2509,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
       end
     end,
     func = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auraData = WeakAuras.GetData(id);
           local index = reference.conditionIndex;
@@ -2546,7 +2551,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     name = L["Duplicate"],
     order = order,
     func = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auraData = WeakAuras.GetData(id);
           local clone = CopyTable(auraData[conditionVariable][reference.conditionIndex])
@@ -2579,7 +2584,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     name = L["Delete"],
     order = order,
     func = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auraData = WeakAuras.GetData(id);
           tremove(auraData[conditionVariable], reference.conditionIndex);
@@ -2633,7 +2638,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     name = L["Add Property Change"],
     order = order,
     func = function()
-      if (data.controlledChildren) then
+      if (merged) then
         for id, reference in pairs(conditions[i].check.references) do
           local auradata = WeakAuras.GetData(id);
           auradata[conditionVariable][reference.conditionIndex].changes = auradata[conditionVariable][reference.conditionIndex].changes or {}
@@ -2655,7 +2660,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
   local showElseIf = false
   local isLinked = false
 
-  if (data.controlledChildren) then
+  if (merged) then
     for id, reference in pairs(conditions[i].check.references) do
       if reference.conditionIndex > 1 then
         local auradata = WeakAuras.GetData(id);
@@ -2687,7 +2692,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
         return isLinked
       end,
       set = function()
-        if (data.controlledChildren) then
+        if (merged) then
           for id, reference in pairs(conditions[i].check.references) do
             local auradata = WeakAuras.GetData(id);
             if reference.conditionIndex > 1 then
@@ -2716,7 +2721,7 @@ local function addControlsForCondition(args, order, data, conditionVariable, tot
     order = order,
     func = function()
       local source = conditions[i]
-      if data.controlledChildren then
+      if merged then
         -- Condition of the first selected aura that has it
         for child in OptionsPrivate.Private.TraverseLeafs(data) do
           local reference = conditions[i].check.references[child.id]
@@ -2809,7 +2814,8 @@ local function createConditionTemplatesValueList(allConditionTemplates, numTrigg
   return conditionTemplates;
 end
 
-local function createConditionTemplates(data)
+-- own: the conditions of the group itself, not the ones of its children.
+local function createConditionTemplates(data, own)
   -- The allConditionTemplates contains a table per trigger.
   -- Each table contains a entry per condition variable
   -- For the DropDown we need a flat and sorted list that maps
@@ -2819,7 +2825,9 @@ local function createConditionTemplates(data)
 
   local allConditionTemplates;
   local numTriggers = 0;
-  if (data.controlledChildren) then
+  if own then
+    allConditionTemplates = {}
+  elseif (data.controlledChildren) then
     allConditionTemplates = {};
     for child in OptionsPrivate.Private.TraverseLeafs(data) do
       numTriggers = max(numTriggers, #child.triggers);
@@ -2846,7 +2854,7 @@ local function createConditionTemplates(data)
 
   local conditionTemplates = createConditionTemplatesValueList(allConditionTemplates, numTriggers, nil, data);
 
-  if (data.controlledChildren) then
+  if (data.controlledChildren and not own) then
     conditionTemplates.displayWithCopy = CopyTable(conditionTemplates.display);
 
     conditionTemplates.displayWithCopy[9998] = "•" .. L["Copy to all auras"] .. "•";
@@ -2859,10 +2867,18 @@ local function createConditionTemplates(data)
   return conditionTemplates, conditionTemplateWithoutCombinations;
 end
 
-local function buildAllPotentialProperties(data, category)
+local function buildAllPotentialProperties(data, category, own)
   local allProperties = {};
   allProperties.propertyMap = {};
-  for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
+  local auras = {}
+  if own then
+    auras[1] = data
+  else
+    for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
+      tinsert(auras, child)
+    end
+  end
+  for _, child in ipairs(auras) do
     local regionProperties = OptionsPrivate.Private.GetProperties(child);
 
     if (regionProperties) then
@@ -2915,7 +2931,7 @@ local function buildAllPotentialProperties(data, category)
   allProperties.display[9999] = "•" .. L["Remove this property"] .. "•";
   allProperties.indexToProperty[9999] = "DELETE";
 
-  if (data.controlledChildren) then
+  if (data.controlledChildren and not own) then
     allProperties.displayWithCopy = CopyTable(allProperties.display);
 
     allProperties.displayWithCopy[9998] = "•" .. L["Copy to all auras"] .. "•";
@@ -3193,51 +3209,41 @@ local fixupConditions = function(conditions)
   end
 end
 
-function OptionsPrivate.GetConditionOptions(data)
-  OptionsPrivate.Private.BlizzardAuraDisplay.MigrateNativeConditions(data)
-  local  options = {
-    type = "group",
-    name = L["Conditions"],
-    order = 25,
-    args = {}
-  }
-
-  local args = options.args
-
+-- Adds the conditions of the children of a group, or of a single aura, to args. own: the conditions of the group itself.
+local function addConditionSection(args, order, data, own)
   local conditionVariable = "conditions"
-  local startorder = 0
   local category = nil
   -- Build potential Conditions Templates structure
-  local conditionTemplates, conditionTemplateWithoutCombinations = createConditionTemplates(data);
+  local conditionTemplates, conditionTemplateWithoutCombinations = createConditionTemplates(data, own);
 
   -- Build potential properties structure
-  local allProperties = buildAllPotentialProperties(data, category);
+  local allProperties = buildAllPotentialProperties(data, category, own);
 
   -- Build currently selected conditions
   local conditions;
   local totalAuraCount
+  local auras = {}
 
-  if (data.controlledChildren) then
-    local allChildren = {}
+  if (data.controlledChildren and not own) then
     for child in OptionsPrivate.Private.TraverseLeafs(data) do
-      tinsert(allChildren, child)
+      tinsert(auras, child)
     end
-    totalAuraCount = #allChildren
+    totalAuraCount = #auras
 
     conditions = {};
     for index = totalAuraCount, 1, -1 do
-      local child = allChildren[index]
+      local child = auras[index]
       fixupConditions(child[conditionVariable])
       mergeConditions(conditions, child[conditionVariable], child.id, conditionTemplates.all, allProperties);
     end
   else
+    auras[1] = data
     totalAuraCount = 1
     data[conditionVariable] = data[conditionVariable] or {};
     conditions = data[conditionVariable];
     fixupConditions(data[conditionVariable])
   end
 
-  local order = startorder;
   for i = 1, #conditions do
     order = addControlsForCondition(args, order, data, conditionVariable, totalAuraCount, conditions, i, conditionTemplates, conditionTemplateWithoutCombinations, allProperties);
   end
@@ -3256,7 +3262,7 @@ function OptionsPrivate.GetConditionOptions(data)
     name = L["Add Condition"],
     order = order,
     func = function()
-      for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
+      for _, child in ipairs(auras) do
         child[conditionVariable][#child[conditionVariable] + 1] = {};
         child[conditionVariable][#child[conditionVariable]].check = {};
         child[conditionVariable][#child[conditionVariable]].changes = {};
@@ -3280,13 +3286,14 @@ function OptionsPrivate.GetConditionOptions(data)
       return copiedCondition == nil
     end,
     func = function()
-      for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
+      for _, child in ipairs(auras) do
         local condition = CopyTable(copiedCondition)
         condition.check = condition.check or {}
         condition.changes = condition.changes or {}
         condition.linked = nil
         condition.category = category
-        ClearMissingTriggers(condition.check, #child.triggers)
+        -- A group has no trigger of its own, only the global checks.
+        ClearMissingTriggers(condition.check, own and 0 or #child.triggers)
         -- An Aura (Modern) does not show at all with a condition it cannot use: such a paste is undone
         local Display = OptionsPrivate.Private.BlizzardAuraDisplay
         local problemBefore = Display.ValidateConditions(child)
@@ -3305,6 +3312,42 @@ function OptionsPrivate.GetConditionOptions(data)
     end
   }
   order = order + 1;
+  return order
+end
+
+function OptionsPrivate.GetConditionOptions(data)
+  OptionsPrivate.Private.BlizzardAuraDisplay.MigrateNativeConditions(data)
+  local  options = {
+    type = "group",
+    name = L["Conditions"],
+    order = 25,
+    args = {}
+  }
+
+  local args = options.args
+  local order = 0
+  -- A group has conditions of its own, shown above the ones of its children. The multi selection has none.
+  if data.controlledChildren and type(data.id) == "string" then
+    local groupArgs = {}
+    order = addConditionSection(groupArgs, 1, data, true)
+    for key, option in pairs(groupArgs) do
+      args["group" .. key] = option
+    end
+    args["groupConditionsTitle"] = {
+      type = "header",
+      width = WeakAuras.doubleWidth,
+      name = L["Group Conditions"],
+      order = 0
+    }
+    args["childrenConditionsTitle"] = {
+      type = "header",
+      width = WeakAuras.doubleWidth,
+      name = L["Children Conditions"],
+      order = order
+    }
+    order = order + 1
+  end
+  addConditionSection(args, order, data, false)
 
   return options;
 end

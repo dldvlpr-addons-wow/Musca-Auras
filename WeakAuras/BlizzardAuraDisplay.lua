@@ -1419,7 +1419,10 @@ do
       candidateFilters = Display.CandidateFilters(auraData),
       sortMethod = sortMethod,
       sortDirection = sortDirection,
-      initializeFrame = function(button) Display.SetupAuraButton(unitEntry, auraRegion, holder, button) end,
+      initializeFrame = function(button)
+        Display.SetupAuraButton(unitEntry, auraRegion, holder, button)
+        Private.SnapLateTextures(button, auraRegion)
+      end,
     })
     return unitEntry
   end

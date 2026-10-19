@@ -389,6 +389,7 @@ local barPrototype = {
           extraTexture:SetTexelSnappingBias(0)
           extraTexture:SetDrawLayer("ARTWORK", min(index, 7));
           self.extraTextures[index] = extraTexture;
+          Private.SnapLateTextures(self)
         end
 
         local extraTexture = self.extraTextures[index];

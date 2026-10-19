@@ -1,7 +1,8 @@
 -- Contract of the flow layout of modern groups, observed through the anchors the code sets (SetPoint, SetParent,
 -- SetFrameStrata, SetFrameLevel) and through returned values: centered growth chained in screen mode, flow preview
 -- (one frame per preview unit, bounds), grid preview, grid on a frame or a nameplate, screen grid, grid spaces for
--- the four vertical types, grid buttons kept in the instance across a disable / enable, Show On rules of the shadows.
+-- the four vertical types, grid buttons kept in the instance across a disable / enable, Show On rules of the shadows, shadows of a
+-- centered growth with Limit on clones and with Show On Missing.
 -- Complements scenarios 27, 28 and 44.
 -- Not covered: a failing Rebind that must not stop UpdateInstance (spec only: the former code had no such path,
 -- see the end of the file). The replay of a locked container is covered for the grid only (case 11).
@@ -496,7 +497,53 @@ return function(test)
     ExpectPoint(container, "TOPLEFT", secondFrame, "TOPLEFT", 0, 0, "locked grid container replaced after combat")
   end
 
-  -- 12 (spec only). A Rebind that fails (SetParent refused, container locked) must not stop UpdateInstance:
+  -- 12. Centered growth: Limit caps the shadow of every clone, and a missing display gets a single shadow
+  -- of one slot, half an element plus a pixel behind the center, before the first visible start.
+  do
+    local group = Group("Limited", { blizzardFlowGrowth = "CENTER_HORIZONTAL", blizzardFlowSpacing = 4,
+      blizzardFlowUseLimit = true, blizzardFlowLimit = 3, controlledChildren = { "LimitedChild" } })
+    local region = CreateFrame("Frame")
+    region.blizzardAuraDisplay = { instances = { { container = CreateFrame("Frame") }, { container = CreateFrame("Frame") } },
+      active = true }
+    local data = Child({ id = "LimitedChild", uid = "LimitedChild", parent = "Limited" })
+    groups.LimitedChild = data
+    Display.EnsureFlowStart(region, data)
+    Display.EnsureFlowShadows(region, data)
+    local flow = region.blizzardAuraDisplay.flow
+    Same(#flow.shadowList, 2, "limited: one shadow per clone")
+    for slot, shadow in ipairs(flow.shadowList) do
+      local settings
+      for _, entry in ipairs(shadow.log) do
+        if entry.name == "AddAuraGroup" then settings = entry[3] end
+      end
+      Same(settings.maxFrameCount, 3, "limited: shadow of clone " .. slot .. " capped by the group limit")
+      Same(settings.layout.elementWidth, (30 + 4) / 2 + 1, "limited: shadow element width of clone " .. slot)
+    end
+
+    group = Group("Missing", { blizzardFlowGrowth = "CENTER_HORIZONTAL", blizzardFlowSpacing = 4,
+      blizzardFlowUseLimit = true, blizzardFlowLimit = 3, controlledChildren = { "MissingChild" } })
+    region = CreateFrame("Frame")
+    local missing = { active = true }
+    region.blizzardAuraDisplay = { instances = { { container = CreateFrame("Frame"), single = { missing = missing } } },
+      active = true }
+    data = Child({ id = "MissingChild", uid = "MissingChild", parent = "Missing" })
+    TriggerOf(data).secretShowOn = "showOnMissing"
+    groups.MissingChild = data
+    Display.EnsureFlowStart(region, data)
+    Display.EnsureFlowShadows(region, data)
+    Display.SetFlowEnd(region, data)
+    private.regions.MissingChild = { region = region }
+    Rechain(group)
+    flow = region.blizzardAuraDisplay.flow
+    Same(flow.shadowKind, "missing", "missing: shadow kind")
+    Same(AddedSettings("MuscaShadow").maxFrameCount, 1, "missing: one slot, whatever the limit")
+    ExpectPoint(flow.shadowStart, "TOPRIGHT", region, "TOP", 0, 0, "missing: shadow start on the center point")
+    ExpectPoint(missing.flowShadow, "TOPLEFT", flow.shadowStart, "TOPRIGHT", -18, 0, "missing: shadow behind the center")
+    ExpectPoint(flow.start, "TOPLEFT", missing.flowShadow, "TOPRIGHT", 2, 0, "missing: visible start after the shadow")
+    private.regions.MissingChild = nil
+  end
+
+  -- 13 (spec only). A Rebind that fails (SetParent refused, container locked) must not stop UpdateInstance:
   -- SetUnit, SetShown and the rest still run. The former AttachContainer had no failure path (an error from
   -- SetParent escapes), so the case cannot run against it.
 

@@ -69,7 +69,7 @@ local function ReadReadiness(spellID)
 end
 
 function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)
-  local gcdSpellID = WeakAuras.IsClassicOrTBCOrWrath() and 29515 or 61304
+  local gcdSpellID = 29515
   local gcdLength = DEFAULT_GCD_LENGTH
   local tracked = {}
   local timers = {}

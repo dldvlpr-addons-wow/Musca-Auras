@@ -723,13 +723,24 @@ local methods = {
       end
     end
 
-    local function DuplicateAuras(sourceParent, targetParent, mapping)
+    local function DuplicateAuras(sourceParent, targetParent, mapping, newUids, copies)
       for index, childId in pairs(sourceParent.controlledChildren) do
         local childData = WeakAuras.GetData(childId)
         if childData.controlledChildren then
-          DuplicateAuras(childData, mapping[childData], mapping)
+          DuplicateAuras(childData, mapping[childData], mapping, newUids, copies)
         else
-          OptionsPrivate.DuplicateAura(childData, targetParent.id, true, index)
+          local copy = OptionsPrivate.DuplicateAura(childData, targetParent.id, true, index)
+          newUids[childData.uid] = copy.uid
+          tinsert(copies, copy)
+        end
+      end
+    end
+
+    -- An "Aura Shown" trigger that watches an aura of the duplicated group follows the copy of that aura.
+    local function RemapWatchedAuras(newUids, copies)
+      for _, copy in ipairs(copies) do
+        if OptionsPrivate.Private.RemapWatchedAuras(copy, newUids) then
+          WeakAuras.Add(copy)
         end
       end
     end
@@ -745,7 +756,9 @@ local methods = {
         -- Do this after duplicating all groups
         local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
         -- And this fills in the leafs
-        DuplicateAuras(self.data, newGroup, mapping)
+        local newUids, copies = {}, {}
+        DuplicateAuras(self.data, newGroup, mapping, newUids, copies)
+        RemapWatchedAuras(newUids, copies)
 
         local button = OptionsPrivate.GetDisplayButton(newGroup.id)
         button.callbacks.UpdateExpandButton()

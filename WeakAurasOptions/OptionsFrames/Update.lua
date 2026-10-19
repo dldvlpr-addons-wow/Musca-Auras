@@ -91,6 +91,8 @@ local function compatibilityReport(auras, codes)
           local scopeOk, scope = pcall(warnings.GetScope, probe, triggernum)
           if ok and secretAura then
             tinsert(lines, L["%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."]:format(aura.id))
+          elseif scopeOk and scope == L["Caster unit checks:"] then
+            tinsert(lines, L["%s: casts of units other than the player or the pet cannot be read, in or out of combat."]:format(aura.id))
           elseif scopeOk and scope then
             tinsert(lines, L["%s: %s may not work in combat (secret values)."]:format(aura.id, (scope:gsub(":$", ""))))
           end
@@ -375,11 +377,24 @@ local function Diff(ours, theirs)
 end
 -- End of diff
 
-local function EnsureUniqueUid(data)
+local function EnsureUniqueUid(data, newUids)
   if not data.uid then
     data.uid = WeakAuras.GenerateUniqueID()
   elseif OptionsPrivate.Private.GetDataByUID(data.uid) then
+    local oldUid = data.uid
     data.uid = WeakAuras.GenerateUniqueID()
+    newUids[oldUid] = data.uid
+  end
+end
+
+-- An "Aura Shown" trigger that watches an aura of the same import follows the copy, not the original. An aura left
+-- out of the import is not copied, the trigger keeps watching the original then.
+local function RemapWatchedUids(data, newUids, uidMap)
+  for _, triggerData in ipairs(data.triggers or {}) do
+    local trigger = triggerData.trigger
+    if trigger and trigger.auraUid and newUids[trigger.auraUid] and uidMap:Contains(newUids[trigger.auraUid]) then
+      trigger.auraUid = newUids[trigger.auraUid]
+    end
   end
 end
 
@@ -722,6 +737,9 @@ local function BuildUidMap(data, children, type)
         end
       end
 
+      for _, entry in pairs(self.map) do
+        OptionsPrivate.Private.RemapWatchedAuras(entry.data, { [uid] = newUid })
+      end
     end
   end
 
@@ -1826,7 +1844,7 @@ local methods = {
     end
   end,
   Import = function(self)
-    if WeakAuras.IsClassicEra() and C_GameRules.IsHardcoreActive() then
+    if C_GameRules.IsHardcoreActive() then
       StaticPopupDialogs["WEAKAURAS_CONFIRM_IMPORT_HARDCORE"] = {
         text = L["You are about to Import an Aura with custom Lua code on a Hardcore server.\n\n|cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r\n\nWould you like to continue?"],
         button1 = L["Import"],
@@ -1873,10 +1891,11 @@ local methods = {
       coroutine.yield(0.1, "start import")
       self:InitializeProgress(2 * (#pendingData.children + 1))
 
-      EnsureUniqueUid(pendingData.data)
+      local newUids = {}
+      EnsureUniqueUid(pendingData.data, newUids)
       coroutine.yield(0.1, "ensure unique uids")
       for i, child in ipairs(pendingData.children) do
-        EnsureUniqueUid(child)
+        EnsureUniqueUid(child, newUids)
         coroutine.yield(0.1, "ensure unique uids")
       end
 
@@ -1885,6 +1904,10 @@ local methods = {
       if userChoices.excludedChildren then
         RemoveExcludedChildren(uidMap, userChoices.excludedChildren)
         self:InitializeProgress(2 * uidMap:GetTotalCount())
+      end
+      RemapWatchedUids(pendingData.data, newUids, uidMap)
+      for _, child in ipairs(pendingData.children) do
+        RemapWatchedUids(child, newUids, uidMap)
       end
 
       local phase2Order = {}
@@ -2070,8 +2093,6 @@ local methods = {
     uid = uid or uidMap:GetRootUID()
     local existingData = OptionsPrivate.Private.GetDataByUID(uid)
     if existingData then
-      if uidMap:GetIdFor(uid) ~= existingData.id then
-      end
       uidMap:ChangeId(uid, existingData.id)
     else
       if WeakAuras.GetData(uidMap:GetIdFor(uid)) then

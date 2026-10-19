@@ -2469,18 +2469,6 @@ local function EventHandler(frame, event, arg1, arg2, ...)
   Private.StopProfileSystem("bufftrigger2 - ".. event)
 end
 
-if WeakAuras.IsCataOrMistsOrRetail() then
-  Private.LibSpecWrapper.Register(function(unit)
-    Private.StartProfileSystem("bufftrigger2 - LibSpecWrapper")
-
-    local deactivatedTriggerInfos = {}
-    RecheckActiveForUnitType("group", unit, deactivatedTriggerInfos)
-    RecheckActiveForUnitType("group", WeakAuras.unitToPetUnit[unit], deactivatedTriggerInfos)
-    DeactivateScanFuncs(deactivatedTriggerInfos)
-
-    Private.StopProfileSystem("bufftrigger2 - LibSpecWrapper")
-  end)
-end
 
 Buff2Frame:RegisterEvent("UNIT_AURA")
 Buff2Frame:RegisterEvent("UNIT_FACTION")
@@ -2491,12 +2479,6 @@ Buff2Frame:RegisterEvent("UNIT_PET")
 Buff2Frame:RegisterEvent("RAID_TARGET_UPDATE")
 Buff2Frame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
 Buff2Frame:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
-if WeakAuras.IsTBCOrWrathOrCataOrMistsOrRetail() then
-  Buff2Frame:RegisterEvent("PLAYER_FOCUS_CHANGED")
-  Buff2Frame:RegisterEvent("ARENA_OPPONENT_UPDATE")
-  Buff2Frame:RegisterEvent("UNIT_ENTERED_VEHICLE")
-  Buff2Frame:RegisterEvent("UNIT_EXITED_VEHICLE")
-end
 Buff2Frame:RegisterEvent("PLAYER_TARGET_CHANGED")
 Buff2Frame:RegisterEvent("ENCOUNTER_START")
 Buff2Frame:RegisterEvent("ENCOUNTER_END")
@@ -2721,10 +2703,6 @@ function BuffTrigger.UnloadAll()
     end
   end
 
-  if WeakAuras.IsRetail() then
-    -- TODO change this when more events are handled by system, or when range check will be supported on other version than Retail
-    PerUnitFrames:UnregisterAll()
-  end
 
   if newAPI then
     TooltipHelper:Clear()
@@ -3340,17 +3318,17 @@ function BuffTrigger.Add(data)
       local groupTrigger = trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party"
       local effectiveIgnoreSelf = (groupTrigger or trigger.unit == "nameplate") and trigger.ignoreSelf
       local effectiveGroupRole = groupTrigger and trigger.useGroupRole and trigger.group_role or nil
-      local effectiveRaidRole = WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists() and (groupTrigger and trigger.useRaidRole and trigger.raid_role) or nil
+      local effectiveRaidRole = (groupTrigger and trigger.useRaidRole and trigger.raid_role) or nil
       local effectiveClass = groupTrigger and trigger.useClass and trigger.class
-      local effectiveSpecId = WeakAuras.IsCataOrMistsOrRetail() and (groupTrigger and trigger.useActualSpec and trigger.actualSpec) or nil
-      local effectiveArenaSpec = WeakAuras.IsRetail() and (trigger.unit == "arena" and trigger.useArenaSpec and trigger.arena_spec) or nil
+      local effectiveSpecId = nil
+      local effectiveArenaSpec = nil
       local effectiveHostility = (groupTrigger or trigger.unit == "nameplate") and trigger.useHostility and trigger.hostility
       local effectiveIgnoreDead = groupTrigger and trigger.ignoreDead
       local effectiveIgnoreDisconnected = groupTrigger and trigger.ignoreDisconnected
       local effectiveIgnoreInvisible = groupTrigger and trigger.ignoreInvisible
       local effectiveNameCheck = groupTrigger and trigger.useUnitName and trigger.unitName
       local effectiveNpcId = (trigger.unit == "nameplate" or trigger.unit == "boss") and trigger.useNpcId and Private.ExecEnv.ParseStringCheck(trigger.npcId)
-      local effectiveInRange = WeakAuras.IsRetail() and groupTrigger and trigger.inRange
+      local effectiveInRange = false
 
       if trigger.unit == "multi" then
         BuffTrigger.InitMultiAura()
@@ -3432,6 +3410,13 @@ function BuffTrigger.Add(data)
     end
   end
   PublishProblems(problems, data.uid)
+end
+
+--- Whether an added Aura trigger keeps its last state under the restriction: one that reads only native filters
+--- still follows the secret auras.
+function Private.AuraTriggerFreezes(id, triggernum)
+  local triggerInfo = triggerInfos[id] and triggerInfos[id][triggernum]
+  return triggerInfo ~= nil and not triggerInfo.acceptsSecretAuras
 end
 
 --- Returns a table containing the names of all overlays
@@ -4323,11 +4308,6 @@ function BuffTrigger.InitMultiAura()
     multiAuraFrame:RegisterEvent("UNIT_TARGET")
     multiAuraFrame:RegisterEvent("UNIT_AURA")
     multiAuraFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-    if not WeakAuras.IsClassicEra() then
-      multiAuraFrame:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
-      multiAuraFrame:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
-      multiAuraFrame:RegisterEvent("PLAYER_FOCUS_CHANGED")
-    end
     multiAuraFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
     multiAuraFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
     multiAuraFrame:RegisterEvent("PLAYER_LEAVING_WORLD")

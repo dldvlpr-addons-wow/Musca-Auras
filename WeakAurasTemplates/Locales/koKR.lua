@@ -38,7 +38,6 @@ local L = WeakAuras.L
 	L["Back"] = "뒤로"
 	L["Basic Show On Cooldown"] = "쿨타임일 때 기본형 표시"
 	L["Basic Show On Ready"] = "준비 완료 시 표시"
-	L["Bloodlust/Heroism"] = "피의 욕망/영웅심"
 	L["buff"] = "버프"
 	L["Buffs"] = "버프"
 	L["Charge and Buff Tracking"] = "충전량 및 버프 추적"

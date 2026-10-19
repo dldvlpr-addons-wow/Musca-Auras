@@ -529,6 +529,179 @@ function OptionsPrivate.ConfirmDeleteUnused()
   OptionsPrivate.ConfirmDelete(toDelete, parents)
 end
 
+-- Find and replace: the selected auras and their children, or every aura when nothing is selected.
+local function AurasToReplaceIn()
+  local roots = {}
+  local picked = frame and frame.pickedDisplay
+  if type(picked) == "string" then
+    roots = { WeakAuras.GetData(picked) }
+  elseif type(picked) == "table" then
+    for _, id in ipairs(tempGroup.controlledChildren) do
+      tinsert(roots, WeakAuras.GetData(id))
+    end
+  else
+    for _, data in pairs(db.displays) do
+      if not data.parent then
+        tinsert(roots, data)
+      end
+    end
+  end
+  local datas, seen = {}, {}
+  for _, root in ipairs(roots) do
+    for data in OptionsPrivate.Private.TraverseAll(root) do
+      if not seen[data.uid] then
+        seen[data.uid] = true
+        tinsert(datas, data)
+      end
+    end
+  end
+  return datas, picked ~= nil
+end
+
+local function TextOf(dialog)
+  return strtrim(dialog:GetEditBox():GetText())
+end
+
+local function ClickAccept(editBox)
+  local dialog = editBox:GetParent()
+  if dialog:GetButton1():IsEnabled() then
+    dialog:GetButton1():Click()
+  end
+end
+
+local function HideDialog(editBox)
+  editBox:GetParent():Hide()
+end
+
+-- Lists in the chat every value that would change, then asks to replace them.
+local function PreviewReplace(search)
+  local occurrences, skipped = OptionsPrivate.Private.FindValueOccurrences(search.datas, search.kind, search.find,
+    search.replacement)
+  if skipped > 0 then
+    WeakAuras.prettyPrint(L["%s number(s) left out: a number is only replaced by a number."]:format(skipped))
+  end
+  if #occurrences == 0 then
+    if skipped == 0 then
+      WeakAuras.prettyPrint(L["Nothing equal to \"%s\"."]:format((search.find:gsub("|", "||"))))
+    end
+    return
+  end
+  local auraCount, counted = 0, {}
+  for _, occurrence in ipairs(occurrences) do
+    if not counted[occurrence.uid] then
+      counted[occurrence.uid] = true
+      auraCount = auraCount + 1
+    end
+    print((("%s: %s  %s -> %s"):format(occurrence.id, occurrence.pathText, tostring(occurrence.old),
+      tostring(occurrence.new)):gsub("|", "||")))
+  end
+  WeakAuras.prettyPrint(L["Values to replace, listed above:"])
+  StaticPopup_Show("WEAKAURAS_REPLACE_CONFIRM", #occurrences, auraCount, { occurrences = occurrences })
+end
+
+local function AskReplacement(kind)
+  return function(dialog, search)
+    search.find = TextOf(dialog)
+    search.kind = kind
+    if search.find ~= "" then
+      StaticPopup_Show("WEAKAURAS_REPLACE_WITH", search.find, nil, search)
+    end
+  end
+end
+
+-- One button per kind of value: the kind chooses the keys searched, so a spell named like a texture is not mixed up.
+StaticPopupDialogs["WEAKAURAS_REPLACE_FIND"] = {
+  text = "%s",
+  hasEditBox = true,
+  maxLetters = 0,
+  selectCallbackByIndex = true,
+  button1 = L["Spell"],
+  button2 = L["Texture"],
+  button3 = L["Font"],
+  button4 = L["Sound"],
+  OnButton1 = AskReplacement("spell"),
+  OnButton2 = AskReplacement("texture"),
+  OnButton3 = AskReplacement("font"),
+  OnButton4 = AskReplacement("sound"),
+  EditBoxOnEscapePressed = HideDialog,
+  hideOnEscape = true,
+  whileDead = true,
+  preferredindex = 4,
+}
+
+StaticPopupDialogs["WEAKAURAS_REPLACE_WITH"] = {
+  text = L["Replace \"%s\" with:"],
+  hasEditBox = true,
+  maxLetters = 0,
+  button1 = L["Next"],
+  button2 = L["Cancel"],
+  OnAccept = function(dialog, search)
+    search.replacement = TextOf(dialog)
+    if search.replacement ~= "" then
+      PreviewReplace(search)
+    end
+  end,
+  EditBoxOnEnterPressed = ClickAccept,
+  EditBoxOnEscapePressed = HideDialog,
+  hideOnEscape = true,
+  whileDead = true,
+  preferredindex = 4,
+}
+
+StaticPopupDialogs["WEAKAURAS_REPLACE_CONFIRM"] = {
+  text = L["Replace %s value(s) in %s aura(s)? Undo reverts it."],
+  button1 = L["Replace"],
+  button2 = L["Cancel"],
+  OnAccept = function(_, data)
+    OptionsPrivate.Private.ReplaceValueOccurrences(data.occurrences)
+    for _, occurrence in ipairs(data.occurrences) do
+      local replaced = OptionsPrivate.Private.GetDataByUID(occurrence.uid)
+      if replaced then
+        WeakAuras.UpdateThumbnail(replaced)
+      end
+    end
+    if frame then
+      frame:FillOptions()
+    end
+  end,
+  showAlert = true,
+  whileDead = true,
+  preferredindex = 4,
+}
+
+function OptionsPrivate.AskReplace()
+  if WeakAuras.IsImporting() then return end
+  local datas, selected = AurasToReplaceIn()
+  local scope = selected and L["Find in the selected auras: a spell ID or name, a texture, a font or a sound."]
+    or L["Find in all auras: a spell ID or name, a texture, a font or a sound."]
+  StaticPopup_Show("WEAKAURAS_REPLACE_FIND", scope, nil, { datas = datas })
+end
+
+StaticPopupDialogs["WEAKAURAS_AURA_SET"] = {
+  text = L["Aura set of this character: the tag of the auras it loads. Empty: all auras."],
+  hasEditBox = true,
+  maxLetters = 0,
+  button1 = OKAY,
+  button2 = L["Cancel"],
+  OnShow = function(dialog)
+    dialog:GetEditBox():SetText(OptionsPrivate.Private.GetCharacterAuraSet() or "")
+  end,
+  OnAccept = function(dialog)
+    if not OptionsPrivate.Private.SetCharacterAuraSet(TextOf(dialog)) then
+      WeakAuras.prettyPrint(L["The name of this character cannot be read here, try again out of the instance."])
+    end
+  end,
+  EditBoxOnEnterPressed = ClickAccept,
+  EditBoxOnEscapePressed = HideDialog,
+  hideOnEscape = true,
+  whileDead = true,
+  preferredindex = 4,
+}
+
+function OptionsPrivate.AskAuraSet()
+  StaticPopup_Show("WEAKAURAS_AURA_SET")
+end
+
 local function AfterScanForLoads()
   if(frame) then
     if (frame:IsVisible() and not WeakAuras.IsImporting()) then
@@ -649,6 +822,7 @@ if not WeakAuras.ToggleOptions then
       OptionsPrivate.Private.callbacks:RegisterCallback("AboutToDelete", OnAboutToDelete)
       OptionsPrivate.Private.callbacks:RegisterCallback("RenameFirst", OnRename)
       OptionsPrivate.Private.OpenUpdate = OptionsPrivate.OpenUpdate
+      OptionsPrivate.Private.ShowDemo = OptionsPrivate.ShowDemo
     end
 
     if(frame and frame:IsVisible()) then
@@ -728,6 +902,37 @@ local function GetSortedOptionsLists()
   return loadedSorted, unloadedSorted;
 end
 
+-- /wa demo waits for the buttons built at the first opening.
+local buttonsBuilt, pendingDemo = false, nil
+
+-- Sample states on every loaded aura, or on one aura and its children, as their eye buttons do.
+function OptionsPrivate.ShowDemo(id)
+  if not buttonsBuilt then
+    pendingDemo = id or true
+    return
+  end
+  pendingDemo = nil
+  -- The eye of a group or of the header toggles, and its visibility is not updated when a child changes.
+  if id then
+    local button = displayButtons[id]
+    if not button or not WeakAuras.GetData(id) then
+      return
+    end
+    if button.data.controlledChildren then
+      button:RecheckVisibility()
+    end
+    if button.view.visibility < 2 then
+      button.callbacks.OnViewClick()
+    end
+    WeakAuras.PickDisplay(id)
+  else
+    frame.loadedButton:RecheckVisibility()
+    if frame.loadedButton.view.visibility < 2 then
+      frame.loadedButton.view:Click()
+    end
+  end
+end
+
 local function LayoutDisplayButtons(msg)
   local total = 0;
   for _,_ in pairs(db.displays) do
@@ -785,6 +990,11 @@ local function LayoutDisplayButtons(msg)
     OptionsPrivate.Private.ResumeAllDynamicGroups(suspended)
 
     frame:SetLoadProgressVisible(false)
+    buttonsBuilt = true
+    if pendingDemo and WeakAuras.IsOptionsOpen() then
+      OptionsPrivate.ShowDemo(pendingDemo ~= true and pendingDemo or nil)
+    end
+    pendingDemo = nil
   end
 
   local func1 = function()
@@ -1132,6 +1342,19 @@ local function AuraSearchText(data)
   end
   add(data.id)
   add(data.desc)
+  -- Tags of the aura and of its groups, as "#tag" so that a search for "#raid" finds the tag, not a name.
+  local function addTags(tags)
+    if type(tags) == "string" then
+      for tag in tags:gmatch("[^,]+") do
+        tag = strtrim(tag)
+        if tag ~= "" then add("#" .. tag) end
+      end
+    end
+  end
+  addTags(data.tags)
+  for parent in OptionsPrivate.Private.TraverseParents(data) do
+    addTags(parent.tags)
+  end
   add(data.displayText)
   for _, triggerData in ipairs(data.triggers or {}) do
     local trigger = type(triggerData) == "table" and triggerData.trigger
@@ -1326,7 +1549,12 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
       elseif OptionsPrivate.Private.loaded[id] == false then
         child:SetLoaded(2, "standby", L["Standby"], L["This display is on standby, it will be loaded when needed."])
       else
-        child:SetLoaded(3, "unloaded", L["Not Loaded"], L["This display is not currently loaded"])
+        local auraSet = OptionsPrivate.Private.GetCharacterAuraSet()
+        if auraSet and not OptionsPrivate.Private.IsInAuraSet(child.data, auraSet) then
+          child:SetLoaded(3, "unloaded", L["Not Loaded"], L["Out of the aura set of this character: %s"]:format(auraSet))
+        else
+          child:SetLoaded(3, "unloaded", L["Not Loaded"], L["This display is not currently loaded"])
+        end
       end
     end
 

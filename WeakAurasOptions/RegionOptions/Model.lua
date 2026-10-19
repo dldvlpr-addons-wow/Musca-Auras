@@ -300,7 +300,7 @@ end
 
 local function createIcon()
   local data = {
-    model_fileId = WeakAuras.IsTBC() and 124614 or "122968", -- Creature/illidan/illidandark.m2 / Creature/Arthaslichking/arthaslichking.m2
+    model_fileId = "122968", -- Creature/illidan/illidandark.m2 / Creature/Arthaslichking/arthaslichking.m2
     modelIsUnit = false,
     model_x = 0,
     model_y = 0,
@@ -327,103 +327,6 @@ local templates = {
   }
 }
 
-if WeakAuras.IsRetail() then
-  tinsert(templates, {
-    title = L["Fire Orb"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      model_fileId = "937416", -- spells/6fx_smallfire.m2
-      model_x = 0,
-      model_y = -0.5,
-      model_z = -1.5
-    },
-  })
-  tinsert(templates, {
-    title = L["Blue Sparkle Orb"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1322288", -- spells/7fx_druid_halfmoon_missile.m2
-      model_x = 0,
-      model_y = 0.7,
-      model_z = 1.5
-    },
-  })
-  tinsert(templates, {
-    title = L["Arcane Orb"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1042743", -- spells/proc_arcane_impact_low.m2
-      model_x = 0,
-      model_y = 0.8,
-      model_z = 2
-    },
-  })
-  tinsert(templates, {
-    title = L["Orange Rune"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1307356", -- spells/7fx_godking_orangerune_state.m2
-    },
-  })
-  tinsert(templates, {
-    title = L["Blue Rune"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1307354", -- spells/7fx_godking_bluerune_state.m2
-    }
-  })
-  tinsert(templates, {
-    title = L["Yellow Rune"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1307358", -- spells/7fx_godking_yellowrune_state.m2
-    }
-  })
-  tinsert(templates, {
-    title = L["Purple Rune"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1307355", -- spells/7fx_godking_purplerune_state.m2
-    }
-  })
-  tinsert(templates, {
-    title = L["Green Rune"],
-    description = "",
-    data = {
-      width = 100,
-      height = 100,
-      advance = true,
-      sequence = 1,
-      model_fileId = "1307357", -- spells/7fx_godking_greenrune_state.m2
-    }
-  })
-end
 
 OptionsPrivate.registerRegions = OptionsPrivate.registerRegions or {}
 table.insert(OptionsPrivate.registerRegions, function()

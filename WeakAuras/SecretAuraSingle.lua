@@ -1728,6 +1728,7 @@ local function BuildMissing(singleState, auraRegion, auraData, filterString, can
     initializeFrame = function(auraButton)
       auraButton:SetSize(layout.elementWidth, iconHeight)
       auraButton:EnableMouse(false)
+      Private.SnapLateTextures(auraButton, auraRegion)
     end,
   })
   if not ok then

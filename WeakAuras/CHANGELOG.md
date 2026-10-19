@@ -1,3 +1,56 @@
+# Musca Auras 1.12.0 (2026-10-19)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Undo and Redo: two buttons in the options window, for every tab. Edits less than one second apart make one step, and the last 50 steps are kept. Renaming, moving, deleting, converting and importing clear the history.
+- Find and replace: the `Replace` button of the toolbar replaces a spell, texture, font or sound in the selected
+  auras and their children, or in every aura when none is selected. It lists the changes in the chat and asks for a
+  confirmation. Undo puts the old values back.
+- Tags: a `Tags` field in the Information tab. Searching `#raid` in the aura list shows the auras tagged "raid" and
+  the members of a group tagged "raid". Tags are not exported, and an update keeps them.
+- Aura Sets: the `Aura Set` button of the toolbar picks a tag for the current character, which then loads only the
+  auras that carry it, themselves or through their group. Each character of the account keeps its own set, from the
+  same auras. An empty tag loads every aura.
+- Trigger `Aura Shown` (Events category): active while another aura is shown, or while it is hidden with Inverse.
+  Renaming the watched aura keeps the link.
+- Edit Mode placement: while the Blizzard Edit Mode is open, each top-level aura or group anchored to the screen
+  gets a labelled box, shown even when the aura is not. Drag the box to move the aura; with Snap on and the grid shown,
+  it sticks to the grid. `Revert All
+  Changes` puts the moved auras back, and /wa can undo a move.
+- Group conditions: the Conditions tab of a group shows `Group Conditions` above `Children Conditions`. They use the
+  global checks, such as combat, and change the alpha, offsets, sound, chat message or custom code of the group itself.
+- `/wa demo` opens the options and shows every loaded aura with sample states, to set up a HUD without a fight.
+  `/wa demo <aura name>` shows only that aura.
+- Frozen value padlock: while the game hides auras in combat, an aura whose Aura trigger can no longer update shows a small padlock at
+  its top right corner, since what it shows may be out of date. `Hide Frozen Value Padlock` in Size & Position turns
+  it off for that aura.
+- `Pixel Perfect` option in Size & Position: the textures of the aura snap to the screen pixels, for sharp edges. Off
+  by default.
+
+## Changed
+
+- Stance/Form/Aura: the trigger stores the form spell instead of its position on the stance bar, so a stance learned
+  later no longer shifts the selection. Dire Bear Form counts as Bear Form, and every rank of Stealth, of the paladin
+  auras and of the hunter aspects counts as one. The `%form` text gives the spell ID; custom code that reads the form
+  is not converted. The `Form by position` option keeps the old behaviour.
+- Spell Cast Succeeded: a warning shows when the Caster Unit is neither the player nor the pet, since the game hides
+  the casts of other units.
+- ForeverAuras imports: anchors and glow frames set to another ForeverAuras aura, form filters and form conditions are
+  converted, and custom code that calls `ForeverAuras` finds the WeakAuras API. An anchor imported before 1.12 stays broken: import the
+  aura again. A condition that its trigger does not offer shows `Incompatible condition` in the options.
+- The movement watcher stops once no aura uses it.
+- French translation of the 225 texts that had none.
+
+## After the update
+
+- Your stance and form auras are converted at login, for the class of the character you log in with. Log in once with
+  each class that has such auras. Only auras loaded for a single class, by the Class option or a Forever
+  specialization, are converted. The others, and an aura whose stance cannot be found on the stance bar, keep
+  `Form by position`.
+- Going back to an older version breaks the converted stance and form auras.
+
 # Musca Auras 1.11.0 (2026-10-18)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

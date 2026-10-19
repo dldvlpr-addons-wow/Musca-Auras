@@ -863,9 +863,7 @@ local templates = {
   },
 }
 
-if WeakAuras.IsClassicEra() then
-  table.remove(templates, 2)
-end
+table.remove(templates, 2)
 
 OptionsPrivate.registerRegions = OptionsPrivate.registerRegions or {}
 table.insert(OptionsPrivate.registerRegions, function()

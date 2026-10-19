@@ -1,5 +1,3 @@
----@type string
-local AddonName = ...
 ---@class Private
 local Private = select(2, ...)
 
@@ -63,7 +61,7 @@ Private.frames = {}
 --- @field callbacks callbacks
 --- @field category_event_prototype table<string, table<string, string>>
 --- @field CanHaveTooltip fun(data: auraData): boolean
---- @field CheckTalentsForLoad fun(event: string)
+--- @field CheckTalentsForLoad fun()
 --- @field ContainsCustomPlaceHolder fun(input: string): boolean
 --- @field ContainsAnyPlaceHolders fun(input: string): boolean
 --- @field ContainsPlaceHolders fun(input: string, placeholders: string, checkDoublePercent?: boolean): boolean
@@ -578,38 +576,6 @@ do
     "LibGetFrame-1.0",
     "LibSerialize",
   }
-  if WeakAuras.IsRetail() then
-    AddonCompartmentFrame:RegisterAddon({
-      text = AddonName,
-      icon = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\icon.blp",
-      registerForAnyClick = true,
-      notCheckable = true,
-      func = function(button, menuInputData, menu)
-        local mouseButton = menuInputData.buttonName
-        if mouseButton == "LeftButton" then
-          if IsShiftKeyDown() then
-            if not (WeakAuras.IsOptionsOpen()) then
-              WeakAuras.Toggle()
-            end
-          else
-            WeakAuras.OpenOptions()
-          end
-        elseif mouseButton == "MiddleButton" then
-          WeakAuras.ToggleMinimap()
-        else
-          WeakAurasProfilingFrame:Toggle()
-        end
-      end,
-      funcOnEnter = function(button)
-        MenuUtil.ShowTooltip(button, function(tooltip)
-          WeakAuras.GenerateTooltip(true, tooltip)
-        end)
-      end,
-      funcOnLeave = function(button)
-        MenuUtil.HideTooltip(button)
-      end,
-    })
-  end
   for _, lib in ipairs(StandAloneLibs) do
     if not lib then
         libsAreOk = false
@@ -635,12 +601,6 @@ end
 if not libsAreOk then
   C_Timer.After(1, function()
     WeakAuras.prettyPrint("WeakAuras is missing necessary libraries. Please reinstall a proper package.")
-  end)
-end
-
-if WeakAuras.IsWrathClassic() then
-  C_Timer.After(1, function()
-    WeakAuras.prettyPrint("This version of WeakAuras is provided as is. We are unable to test it ourselves on CN Servers.")
   end)
 end
 

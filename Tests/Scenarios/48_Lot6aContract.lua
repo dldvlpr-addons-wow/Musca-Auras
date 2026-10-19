@@ -91,7 +91,7 @@ return function(test)
   end
 
   ---------------------------------------------------------------------------------------------------------------
-  -- Part 2: talent reader of Prototypes (GetTalentConfigID, GetTalentData, CheckTalentsForLoad, talent frame).
+  -- Part 2: talent reader of TalentReader.lua (GetTalentConfigID, GetTalentData, CheckTalentsForLoad, talent frame).
   -- The harness already enables Private.traitTalents (Classic Era flavor with specializations and C_Traits), so the
   -- block is defined at load. The scenario only replaces the API tables after the load, which the code reads at
   -- call time: C_Traits, C_SpecializationInfo and the aliases of Private.ExecEnv.
@@ -101,7 +101,6 @@ return function(test)
     assert(type(private.GetTalentData) == "function" and type(private.GetTalentConfigID) == "function"
       and type(private.CheckTalentsForLoad) == "function", "talent functions missing")
     assert(type(WeakAuras.CheckTalentId) == "function" and type(WeakAuras.GetTalentById) == "function", "talent lookups missing")
-    Same(type(private.talentInfo), "table", "talentInfo")
 
     C_Traits = C_Traits or {}
     C_SpecializationInfo = C_SpecializationInfo or {}
@@ -277,7 +276,7 @@ return function(test)
     local frame = private.frames["WeakAuras talentCheckFrame"]
     assert(frame, "talent frame missing")
     for _, event in ipairs({ "TRAIT_CONFIG_CREATED", "TRAIT_CONFIG_UPDATED", "PLAYER_TALENT_UPDATE", "PLAYER_SPECIALIZATION_CHANGED",
-      "PLAYER_LOGIN", "ACTIVE_TALENT_GROUP_CHANGED" }) do
+      "PLAYER_LOGIN", "ACTIVE_TALENT_GROUP_CHANGED", "ACTIVE_COMBAT_CONFIG_CHANGED" }) do
       assert(frame:IsEventRegistered(event), "talent frame does not listen to " .. event)
     end
     assert(not frame:IsEventRegistered("TRAIT_NODE_CHANGED") and not frame:IsEventRegistered("PLAYER_ENTERING_WORLD"),
@@ -368,9 +367,9 @@ return function(test)
     nodes[10].activeRank = 3
     nodes[30].activeRank = 2
 
-    -- Every one of the six events does the same work.
+    -- Every one of the seven events does the same work.
     for _, event in ipairs({ "TRAIT_CONFIG_CREATED", "TRAIT_CONFIG_UPDATED", "PLAYER_TALENT_UPDATE", "PLAYER_SPECIALIZATION_CHANGED",
-      "PLAYER_LOGIN", "ACTIVE_TALENT_GROUP_CHANGED" }) do
+      "PLAYER_LOGIN", "ACTIVE_TALENT_GROUP_CHANGED", "ACTIVE_COMBAT_CONFIG_CHANGED" }) do
       Fire(event)
       Same(#log, 2, "messages for " .. event)
       Same(log[1][4], "WA_TALENT_UPDATE", "ScanForLoads for " .. event)
@@ -405,9 +404,9 @@ return function(test)
     Same(talentMessages, 1, "frame dispatch gives one talent message")
     Same(CheckTalentId(300), true, "table rebuilt by the dispatch")
 
-    -- Direct call with the delayed login name: same messages; the read one second later must not fail.
+    -- Direct call, as after the delayed login: same messages, and nothing changes the table one second later.
     log, profile = {}, {}
-    private.CheckTalentsForLoad("WA_DELAYED_PLAYER_ENTERING_WORLD")
+    private.CheckTalentsForLoad()
     Same(#log, 2, "messages for the delayed call")
     Same(table.concat(profile, ","), "start talent,stop talent", "profiling for the delayed call")
     Same(CheckTalentId(300), true, "table rebuilt by the delayed call")

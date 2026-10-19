@@ -470,5 +470,29 @@ return function(test)
   Same(Find(customArgs, "^condition1_else$"), nil, "no else on condition 1 with a custom trigger")
   private.GetTriggerConditions = realGetTriggerConditions
 
+  ---------------------------------------------------------------------------------------------------------------
+  -- ConditionOptions: a group shows its own conditions above the merged ones of its children.
+  ---------------------------------------------------------------------------------------------------------------
+  local child = ConditionData("custom")
+  child.parent = "G"
+  local group = { id = "G", uid = "G", regionType = "group", controlledChildren = { "CD" }, triggers = {},
+    actions = { start = {}, finish = {}, init = {} }, subRegions = {}, alpha = 1,
+    conditions = { { check = { trigger = -1, variable = "incombat", value = 1 }, changes = { { property = "alpha", value = 0.3 } } } } }
+  local realGetDataForConditions = WeakAuras.GetData
+  WeakAuras.GetData = function(id) return id == "CD" and child or realGetDataForConditions(id) end
+  local groupArgs = optionsPrivate.GetConditionOptions(group).args
+  assert(groupArgs.groupConditionsTitle and groupArgs.childrenConditionsTitle, "group and children headers")
+  assert(groupArgs.groupConditionsTitle.order < groupArgs.groupaddCondition.order
+    and groupArgs.groupaddCondition.order < groupArgs.childrenConditionsTitle.order
+    and groupArgs.childrenConditionsTitle.order < groupArgs.addCondition.order, "group section above the children")
+  assert(Find(groupArgs, "^groupcondition1"), "own condition of the group")
+  assert(Find(groupArgs, "^condition2"), "merged conditions of the children")
+  Take()
+  groupArgs.groupaddCondition.func()
+  Same(#group.conditions, 2, "condition added to the group")
+  Same(#child.conditions, 2, "child conditions untouched")
+  Same(Take(), "add:G,clear:G,update:G", "add on the group only")
+  WeakAuras.GetData = realGetDataForConditions
+
   WeakAuras.Add, WeakAuras.UpdateThumbnail, WeakAuras.ClearAndUpdateOptions = realAdd, realUpdateThumbnail, realClearAndUpdate
 end

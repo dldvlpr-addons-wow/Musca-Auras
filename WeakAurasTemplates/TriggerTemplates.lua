@@ -4,7 +4,7 @@ local AddonName, TemplatePrivate = ...
 
 local AceGUI = LibStub("AceGUI-3.0");
 local floor, ceil, tinsert = floor, ceil, tinsert;
-local CreateFrame, UnitClass, UnitRace, GetSpecialization = CreateFrame, UnitClass, UnitRace, GetSpecialization;
+local CreateFrame, UnitClass, UnitRace = CreateFrame, UnitClass, UnitRace;
 ---@class WeakAuras
 local WeakAuras = WeakAuras;
 local L = WeakAuras.L
@@ -1702,11 +1702,6 @@ function WeakAuras.CreateTemplateView(Private, frame)
       local classSelector = createDropdown("class", WeakAuras.class_types);
       newViewScroll:AddChild(classSelector);
 
-      if WeakAuras.IsRetail() then
-        local specSelector = createDropdown("spec", WeakAuras.spec_types_specific[newView.class]);
-        newViewScroll:AddChild(specSelector);
-        newViewScroll:AddChild(createSpacer());
-      end
       if TemplatePrivate.triggerTemplates.class[newView.class]
          and TemplatePrivate.triggerTemplates.class[newView.class][newView.spec]
       then
@@ -1869,11 +1864,7 @@ function WeakAuras.CreateTemplateView(Private, frame)
       newView.chosenItemBatch = {};
     end
     newView.class = select(2, UnitClass("player"));
-    if WeakAuras.IsRetail() then
-      newView.spec = GetSpecialization() or 1;
-    else
-      newView.spec = 1
-    end
+    newView.spec = 1
     newView.race = select(2, UnitRace('player'));
 
     createButtons();

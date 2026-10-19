@@ -963,44 +963,6 @@ local function GetBuffTriggerOptions(data, triggernum)
       end
     },
 
-    useActualSpec = {
-      type = "toggle",
-      width = WeakAuras.normalWidth,
-      name = L["Filter by Specialization"],
-      desc = L["Requires LibSpecialization, that is e.g. a up-to date WeakAuras version"],
-      order = 66.3,
-      hidden = function() return
-        not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party")
-        and WeakAuras.IsCataOrMistsOrRetail())
-      end,
-    },
-    actualSpec = {
-      type = "multiselect",
-      width = WeakAuras.normalWidth,
-      name = L["Actual Spec"],
-      desc = L["Requires syncing the specialization via LibSpecialization."],
-      values = OptionsPrivate.Private.spec_types_all,
-      hidden = function()
-        return not (trigger.type == "aura2"
-                    and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party")
-                    and trigger.useActualSpec
-                    and WeakAuras.IsCataOrMistsOrRetail())
-      end,
-      order = 66.4
-    },
-    actualSpecSpace = {
-      type = "description",
-      name = "",
-      order = 66.5,
-      width = WeakAuras.normalWidth,
-      hidden = function()
-        return not (trigger.type == "aura2"
-                    and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party")
-                    and not trigger.useActualSpec
-                    and WeakAuras.IsCataOrMistsOrRetail())
-      end
-    },
-
     useGroupRole = {
       type = "toggle",
       width = WeakAuras.normalWidth,
@@ -1036,7 +998,6 @@ local function GetBuffTriggerOptions(data, triggernum)
       order = 67.4,
       hidden = function() return
         not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party"))
-        or WeakAuras.IsRetail()
       end
     },
     raid_role = {
@@ -1046,7 +1007,6 @@ local function GetBuffTriggerOptions(data, triggernum)
       values = OptionsPrivate.Private.raid_role_types,
       hidden = function() return
         not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party") and trigger.useRaidRole)
-        or WeakAuras.IsRetail()
       end,
       order = 67.5
     },
@@ -1057,36 +1017,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       width = WeakAuras.normalWidth,
       hidden = function() return
         not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party") and not trigger.useRaidRole)
-        or WeakAuras.IsRetail()
       end
-    },
-    useArenaSpec = {
-      type = "toggle",
-      width = WeakAuras.normalWidth,
-      name = L["Filter by Arena Spec"],
-      order = 67.8,
-      hidden = function() return
-        not (WeakAuras.IsRetail() and trigger.type == "aura2" and trigger.unit == "arena")
-      end
-    },
-    arena_spec = {
-      type = "multiselect",
-      width = WeakAuras.normalWidth,
-      name = L["Specialization"],
-      values = OptionsPrivate.Private.spec_types_all,
-      hidden = function()
-        return not (WeakAuras.IsRetail() and trigger.type == "aura2" and trigger.unit == "arena" and trigger.useArenaSpec)
-      end,
-      order = 67.9
-    },
-    arena_specSpace = {
-      type = "description",
-      name = "",
-      order = 67.91,
-      width = WeakAuras.normalWidth,
-      hidden = function()
-        return not (WeakAuras.IsRetail() and trigger.type == "aura2" and trigger.unit == "arena" and not trigger.useArenaSpec)
-      end,
     },
 
     useClass = {
@@ -1235,14 +1166,6 @@ local function GetBuffTriggerOptions(data, triggernum)
       order = 69.8,
       width = WeakAuras.doubleWidth,
       hidden = function() return not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party")) end
-    },
-    inRange = {
-      type = "toggle",
-      name = L["Ignore out of casting range"],
-      desc = L["Uses UnitInRange() to check if in range. Matches default raid frames out of range behavior, which is between 25 to 40 yards depending on your class and spec."],
-      order = 69.81,
-      width = WeakAuras.doubleWidth,
-      hidden = function() return not (trigger.type == "aura2" and (trigger.unit == "group" or trigger.unit == "raid" or trigger.unit == "party") and WeakAuras.IsRetail()) end
     },
     ignoreInvisible = {
       type = "toggle",

@@ -38,7 +38,6 @@ local L = WeakAuras.L
 	L["Back"] = "上一步"
 	L["Basic Show On Cooldown"] = "基本冷卻中顯示"
 	L["Basic Show On Ready"] = "可使用時基本顯示"
-	L["Bloodlust/Heroism"] = "嗜血/英勇"
 	L["buff"] = "種族特長"
 	L["Buffs"] = "增益 BUFF"
 	L["Charge and Buff Tracking"] = "次數和增益監控"

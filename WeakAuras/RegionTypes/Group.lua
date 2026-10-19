@@ -64,8 +64,9 @@ local function getRect(data, region)
   local blx, bly, trx, try;
   blx, bly = data.xOffset or 0, data.yOffset or 0;
 
-  local width = data.width or (region and  region.width)
-  local height = data.height or (region and  region.height)
+  -- A dynamic group has no size of its own, it grows with its shown children.
+  local width = data.width or (region and (region.width or region.currentWidth))
+  local height = data.height or (region and (region.height or region.currentHeight))
 
   if width == nil or height == nil then
     return blx, bly, blx, bly;
@@ -117,6 +118,31 @@ local function RechainFlowGroup(data)
   end
 end
 
+-- Bounding box of the children of a group, in its own coordinates, as left, bottom, right, top. A sub group is drawn at
+-- its scale, its offsets included.
+local function groupRect(data)
+  local leftest, rightest, lowest, highest = 0, 0, 0, 0
+  for _, childId in ipairs(data.controlledChildren) do
+    local child = WeakAuras.GetData(childId)
+    if child then
+      local blx, bly, trx, try
+      if child.regionType == "group" then
+        local scale = child.scale and child.scale > 0 and child.scale <= 10 and child.scale or 1
+        local x, y = child.xOffset or 0, child.yOffset or 0
+        blx, bly, trx, try = groupRect(child)
+        blx, bly, trx, try = (x + blx) * scale, (y + bly) * scale, (x + trx) * scale, (y + try) * scale
+      else
+        blx, bly, trx, try = getRect(child, WeakAuras.GetRegion(childId))
+      end
+      leftest = math.min(leftest, blx)
+      rightest = math.max(rightest, trx)
+      lowest = math.min(lowest, bly)
+      highest = math.max(highest, try)
+    end
+  end
+  return leftest, lowest, rightest, highest
+end
+
 -- Modify a given region/display
 local function modify(parent, region, data)
   local flowSelfPoint = FlowSelfPoint(data)
@@ -136,17 +162,7 @@ local function modify(parent, region, data)
 
   region.GetBoundingRect = function(self)
     if not self.boundingRect then
-      local leftest, rightest, lowest, highest = 0, 0, 0, 0;
-      for child in Private.TraverseLeafs(data) do
-        local childRegion = WeakAuras.GetRegion(child.id)
-        if(child) then
-          local blx, bly, trx, try = getRect(child, childRegion);
-          leftest = math.min(leftest, blx);
-          rightest = math.max(rightest, trx);
-          lowest = math.min(lowest, bly);
-          highest = math.max(highest, try);
-        end
-      end
+      local leftest, lowest, rightest, highest = groupRect(data)
       self.blx = leftest
       self.bly = lowest
       self.trx = rightest
@@ -231,4 +247,4 @@ local function modify(parent, region, data)
 end
 
 -- Register new region type with WeakAuras
-Private.RegisterRegionType("group", create, modify, default);
+Private.RegisterRegionType("group", create, modify, default, Private.regionPrototype.GroupProperties(default));

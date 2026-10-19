@@ -492,6 +492,8 @@ function Methods:GetNumMaskTextures() return #(State[self].masks or {}) end
 function Methods:GetMaskTexture(index) return (State[self].masks or {})[index] end
 function Methods:SetTexelSnappingBias(bias) State[self].texelSnappingBias = bias end
 function Methods:SetSnapToPixelGrid(snap) State[self].snapToPixelGrid = snap end
+function Methods:GetTexelSnappingBias() return State[self].texelSnappingBias or 0 end
+function Methods:IsSnappingToPixelGrid() return State[self].snapToPixelGrid ~= false end
 function Methods:SetBlendMode(mode) State[self].blendMode = mode end
 function Methods:GetBlendMode() return State[self].blendMode or "BLEND" end
 function Methods:SetRotation(radians) State[self].rotation = radians end
