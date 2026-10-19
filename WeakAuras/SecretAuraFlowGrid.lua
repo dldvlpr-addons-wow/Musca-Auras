@@ -303,6 +303,7 @@ local function SetUpGroup(unitState, member, slot, position, plan)
       layout = layout,
       initializeFrame = function(auraButton)
         AuraDisplay.SetupAuraButton(kind, kind.region, auraContainer, auraButton)
+        Private.SnapLateTextures(auraButton, kind.region)
         Share(kind)
       end,
     })

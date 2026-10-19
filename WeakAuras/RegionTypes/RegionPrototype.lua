@@ -155,6 +155,16 @@ function Private.regionPrototype.AddProperties(properties, defaultsForRegion)
   end
 end
 
+--- Properties a condition of a group can change. The children follow the alpha and the offsets of the group; the
+--- glow and the looping animation need a shown aura, a group has none.
+function Private.regionPrototype.GroupProperties(defaultsForRegion)
+  local properties = {}
+  Private.regionPrototype.AddProperties(properties, defaultsForRegion)
+  properties.glowexternal = nil
+  properties.conditionAnimation = nil
+  return properties
+end
+
 local function SoundRepeatStop(self)
   Private.StartProfileSystem("sound");
   if (self.soundRepeatTimer) then
@@ -921,6 +931,8 @@ function Private.regionPrototype.modify(parent, region, data)
   region:SetOffset(data.xOffset or 0, data.yOffset or 0);
   region:SetOffsetRelative(0, 0)
   region:SetOffsetAnim(0, 0);
+
+  Private.UpdateFrozenMarker(region, data)
 
   if data.anchorFrameType == "CUSTOM" and data.customAnchor then
     region.customAnchorFunc = WeakAuras.LoadFunction("return " .. data.customAnchor, data.id)

@@ -16,12 +16,16 @@ local globalDynamicConditionFuncs = {};
 -- Check Conditions Functions, keyed on uid
 local checkConditions = {};
 
+-- Regions of the loaded groups that have conditions, keyed on uid
+local groupConditionRegions = {}
+
 local conditionChecksTimers = {};
 conditionChecksTimers.recheckTime = {};
 conditionChecksTimers.recheckHandle = {};
 
 local function OnDelete(_, uid)
   checkConditions[uid] = nil
+  groupConditionRegions[uid] = nil
   conditionChecksTimers.recheckTime[uid] = nil
   if (conditionChecksTimers.recheckHandle[uid]) then
     for cloneId, v in pairs(conditionChecksTimers.recheckHandle[uid]) do
@@ -900,7 +904,9 @@ local function runDynamicConditionFunctions(funcs)
   for uid in pairs(funcs) do
     local id = Private.UIDtoID(uid)
     Private.StartProfileAura(id)
-    if (Private.IsAuraActive(uid) and checkConditions[uid]) then
+    if groupConditionRegions[uid] then
+      Private.RunConditions(groupConditionRegions[uid], uid, false)
+    elseif (Private.IsAuraActive(uid) and checkConditions[uid]) then
       local activeStates = WeakAuras.GetActiveStates(id)
       for cloneId, state in pairs(activeStates) do
         local region = WeakAuras.GetRegion(id, cloneId)
@@ -1102,4 +1108,53 @@ end
 function Private.UnloadConditions(uid)
   CancelTimers(uid)
   Private.UnregisterForGlobalConditions(uid);
+end
+
+local function AnyChildLoaded(data)
+  for child in Private.TraverseLeafs(data) do
+    -- false means the child could be loaded, it does not run.
+    if Private.loaded[child.id] == true then
+      return true
+    end
+  end
+  return false
+end
+
+-- Stops the conditions of a group. The region gets its settings back, so the conditions start over when they load
+-- again: a sound or a message of a condition still met plays once more.
+local function StopGroupConditions(uid)
+  groupConditionRegions[uid] = nil
+  Private.UnloadConditions(uid)
+  local data = Private.GetDataByUID(uid)
+  local region = data and WeakAuras.GetRegion(data.id)
+  if region then
+    Private.SetRegion(data)
+    region.activatedConditions = nil
+  end
+end
+
+--- Loads the conditions of a group while one of its children is loaded and the options are closed, unloads them
+--- otherwise. The conditions of a group change its region, the children follow it.
+function Private.UpdateGroupConditions(data)
+  local uid = data.uid
+  local region = not WeakAuras.IsPaused() and checkConditions[uid] and AnyChildLoaded(data)
+    and WeakAuras.GetRegion(data.id)
+  if not region then
+    if groupConditionRegions[uid] then
+      StopGroupConditions(uid)
+    end
+    return
+  end
+  groupConditionRegions[uid] = region
+  region.states = { [-1] = globalConditionState }
+  Private.RegisterForGlobalConditions(uid)
+  Private.RunConditions(region, uid, false)
+end
+
+--- Stops the conditions of the groups while the options are open: their sounds and messages would play during the
+--- edit. Private.Resume loads them again.
+function Private.PauseGroupConditions()
+  for uid in pairs(groupConditionRegions) do
+    StopGroupConditions(uid)
+  end
 end

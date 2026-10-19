@@ -1534,6 +1534,22 @@ local function PositionOptions(id, data, _, hideWidthHeight, disableSelfPoint, g
         return not (data.anchorFrameType ~= "SCREEN" or data.anchorFrameType ~= "UIPARENT" or IsParentDynamicGroup());
       end
     },
+    hideFrozenMarker = {
+      type = "toggle",
+      width = WeakAuras.doubleWidth,
+      name = L["Hide Frozen Value Padlock"],
+      desc = L["In combat, an Aura trigger keeps its last state and a padlock shows on the aura. Hides this padlock."],
+      order = 83,
+      hidden = function() return not OptionsPrivate.Private.CanFreeze(data) end,
+    },
+    pixelPerfect = {
+      type = "toggle",
+      width = WeakAuras.doubleWidth,
+      name = L["Pixel Perfect"],
+      desc = L["Snaps the textures of this aura to the screen pixels: sharp edges, but progress and slides move by whole pixels."],
+      order = 84,
+      hidden = function() return data.controlledChildren ~= nil end,
+    },
   };
 
   OptionsPrivate.commonOptions.AddCodeOption(positionOptions, data, L["Custom Anchor"], "custom_anchor",

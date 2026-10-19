@@ -38,7 +38,6 @@ local L = WeakAuras.L
 	L["Back"] = "返回"
 	L["Basic Show On Cooldown"] = "仅在冷却中显示"
 	L["Basic Show On Ready"] = "仅在可用时显示"
-	L["Bloodlust/Heroism"] = "嗜血/英勇"
 	L["buff"] = "增益效果"
 	L["Buffs"] = "增益效果"
 	L["Charge and Buff Tracking"] = "可用次数充能和增益效果追踪"

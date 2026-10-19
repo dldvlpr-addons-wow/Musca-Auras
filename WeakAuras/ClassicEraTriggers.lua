@@ -2,7 +2,6 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
-if not WeakAuras.IsClassicEra() then return end
 
 local L = WeakAuras.L
 local ExecEnv = Private.ExecEnv

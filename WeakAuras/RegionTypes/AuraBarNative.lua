@@ -375,6 +375,7 @@ function barFuncs:UpdateNativeAdditionalBars()
     if not overlay then
       overlay = CreateOverlay(self)
       self.secretExtraTextures[index] = overlay
+      Private.SnapLateTextures(self)
     end
     ApplyOverlayLayout(self, overlay, OverlayLayout(self, index, settings))
   end

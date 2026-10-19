@@ -316,8 +316,8 @@ return function(test)
     Is(arg.conditionType, "number", key .. " conditionType")
     Is(arg.multiEntry.operator, "and", key .. " multiEntry operator")
     Is(arg.multiEntry.limit, 2, key .. " multiEntry limit")
-    Is(arg.enable, WeakAuras.IsClassic(), key .. " enable")
-    Is(arg.hidden, not WeakAuras.IsClassic(), key .. " hidden")
+    Is(arg.enable, nil, key .. " enable")
+    Is(arg.hidden, nil, key .. " hidden")
     Is(arg.formatter, key:find("percent") and "Number" or nil, key .. " formatter")
   end
 

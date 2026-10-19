@@ -1,7 +1,6 @@
 local AddonName, TemplatePrivate = ...
 ---@class WeakAuras
 local WeakAuras = WeakAuras
-if not WeakAuras.IsClassicEra() then return end
 local L = WeakAuras.L
 local GetSpellInfo, tinsert, GetSpellDescription, C_Timer, Spell = GetSpellInfo, tinsert, GetSpellDescription, C_Timer, Spell
 if not GetSpellInfo then
@@ -1101,7 +1100,7 @@ tinsert(templates.class.WARRIOR[1][8].args, {
     type = WeakAuras.GetTriggerCategoryFor("Stance/Form/Aura"),
     event = "Stance/Form/Aura"}}}
 })
-for j, id in ipairs({2457, 71, 2458}) do
+for _, id in ipairs({2457, 71, 2458}) do
   local title, _, icon = GetSpellInfo(id)
   if title then
     tinsert(templates.class.WARRIOR[1][8].args, {
@@ -1113,7 +1112,7 @@ for j, id in ipairs({2457, 71, 2458}) do
             type = WeakAuras.GetTriggerCategoryFor("Stance/Form/Aura"),
             event = "Stance/Form/Aura",
             use_form = true,
-            form = { single = j }
+            form = { single = id }
           }
         }
       }
@@ -1163,7 +1162,7 @@ for j = 1, GetNumShapeshiftForms() do
             type = WeakAuras.GetTriggerCategoryFor("Stance/Form/Aura"),
             event = "Stance/Form/Aura",
             use_form = true,
-            form = { single = j }
+            form = { single = id == 9634 and 5487 or id }
           }
         }
       }

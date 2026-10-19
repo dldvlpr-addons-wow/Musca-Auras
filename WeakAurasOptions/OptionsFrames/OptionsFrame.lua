@@ -151,6 +151,7 @@ function OptionsPrivate.CreateFrame()
   frame:Hide()
 
   frame:SetScript("OnHide", function()
+    OptionsPrivate.Private.TimeMachine:ForgetWatched()
     local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
 
     OptionsPrivate.Private.ClearFakeStates()
@@ -328,7 +329,7 @@ function OptionsPrivate.CreateFrame()
 
   local minimizebutton = CreateFrame("Button", nil, frame, "MaximizeMinimizeButtonFrameTemplate")
   minimizebutton:SetFrameLevel(frame.TitleContainer:GetFrameLevel() + 1)
-  minimizebutton:SetPoint("RIGHT", frame.CloseButton, "LEFT", WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists() and 10 or 0, 0)
+  minimizebutton:SetPoint("RIGHT", frame.CloseButton, "LEFT", 10, 0)
   minimizebutton:SetOnMaximizedCallback(function()
     frame.minimized = false
     local right, top = frame:GetRight(), frame:GetTop()
@@ -628,11 +629,27 @@ function OptionsPrivate.CreateFrame()
   toolbarContainer:SetPoint("TOPLEFT", buttonsContainer.frame, "TOPLEFT", 30, 30)
   toolbarContainer:SetPoint("BOTTOMRIGHT", buttonsContainer.frame, "TOPRIGHT", 0, 0)
 
+  -- A restored aura may have moved or resized: its group, thumbnail and mover follow, as after a setter.
+  local function RefreshRestored(records)
+    for _, record in ipairs(records or {}) do
+      local data = OptionsPrivate.Private.GetDataByUID(record.uid)
+      if data then
+        if record.actionType == "restore" then
+          OptionsPrivate.Private.AddParents(data)
+        end
+        WeakAuras.UpdateThumbnail(data)
+      end
+    end
+    OptionsPrivate.ResetMoverSizer()
+  end
+
   local undo = AceGUI:Create("WeakAurasToolbarButton")
   undo:SetText(L["Undo"])
   undo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upleft")
   undo:SetCallback("OnClick", function()
+    local records = OptionsPrivate.Private.TimeMachine:DescribePrevious()
     OptionsPrivate.Private.TimeMachine:StepBackward()
+    RefreshRestored(records)
     frame:FillOptions()
   end)
   undo.frame:SetParent(toolbarContainer)
@@ -644,7 +661,9 @@ function OptionsPrivate.CreateFrame()
   redo:SetText(L["Redo"])
   redo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upright")
   redo:SetCallback("OnClick", function()
+    local records = OptionsPrivate.Private.TimeMachine:DescribeNext()
     OptionsPrivate.Private.TimeMachine:StepForward()
+    RefreshRestored(records)
     frame:FillOptions()
   end)
   redo.frame:SetParent(toolbarContainer)
@@ -678,8 +697,10 @@ function OptionsPrivate.CreateFrame()
       self.redo:SetDisabled(OptionsPrivate.Private.TimeMachine:DescribeNext() == nil)
     end)
   end
+  tmControls.Record = tmControls.Step
   tmControls:Step()
   OptionsPrivate.Private.TimeMachine.sub:AddSubscriber("Step", tmControls)
+  OptionsPrivate.Private.TimeMachine.sub:AddSubscriber("Record", tmControls)
 
   local newButton = AceGUI:Create("WeakAurasToolbarButton")
   newButton:SetText(L["New Aura"])
@@ -753,6 +774,24 @@ function OptionsPrivate.CreateFrame()
   unusedButton.frame:Show()
   unusedButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 10, 0)
 
+  local replaceButton = AceGUI:Create("WeakAurasToolbarButton")
+  replaceButton:SetText(L["Replace"])
+  replaceButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\edit")
+  replaceButton:SetCallback("OnClick", OptionsPrivate.AskReplace)
+  replaceButton:SetTooltip(L["Replaces a spell, a texture, a font or a sound in the selected auras, or in all auras when none is selected.\nThe changes are shown in the chat before the confirmation, and Undo reverts them."])
+  replaceButton.frame:SetParent(toolbarContainer)
+  replaceButton.frame:Show()
+  replaceButton:SetPoint("LEFT", unusedButton.frame, "RIGHT", 10, 0)
+
+  local auraSetButton = AceGUI:Create("WeakAurasToolbarButton")
+  -- Icon only: the toolbar is already as wide as the window.
+  auraSetButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\browse")
+  auraSetButton:SetCallback("OnClick", OptionsPrivate.AskAuraSet)
+  auraSetButton:SetTooltip(L["Aura Set"] .. "\n" .. L["Chooses a tag for this character: it then loads only the auras with this tag, or whose group has it.\nThe other characters keep their own choice."])
+  auraSetButton.frame:SetParent(toolbarContainer)
+  auraSetButton.frame:Show()
+  auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", 10, 0)
+
   if C_CooldownViewer then
     local hideCDMLabel = L["Hide Blizzard's CDM"]
     local hideCDMToggle = AceGUI:Create("CheckBox")
@@ -762,7 +801,7 @@ function OptionsPrivate.CreateFrame()
     hideCDMToggle:SetWidth(190)
     hideCDMToggle:SetLabel(hideCDMLabel)
     hideCDMToggle.frame:SetParent(toolbarContainer)
-    hideCDMToggle:SetPoint("LEFT", unusedButton.frame, "RIGHT", 10, 0)
+    hideCDMToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 10, 0)
     ReadHideCDM()
     hideCDMToggle.frame:HookScript("OnShow", ReadHideCDM)
     hideCDMToggle:SetCallback("OnValueChanged", function(_, _, checked)
@@ -1255,8 +1294,12 @@ function OptionsPrivate.CreateFrame()
     local data
     if type(self.pickedDisplay) == "string" then
       data = WeakAuras.GetData(frame.pickedDisplay)
+      OptionsPrivate.Private.TimeMachine:Watch(data)
     elseif self.pickedDisplay then
       data = tempGroup
+      for _, childId in ipairs(tempGroup.controlledChildren) do
+        OptionsPrivate.Private.TimeMachine:Watch(WeakAuras.GetData(childId))
+      end
     end
 
     local tabsWidget

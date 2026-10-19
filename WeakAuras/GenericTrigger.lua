@@ -912,18 +912,31 @@ function WeakAuras.ScanEventsByID(event, id, ...)
   scannerFrame:Queue(Private.ScanEventsByID, event, id, ...)
 end
 
+--- Wakes the "Aura Shown" triggers that watch this aura. Queued to the next frame: the watcher must not run inside
+--- the update of the watched aura, whose aura environment is still active.
+function Private.AuraShownChanged(uid)
+  local event = "WA_AURA_SHOWN:" .. uid
+  if loaded_events[event] then
+    -- Pause hides every aura: the watchers must not take that for a change. Resume reloads them anyway.
+    scannerFrame:Queue(function()
+      if not WeakAuras.IsPaused() then
+        Private.ScanEvents(event, uid)
+      end
+    end)
+  end
+end
+
 ---@param event string
 ---@param arg1? any
 ---@param arg2? any
 ---@param ... any
 function Private.ScanEvents(event, arg1, arg2, ...)
-  local system = getGameEventFromComposedEvent(event)
-  Private.StartProfileSystem("generictrigger " .. system)
   local event_list = loaded_events[event];
   if (not event_list) then
-    Private.StopProfileSystem("generictrigger " .. system)
     return
   end
+  local system = getGameEventFromComposedEvent(event)
+  Private.StartProfileSystem("generictrigger " .. system)
   if(event == "COMBAT_LOG_EVENT_UNFILTERED") then
     local arg1, arg2 = CombatLogGetCurrentEventInfo();
 
@@ -1297,7 +1310,7 @@ function HandleEvent(frame, event, arg1, arg2, ...)
       Private.StopProfileSystem("generictrigger WA_DELAYED_PLAYER_ENTERING_WORLD");
       Private.PreShowModels()
       if Private.traitTalents then
-        Private.CheckTalentsForLoad("WA_DELAYED_PLAYER_ENTERING_WORLD")
+        Private.CheckTalentsForLoad()
       end
     end,
     0.8);  -- Data not available
@@ -1525,6 +1538,12 @@ function LoadEvent(id, triggernum, data)
         )
       end
     end
+  end
+
+  -- Custom triggers can listen to the movement events too, and the watcher stops when nothing listens.
+  local movingAuras, speedAuras = loaded_events["PLAYER_MOVING_UPDATE"], loaded_events["PLAYER_MOVE_SPEED_UPDATE"]
+  if (movingAuras and movingAuras[id]) or (speedAuras and speedAuras[id]) then
+    WeakAuras.WatchForPlayerMoving()
   end
 
   if (data.loadFunc) then
@@ -2124,7 +2143,7 @@ end
 do
   local mh = GetInventorySlotInfo("MainHandSlot")
   local oh = GetInventorySlotInfo("SecondaryHandSlot")
-  local ranged = WeakAuras.IsClassicOrTBCOrWrath() and GetInventorySlotInfo("RangedSlot")
+  local ranged = GetInventorySlotInfo("RangedSlot")
 
   local swingTimerFrame;
   local lastSwingMain, lastSwingOff, lastSwingRange;
@@ -2175,10 +2194,8 @@ do
     if(hand == "main") then
       local itemId = GetInventoryItemID("player", mh);
       local name, _, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(itemId or 0);
-      if(lastSwingMain) then
+      if (lastSwingMain) then
         return swingDurationMain, lastSwingMain + swingDurationMain - mainSwingOffset, name, icon;
-      elseif WeakAuras.IsRetail() and lastSwingRange then
-        return swingDurationRange, lastSwingRange + swingDurationRange, name, icon;
       else
         return 0, math.huge, name, icon;
       end
@@ -2335,11 +2352,7 @@ do
         end)
       end
       if Private.reset_ranged_swing_spells[spell] then
-        if WeakAuras.IsClassicOrTBCOrWrath() then
-          swingStart("ranged")
-        else
-          swingStart("main")
-        end
+        swingStart("ranged")
         swingTriggerUpdate()
       end
     elseif event == "UNIT_SPELLCAST_START" then
@@ -2367,11 +2380,9 @@ do
       swingTimerFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
       swingTimerFrame:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player");
       swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player");
-      if WeakAuras.IsClassicOrTBCOrWrath() then
-        swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
-        swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
-        swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
-      end
+      swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player")
+      swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_INTERRUPTED", "player")
+      swingTimerFrame:RegisterUnitEvent("UNIT_SPELLCAST_FAILED", "player")
       if Private.hasNativeSwingTimer then
         pcall(swingTimerFrame.RegisterEvent, swingTimerFrame, "PLAYER_SWING")
         pcall(swingTimerFrame.RegisterEvent, swingTimerFrame, "PLAYER_SWING_RANGE_UPDATE")
@@ -2448,27 +2459,17 @@ do
   local function CheckGCD()
     local event;
     local startTime, duration, modRate
-    local gcdSpellId = WeakAuras.IsClassicOrTBCOrWrath() and 29515 or 61304
-    local spellCooldownInfo
-    if WeakAuras.IsClassicOrTBCOrWrath() then
-      spellCooldownInfo = C_Spell.GetSpellCooldown(29515)
-      if spellCooldownInfo then
-        startTime = spellCooldownInfo.startTime
-        duration = spellCooldownInfo.duration
-        modRate = spellCooldownInfo.modRate
-      end
-      local shootInfo = C_Spell.GetSpellCooldown(5019)
-      if shootInfo and not Private.IsSecret(shootInfo.startTime, shootInfo.duration) then
-        shootStart = shootInfo.startTime
-        shootDuration = shootInfo.duration
-      end
-    else
-      spellCooldownInfo = C_Spell.GetSpellCooldown(61304);
-      if spellCooldownInfo then
-        startTime = spellCooldownInfo.startTime
-        duration = spellCooldownInfo.duration
-        modRate = spellCooldownInfo.modRate
-      end
+    local gcdSpellId = 29515
+    local spellCooldownInfo = C_Spell.GetSpellCooldown(gcdSpellId)
+    if spellCooldownInfo then
+      startTime = spellCooldownInfo.startTime
+      duration = spellCooldownInfo.duration
+      modRate = spellCooldownInfo.modRate
+    end
+    local shootInfo = C_Spell.GetSpellCooldown(5019)
+    if shootInfo and not Private.IsSecret(shootInfo.startTime, shootInfo.duration) then
+      shootStart = shootInfo.startTime
+      shootDuration = shootInfo.duration
     end
     if Private.IsSecret(startTime, duration, modRate) then
       if gcdStart and GetTime() < gcdStart + gcdDuration then
@@ -2617,8 +2618,7 @@ do
     end
 
     if duration > 0 then
-      if (startTime == gcdStart and duration == gcdDuration)
-          or (WeakAuras.IsClassicOrTBCOrWrath() and duration == shootDuration and startTime == shootStart)
+      if (startTime == gcdStart and duration == gcdDuration) or (duration == shootDuration and startTime == shootStart)
       then
         -- GCD cooldown, this could mean that the spell reset!
         if self.expirationTime[id] and self.expirationTime[id] > endTime and self.expirationTime[id] ~= 0 then
@@ -2967,11 +2967,6 @@ do
       useExact = useExact and true or false
       followoverride = followoverride and true or false
 
-      if ignoreRunes and WeakAuras.IsWrathOrCataOrMistsOrRetail() then
-        for i = 1, 6 do
-          WeakAuras.WatchRuneCooldown(i)
-        end
-      end
 
       local effectiveSpellId = Private.ExecEnv.GetEffectiveSpellId(userSpellId, useExact, followoverride)
 
@@ -3079,13 +3074,7 @@ do
     cdReadyFrame = CreateFrame("Frame");
     cdReadyFrame.inWorld = 0
     Private.frames["Cooldown Trigger Handler"] = cdReadyFrame
-    if WeakAuras.IsRetail() then
-      cdReadyFrame:RegisterEvent("RUNE_POWER_UPDATE");
-      cdReadyFrame:RegisterEvent("PLAYER_TALENT_UPDATE");
-      cdReadyFrame:RegisterEvent("PLAYER_PVP_TALENT_UPDATE");
-    else
-      cdReadyFrame:RegisterEvent("CHARACTER_POINTS_CHANGED");
-    end
+    cdReadyFrame:RegisterEvent("CHARACTER_POINTS_CHANGED");
     cdReadyFrame:RegisterEvent("SPELL_UPDATE_COOLDOWN");
     cdReadyFrame:RegisterEvent("SPELL_UPDATE_USABLE")
     cdReadyFrame:RegisterEvent("SPELL_UPDATE_USES");
@@ -3099,10 +3088,6 @@ do
     cdReadyFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
     cdReadyFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
     cdReadyFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-    if WeakAuras.IsWrathOrCata() then
-      cdReadyFrame:RegisterEvent("RUNE_POWER_UPDATE");
-      cdReadyFrame:RegisterEvent("RUNE_TYPE_UPDATE");
-    end
     cdReadyFrame.HandleEvent = function(self, event, ...)
       if (event == "PLAYER_ENTERING_WORLD") then
         cdReadyFrame.inWorld = GetTime()
@@ -3854,7 +3839,7 @@ do
     end
   end
 
-  local GetOverrideSpell = WeakAuras.IsTWW() and C_Spell.GetOverrideSpell or FindSpellOverrideByID
+  local GetOverrideSpell = FindSpellOverrideByID
 
   function Private.ExecEnv.GetEffectiveSpellId(spellId, exactMatch, followoverride)
     if type(spellId) == "string" then
@@ -4026,10 +4011,6 @@ function WeakAuras.WatchUnitChange(unit)
 
     Private.frames["Unit Change Frame"] = watchUnitChange;
     watchUnitChange:RegisterEvent("PLAYER_TARGET_CHANGED")
-    if not WeakAuras.IsClassicEra() then
-      watchUnitChange:RegisterEvent("PLAYER_FOCUS_CHANGED")
-      watchUnitChange:RegisterEvent("ARENA_OPPONENT_UPDATE")
-    end
     watchUnitChange:RegisterEvent("PLAYER_ROLES_ASSIGNED")
     watchUnitChange:RegisterEvent("PLAYER_SOFT_ENEMY_CHANGED")
     watchUnitChange:RegisterEvent("PLAYER_SOFT_FRIEND_CHANGED")
@@ -4121,31 +4102,19 @@ function WeakAuras.WatchUnitChange(unit)
     end
 
     local roleUpdate
-    if WeakAuras.IsClassicOrTBCOrWrath() then
-      function roleUpdate(unit, eventsToSend)
-        -- For classic check both raid role and group role
-        local oldRaidRole = watchUnitChange.unitRaidRole[unit]
-        local newRaidRole = WeakAuras.UnitRaidRole(unit)
-        if oldRaidRole ~= newRaidRole then
-          eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
-          watchUnitChange.unitRaidRole[unit] = newRaidRole
-        end
-        local oldRole = watchUnitChange.unitRoles[unit]
-        local newRole = UnitGroupRolesAssigned and Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
-        if oldRole ~= newRole then
-          eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
-          watchUnitChange.unitRoles[unit] = newRole
-        end
+    function roleUpdate(unit, eventsToSend)
+      -- For classic check both raid role and group role
+      local oldRaidRole = watchUnitChange.unitRaidRole[unit]
+      local newRaidRole = WeakAuras.UnitRaidRole(unit)
+      if oldRaidRole ~= newRaidRole then
+        eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
+        watchUnitChange.unitRaidRole[unit] = newRaidRole
       end
-    end
-    if WeakAuras.IsCataOrMistsOrRetail() then
-      function roleUpdate(unit, eventsToSend)
-        local oldRole = watchUnitChange.unitRoles[unit]
-        local newRole = UnitGroupRolesAssigned and Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
-        if oldRole ~= newRole then
-          eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
-          watchUnitChange.unitRoles[unit] = newRole
-        end
+      local oldRole = watchUnitChange.unitRoles[unit]
+      local newRole = UnitGroupRolesAssigned and Private.ReadableOrNil(UnitGroupRolesAssigned(unit))
+      if oldRole ~= newRole then
+        eventsToSend["UNIT_ROLE_CHANGED_" .. unit] = unit
+        watchUnitChange.unitRoles[unit] = newRole
       end
     end
 
@@ -4306,48 +4275,6 @@ function Private.WatchStagger()
     staggerWatchFrame = CreateFrame("FRAME")
     Private.frames["WeakAuras Stagger Frame"] = staggerWatchFrame
 
-    if WeakAuras.IsRetail() then
-      staggerWatchFrame:RegisterUnitEvent("UNIT_ABSORB_AMOUNT_CHANGED", "player")
-      staggerWatchFrame:SetScript("OnEvent", function()
-        Private.StartProfileSystem("stagger")
-        local stagger = UnitStagger("player")
-        if stagger > 0 then
-          if not staggerWatchFrame.onupdate then
-            staggerWatchFrame.onupdate = true
-            staggerWatchFrame:SetScript("OnUpdate", function()
-              Private.StartProfileSystem("stagger")
-              local stagger = UnitStagger("player")
-              if stagger ~= staggerWatchFrame.stagger then
-                staggerWatchFrame.stagger = stagger
-                Private.ScanEvents("WA_UNIT_STAGGER_CHANGED", "player", stagger)
-              end
-              if stagger == 0 then
-                staggerWatchFrame:SetScript("OnUpdate", nil)
-                staggerWatchFrame.onupdate = nil
-              end
-              Private.StopProfileSystem("stagger")
-            end)
-          end
-        end
-
-        if stagger ~= staggerWatchFrame.stagger then
-          staggerWatchFrame.stagger = stagger
-          Private.ScanEvents("WA_UNIT_STAGGER_CHANGED", "player", stagger)
-        end
-        Private.StopProfileSystem("stagger")
-      end)
-    elseif WeakAuras.IsMists() then
-      -- On Mists Stagger has no events
-      staggerWatchFrame:SetScript("OnUpdate", function()
-        Private.StartProfileSystem("stagger")
-        local stagger = UnitStagger("player")
-        if stagger ~= staggerWatchFrame.stagger then
-          staggerWatchFrame.stagger = stagger
-          Private.ScanEvents("WA_UNIT_STAGGER_CHANGED", "player", stagger)
-        end
-        Private.StopProfileSystem("stagger")
-      end)
-    end
   end
 end
 
@@ -4408,7 +4335,7 @@ function Private.ExecEnv.CheckTotemSpellId(spellId, triggerSpellId, followoverri
 end
 
 -- Queueable Spells
-if WeakAuras.IsClassicOrTBCOrWrath() then
+do
   local queueableSpells
   local classQueueableSpells = {
     ["WARRIOR"] = {
@@ -4467,7 +4394,7 @@ local GetSpellPowerCost = C_Spell.GetSpellPowerCost
 ---@return number? cost
 function WeakAuras.GetSpellCost(powerTypeToCheck)
   local spellID = select(9, WeakAuras.UnitCastingInfo("player"))
-  if WeakAuras.IsClassicOrTBCOrWrath() and not spellID then
+  if not spellID then
     spellID = WeakAuras.GetQueuedSpell()
   end
   if spellID then
@@ -4485,8 +4412,6 @@ end
 
 -- Weapon Enchants
 do
-  local hasRanged = WeakAuras.IsClassicOrTBCOrWrathOrCata()
-
   local mh = GetInventorySlotInfo("MainHandSlot")
   local oh = GetInventorySlotInfo("SecondaryHandSlot")
 
@@ -4498,12 +4423,10 @@ do
   ---@type string?
   local oh_icon = GetInventoryItemTexture("player", oh) or "Interface\\Icons\\INV_Misc_QuestionMark"
 
-  local rw, rw_icon, rw_exp, rw_dur, rw_name, rw_shortenedName, rw_charges, rw_EnchantID;
+  local rw_exp, rw_dur, rw_name, rw_shortenedName, rw_charges, rw_EnchantID;
+  local rw = GetInventorySlotInfo("RANGEDSLOT")
   ---@type string?
-  if hasRanged then
-    rw = GetInventorySlotInfo("RANGEDSLOT")
-    rw_icon = GetInventoryItemTexture("player", rw) or "Interface\\Icons\\INV_Misc_QuestionMark"
-  end
+  local rw_icon = GetInventoryItemTexture("player", rw) or "Interface\\Icons\\INV_Misc_QuestionMark"
 
   local tenchFrame = nil
   Private.frames["Temporary Enchant Handler"] = tenchFrame;
@@ -4515,57 +4438,31 @@ do
       tenchFrame = CreateFrame("Frame");
       tenchFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
       tenchFrame:RegisterEvent("PLAYER_REGEN_ENABLED");
-      if WeakAuras.IsRetail() then
-        tenchFrame:RegisterEvent("WEAPON_ENCHANT_CHANGED")
-      end
       tenchFrame:RegisterUnitEvent("UNIT_INVENTORY_CHANGED", "player")
-      if WeakAuras.IsClassicOrTBCOrWrath() then
-        tenchFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-      end
+      tenchFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 
       local getTenchName
-      if WeakAuras.IsRetail() then
-        getTenchName = function(id)
-          local tooltipData = C_TooltipInfo.GetInventoryItem("player", id)
-          if tooltipData and tooltipData.lines then
-            for _, line in ipairs(tooltipData.lines) do
-              if line.leftText then
-                -- Format based on ITEM_ENCHANT_TIME_LEFT_MIN, ITEM_ENCHANT_TIME_LEFT_SEC
-                local _, _, name, shortenedName = line.leftText:find("^((.-) ?+?[VI%d]*) ?%(%d+%D.+%)$");
-                if(name and name ~= "") then
-                  return name, shortenedName;
-                end
-                _, _, name, shortenedName = line.leftText:find("^((.-) ?+?[VI%d]*)%（%d+%D.+%）$");
-                if(name and name ~= "") then
-                  return name, shortenedName;
-                end
+      getTenchName = function(id)
+        tenchTip = WeakAuras.GetHiddenTooltip();
+        tenchTip:SetInventoryItem("player", id);
+        local lines = { tenchTip:GetRegions() };
+        for i,v in ipairs(lines) do
+          if(v:GetObjectType() == "FontString") then
+            local text = v:GetText();
+            if(text) then
+              local _, _, name, shortenedName = text:find("^((.-) ?+?[XVI%d]*) ?%(%d+%D+%)$");
+              if(name and name ~= "") then
+                return name, shortenedName;
+              end
+              _, _, name, shortenedName = text:find("^((.-) ?+?[XVI%d]*)%（%d+.%D%）$");
+              if(name and name ~= "") then
+                return name, shortenedName;
               end
             end
           end
         end
-      else
-        getTenchName = function(id)
-          tenchTip = WeakAuras.GetHiddenTooltip();
-          tenchTip:SetInventoryItem("player", id);
-          local lines = { tenchTip:GetRegions() };
-          for i,v in ipairs(lines) do
-            if(v:GetObjectType() == "FontString") then
-              local text = v:GetText();
-              if(text) then
-                local _, _, name, shortenedName = text:find("^((.-) ?+?[XVI%d]*) ?%(%d+%D+%)$");
-                if(name and name ~= "") then
-                  return name, shortenedName;
-                end
-                _, _, name, shortenedName = text:find("^((.-) ?+?[XVI%d]*)%（%d+.%D%）$");
-                if(name and name ~= "") then
-                  return name, shortenedName;
-                end
-              end
-            end
-          end
 
-          return "Unknown", "Unknown";
-        end
+        return "Unknown", "Unknown";
       end
 
       local GetWeaponEnchantInfo = GetWeaponEnchantInfo
@@ -4625,17 +4522,15 @@ do
           end
           oh_icon = GetInventoryItemTexture("player", oh)
         end
-        if hasRanged then
-          if(math.abs((rw_exp or 0) - (rw_exp_new or 0)) > 1) then
-            rw_exp = rw_exp_new;
-            rw_dur = rw_rem and rw_rem / 1000;
-            if rw_exp then
-              rw_name, rw_shortenedName = getTenchName(rw)
-            else
-              rw_name, rw_shortenedName = "None", "None"
-            end
-            rw_icon = GetInventoryItemTexture("player", rw)
+        if(math.abs((rw_exp or 0) - (rw_exp_new or 0)) > 1) then
+          rw_exp = rw_exp_new;
+          rw_dur = rw_rem and rw_rem / 1000;
+          if rw_exp then
+            rw_name, rw_shortenedName = getTenchName(rw)
+          else
+            rw_name, rw_shortenedName = "None", "None"
           end
+          rw_icon = GetInventoryItemTexture("player", rw)
         end
         Private.ScanEvents("TENCH_UPDATE");
         Private.StopProfileSystem("generictrigger temporary enchant");
@@ -4778,11 +4673,11 @@ do
     end
   end
 
-  Private.frames["Nameplate Target Handler"] = nameplateTargetFrame
   ---@private
   function WeakAuras.WatchForNameplateTargetChange()
     if not nameplateTargetFrame then
       nameplateTargetFrame = CreateFrame("Frame")
+      Private.frames["Nameplate Target Handler"] = nameplateTargetFrame
       nameplateTargetFrame:SetScript("OnUpdate", nameplateTargetOnUpdate)
       nameplateTargetFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
       nameplateTargetFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
@@ -4800,7 +4695,17 @@ do
   ---@type PlayerMovingFrame|Frame|nil
   local playerMovingFrame = nil
 
+  local function HasSubscribers(event)
+    local auras = loaded_events[event]
+    return auras ~= nil and next(auras) ~= nil
+  end
+
   local function PlayerMoveUpdate()
+    -- Stops once the last aura that watches movement is unloaded; LoadEvent restarts it.
+    if not HasSubscribers("PLAYER_MOVING_UPDATE") and not HasSubscribers("PLAYER_MOVE_SPEED_UPDATE") then
+      playerMovingFrame:SetScript("OnUpdate", nil)
+      return
+    end
     Private.StartProfileSystem("generictrigger player moving");
     local moving = IsPlayerMoving()
     if (playerMovingFrame.moving ~= moving or playerMovingFrame.moving == nil) then
@@ -4825,31 +4730,6 @@ do
       playerMovingFrame.speed = GetUnitSpeed("player")
     end
     playerMovingFrame:SetScript("OnUpdate", PlayerMoveUpdate)
-  end
-end
-
--- combat assist next cast
-if not WeakAuras.IsClassicOrTBCOrWrathOrCataOrMists() and C_AssistedCombat and C_AssistedCombat.GetNextCastSpell then
-  local assistedCombatFrame
-
-  local function assistedCombatUpdate(self, elapsed)
-    Private.StartProfileSystem("generictrigger assisted combat next cast")
-    local nextCastSpell = C_AssistedCombat.GetNextCastSpell()
-    if nextCastSpell ~= assistedCombatFrame.lastSpell then
-      assistedCombatFrame.lastSpell = nextCastSpell
-      Private.ScanEvents("WA_ASSISTED_COMBAT_NEXT_CAST", nextCastSpell)
-    end
-    Private.StopProfileSystem("generictrigger assisted combat next cast")
-  end
-
-  ---@private
-  function WeakAuras.WatchForAssistedCombatNextCast()
-    if not assistedCombatFrame then
-      assistedCombatFrame = CreateFrame("Frame")
-      Private.frames["Assisted Combat Next Cast Frame"] = assistedCombatFrame
-      assistedCombatFrame.lastSpell = C_AssistedCombat.GetNextCastSpell()
-    end
-    assistedCombatFrame:SetScript("OnUpdate", assistedCombatUpdate)
   end
 end
 
@@ -4883,14 +4763,8 @@ function WeakAuras.RegisterItemCountWatch()
   end
 end
 
--- LibSpecWrapper
 -- We always register, because it's probably not that often called, and ScanEvents checks
 -- early if anyone wants the event
-if WeakAuras.IsCataOrMistsOrRetail() then
-  Private.LibSpecWrapper.Register(function(unit)
-    Private.ScanEvents("UNIT_SPEC_CHANGED_" .. unit, unit)
-  end)
-end
 
 do
   local scheduled_scans = {};
@@ -5394,7 +5268,7 @@ function GenericTrigger.GetTriggerConditions(data, triggernum)
               result[v.name].values = Private[v.conditionValues] or WeakAuras[v.conditionValues];
             else
               if type(v.values) == "function" then
-                result[v.name].values = v.values()
+                result[v.name].values = v.values(trigger)
               else
                 result[v.name].values = Private[v.values] or WeakAuras[v.values];
               end
@@ -5730,72 +5604,6 @@ WeakAuras.GetHitChance = function()
   local spell = (GetCombatRatingBonus(CR_HIT_SPELL) or 0) + (GetSpellHitModifier() or 0)
   return max(melee, ranged, spell)
 end
-
----@type fun(trigger: triggerData)
----@return CurrencyInfo|nil
-Private.GetCurrencyInfoForTrigger = function(trigger)
-  if trigger.currencyId then
-    local currencyId = tonumber(trigger.currencyId)
-    if currencyId then
-      return C_CurrencyInfo.GetCurrencyInfo(currencyId)
-    end
-  end
-end
-
-Private.ExecEnv.GetCurrencyAccountInfo = function(currencyId)
-  local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyId)
-
-  -- Gather currency data for account characters
-  if WeakAuras.IsRetail() and currencyInfo and currencyInfo.isAccountTransferable then
-    local dataReady = C_CurrencyInfo.IsAccountCharacterCurrencyDataReady()
-    local accountCurrencyData = dataReady and C_CurrencyInfo.FetchCurrencyDataFromAccountCharacters(currencyId)
-
-    if dataReady and accountCurrencyData then
-      currencyInfo.accountQuantity = currencyInfo.quantity
-      currencyInfo.realAccountQuantity = currencyInfo.quantity
-      if currencyInfo.transferPercentage then
-        currencyInfo.realCharacterQuantity = math.floor(currencyInfo.quantity * (currencyInfo.transferPercentage / 100))
-      end
-
-      currencyInfo.accountCurrencyData = accountCurrencyData
-      for _, currencyData in ipairs(currencyInfo.accountCurrencyData) do
-        if currencyData.quantity then
-          if currencyInfo.transferPercentage then
-            currencyData.realCharacterQuantity = math.floor(currencyData.quantity * (currencyInfo.transferPercentage / 100))
-          end
-          currencyInfo.realAccountQuantity = currencyInfo.realAccountQuantity + (currencyData.realCharacterQuantity or currencyData.quantity)
-          currencyInfo.accountQuantity = currencyInfo.accountQuantity + currencyData.quantity
-        end
-      end
-    else
-      C_CurrencyInfo.RequestCurrencyDataForAccountCharacters()
-    end
-  end
-
-  -- WORKAROUND https://github.com/WeakAuras/WeakAuras2/issues/5106
-  if currencyInfo and WeakAuras.IsCataClassic() then
-    if currencyInfo.quantityEarnedThisWeek then
-      currencyInfo.quantityEarnedThisWeek = currencyInfo.quantityEarnedThisWeek / 100
-    end
-  end
-
-  if currencyInfo then
-    currencyInfo.capped = currencyInfo.maxQuantity and currencyInfo.maxQuantity > 0 and currencyInfo.quantity >= currencyInfo.maxQuantity
-    currencyInfo.seasonCapped = currencyInfo.maxQuantity and currencyInfo.maxQuantity > 0 and currencyInfo.useTotalEarnedForMaxQty and currencyInfo.totalEarned >= currencyInfo.maxQuantity
-    currencyInfo.weeklyCapped = currencyInfo.maxWeeklyQuantity and currencyInfo.maxWeeklyQuantity > 0 and currencyInfo.quantityEarnedThisWeek >= currencyInfo.maxWeeklyQuantity
-  end
-
-  if not currencyInfo then
-    local testToken = C_CurrencyInfo.GetCurrencyInfo(1) --Currency Token Test Token 4
-    if testToken then
-      currencyInfo = testToken
-      currencyInfo.iconFileID = "Interface\\Icons\\INV_Misc_QuestionMark" --We don't want the user to think their input was valid
-    end
-  end
-
-  return currencyInfo or {}
-end
-
 
 local types = {}
 tinsert(types, "custom")

@@ -1654,4 +1654,4 @@ local function modify(parent, region, data)
   Private.regionPrototype.modifyFinish(parent, region, data)
 end
 
-Private.RegisterRegionType("dynamicgroup", create, modify, default)
+Private.RegisterRegionType("dynamicgroup", create, modify, default, Private.regionPrototype.GroupProperties(default))

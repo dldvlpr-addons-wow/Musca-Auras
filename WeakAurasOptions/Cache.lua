@@ -36,51 +36,14 @@ function spellCache.Build()
   end
 
   local holes
-  if WeakAuras.IsClassicEra() then
-    holes = {}
-    holes[63707] = 81743
-    holes[81748] = 219002
-    holes[219004] = 285223
-    holes[285224] = 301088
-    holes[301101] = 324269
-    holes[474742] = 1213143
-    holes[1259266] = 1278761
-  elseif WeakAuras.IsTBC() then
-    holes = {}
-    holes[81748] = 158262
-    holes[158263] = 186402
-    holes[186403] = 219002
-    holes[219004] = 243805
-    holes[243806] = 261127
-    holes[262591] = 281624
-    holes[308395] = 324269
-    holes[385807] = 1244001
-    holes[1244002] = 1265708
-  elseif WeakAuras.IsCataClassic() then
-    holes = {}
-    holes[121820] = 158262
-    holes[158263] = 186402
-    holes[186403] = 219002
-    holes[219004] = 243805
-    holes[243806] = 261127
-    holes[262591] = 281624
-    holes[301101] = 324269
-  elseif WeakAuras.IsMists() then
-    holes = {}
-    holes[171557] = 186402
-    holes[186403] = 219002
-    holes[219004] = 243805
-    holes[243819] = 261127
-    holes[262591] = 281624
-    holes[301101] = 324269
-    holes[473745] = 1214175
-  elseif WeakAuras.IsRetail() then
-    holes = {}
-    holes[474771] = 556604
-    holes[556606] = 936050
-    holes[936051] = 1049295
-    holes[1049296] = 1213133
-  end
+  holes = {}
+  holes[63707] = 81743
+  holes[81748] = 219002
+  holes[219004] = 285223
+  holes[285224] = 301088
+  holes[301101] = 324269
+  holes[474742] = 1213143
+  holes[1259266] = 1278761
   wipe(cache)
   local co = coroutine.create(function()
     metaData.rebuilding = true
@@ -109,26 +72,6 @@ function spellCache.Build()
         id = holes[id]
       end
       coroutine.yield(0.01, "spells")
-    end
-
-    -- achievements got introduced in 3.0.2, so we can skip this step for TBC and Classic
-    if WeakAuras.IsWrathOrCataOrMistsOrRetail() then
-      for _, category in pairs(GetCategoryList()) do
-        local total = GetCategoryNumAchievements(category, true)
-        for i = 1, total do
-          local id,name,_,_,_,_,_,_,_,iconID = GetAchievementInfo(category, i)
-          if name and iconID then
-            cache[name] = cache[name] or {}
-            if not cache[name].achievements or cache[name].achievements == "" then
-              cache[name].achievements = id .. "=" .. iconID
-            else
-              cache[name].achievements = cache[name].achievements .. "," .. id .. "=" .. iconID
-            end
-          end
-          coroutine.yield(0.1, "achievements")
-        end
-        coroutine.yield(0.1, "categories")
-      end
     end
 
     metaData.needsRebuild = false

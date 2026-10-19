@@ -63,7 +63,7 @@ return function(test)
     end
   end
   forms = table.concat(forms, ",")
-  assert(forms == "1=Spell 9634,2=Spell 1066,4=Spell 768", "Druid form templates: " .. forms)
+  assert(forms == "5487=Spell 9634,1066=Spell 1066,768=Spell 768", "Druid form templates: " .. forms)
 
   local file = assert(io.open(templatesDirectory .. "TriggerTemplatesDataClassicEra.lua", "r"))
   local source = file:read("*a")

@@ -39,7 +39,6 @@ local L = WeakAuras.L
 	L["Basic Show On Cooldown"] = "Affichage de base en temps de recharge"
 	--[[Translation missing --]]
 	L["Basic Show On Ready"] = "Basic Show On Ready"
-	L["Bloodlust/Heroism"] = "Furie sanguinaire/Héroïsme"
 	L["buff"] = "amélioration"
 	L["Buffs"] = "Améliorations"
 	L["Charge and Buff Tracking"] = "Suivis des Charges et Amélioration"

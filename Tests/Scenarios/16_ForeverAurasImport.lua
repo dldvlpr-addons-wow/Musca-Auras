@@ -31,7 +31,7 @@ return function(test)
   assert(timeline.information.showNilIsFalse == true, "showNilIsFalse not set")
   assert(Printed("TimelineParser Timer trigger has no equivalent"), "no warning for the unsupported event")
   assert(Printed("Converted from ForeverAuras"), "no conversion notice")
-  assert(timeline.internalVersion == WeakAuras.InternalVersion(), "internal version of a recent aura: " .. tostring(timeline.internalVersion))
+  assert(timeline.internalVersion == 91, "internal version of a recent aura: " .. tostring(timeline.internalVersion))
   local old = Aura("Old", { type = "event", event = "TimelineParser Stage" }, { internalVersion = 80 })
   assert(convert(old) and old.internalVersion == 89, "old internal version: " .. tostring(old.internalVersion))
 
@@ -51,6 +51,27 @@ return function(test)
   local durability = Aura("Durability", { type = "event", event = "Equipment Durability", durabilitySlot = "3", trackingType = "" })
   assert(convert(durability) and durability.triggers[1].trigger.durabilitySlot == 3, "durability slot")
 
+  -- form filter by form ID
+  printed = {}
+  local form = Aura("Form", { type = "unit", event = "Stance/Form/Aura", use_formID = false,
+    formID = { single = 1, multi = { [8] = true, [18] = true, [99] = true } } })
+  form.conditions = { { check = { trigger = 1, variable = "formID", op = "==", value = 3 } },
+    { check = { checks = { { trigger = 1, variable = "form", value = 2 } } } } }
+  assert(convert(form), "form ID not converted")
+  trigger = form.triggers[1].trigger
+  assert(trigger.use_form == false and trigger.form.single == nil, "form single")
+  assert(trigger.form.multi[5487] and trigger.form.multi[71] and trigger.use_formByPosition == false, "form multi")
+  assert(trigger.use_formID == nil and trigger.formID == nil, "form ID fields kept")
+  assert(Printed("Form ID 99 has no equivalent"), "unknown form ID warning")
+  assert(form.conditions[1].check.variable == "form" and form.conditions[1].check.value == 783, "form ID condition")
+  assert(Printed("Condition on form by position"), "form position condition warning")
+  printed = {}
+  local single = Aura("Form single", { type = "unit", event = "Stance/Form/Aura", use_formID = true, formID = { single = 2 },
+    use_form = true, form = { single = 1 } })
+  assert(convert(single), "single form ID not converted")
+  assert(single.triggers[1].trigger.use_form == nil, "unknown single form kept")
+  assert(Printed("Form ID 2 has no equivalent") and Printed("Form filter by position replaced"), "single form warnings")
+
   -- references to the ForeverAuras addon and API
   local references = Aura("References", { type = "custom", custom_type = "stateupdate",
     custom = "function() return ForeverAuras.GetSomething() end" }, {
@@ -63,6 +84,23 @@ return function(test)
   assert(references.icon == [[Interface\AddOns\WeakAuras\Media\icon.tga]], "texture path " .. references.icon)
   local text = Aura("Text", { type = "aura2" }, { displayText = "ForeverAuras.Name" })
   assert(convert(text) == false, "non code text with the API name converted")
+
+  -- anchors and glow frames on another ForeverAuras aura
+  local anchored = Aura("Anchored", { type = "aura2" }, {
+    anchorFrameType = "SELECTFRAME", anchorFrameFrame = "ForeverAuras:Parent",
+    actions = { start = { do_glow = true, glow_frame = "ForeverAuras:Other" } },
+  })
+  assert(convert(anchored), "frame reference not detected")
+  assert(anchored.anchorFrameFrame == "WeakAuras:Parent", "anchor " .. anchored.anchorFrameFrame)
+  assert(anchored.actions.start.glow_frame == "WeakAuras:Other", "glow frame " .. anchored.actions.start.glow_frame)
+  local named = Aura("Named", { type = "aura2" }, { anchorFrameFrame = "MyForeverAuras:Frame" })
+  assert(convert(named) == false and named.anchorFrameFrame == "MyForeverAuras:Frame", "frame name without the prefix converted")
+
+  -- global alias, only when ForeverAuras is not loaded
+  assert(ForeverAuras == WeakAuras, "ForeverAuras alias missing")
+  local sandboxed = WeakAuras.LoadFunction("return function() return ForeverAuras, WeakAuras end")
+  local aliasInCode, fakeInCode = sandboxed()
+  assert(aliasInCode == fakeInCode and aliasInCode ~= WeakAuras, "custom code reaches the real WeakAuras table")
 
   -- group: children converted, warnings carry the child id
   printed = {}

@@ -108,10 +108,6 @@ L["AbbreviateNumbers (Blizzard)"] = "AbreviarNúmeros (Blizzard)"
 L["Absorb"] = "Absorver"
 --[[Translation missing --]]
 L["Absorb and Healing"] = "Absorb and Healing"
---[[Translation missing --]]
-L["Absorb Heal Overlay"] = "Absorb Heal Overlay"
---[[Translation missing --]]
-L["Absorb Overlay"] = "Absorb Overlay"
 L["Absorbed"] = "Absorvido"
 L["Action Button Glow"] = "Brilho do botão de ação"
 L["Actions"] = "Ações"
@@ -140,9 +136,6 @@ L["Aggro"] = "Aggro"
 L["Agility"] = "Agilidade"
 L["Ahn'Qiraj"] = "Ahn'Qiraj"
 --[[Translation missing --]]
-L["Akil'zon"] = "Akil'zon"
---[[Translation missing --]]
-L["Al'ar"] = "Al'ar"
 L["Alert Type"] = "Tipo de alerta"
 L["Alive"] = "Vivo"
 L["All"] = "Todos"
@@ -152,9 +145,7 @@ L["All children of this aura will also not be loaded, to minimize the chance of 
 L["All States table contains a non table at key: '%s'."] = "All States table contains a non table at key: '%s'."
 L["All Triggers"] = "Todos os Gatilhos"
 L["Alliance"] = "Aliança"
-L["Allow partial matches"] = "Permitir combinações parciais"
 L["Alpha"] = "Transparência"
-L["Alternate Power"] = "Alternar Poder"
 L["Always"] = "Sempre"
 L["Always active trigger"] = "Gatilho sempre ativo"
 L["Always include realm"] = "Sempre incluir reino"
@@ -164,22 +155,15 @@ L["Amount"] = "Quantidade"
 L["Anchoring"] = "Anchoring"
 L["And Talent"] = "E Também o Talento"
 --[[Translation missing --]]
-L["Anetheron"] = "Anetheron"
---[[Translation missing --]]
 L["Angle and Radius"] = "Angle and Radius"
 L["Animations"] = "Animações"
 L["Anticlockwise"] = "Anti-horário"
 --[[Translation missing --]]
-L["Anub'arak"] = "Anub'arak"
 L["Anub'Rekhan"] = "Anub'Rekhan"
 L["Any"] = "Qualquer"
 L["Any Triggers"] = "Quaisquer gatilhos"
 L["AOE"] = "AOE"
 L["Arcane Resistance"] = "Resistência Arcana"
---[[Translation missing --]]
-L["Archavon the Stone Watcher"] = "Archavon the Stone Watcher"
---[[Translation missing --]]
-L["Archimonde"] = "Archimonde"
 --[[Translation missing --]]
 L[ [=[Are you sure you want to run the |cffff0000EXPERIMENTAL|r repair tool?
 This will overwrite any changes you have made since the last database upgrade.
@@ -187,12 +171,6 @@ Last upgrade: %s]=] ] = [=[Are you sure you want to run the |cffff0000EXPERIMENT
 This will overwrite any changes you have made since the last database upgrade.
 Last upgrade: %s]=]
 L["Arena"] = "Arena"
-L["Armor (%)"] = "Armadura (%)"
-L["Armor against Target (%)"] = "Armadura contra o Alvo (%)"
---[[Translation missing --]]
-L["Armor Peneration Percent"] = "Armor Peneration Percent"
---[[Translation missing --]]
-L["Armor Peneration Rating"] = "Armor Peneration Rating"
 L["Armor Rating"] = "Classificação de armadura"
 L["Array"] = "Arranjo"
 L["Ascending"] = "Ascendente"
@@ -201,8 +179,6 @@ L["Assigned Role"] = "Função Atribuída"
 L["Assigned Role Icon"] = "Assigned Role Icon"
 --[[Translation missing --]]
 L["Assist"] = "Assist"
---[[Translation missing --]]
-L["Assisted Combat Next Cast"] = "Assisted Combat Next Cast"
 L["At Least One Enemy"] = "Pelo Menos Um Inimigo"
 L["At missing Value"] = "No valor ausente"
 L["At Percent"] = "Na porcentagem"
@@ -219,7 +195,6 @@ L["Attack Power"] = "Poder de ataque"
 L["Attackable"] = "Atacável"
 L["Attackable Target"] = "Alvo atacável "
 --[[Translation missing --]]
-L["Attumen the Huntsman"] = "Attumen the Huntsman"
 L["Aura"] = "Aura"
 L["Aura '%s': %s"] = "Aura '%s': %s"
 L["Aura Applied"] = "Aura Aplicada"
@@ -254,13 +229,7 @@ L["Automatic Length"] = "Comprimento Automático"
 L["Automatic Rotation"] = "Rotação Automática"
 --[[Translation missing --]]
 L["Available features: %s"] = "Available features: %s"
---[[Translation missing --]]
-L["Avoidance (%)"] = "Avoidance (%)"
---[[Translation missing --]]
-L["Avoidance Rating"] = "Avoidance Rating"
 L["Ayamiss the Hunter"] = "Ayamiss, o Caçador"
---[[Translation missing --]]
-L["Azgalor"] = "Azgalor"
 --[[Translation missing --]]
 L["Azuregos"] = "Azuregos"
 L["Back and Forth"] = "Vai e volta"
@@ -305,7 +274,6 @@ L["BigWigs Message"] = "Mensagem do BigWigs"
 L["BigWigs Stage"] = "BigWigs Stage"
 L["BigWigs Timer"] = "Cronômetro do BigWigs"
 --[[Translation missing --]]
-L["Black Temple"] = "Black Temple"
 L["Black Wing Lair"] = "Covil Asa Negra"
 --[[Translation missing --]]
 L["Bleed"] = "Bleed"
@@ -314,19 +282,10 @@ L["Blizzard Combat Text"] = "Texto de Combate da Blizzard"
 L["Blizzard Cooldown Reduction"] = "Blizzard Cooldown Reduction"
 L["Block"] = "Bloquear"
 L["Block (%)"] = "Bloqueio (%)"
-L["Block against Target (%)"] = "Bloqueio contra o Alvo (%)"
 --[[Translation missing --]]
 L["Block Value"] = "Block Value"
 L["Blocked"] = "Bloqueado"
---[[Translation missing --]]
-L["Blood"] = "Blood"
---[[Translation missing --]]
-L["Blood Rune #1"] = "Blood Rune #1"
---[[Translation missing --]]
-L["Blood Rune #2"] = "Blood Rune #2"
 L["Bloodlord Mandokir"] = "Sangrelorde Mandokir"
---[[Translation missing --]]
-L["Bonus Reputation Gain"] = "Bonus Reputation Gain"
 L["Border"] = "Borda"
 L["Boss"] = "Chefe"
 L["Boss Emote"] = "Emote do Chefe"
@@ -351,7 +310,6 @@ L["Break"] = "Break"
 L["BreakUpLargeNumbers (Blizzard)"] = "BreakUpLargeNumbers (Blizzard)"
 L["Broodlord Lashlayer"] = "Prolemestre Flagelador"
 --[[Translation missing --]]
-L["Brutallus"] = "Brutallus"
 L["Buff"] = "Buff"
 --[[Translation missing --]]
 L["Buff/Debuff"] = "Buff/Debuff"
@@ -372,10 +330,6 @@ https://github.com/WeakAuras/WeakAuras2/wiki/Protected-Frames]=]
 L["Can't schedule timer with %i, due to a World of Warcraft bug with high computer uptime. (Uptime: %i). Please restart your computer."] = "Não é possível agendar o cronômetro com %i, devido a um bug do World of Warcraft com alto tempo de atividade do computador. (Tempo de atividade: %i). Por favor, reinicie o seu computador."
 --[[Translation missing --]]
 L["Capped"] = "Capped"
---[[Translation missing --]]
-L["Capped at Season Max"] = "Capped at Season Max"
---[[Translation missing --]]
-L["Capped at Weekly Max"] = "Capped at Weekly Max"
 L["Cast"] = "Lançar"
 L["Cast Bar"] = "Barra de Lançamento"
 L["Cast Failed"] = "Lançamento falho"
@@ -418,22 +372,12 @@ L["Centered Vertical, then Right"] = "Centered Vertical, then Right"
 L["Changed"] = "Mudou"
 L["Channel"] = "Canal"
 L["Channel (Spell)"] = "Canal (Feitiço)"
---[[Translation missing --]]
-L["Character GUID"] = "Character GUID"
---[[Translation missing --]]
-L["Character Name"] = "Character Name"
 L["Character Stats"] = "Atributos do Personagem"
---[[Translation missing --]]
-L["Character Transferred Quantity"] = "Character Transferred Quantity"
 L["Character Type"] = "Tipo de personagem"
 L["Charge gained/lost"] = "Carga ganha/perdida"
---[[Translation missing --]]
-L["Charged Combo Points"] = "Charged Combo Points"
 L["Charges"] = "Cargas"
 --[[Translation missing --]]
 L["Charges Changed Event"] = "Charges Changed Event"
---[[Translation missing --]]
-L["Charging"] = "Charging"
 L["Chat Frame"] = "Quadro do bate-papo"
 L["Chat Message"] = "Mensagem de bate-papo"
 --[[Translation missing --]]
@@ -441,7 +385,6 @@ L["Check if a single talent match a Rank"] = "Check if a single talent match a R
 --[[Translation missing --]]
 L["Check nameplate's target every 0.2s"] = "Check nameplate's target every 0.2s"
 --[[Translation missing --]]
-L["Chess Event"] = "Chess Event"
 L["Chromaggus"] = "Chromaggus"
 L["Circle"] = "Círculo"
 --[[Translation missing --]]
@@ -455,13 +398,9 @@ L["Classic"] = "Classic"
 L["Classification"] = "Classificação"
 L["Clockwise"] = "Sentido Horário"
 --[[Translation missing --]]
-L["Clone per Character"] = "Clone per Character"
---[[Translation missing --]]
 L["Clone per Event"] = "Clone per Event"
 --[[Translation missing --]]
 L["Clone per Match"] = "Clone per Match"
---[[Translation missing --]]
-L["Coilfang: Serpentshrine Cavern"] = "Coilfang: Serpentshrine Cavern"
 --[[Translation missing --]]
 L["Coin Precision"] = "Coin Precision"
 L["Color"] = "Cor"
@@ -501,19 +440,9 @@ L["Count"] = "Count"
 --[[Translation missing --]]
 L["Counter Clockwise"] = "Counter Clockwise"
 L["Create"] = "Criar"
---[[Translation missing --]]
-L["Creature Family"] = "Creature Family"
---[[Translation missing --]]
-L["Creature Family Name"] = "Creature Family Name"
---[[Translation missing --]]
-L["Creature Type"] = "Creature Type"
---[[Translation missing --]]
-L["Creature Type Name"] = "Creature Type Name"
 L["Critical"] = "Crítico"
 --[[Translation missing --]]
 L["Critical (%)"] = "Critical (%)"
---[[Translation missing --]]
-L["Critical Rating"] = "Critical Rating"
 --[[Translation missing --]]
 L["Crop X"] = "Crop X"
 --[[Translation missing --]]
@@ -525,17 +454,11 @@ L["C'thun"] = "C'thun"
 --[[Translation missing --]]
 L["Cumulated time used during profiling"] = "Cumulated time used during profiling"
 --[[Translation missing --]]
-L["Currency"] = "Currency"
---[[Translation missing --]]
-L["Current Essence"] = "Current Essence"
---[[Translation missing --]]
 L["Current Experience"] = "Current Experience"
 --[[Translation missing --]]
 L["Current Instance"] = "Current Instance"
 --[[Translation missing --]]
 L["Current Movement Speed (%)"] = "Current Movement Speed (%)"
---[[Translation missing --]]
-L["Current Stage"] = "Current Stage"
 --[[Translation missing --]]
 L["Current Zone"] = "Current Zone"
 --[[Translation missing --]]
@@ -580,9 +503,6 @@ L["DBM Timer"] = "DBM Timer"
 --[[Translation missing --]]
 L["Dead"] = "Dead"
 --[[Translation missing --]]
-L["Death"] = "Death"
-L["Death Knight Rune"] = "Runa de Cavaleiro da Morte"
---[[Translation missing --]]
 L["Debuff"] = "Debuff"
 --[[Translation missing --]]
 L["Debuff Class"] = "Debuff Class"
@@ -596,8 +516,6 @@ L["Debug Log contains more than 1000 entries"] = "Debug Log contains more than 1
 L["Debug Logging enabled"] = "Debug Logging enabled"
 --[[Translation missing --]]
 L["Debug Logging enabled for '%s'"] = "Debug Logging enabled for '%s'"
---[[Translation missing --]]
-L["Defense"] = "Defense"
 --[[Translation missing --]]
 L["Defensive Stats"] = "Defensive Stats"
 --[[Translation missing --]]
@@ -646,8 +564,6 @@ L["Disabled feature %q"] = "Disabled feature %q"
 --[[Translation missing --]]
 L["Disabled Spell Known Check"] = "Disabled Spell Known Check"
 --[[Translation missing --]]
-L["Discovered"] = "Discovered"
---[[Translation missing --]]
 L["Disease"] = "Disease"
 --[[Translation missing --]]
 L["Dispel"] = "Dispel"
@@ -662,12 +578,6 @@ L["Do Not Disturb"] = "Do Not Disturb"
 L["Dodge"] = "Dodge"
 --[[Translation missing --]]
 L["Dodge (%)"] = "Dodge (%)"
---[[Translation missing --]]
-L["Dodge Rating"] = "Dodge Rating"
---[[Translation missing --]]
-L["Doom Lord Kazzak"] = "Doom Lord Kazzak"
---[[Translation missing --]]
-L["Doomwalker"] = "Doomwalker"
 --[[Translation missing --]]
 L["Down"] = "Down"
 --[[Translation missing --]]
@@ -685,8 +595,6 @@ L["Dropdown Menu"] = "Dropdown Menu"
 --[[Translation missing --]]
 L["Dumping table"] = "Dumping table"
 --[[Translation missing --]]
-L["Dungeon (Celestial)"] = "Dungeon (Celestial)"
---[[Translation missing --]]
 L["Dungeon (Heroic)"] = "Dungeon (Heroic)"
 --[[Translation missing --]]
 L["Dungeon (Mythic)"] = "Dungeon (Mythic)"
@@ -696,8 +604,6 @@ L["Dungeon (Mythic+)"] = "Dungeon (Mythic+)"
 L["Dungeon (Normal)"] = "Dungeon (Normal)"
 --[[Translation missing --]]
 L["Dungeon (Timewalking)"] = "Dungeon (Timewalking)"
---[[Translation missing --]]
-L["Dungeons"] = "Dungeons"
 --[[Translation missing --]]
 L["Durability Damage"] = "Durability Damage"
 --[[Translation missing --]]
@@ -717,8 +623,6 @@ L["Ease Out"] = "Ease Out"
 --[[Translation missing --]]
 L["Ebonroc"] = "Ebonroc"
 --[[Translation missing --]]
-L["Eclipse Direction"] = "Eclipse Direction"
---[[Translation missing --]]
 L["Edge"] = "Edge"
 --[[Translation missing --]]
 L["Edge of Madness"] = "Edge of Madness"
@@ -729,8 +633,6 @@ L["Elide"] = "Elide"
 --[[Translation missing --]]
 L["Elite"] = "Elite"
 --[[Translation missing --]]
-L["Emalon the Storm Watcher"] = "Emalon the Storm Watcher"
---[[Translation missing --]]
 L["Emote"] = "Emote"
 --[[Translation missing --]]
 L["Empower Cast End"] = "Empower Cast End"
@@ -740,22 +642,6 @@ L["Empower Cast Interrupt"] = "Empower Cast Interrupt"
 L["Empower Cast Start"] = "Empower Cast Start"
 --[[Translation missing --]]
 L["Empowered"] = "Empowered"
---[[Translation missing --]]
-L["Empowered 1"] = "Empowered 1"
---[[Translation missing --]]
-L["Empowered 2"] = "Empowered 2"
---[[Translation missing --]]
-L["Empowered 3"] = "Empowered 3"
---[[Translation missing --]]
-L["Empowered 4"] = "Empowered 4"
---[[Translation missing --]]
-L["Empowered 5"] = "Empowered 5"
---[[Translation missing --]]
-L["Empowered Cast"] = "Empowered Cast"
---[[Translation missing --]]
-L["Empowered Cast Fully Charged"] = "Empowered Cast Fully Charged"
---[[Translation missing --]]
-L["Empowered Fully Charged"] = "Empowered Fully Charged"
 --[[Translation missing --]]
 L["Empty"] = "Empty"
 --[[Translation missing --]]
@@ -799,15 +685,9 @@ L["Environmental"] = "Environmental"
 --[[Translation missing --]]
 L["Equipment"] = "Equipment"
 --[[Translation missing --]]
-L["Equipment Set"] = "Equipment Set"
---[[Translation missing --]]
-L["Equipment Set Equipped"] = "Equipment Set Equipped"
---[[Translation missing --]]
 L["Equipment Slot"] = "Equipment Slot"
 --[[Translation missing --]]
 L["Equipped"] = "Equipped"
---[[Translation missing --]]
-L["Eredar Twins"] = "Eredar Twins"
 --[[Translation missing --]]
 L["Error"] = "Error"
 --[[Translation missing --]]
@@ -831,20 +711,6 @@ L["Error in Aura '%s'"] = "Error in Aura '%s'"
 --[[Translation missing --]]
 L["Error not receiving display information from %s"] = "Error not receiving display information from %s"
 --[[Translation missing --]]
-L["Essence"] = "Essence"
---[[Translation missing --]]
-L["Essence #1"] = "Essence #1"
---[[Translation missing --]]
-L["Essence #2"] = "Essence #2"
---[[Translation missing --]]
-L["Essence #3"] = "Essence #3"
---[[Translation missing --]]
-L["Essence #4"] = "Essence #4"
---[[Translation missing --]]
-L["Essence #5"] = "Essence #5"
---[[Translation missing --]]
-L["Essence #6"] = "Essence #6"
---[[Translation missing --]]
 L["Evade"] = "Evade"
 L["Event"] = "Evento"
 L["Event(s)"] = "Evento(s)"
@@ -852,17 +718,11 @@ L["Every Frame"] = "Todo Frame"
 --[[Translation missing --]]
 L["Every Frame (High CPU usage)"] = "Every Frame (High CPU usage)"
 --[[Translation missing --]]
-L["Evoker Essence"] = "Evoker Essence"
---[[Translation missing --]]
 L["Exact Spell ID(s)"] = "Exact Spell ID(s)"
 --[[Translation missing --]]
 L["Execute Conditions"] = "Execute Conditions"
 --[[Translation missing --]]
 L["Experience (%)"] = "Experience (%)"
---[[Translation missing --]]
-L["Expertise Bonus"] = "Expertise Bonus"
---[[Translation missing --]]
-L["Expertise Rating"] = "Expertise Rating"
 --[[Translation missing --]]
 L["Extend Outside"] = "Extend Outside"
 L["Extra Amount"] = "Quantidade Extra"
@@ -872,8 +732,6 @@ L["Extra Spell Id"] = "Extra Spell Id"
 L["Extra Spell Name"] = "Nome da Magia Extra"
 --[[Translation missing --]]
 L["Faction"] = "Faction"
---[[Translation missing --]]
-L["Faction Champions"] = "Faction Champions"
 --[[Translation missing --]]
 L["Faction Name"] = "Faction Name"
 --[[Translation missing --]]
@@ -891,21 +749,9 @@ L["False"] = "False"
 --[[Translation missing --]]
 L["Fankriss the Unyielding"] = "Fankriss the Unyielding"
 --[[Translation missing --]]
-L["Fathom-Lord Karathress"] = "Fathom-Lord Karathress"
---[[Translation missing --]]
 L["Feature %q is already disabled"] = "Feature %q is already disabled"
 --[[Translation missing --]]
 L["Feature %q is already enabled"] = "Feature %q is already enabled"
---[[Translation missing --]]
-L["Felmyst"] = "Felmyst"
---[[Translation missing --]]
-L["Fetch Absorb"] = "Fetch Absorb"
---[[Translation missing --]]
-L["Fetch Heal Absorb"] = "Fetch Heal Absorb"
---[[Translation missing --]]
-L["Fetch Legendary Power"] = "Fetch Legendary Power"
---[[Translation missing --]]
-L["Fetches the name and icon of the Legendary Power that matches this bonus id."] = "Fetches the name and icon of the Legendary Power that matches this bonus id."
 --[[Translation missing --]]
 L["Fill Area"] = "Fill Area"
 --[[Translation missing --]]
@@ -934,8 +780,6 @@ L["Flex Raid"] = "Flex Raid"
 L["Flip"] = "Flip"
 --[[Translation missing --]]
 L["Floor"] = "Floor"
---[[Translation missing --]]
-L["Focus"] = "Focus"
 --[[Translation missing --]]
 L["Follower Dungeon"] = "Follower Dungeon"
 --[[Translation missing --]]
@@ -971,19 +815,9 @@ L["Frequency"] = "Frequency"
 L["Friendly"] = "Amigável"
 L["Friendly Fire"] = "Fogo Amigo"
 --[[Translation missing --]]
-L["Friendship Max Rank"] = "Friendship Max Rank"
---[[Translation missing --]]
-L["Friendship Rank"] = "Friendship Rank"
---[[Translation missing --]]
-L["Friendship Reputation"] = "Friendship Reputation"
---[[Translation missing --]]
 L["Frost"] = "Frost"
 --[[Translation missing --]]
 L["Frost Resistance"] = "Frost Resistance"
---[[Translation missing --]]
-L["Frost Rune #1"] = "Frost Rune #1"
---[[Translation missing --]]
-L["Frost Rune #2"] = "Frost Rune #2"
 --[[Translation missing --]]
 L["Full"] = "Full"
 --[[Translation missing --]]
@@ -1014,8 +848,6 @@ L["Glow"] = "Glow"
 L["Glow External Element"] = "Glow External Element"
 --[[Translation missing --]]
 L["Gluth"] = "Gluth"
---[[Translation missing --]]
-L["Glyph"] = "Glyph"
 --[[Translation missing --]]
 L["Gold"] = "Gold"
 --[[Translation missing --]]
@@ -1050,36 +882,22 @@ L["Group Type"] = "Group Type"
 --[[Translation missing --]]
 L["Grow"] = "Grow"
 --[[Translation missing --]]
-L["Gruul the Dragonkiller"] = "Gruul the Dragonkiller"
---[[Translation missing --]]
-L["Gruul's Lair"] = "Gruul's Lair"
---[[Translation missing --]]
 L["GTFO Alert"] = "GTFO Alert"
 --[[Translation missing --]]
 L["Guardian"] = "Guardian"
 --[[Translation missing --]]
 L["Guild"] = "Guild"
 --[[Translation missing --]]
-L["Gurtogg Bloodboil"] = "Gurtogg Bloodboil"
---[[Translation missing --]]
 L["Hakkar"] = "Hakkar"
---[[Translation missing --]]
-L["Halazzi"] = "Halazzi"
 --[[Translation missing --]]
 L["Hardcore"] = "Hardcore"
 L["Has Target"] = "Tem Alvo"
---[[Translation missing --]]
-L["Has Vehicle UI"] = "Has Vehicle UI"
 --[[Translation missing --]]
 L["HasPet"] = "HasPet"
 --[[Translation missing --]]
 L["Haste (%)"] = "Haste (%)"
 --[[Translation missing --]]
-L["Haste Rating"] = "Haste Rating"
---[[Translation missing --]]
 L["Heal"] = "Heal"
---[[Translation missing --]]
-L["Heal Absorb"] = "Heal Absorb"
 --[[Translation missing --]]
 L["Heal Absorbed"] = "Heal Absorbed"
 --[[Translation missing --]]
@@ -1093,11 +911,7 @@ L["Heigan the Unclean"] = "Heigan the Unclean"
 --[[Translation missing --]]
 L["Height"] = "Height"
 --[[Translation missing --]]
-L["Hero Talent"] = "Hero Talent"
---[[Translation missing --]]
 L["Heroic Party"] = "Heroic Party"
---[[Translation missing --]]
-L["Hex Lord Malacrass"] = "Hex Lord Malacrass"
 --[[Translation missing --]]
 L["Hide"] = "Hide"
 --[[Translation missing --]]
@@ -1105,11 +919,7 @@ L["Hide 0 cooldowns"] = "Hide 0 cooldowns"
 --[[Translation missing --]]
 L["Hide Timer Text"] = "Hide Timer Text"
 --[[Translation missing --]]
-L["High Astromancer Solarian"] = "High Astromancer Solarian"
---[[Translation missing --]]
 L["High Damage"] = "High Damage"
---[[Translation missing --]]
-L["High King Maulgar"] = "High King Maulgar"
 --[[Translation missing --]]
 L["High Priest Thekal"] = "High Priest Thekal"
 --[[Translation missing --]]
@@ -1121,15 +931,9 @@ L["High Priestess Jeklik"] = "High Priestess Jeklik"
 --[[Translation missing --]]
 L["High Priestess Mar'li"] = "High Priestess Mar'li"
 --[[Translation missing --]]
-L["High Warlord Naj'entus"] = "High Warlord Naj'entus"
---[[Translation missing --]]
 L["Higher Than Tank"] = "Higher Than Tank"
 --[[Translation missing --]]
 L["Highest Spell Id"] = "Highest Spell Id"
---[[Translation missing --]]
-L["Hit (%)"] = "Hit (%)"
---[[Translation missing --]]
-L["Hit Rating"] = "Hit Rating"
 --[[Translation missing --]]
 L["Holy Resistance"] = "Holy Resistance"
 L["Horde"] = "Horda"
@@ -1143,7 +947,6 @@ L["Humanoid"] = "Humanoide"
 --[[Translation missing --]]
 L["Hybrid"] = "Hybrid"
 --[[Translation missing --]]
-L["Hydross the Unstable"] = "Hydross the Unstable"
 L["Icon"] = "Ícone"
 --[[Translation missing --]]
 L["Icon Function"] = "Icon Function"
@@ -1170,7 +973,6 @@ L["Ignore Spell Cooldown/Charges"] = "Ignore Spell Cooldown/Charges"
 --[[Translation missing --]]
 L["Ignore Spell Override"] = "Ignore Spell Override"
 --[[Translation missing --]]
-L["Illidan Stormrage"] = "Illidan Stormrage"
 L["Immune"] = "Imune"
 L["Important"] = "Importante"
 --[[Translation missing --]]
@@ -1180,24 +982,15 @@ L["In Encounter"] = "Em Encontro"
 L["In Group"] = "Em Grupo"
 --[[Translation missing --]]
 L["In Party"] = "In Party"
---[[Translation missing --]]
-L["In Pet Battle"] = "In Pet Battle"
 L["In Raid"] = "Em Raide"
 --[[Translation missing --]]
 L["In Range"] = "In Range"
-L["In Vehicle"] = "Em Veículo"
---[[Translation missing --]]
-L["In War Mode"] = "In War Mode"
 --[[Translation missing --]]
 L["Include Bank"] = "Include Bank"
 --[[Translation missing --]]
 L["Include Charges"] = "Include Charges"
 --[[Translation missing --]]
-L["Include Death Runes"] = "Include Death Runes"
---[[Translation missing --]]
 L["Include Pets"] = "Include Pets"
---[[Translation missing --]]
-L["Include War Band Bank"] = "Include War Band Bank"
 --[[Translation missing --]]
 L["Incoming Heal"] = "Incoming Heal"
 --[[Translation missing --]]
@@ -1214,7 +1007,6 @@ L["Instakill"] = "Instakill"
 L["Install the addons BugSack and BugGrabber for detailed error logs."] = "Install the addons BugSack and BugGrabber for detailed error logs."
 --[[Translation missing --]]
 L["Instance"] = "Instance"
-L["Instance Difficulty"] = "Dificuldade da Instância"
 --[[Translation missing --]]
 L["Instance Id"] = "Instance Id"
 --[[Translation missing --]]
@@ -1248,23 +1040,15 @@ L["Inverse Pet Behavior"] = "Inverse Pet Behavior"
 --[[Translation missing --]]
 L["Is Away from Keyboard"] = "Is Away from Keyboard"
 --[[Translation missing --]]
-L["Is Current Specialization"] = "Is Current Specialization"
---[[Translation missing --]]
-L["Is Death Rune"] = "Is Death Rune"
---[[Translation missing --]]
 L["Is Exactly"] = "Is Exactly"
 --[[Translation missing --]]
 L["Is Moving"] = "Is Moving"
 --[[Translation missing --]]
 L["Is Off Hand"] = "Is Off Hand"
 --[[Translation missing --]]
-L["Is Paragon Reputation"] = "Is Paragon Reputation"
---[[Translation missing --]]
 L["Is Paused"] = "Is Paused"
 --[[Translation missing --]]
 L["is useable"] = "is useable"
---[[Translation missing --]]
-L["Is Weekly Renown Capped"] = "Is Weekly Renown Capped"
 --[[Translation missing --]]
 L["Island Expedition (Heroic)"] = "Island Expedition (Heroic)"
 --[[Translation missing --]]
@@ -1300,19 +1084,9 @@ L["Item Type Equipped"] = "Tipo de Item Equipado"
 --[[Translation missing --]]
 L["ItemId"] = "ItemId"
 --[[Translation missing --]]
-L["Jan'alai"] = "Jan'alai"
---[[Translation missing --]]
 L["Jin'do the Hexxer"] = "Jin'do the Hexxer"
 --[[Translation missing --]]
 L["Journal Stage"] = "Journal Stage"
---[[Translation missing --]]
-L["Kael'thas Sunstrider"] = "Kael'thas Sunstrider"
---[[Translation missing --]]
-L["Kalecgos"] = "Kalecgos"
---[[Translation missing --]]
-L["Karazhan"] = "Karazhan"
---[[Translation missing --]]
-L["Kaz'rogal"] = "Kaz'rogal"
 --[[Translation missing --]]
 L["Kazzak"] = "Kazzak"
 --[[Translation missing --]]
@@ -1320,13 +1094,7 @@ L["Keep Inside"] = "Keep Inside"
 --[[Translation missing --]]
 L["Kel'Thuzad"] = "Kel'Thuzad"
 --[[Translation missing --]]
-L["Kil'jaeden"] = "Kil'jaeden"
---[[Translation missing --]]
-L["Koralon the Flame Watcher"] = "Koralon the Flame Watcher"
---[[Translation missing --]]
 L["Kurinnaxx"] = "Kurinnaxx"
---[[Translation missing --]]
-L["Lady Vashj"] = "Lady Vashj"
 --[[Translation missing --]]
 L["Large"] = "Large"
 --[[Translation missing --]]
@@ -1338,10 +1106,6 @@ L["Least remaining time"] = "Least remaining time"
 --[[Translation missing --]]
 L["Leaving"] = "Leaving"
 L["Leech"] = "Sugar"
---[[Translation missing --]]
-L["Leech (%)"] = "Leech (%)"
---[[Translation missing --]]
-L["Leech Rating"] = "Leech Rating"
 L["Left"] = "Esquerda"
 L["Left to Right"] = "Da esquerda para direita"
 --[[Translation missing --]]
@@ -1360,8 +1124,6 @@ L["Legacy RGB Gradient Pulse"] = "Legacy RGB Gradient Pulse"
 L["Legion"] = "Legion"
 --[[Translation missing --]]
 L["Length"] = "Length"
---[[Translation missing --]]
-L["Leotheras the Blind"] = "Leotheras the Blind"
 --[[Translation missing --]]
 L["Level"] = "Level"
 --[[Translation missing --]]
@@ -1387,16 +1149,6 @@ L["Loop"] = "Loop"
 --[[Translation missing --]]
 L["Loot"] = "Loot"
 --[[Translation missing --]]
-L["Loot Specialization"] = "Loot Specialization"
---[[Translation missing --]]
-L["Loot Specialization Id"] = "Loot Specialization Id"
---[[Translation missing --]]
-L["Loot Specialization Name"] = "Loot Specialization Name"
---[[Translation missing --]]
-L["Lord Jaraxxus"] = "Lord Jaraxxus"
---[[Translation missing --]]
-L["Lord Kazzak"] = "Lord Kazzak"
---[[Translation missing --]]
 L["Lorewalking"] = "Lorewalking"
 --[[Translation missing --]]
 L["Lost"] = "Lost"
@@ -1417,21 +1169,9 @@ L["Magic"] = "Mágico"
 --[[Translation missing --]]
 L["Magmadar"] = "Magmadar"
 --[[Translation missing --]]
-L["Magtheridon"] = "Magtheridon"
---[[Translation missing --]]
-L["Magtheridon's Lair"] = "Magtheridon's Lair"
---[[Translation missing --]]
-L["Maiden of Virtue"] = "Maiden of Virtue"
---[[Translation missing --]]
-L["Main Character"] = "Main Character"
---[[Translation missing --]]
-L["Main Stat"] = "Main Stat"
---[[Translation missing --]]
 L["Majordomo Executus"] = "Majordomo Executus"
 --[[Translation missing --]]
 L["Malformed WeakAuras link"] = "Malformed WeakAuras link"
---[[Translation missing --]]
-L["Malygos"] = "Malygos"
 --[[Translation missing --]]
 L["Manual"] = "Manual"
 --[[Translation missing --]]
@@ -1445,10 +1185,6 @@ L["Marked Last"] = "Marked Last"
 --[[Translation missing --]]
 L["Mason"] = "Mason"
 L["Master"] = "Mestre"
---[[Translation missing --]]
-L["Mastery (%)"] = "Mastery (%)"
---[[Translation missing --]]
-L["Mastery Rating"] = "Mastery Rating"
 --[[Translation missing --]]
 L["Match Count"] = "Match Count"
 --[[Translation missing --]]
@@ -1472,8 +1208,6 @@ L["Max Health"] = "Max Health"
 --[[Translation missing --]]
 L["Max Power"] = "Max Power"
 --[[Translation missing --]]
-L["Max Quantity"] = "Max Quantity"
---[[Translation missing --]]
 L["Maximum Estimate"] = "Maximum Estimate"
 --[[Translation missing --]]
 L["Maximum Progress"] = "Maximum Progress"
@@ -1485,8 +1219,6 @@ L["Media"] = "Media"
 L["Medium"] = "Medium"
 --[[Translation missing --]]
 L["Melee"] = "Melee"
---[[Translation missing --]]
-L["Melee Haste (%)"] = "Melee Haste (%)"
 L["Message"] = "Mensagem"
 L["Message Type"] = "Tipo de mensagem"
 L["Message type:"] = "Tipo de mensagem:"
@@ -1538,29 +1270,15 @@ L["Monster Say"] = "Monster Say"
 L["Monster Whisper"] = "Monster Whisper"
 L["Monster Yell"] = "Grito do monstro"
 --[[Translation missing --]]
-L["Moon"] = "Moon"
---[[Translation missing --]]
-L["Moroes"] = "Moroes"
---[[Translation missing --]]
-L["Morogrim Tidewalker"] = "Morogrim Tidewalker"
---[[Translation missing --]]
 L["Most remaining time"] = "Most remaining time"
 --[[Translation missing --]]
-L["Mother Shahraz"] = "Mother Shahraz"
 L["Mounted"] = "Montado"
 --[[Translation missing --]]
 L["Mouse Cursor"] = "Mouse Cursor"
---[[Translation missing --]]
-L["Movement Speed Rating"] = "Movement Speed Rating"
 L["Multi-target"] = "Multi-alvo"
---[[Translation missing --]]
-L["M'uru"] = "M'uru"
 --[[Translation missing --]]
 L["Mythic Keystone"] = "Mythic Keystone"
 --[[Translation missing --]]
-L["Mythic+ Affix"] = "Mythic+ Affix"
---[[Translation missing --]]
-L["Nalorakk"] = "Nalorakk"
 L["Name"] = "Nome"
 --[[Translation missing --]]
 L["Name Function"] = "Name Function"
@@ -1589,15 +1307,12 @@ L["Naxxramas"] = "Naxxramas"
 --[[Translation missing --]]
 L["Nefarian"] = "Nefarian"
 --[[Translation missing --]]
-L["Netherspite"] = "Netherspite"
 L["Neutral"] = "Neutro"
 L["Never"] = "Nunca"
 --[[Translation missing --]]
 L["Next Combat"] = "Next Combat"
 --[[Translation missing --]]
 L["Next Encounter"] = "Next Encounter"
---[[Translation missing --]]
-L["Nightbane"] = "Nightbane"
 --[[Translation missing --]]
 L[ [=[No active boss mod addon detected.
 
@@ -1618,8 +1333,6 @@ L["Normal"] = "Normal"
 --[[Translation missing --]]
 L["Normal Party"] = "Normal Party"
 --[[Translation missing --]]
-L["Northrend Beasts"] = "Northrend Beasts"
---[[Translation missing --]]
 L["Not in Group"] = "Not in Group"
 --[[Translation missing --]]
 L["Not in Smart Group"] = "Not in Smart Group"
@@ -1630,13 +1343,7 @@ L["Not On Threat Table"] = "Not On Threat Table"
 --[[Translation missing --]]
 L["Note: Due to how complicated the swing timer behavior is and the lack of APIs from Blizzard, results are inaccurate in edge cases."] = "Note: Due to how complicated the swing timer behavior is and the lack of APIs from Blizzard, results are inaccurate in edge cases."
 --[[Translation missing --]]
-L["Note: 'Hide Alone' is not available in the new aura tracking system. A load option can be used instead."] = "Note: 'Hide Alone' is not available in the new aura tracking system. A load option can be used instead."
---[[Translation missing --]]
-L["Note: The available text replacements for multi triggers match the normal triggers now."] = "Note: The available text replacements for multi triggers match the normal triggers now."
---[[Translation missing --]]
 L["Note: This trigger internally stores the shapeshift position, and thus is incompatible with learning stances on the fly, like e.g. the Gladiator Rune."] = "Note: This trigger internally stores the shapeshift position, and thus is incompatible with learning stances on the fly, like e.g. the Gladiator Rune."
---[[Translation missing --]]
-L["Note: This trigger relies on the WoW API, which returns incorrect information in some cases."] = "Note: This trigger relies on the WoW API, which returns incorrect information in some cases."
 --[[Translation missing --]]
 L["Note: This trigger type estimates the range to the hitbox of a unit. The actual range of friendly players is usually 3 yards more than the estimate. Range checking capabilities depend on your current class and known abilities as well as the type of unit being checked. Some of the ranges may also not work with certain NPCs.|n|n|cFFAAFFAAFriendly Units:|r %s|n|cFFFFAAAAHarmful Units:|r %s|n|cFFAAAAFFMiscellanous Units:|r %s"] = "Note: This trigger type estimates the range to the hitbox of a unit. The actual range of friendly players is usually 3 yards more than the estimate. Range checking capabilities depend on your current class and known abilities as well as the type of unit being checked. Some of the ranges may also not work with certain NPCs.|n|n|cFFAAFFAAFriendly Units:|r %s|n|cFFFFAAAAHarmful Units:|r %s|n|cFFAAAAFFMiscellanous Units:|r %s"
 --[[Translation missing --]]
@@ -1740,8 +1447,6 @@ L["Onyxia"] = "Onyxia"
 --[[Translation missing --]]
 L["Opaque"] = "Opaque"
 --[[Translation missing --]]
-L["Opera Hall"] = "Opera Hall"
---[[Translation missing --]]
 L["Option Group"] = "Option Group"
 --[[Translation missing --]]
 L["Options could not be loaded, the addon is %s"] = "Options could not be loaded, the addon is %s"
@@ -1773,8 +1478,6 @@ L["Overkill"] = "Sobreassassinato"
 --[[Translation missing --]]
 L["Overlay %s"] = "Overlay %s"
 --[[Translation missing --]]
-L["Overlay Charged Combo Points"] = "Overlay Charged Combo Points"
---[[Translation missing --]]
 L["Overlay Cost of Casts"] = "Overlay Cost of Casts"
 --[[Translation missing --]]
 L["Overlay Latency"] = "Overlay Latency"
@@ -1785,18 +1488,12 @@ L["Pad Mode"] = "Pad Mode"
 --[[Translation missing --]]
 L["Pad to"] = "Pad to"
 --[[Translation missing --]]
-L["Paragon Reputation"] = "Paragon Reputation"
---[[Translation missing --]]
-L["Paragon Reward Pending"] = "Paragon Reward Pending"
---[[Translation missing --]]
 L["Parent Frame"] = "Parent Frame"
 --[[Translation missing --]]
 L["Parent Zone"] = "Parent Zone"
 L["Parry"] = "Aparar"
 --[[Translation missing --]]
 L["Parry (%)"] = "Parry (%)"
---[[Translation missing --]]
-L["Parry Rating"] = "Parry Rating"
 L["Party"] = "Grupo"
 L["Party Kill"] = "Assassinato do grupo"
 --[[Translation missing --]]
@@ -1838,8 +1535,6 @@ L["Player"] = "Jogador"
 L["Player Character"] = "Personagem do Jogador"
 L["Player Class"] = "Classe do Jogador"
 --[[Translation missing --]]
-L["Player Effective Level"] = "Player Effective Level"
---[[Translation missing --]]
 L["Player Experience"] = "Player Experience"
 --[[Translation missing --]]
 L["Player Faction"] = "Player Faction"
@@ -1868,8 +1563,6 @@ L["Precision"] = "Precision"
 L["Preset"] = "Predefinido"
 --[[Translation missing --]]
 L["Primary Stats"] = "Primary Stats"
---[[Translation missing --]]
-L["Prince Malchezaar"] = "Prince Malchezaar"
 --[[Translation missing --]]
 L["Princess Huhuran"] = "Princess Huhuran"
 --[[Translation missing --]]
@@ -1905,22 +1598,10 @@ L["PvP Flagged"] = "Marcado para JxJ"
 --[[Translation missing --]]
 L["PvP Mode Active"] = "PvP Mode Active"
 --[[Translation missing --]]
-L["PvP Talent selected"] = "PvP Talent selected"
---[[Translation missing --]]
-L["PvP Talent Selected"] = "PvP Talent Selected"
---[[Translation missing --]]
-L["Quality Id"] = "Quality Id"
---[[Translation missing --]]
-L["Quantity"] = "Quantity"
---[[Translation missing --]]
-L["Quantity earned this week"] = "Quantity earned this week"
---[[Translation missing --]]
 L["Quest Party"] = "Quest Party"
 --[[Translation missing --]]
 L["Queued Action"] = "Queued Action"
 L["Radius"] = "Raio"
---[[Translation missing --]]
-L["Rage Winterchill"] = "Rage Winterchill"
 --[[Translation missing --]]
 L["Ragnaros"] = "Ragnaros"
 L["Raid"] = "Raide"
@@ -1936,7 +1617,6 @@ L["Raid Mark Icon"] = "Raid Mark Icon"
 L["Raid Role"] = "Raid Role"
 L["Raid Warning"] = "Aviso de raide"
 --[[Translation missing --]]
-L["Raids"] = "Raids"
 L["Range"] = "Alcance"
 --[[Translation missing --]]
 L["Range Check"] = "Range Check"
@@ -1959,10 +1639,6 @@ L["Razorgore the Untamed"] = "Razorgore the Untamed"
 --[[Translation missing --]]
 L["Ready Check"] = "Ready Check"
 --[[Translation missing --]]
-L["Reagent Quality"] = "Reagent Quality"
---[[Translation missing --]]
-L["Reagent Quality Texture"] = "Reagent Quality Texture"
---[[Translation missing --]]
 L["Realm"] = "Realm"
 --[[Translation missing --]]
 L["Realm Name"] = "Realm Name"
@@ -1983,18 +1659,10 @@ L["Relative X-Offset"] = "Relative X-Offset"
 --[[Translation missing --]]
 L["Relative Y-Offset"] = "Relative Y-Offset"
 --[[Translation missing --]]
-L["Reliquary of Souls"] = "Reliquary of Souls"
---[[Translation missing --]]
 L["Remaining Duration"] = "Remaining Duration"
 L["Remaining Time"] = "Tempo restante"
 --[[Translation missing --]]
 L["Remove Obsolete Auras"] = "Remove Obsolete Auras"
---[[Translation missing --]]
-L["Renown Level"] = "Renown Level"
---[[Translation missing --]]
-L["Renown Max Level"] = "Renown Max Level"
---[[Translation missing --]]
-L["Renown Reputation"] = "Renown Reputation"
 L["Repair"] = "Reparar"
 --[[Translation missing --]]
 L["Repeat"] = "Repeat"
@@ -2009,12 +1677,6 @@ L["Requested display not authorized"] = "Exibição requerida não autorizada"
 --[[Translation missing --]]
 L["Requesting display information from %s ..."] = "Requesting display information from %s ..."
 L["Require Valid Target"] = "Requer um alvo válido"
---[[Translation missing --]]
-L["Requires syncing the specialization via LibSpecialization."] = "Requires syncing the specialization via LibSpecialization."
---[[Translation missing --]]
-L["Resilience (%)"] = "Resilience (%)"
---[[Translation missing --]]
-L["Resilience Rating"] = "Resilience Rating"
 L["Resist"] = "Resistir"
 --[[Translation missing --]]
 L["Resistances"] = "Resistances"
@@ -2057,31 +1719,9 @@ L["Ruins of Ahn'Qiraj"] = "Ruins of Ahn'Qiraj"
 L["Run Custom Code"] = "Run Custom Code"
 --[[Translation missing --]]
 L["Run Speed (%)"] = "Run Speed (%)"
-L["Rune"] = "Runa"
---[[Translation missing --]]
-L["Rune #1"] = "Rune #1"
---[[Translation missing --]]
-L["Rune #2"] = "Rune #2"
---[[Translation missing --]]
-L["Rune #3"] = "Rune #3"
---[[Translation missing --]]
-L["Rune #4"] = "Rune #4"
---[[Translation missing --]]
-L["Rune #5"] = "Rune #5"
---[[Translation missing --]]
-L["Rune #6"] = "Rune #6"
---[[Translation missing --]]
-L["Rune Count"] = "Rune Count"
---[[Translation missing --]]
-L["Rune Count - Blood"] = "Rune Count - Blood"
---[[Translation missing --]]
-L["Rune Count - Frost"] = "Rune Count - Frost"
---[[Translation missing --]]
-L["Rune Count - Unholy"] = "Rune Count - Unholy"
 --[[Translation missing --]]
 L["Sapphiron"] = "Sapphiron"
 --[[Translation missing --]]
-L["Sartharion"] = "Sartharion"
 L["Say"] = "falar"
 --[[Translation missing --]]
 L["Scale"] = "Scale"
@@ -2119,27 +1759,12 @@ L["Selection Mode"] = "Selection Mode"
 --[[Translation missing --]]
 L["Separator"] = "Separator"
 --[[Translation missing --]]
-L["Set IDs can be found on websites such as wowhead.com/cata/item-sets"] = "Set IDs can be found on websites such as wowhead.com/cata/item-sets"
---[[Translation missing --]]
 L["Set IDs can be found on websites such as wowhead.com/classic/item-sets"] = "Set IDs can be found on websites such as wowhead.com/classic/item-sets"
---[[Translation missing --]]
-L["Set IDs can be found on websites such as wowhead.com/item-sets"] = "Set IDs can be found on websites such as wowhead.com/item-sets"
---[[Translation missing --]]
-L["Set IDs can be found on websites such as wowhead.com/mop-classic/item-sets"] = "Set IDs can be found on websites such as wowhead.com/mop-classic/item-sets"
---[[Translation missing --]]
-L["Set IDs can be found on websites such as wowhead.com/tbc/item-sets"] = "Set IDs can be found on websites such as wowhead.com/tbc/item-sets"
---[[Translation missing --]]
-L["Set IDs can be found on websites such as wowhead.com/wotlk/item-sets"] = "Set IDs can be found on websites such as wowhead.com/wotlk/item-sets"
---[[Translation missing --]]
-L["Shade of Akama"] = "Shade of Akama"
---[[Translation missing --]]
-L["Shade of Aran"] = "Shade of Aran"
 --[[Translation missing --]]
 L["Shadow Resistance"] = "Shadow Resistance"
 --[[Translation missing --]]
 L["Shadowlands"] = "Shadowlands"
 --[[Translation missing --]]
-L["Shadron"] = "Shadron"
 L["Shake"] = "Sacudir"
 --[[Translation missing --]]
 L["Shazzrah"] = "Shazzrah"
@@ -2148,8 +1773,6 @@ L["Shift-Click to resume addon execution."] = "Shift-Click to resume addon execu
 L["Show"] = "Mostrar"
 --[[Translation missing --]]
 L["Show CD of Charge"] = "Show CD of Charge"
---[[Translation missing --]]
-L["Show charged duration for empowered casts"] = "Show charged duration for empowered casts"
 --[[Translation missing --]]
 L["Show GCD"] = "Show GCD"
 --[[Translation missing --]]
@@ -2186,8 +1809,6 @@ L["Since Stack Gain"] = "Since Stack Gain"
 L["Since Stack Lost"] = "Since Stack Lost"
 --[[Translation missing --]]
 L["Size & Position"] = "Size & Position"
---[[Translation missing --]]
-L["Skyriding"] = "Skyriding"
 --[[Translation missing --]]
 L["Slide Animation"] = "Slide Animation"
 L["Slide from Bottom"] = "Deslizar de baixo"
@@ -2248,20 +1869,12 @@ L["Spacing"] = "Espaçamento"
 --[[Translation missing --]]
 L["Spark"] = "Spark"
 --[[Translation missing --]]
-L["Spec Position"] = "Spec Position"
---[[Translation missing --]]
-L["Spec Role"] = "Spec Role"
---[[Translation missing --]]
 L["Specialization"] = "Specialization"
---[[Translation missing --]]
-L["Specific Currency"] = "Specific Currency"
 --[[Translation missing --]]
 L["Specific Type"] = "Specific Type"
 L["Specific Unit"] = "Unidade específica"
 L["Spell"] = "Feitiço"
 L["Spell (Building)"] = "Feitiço (Construção)"
---[[Translation missing --]]
-L["Spell Activation Overlay Glow"] = "Spell Activation Overlay Glow"
 --[[Translation missing --]]
 L["Spell Cast Succeeded"] = "Spell Cast Succeeded"
 --[[Translation missing --]]
@@ -2281,8 +1894,6 @@ L["Spell in Range"] = "Spell in Range"
 --[[Translation missing --]]
 L["Spell Known"] = "Spell Known"
 L["Spell Name"] = "Nome do feitiço"
---[[Translation missing --]]
-L["Spell Peneration Percent"] = "Spell Peneration Percent"
 --[[Translation missing --]]
 L["Spell Power"] = "Spell Power"
 --[[Translation missing --]]
@@ -2313,10 +1924,6 @@ L["Stage"] = "Stage"
 L["Stage Counter"] = "Stage Counter"
 --[[Translation missing --]]
 L["Stagger"] = "Stagger"
---[[Translation missing --]]
-L["Stagger (%)"] = "Stagger (%)"
---[[Translation missing --]]
-L["Stagger against Target (%)"] = "Stagger against Target (%)"
 --[[Translation missing --]]
 L["Stagger Scale"] = "Stagger Scale"
 --[[Translation missing --]]
@@ -2362,10 +1969,6 @@ L["Success"] = "Success"
 L["Sulfuron Harbinger"] = "Sulfuron Harbinger"
 L["Summon"] = "Invocar"
 --[[Translation missing --]]
-L["Summon Pending"] = "Summon Pending"
---[[Translation missing --]]
-L["Sun"] = "Sun"
---[[Translation missing --]]
 L["Supports multiple entries, separated by commas"] = "Supports multiple entries, separated by commas"
 --[[Translation missing --]]
 L[ [=[Supports multiple entries, separated by commas
@@ -2388,7 +1991,6 @@ Supports Area IDs from https://wago.tools/db2/AreaTable prefixed with 'a'.
 Supports Instance IDs prefixed with 'i'.
 Entries can be prefixed with '-' to negate.]=]
 --[[Translation missing --]]
-L["Supremus"] = "Supremus"
 L["Swing"] = "Balançar"
 L["Swing Timer"] = "Tempo de balanço"
 --[[Translation missing --]]
@@ -2410,8 +2012,6 @@ L["Talent |cFFFF0000Not|r Selected"] = "Talent |cFFFF0000Not|r Selected"
 L["Talent Known"] = "Talent Known"
 --[[Translation missing --]]
 L["Talent Selected"] = "Talent Selected"
---[[Translation missing --]]
-L["Talent selected"] = "Talent selected"
 L["Talent Specialization"] = "Especialização de talentos"
 --[[Translation missing --]]
 L["Tanking And Highest"] = "Tanking And Highest"
@@ -2420,14 +2020,6 @@ L["Tanking But Not Highest"] = "Tanking But Not Highest"
 L["Target"] = "Alvo"
 --[[Translation missing --]]
 L["Targeted"] = "Targeted"
---[[Translation missing --]]
-L["Tempest Keep"] = "Tempest Keep"
---[[Translation missing --]]
-L["Tenebron"] = "Tenebron"
---[[Translation missing --]]
-L["Terestian Illhoof"] = "Terestian Illhoof"
---[[Translation missing --]]
-L["Teron Gorefiend"] = "Teron Gorefiend"
 --[[Translation missing --]]
 L["Tertiary Stats"] = "Tertiary Stats"
 --[[Translation missing --]]
@@ -2458,31 +2050,11 @@ L["The aura has overwritten the global '%s', this might affect other auras."] = 
 --[[Translation missing --]]
 L["The aura tried to overwrite the aura_env global, which is not allowed."] = "The aura tried to overwrite the aura_env global, which is not allowed."
 --[[Translation missing --]]
-L["The Battle for Mount Hyjal"] = "The Battle for Mount Hyjal"
---[[Translation missing --]]
-L["The Curator"] = "The Curator"
---[[Translation missing --]]
-L["The effective level differs from the level in e.g. Time Walking dungeons."] = "The effective level differs from the level in e.g. Time Walking dungeons."
---[[Translation missing --]]
-L["The Eye of Eternity"] = "The Eye of Eternity"
---[[Translation missing --]]
 L["The Four Horsemen"] = "The Four Horsemen"
 --[[Translation missing --]]
 L["The 'ID' value can be found in the BigWigs options of a specific spell"] = "The 'ID' value can be found in the BigWigs options of a specific spell"
 --[[Translation missing --]]
-L["The Illidari Council"] = "The Illidari Council"
---[[Translation missing --]]
-L["The Lurker Below"] = "The Lurker Below"
---[[Translation missing --]]
-L["The Obsidian Sanctum"] = "The Obsidian Sanctum"
---[[Translation missing --]]
 L["The Prophet Skeram"] = "The Prophet Skeram"
---[[Translation missing --]]
-L["The Sunwell Plateau"] = "The Sunwell Plateau"
---[[Translation missing --]]
-L["The total quantity a warband character can transfer after paying the transfer cost"] = "The total quantity a warband character can transfer after paying the transfer cost"
---[[Translation missing --]]
-L["The total quantity after transferring everything to your current character and paying the transfer cost"] = "The total quantity after transferring everything to your current character and paying the transfer cost"
 --[[Translation missing --]]
 L["The War Within"] = "The War Within"
 --[[Translation missing --]]
@@ -2542,8 +2114,6 @@ L["Timer"] = "Timer"
 --[[Translation missing --]]
 L["Timer Id"] = "Timer Id"
 --[[Translation missing --]]
-L["Titan Reforged"] = "Titan Reforged"
---[[Translation missing --]]
 L["Toggle"] = "Toggle"
 --[[Translation missing --]]
 L["Toggle List"] = "Toggle List"
@@ -2572,15 +2142,9 @@ L["Top Left"] = "Topo à esquerda"
 L["Top Right"] = "Topo à direita"
 L["Top to Bottom"] = "Do topo para base"
 --[[Translation missing --]]
-L["Toravon the Ice Watcher"] = "Toravon the Ice Watcher"
---[[Translation missing --]]
 L["Torghast"] = "Torghast"
 --[[Translation missing --]]
 L["Total Duration"] = "Total Duration"
---[[Translation missing --]]
-L["Total Earned in this Season"] = "Total Earned in this Season"
---[[Translation missing --]]
-L["Total Essence"] = "Total Essence"
 --[[Translation missing --]]
 L["Total Experience"] = "Total Experience"
 --[[Translation missing --]]
@@ -2591,8 +2155,6 @@ L["Total Reputation"] = "Total Reputation"
 L["Total Stacks"] = "Total Stacks"
 --[[Translation missing --]]
 L["Total stacks over all matches"] = "Total stacks over all matches"
---[[Translation missing --]]
-L["Total Stages"] = "Total Stages"
 --[[Translation missing --]]
 L["Total Unit Count"] = "Total Unit Count"
 --[[Translation missing --]]
@@ -2617,7 +2179,6 @@ L["Tracking Charge CDs"] = "Tracking Charge CDs"
 L["Tracking Only Cooldown"] = "Tracking Only Cooldown"
 L["Transmission error"] = "Erro de transmissão"
 --[[Translation missing --]]
-L["Trial of the Crusader"] = "Trial of the Crusader"
 L["Trigger"] = "Gatilho"
 L["Trigger %i"] = "Gatilho %i"
 --[[Translation missing --]]
@@ -2641,12 +2202,6 @@ L["Unable to modernize aura '%s'. This is probably due to corrupt data or a bad 
 --[[Translation missing --]]
 L["Unaffected"] = "Unaffected"
 L["Undefined"] = "Indefinido"
---[[Translation missing --]]
-L["Unholy"] = "Unholy"
---[[Translation missing --]]
-L["Unholy Rune #1"] = "Unholy Rune #1"
---[[Translation missing --]]
-L["Unholy Rune #2"] = "Unholy Rune #2"
 L["Unit"] = "Unidade"
 L["Unit Characteristics"] = "Características da unidade"
 L["Unit Destroyed"] = "Unidade destruída"
@@ -2701,39 +2256,19 @@ L["Use Texture"] = "Use Texture"
 --[[Translation missing --]]
 L["Use Watched Faction"] = "Use Watched Faction"
 --[[Translation missing --]]
-L["Uses UnitInRange() to check if in range. Matches default raid frames out of range behavior, which is between 25 to 40 yards depending on your class and spec."] = "Uses UnitInRange() to check if in range. Matches default raid frames out of range behavior, which is between 25 to 40 yards depending on your class and spec."
---[[Translation missing --]]
 L["Using WeakAuras.clones is deprecated. Use WeakAuras.GetRegion(id, cloneId) instead."] = "Using WeakAuras.clones is deprecated. Use WeakAuras.GetRegion(id, cloneId) instead."
 --[[Translation missing --]]
 L["Using WeakAuras.regions is deprecated. Use WeakAuras.GetRegion(id) instead."] = "Using WeakAuras.regions is deprecated. Use WeakAuras.GetRegion(id) instead."
 --[[Translation missing --]]
 L["Vaelastrasz the Corrupt"] = "Vaelastrasz the Corrupt"
 --[[Translation missing --]]
-L["Val'kyr Twins"] = "Val'kyr Twins"
---[[Translation missing --]]
-L["Vault of Archavon"] = "Vault of Archavon"
---[[Translation missing --]]
-L["Versatility (%)"] = "Versatility (%)"
---[[Translation missing --]]
-L["Versatility Rating"] = "Versatility Rating"
---[[Translation missing --]]
 L["Vertical"] = "Vertical"
---[[Translation missing --]]
-L["Vesperon"] = "Vesperon"
 --[[Translation missing --]]
 L["Viscidus"] = "Viscidus"
 --[[Translation missing --]]
 L["Visibility"] = "Visibility"
 --[[Translation missing --]]
 L["Visions of N'Zoth"] = "Visions of N'Zoth"
---[[Translation missing --]]
-L["Void Reaver"] = "Void Reaver"
---[[Translation missing --]]
-L["Warband Quantity Total"] = "Warband Quantity Total"
---[[Translation missing --]]
-L["Warband Transfer Percentage"] = "Warband Transfer Percentage"
---[[Translation missing --]]
-L["Warband Transferred Quantity"] = "Warband Transferred Quantity"
 --[[Translation missing --]]
 L["Warfront (Heroic)"] = "Warfront (Heroic)"
 --[[Translation missing --]]
@@ -2746,12 +2281,6 @@ L["Warning"] = "Warning"
 L["Warning for unknown aura:"] = "Warning for unknown aura:"
 --[[Translation missing --]]
 L["Warning: Anchoring in aura '%s' is imposssible, due to an anchoring cycle"] = "Warning: Anchoring in aura '%s' is imposssible, due to an anchoring cycle"
---[[Translation missing --]]
-L["Warning: Full Scan auras checking for both name and spell id can't be converted."] = "Warning: Full Scan auras checking for both name and spell id can't be converted."
---[[Translation missing --]]
-L["Warning: Name info is now available via %affected, %unaffected. Number of affected group members via %unitCount. Some options behave differently now. This is not automatically adjusted."] = "Warning: Name info is now available via %affected, %unaffected. Number of affected group members via %unitCount. Some options behave differently now. This is not automatically adjusted."
---[[Translation missing --]]
-L["Warning: Tooltip values are now available via %tooltip1, %tooltip2, %tooltip3 instead of %s. This is not automatically adjusted."] = "Warning: Tooltip values are now available via %tooltip1, %tooltip2, %tooltip3 instead of %s. This is not automatically adjusted."
 --[[Translation missing --]]
 L["WeakAuras Built-In (63:42 | 3:07 | 10 | 2.4)"] = "WeakAuras Built-In (63:42 | 3:07 | 10 | 2.4)"
 --[[Translation missing --]]
@@ -2779,8 +2308,6 @@ L["WeakAuras Version: %s"] = "WeakAuras Version: %s"
 L["Weapon"] = "Arma"
 --[[Translation missing --]]
 L["Weapon Enchant"] = "Weapon Enchant"
---[[Translation missing --]]
-L["Weapon Enchant / Fishing Lure"] = "Weapon Enchant / Fishing Lure"
 L["Whisper"] = "Sussurro"
 L["Width"] = "Largura"
 L["Wobble"] = "Oscilar"
@@ -2823,9 +2350,5 @@ L["Zoom"] = "Zoom"
 --[[Translation missing --]]
 L["Zoom Animation"] = "Zoom Animation"
 --[[Translation missing --]]
-L["Zul'Aman"] = "Zul'Aman"
---[[Translation missing --]]
 L["Zul'Gurub"] = "Zul'Gurub"
 --[[Translation missing --]]
-L["Zul'jin"] = "Zul'jin"
-

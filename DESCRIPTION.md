@@ -46,14 +46,15 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ---
 
-## <span style="color: #3c3;">🆕 New in the last releases (1.10 and 1.11)</span>
+## <span style="color: #3c3;">🆕 New in 1.12</span>
 
-- <span style="color: #ffd100;"><strong>Health and power conditions in combat:</strong></span> Health (%), Power (%) and their siblings change alpha, color and desaturate even when the game hides the value. On an enemy, the % conditions work.
-- <span style="color: #ffd100;"><strong>Trigger Expression:</strong></span> combine triggers with an expression such as `1 and (2 or not 3)`, no code needed.
-- <span style="color: #ffd100;"><strong>Copy and paste a single trigger or condition,</strong></span> and pick which child auras to import from a group.
-- <span style="color: #ffd100;"><strong>Your auras are safe:</strong></span> a daily backup (`/wa backups`, `/wa restore`), and every deleted aura kept for 30 days (`/wa deleted`, `/wa undelete`).
-- <span style="color: #ffd100;"><strong>Find what costs CPU:</strong></span> after a profiling, each aura shows a badge colored by its cost, and an Unused Auras button cleans up what no character loads.
-- <span style="color: #ffd100;"><strong>Class packs:</strong></span> a "Not in melee range" text for melee specs, reminders that pulse, and a mana bar that turns red under 30 %.
+- <span style="color: #ffd100;"><strong>Undo and Redo buttons for every tab,</strong></span> and a Replace button that swaps a spell, texture, font or sound in all your auras at once.
+- <span style="color: #ffd100;"><strong>Tags and Aura Sets:</strong></span> tag your auras, search them with `#tag`, and let each character load only the auras of its set.
+- <span style="color: #ffd100;"><strong>Place your HUD in the Blizzard Edit Mode,</strong></span> and preview every aura without a fight with `/wa demo`.
+- <span style="color: #ffd100;"><strong>Group conditions and an Aura Shown trigger:</strong></span> change a whole group in combat, or show an aura while another one is shown.
+- <span style="color: #ffd100;"><strong>Know what is out of date:</strong></span> a small padlock on auras the game freezes in combat.
+- <span style="color: #ffd100;"><strong>Pixel Perfect option</strong></span> for sharp edges.
+- <span style="color: #ffd100;"><strong>Stance and form triggers store the spell,</strong></span> so learning a new stance no longer shifts them. Auras loaded for a single class are converted at login.
 
 Full list in the **Files** tab.
 
@@ -85,16 +86,16 @@ Full list in the **Files** tab.
 
 Install the latest version, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel. Your positions and options are kept.
 
-- <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> The saved data format did not change.
+- <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> 1.12 converts stance and form auras: an older version no longer reads them correctly.
 - <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab, and report it on Discord, GitHub or CurseForge with the text of the error.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
 
 ---
 
 ## <span style="color: #0cf;">⚖ License and credits</span>
 
 - **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/LICENSE). Changes © 2026 dldvlpr, same license.
-- It also includes code from [M33kAuras](https://github.com/m33shoq/M33kAuras) by m33shoq and from [ForeverAuras](https://github.com/neroxrw/foreverauras) by Neroxrw, both under the GPL v2.
+- Includes code from [ForeverAuras](https://github.com/neroxrw/foreverauras) (Neroxrw), GPL v2. Versions before 1.10 also held code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq).
 - **Specialization and spell rank data** come from talentsforever.com, under CC-BY 4.0.
 - **Bundled libraries** keep their own licenses, included in their folders under `WeakAuras/Libs/`.
 - **Source code and change list:** every modified file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md), as required by the GPL v2 section 2a. Full source: [github.com/dldvlpr-addons-wow/Musca-Auras](https://github.com/dldvlpr-addons-wow/Musca-Auras).

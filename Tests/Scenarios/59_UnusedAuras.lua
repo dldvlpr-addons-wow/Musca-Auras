@@ -80,9 +80,18 @@ return function(test)
   -- The same aura deleted again, after an import that kept its uid, gets a second copy.
   local realTime = _G.time
   _G.time = function() return now + 5 end
+  -- Tags are not exported: the archive keeps them and the undelete puts them back.
+  WeakAuras.GetData("Dead").tags = "raid"
+  WeakAuras.GetData("DeadA").tags = "tank"
   assert(private.ArchiveDeletedAura("Dead"), "second archive failed")
   _G.time = realTime
   assert(#private.ListDeletedAuras() == 2, "second archive replaced the first one")
+  imported = nil
+  SlashCmdList.WEAKAURAS("undelete 1")
+  assert(type(imported) == "table" and imported.d.tags == "raid", "undelete lost the tags of the group")
+  local childTags = {}
+  for _, child in ipairs(imported.c) do childTags[child.id] = child.tags or false end
+  assert(childTags.DeadA == "tank" and childTags.DeadB == false, "undelete lost the tags of the members")
 
   -- Entries older than 30 days are dropped.
   _G.time = function() return now + 31 * DAY end

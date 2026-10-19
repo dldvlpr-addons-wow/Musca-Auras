@@ -104,8 +104,16 @@ function Private.ArchiveDeletedAura(id)
   end
   -- An import keeps the uid, the same aura deleted twice gets two copies
   local key = WeakAuras.GetData(id).uid .. "-" .. time()
+  -- Tags are not exported (non_transmissable_fields): kept beside the export, by uid.
+  local tags
+  for child in Private.TraverseAll(WeakAuras.GetData(id)) do
+    if child.tags then
+      tags = tags or {}
+      tags[child.uid] = child.tags
+    end
+  end
   local copy
-  ok, copy = pcall(deleted.Set, deleted, key, { id = id, export = export })
+  ok, copy = pcall(deleted.Set, deleted, key, { id = id, export = export, tags = tags })
   if not ok then
     deleted.stores[key] = nil
     return false
@@ -136,6 +144,15 @@ function Private.RestoreDeletedAura(key)
   if type(copy) ~= "table" or type(copy.export) ~= "string" then
     return false
   end
-  WeakAuras.Import(copy.export)
+  local received = type(copy.tags) == "table" and Private.StringToTable(copy.export, true)
+  if type(received) == "table" and type(received.d) == "table" then
+    received.d.tags = copy.tags[received.d.uid]
+    for _, child in ipairs(received.c or {}) do
+      child.tags = copy.tags[child.uid]
+    end
+    WeakAuras.Import(received)
+  else
+    WeakAuras.Import(copy.export)
+  end
   return true
 end

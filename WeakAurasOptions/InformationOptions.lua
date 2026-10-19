@@ -175,6 +175,57 @@ function OptionsPrivate.GetInformationOptions(data)
   end
 
 
+  -- Tags
+  -- Not exported, kept by updates (non_transmissable_fields). A group's tags also find its members in the search.
+  -- Multi-selection: sets the tags on all selected auras
+  local sameTags = true
+  local commonTags
+  local tagTargets = {}
+  if isTmpGroup then
+    for child in OptionsPrivate.Private.TraverseAllChildren(data) do
+      tinsert(tagTargets, child)
+    end
+  else
+    tagTargets[1] = data
+  end
+  for _, child in ipairs(tagTargets) do
+    local tags = child.tags or ""
+    if commonTags == nil then
+      commonTags = tags
+    elseif tags ~= commonTags then
+      sameTags = false
+    end
+  end
+
+  args.tags = {
+    type = "input",
+    name = sameTags and L["Tags"] or "|cFF4080FF" .. L["Tags"],
+    desc = L["Comma separated. Type #tag in the search box to list the auras with this tag."],
+    width = WeakAuras.doubleWidth,
+    order = order,
+    get = function()
+      return sameTags and commonTags or ""
+    end,
+    set = function(info, v)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for _, child in ipairs(tagTargets) do
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = child.uid,
+          actionType = "set",
+          path = {"tags"},
+          payload = v
+        })
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+      -- With an aura set, the tags decide what loads.
+      if OptionsPrivate.Private.GetCharacterAuraSet() then
+        OptionsPrivate.Private.ScanForLoads(nil, "SCAN_ALL")
+      end
+      OptionsPrivate.SortDisplayButtons(nil, true)
+    end
+  }
+  order = order + 1
+
   -- Squelch Action
   local sameSquelch = true
   local commonSquelch

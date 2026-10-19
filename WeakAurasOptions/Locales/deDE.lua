@@ -147,8 +147,6 @@ Enable this setting if you want this timer to be hidden, or when using a WeakAur
 	L["Ace: Funkeh, Nevcairiel"] = "Ace: Funkeh, Nevcairiel"
 	--[[Translation missing --]]
 	L["Active Aura Filters and Info"] = "Active Aura Filters and Info"
-	--[[Translation missing --]]
-	L["Actual Spec"] = "Actual Spec"
 	L["Add %s"] = "Füge %s hinzu"
 	L["Add a new display"] = "Neue Anzeige hinzufügen"
 	L["Add Condition"] = "Neue Bedingung"
@@ -221,7 +219,6 @@ Falls die Dauer der Animation auf |cFF00CC0010%|r gesetzt wurde und für die Anz
 	--[[Translation missing --]]
 	L["Any of"] = "Any of"
 	L["Apply Template"] = "Vorlage übernehmen"
-	L["Arcane Orb"] = "Arkane Kugel"
 	--[[Translation missing --]]
 	L["Area"] = "Area"
 	--[[Translation missing --]]
@@ -258,8 +255,6 @@ Off Screen]=]
 	L["Bar Color Settings"] = "Balkenfarbeneinstellungen"
 	L["Big Icon"] = "Großes Symbol"
 	L["Blend Mode"] = "Mischmodus"
-	L["Blue Rune"] = "Blaue Rune"
-	L["Blue Sparkle Orb"] = "Blau funkelnde Kugel"
 	L["Border %s"] = "Rahmen %s"
 	--[[Translation missing --]]
 	L["Border Anchor"] = "Border Anchor"
@@ -292,7 +287,6 @@ Off Screen]=]
 	--[[Translation missing --]]
 	L["Changelog"] = "Changelog"
 	--[[Translation missing --]]
-	L["Chat with WeakAuras experts on our Discord server."] = "Chat with WeakAuras experts on our Discord server."
 	L["Check On..."] = "Prüfen auf..."
 	--[[Translation missing --]]
 	L["Check out our wiki for a large collection of examples and snippets."] = "Check out our wiki for a large collection of examples and snippets."
@@ -534,8 +528,6 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED]=]
 	L["File Width"] = "File Width"
 	--[[Translation missing --]]
 	L["Filter based on the spell Name string."] = "Filter based on the spell Name string."
-	--[[Translation missing --]]
-	L["Filter by Arena Spec"] = "Filter by Arena Spec"
 	L["Filter by Class"] = "Nach Klasse filtern"
 	L["Filter by Group Role"] = "Nach Gruppenrolle filtern"
 	--[[Translation missing --]]
@@ -543,8 +535,6 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED]=]
 	--[[Translation missing --]]
 	L["Filter by Npc ID"] = "Filter by Npc ID"
 	L["Filter by Raid Role"] = "Filter nach Schlachtzugsrollen"
-	--[[Translation missing --]]
-	L["Filter by Specialization"] = "Filter by Specialization"
 	--[[Translation missing --]]
 	L["Filter by Unit Name"] = "Filter by Unit Name"
 	--[[Translation missing --]]
@@ -561,7 +551,6 @@ Can use \ to escape -.]=]
 	L["Finish"] = "Endanimation"
 	--[[Translation missing --]]
 	L["Finishing..."] = "Finishing..."
-	L["Fire Orb"] = "Feuerkugel"
 	--[[Translation missing --]]
 	L["Flat Framelevels"] = "Flat Framelevels"
 	L["Foreground Texture"] = "Vordergrundtextur"
@@ -592,7 +581,6 @@ Can use \ to escape -.]=]
 	--[[Translation missing --]]
 	L["Glow Frame Type"] = "Glow Frame Type"
 	L["Glow Type"] = "Leuchttyp"
-	L["Green Rune"] = "Grüne Rune"
 	--[[Translation missing --]]
 	L["Grid direction"] = "Grid direction"
 	L["Group (verb)"] = "Gruppieren"
@@ -688,8 +676,6 @@ Falls die Zahl als Dezimalzahl (z.B. 0.5), Bruch (z.B. 1/2) oder Prozentsatz (z.
 	--[[Translation missing --]]
 	L["If unchecked, then this space will fill the entire line it is on in User Mode."] = "If unchecked, then this space will fill the entire line it is on in User Mode."
 	--[[Translation missing --]]
-	L["Ignore out of casting range"] = "Ignore out of casting range"
-	--[[Translation missing --]]
 	L["Ignore out of checking range"] = "Ignore out of checking range"
 	--[[Translation missing --]]
 	L["Ignore Wago updates"] = "Ignore Wago updates"
@@ -770,11 +756,9 @@ Falls die Zahl als Dezimalzahl (z.B. 0.5), Bruch (z.B. 1/2) oder Prozentsatz (z.
 	--[[Translation missing --]]
 	L["LibDeflate: Yoursafety"] = "LibDeflate: Yoursafety"
 	--[[Translation missing --]]
-	L["LibDispel: Simpy"] = "LibDispel: Simpy"
 	--[[Translation missing --]]
 	L["LibSerialize: Sanjo"] = "LibSerialize: Sanjo"
 	--[[Translation missing --]]
-	L["LibSpecialization: Funkeh"] = "LibSpecialization: Funkeh"
 	L["Limit"] = "Limit"
 	--[[Translation missing --]]
 	L["Line"] = "Line"
@@ -922,7 +906,6 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["or"] = "oder"
 	--[[Translation missing --]]
 	L["or %s"] = "or %s"
-	L["Orange Rune"] = "Orange Rune"
 	--[[Translation missing --]]
 	L["Our translators (too many to name)"] = "Our translators (too many to name)"
 	--[[Translation missing --]]
@@ -986,7 +969,6 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Progress Texture"] = "Fortschrittstextur"
 	--[[Translation missing --]]
 	L["Progress Texture Settings"] = "Progress Texture Settings"
-	L["Purple Rune"] = "Violette Rune"
 	L["Put this display in a group"] = "Diese Anzeige in eine Gruppe stecken"
 	--[[Translation missing --]]
 	L["Range in yards"] = "Range in yards"
@@ -1017,8 +999,6 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	--[[Translation missing --]]
 	L["Require unit from trigger"] = "Require unit from trigger"
 	L["Required for Activation"] = "Benötigt zur Aktivierung"
-	--[[Translation missing --]]
-	L["Requires LibSpecialization, that is e.g. a up-to date WeakAuras version"] = "Requires LibSpecialization, that is e.g. a up-to date WeakAuras version"
 	--[[Translation missing --]]
 	L["Reset all options to their default values."] = "Reset all options to their default values."
 	L["Reset Entry"] = "Eintrag zurücksetzen"
@@ -1178,8 +1158,6 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Space Vertically"] = "Vertikaler Abstand"
 	L["Spark Settings"] = "Funkeneinstellungen"
 	L["Spark Texture"] = "Funkentextur"
-	--[[Translation missing --]]
-	L["Specific Currency ID"] = "Specific Currency ID"
 	--[[Translation missing --]]
 	L["Spell Selection Filters"] = "Spell Selection Filters"
 	--[[Translation missing --]]
@@ -1353,8 +1331,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	--[[Translation missing --]]
 	L["Unknown"] = "Unknown"
 	--[[Translation missing --]]
-	L["Unknown Encounter's Spell Id"] = "Unknown Encounter's Spell Id"
-	--[[Translation missing --]]
 	L["Unknown property '%s' found in '%s'"] = "Unknown property '%s' found in '%s'"
 	--[[Translation missing --]]
 	L["Unknown Spell"] = "Unknown Spell"
@@ -1423,7 +1399,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["Y Offset"] = "Y-Versatz"
 	L["Y Rotation"] = "Y-Rotation"
 	L["Y Scale"] = "Skalierung (Y)"
-	L["Yellow Rune"] = "Gelbe Rune"
 	--[[Translation missing --]]
 	L["y-Offset"] = "y-Offset"
 	--[[Translation missing --]]

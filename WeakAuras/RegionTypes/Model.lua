@@ -9,7 +9,7 @@ local L = WeakAuras.L;
 
 -- Default settings
 local default = {
-  model_fileId = WeakAuras.IsTBC() and "124614" or "122968", -- Creature/illidan/illidandark.m2 / Creature/Arthaslichking/arthaslichking.m2
+  model_fileId = "122968", -- Creature/illidan/illidandark.m2 / Creature/Arthaslichking/arthaslichking.m2
   modelIsUnit = false,
   api = false, -- false ==> SetPosition + SetFacing; true ==> SetTransform
   model_x = 0,
@@ -153,8 +153,6 @@ local function ConfigureModel(region, model, data)
 
     if (unit == "target") then
       model:RegisterEvent("PLAYER_TARGET_CHANGED");
-    elseif not WeakAuras.IsClassicEra() and unit == "focus" then
-      model:RegisterEvent("PLAYER_FOCUS_CHANGED");
     end
     model:SetScript("OnEvent", function(self, event, unitId)
       Private.StartProfileSystem("model");
@@ -172,9 +170,6 @@ local function ConfigureModel(region, model, data)
   else
     model:UnregisterEvent("UNIT_MODEL_CHANGED");
     model:UnregisterEvent("PLAYER_TARGET_CHANGED");
-    if not WeakAuras.IsClassicEra() then
-      model:UnregisterEvent("PLAYER_FOCUS_CHANGED");
-    end
     model:SetScript("OnEvent", nil);
   end
 
@@ -199,9 +194,6 @@ local function ReleaseModel(model)
   model:Hide()
   model:UnregisterEvent("UNIT_MODEL_CHANGED");
   model:UnregisterEvent("PLAYER_TARGET_CHANGED");
-  if not WeakAuras.IsClassicEra() then
-    model:UnregisterEvent("PLAYER_FOCUS_CHANGED");
-  end
   model:SetScript("OnEvent", nil);
   local pool = model.api and poolNewApi or poolOldApi
   pool:Release(model)

@@ -618,6 +618,7 @@ local overridden = {
   ActionButton_ShowOverlayGlow = WeakAuras.ShowOverlayGlow,
   ActionButton_HideOverlayGlow = WeakAuras.HideOverlayGlow,
   WeakAuras = FakeWeakAuras,
+  ForeverAuras = FakeWeakAuras,
   collectgarbage = function(option)
     if option == "count" then
       return collectgarbage("count")

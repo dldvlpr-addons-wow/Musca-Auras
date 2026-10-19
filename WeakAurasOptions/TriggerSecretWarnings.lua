@@ -9,6 +9,7 @@ OptionsPrivate.TriggerSecretWarnings = Warnings
 
 Warnings.message = L["Secret detected. Some features may be restricted in combat."]
 Warnings.text = "|cffff0000" .. Warnings.message .. "|r"
+Warnings.casterText = "|cffff0000" .. L["Secret detected. Casts of units other than the player or the pet cannot be read, in or out of combat."] .. "|r"
 
 local function IsSecret(value)
   return issecretvalue ~= nil and issecretvalue(value) == true
@@ -233,6 +234,10 @@ local eventScopes = {
       if Says("ShouldUnitSpellCastingBeSecret", unit) then return L["Cast value checks:"] end
     end)
   end,
+  ["Spell Cast Succeeded"] = function(context)
+    local unit = type(context.trigger.unit) == "string" and context.trigger.unit:lower()
+    if unit ~= "player" and unit ~= "pet" then return L["Caster unit checks:"] end
+  end,
   ["Cooldown Progress (Spell)"] = CooldownScope,
   ["Cooldown Ready (Spell)"] = CooldownScope,
   ["Charges Changed"] = CooldownScope,
@@ -284,7 +289,9 @@ function Warnings.GetScope(data, triggernum)
 end
 
 function Warnings.GetText(data, triggernum)
-  return Warnings.GetScope(data, triggernum) ~= nil and Warnings.text or ""
+  local scope = Warnings.GetScope(data, triggernum)
+  if scope == L["Caster unit checks:"] then return Warnings.casterText end
+  return scope ~= nil and Warnings.text or ""
 end
 
 local function TriggerUsesSecrets(data, triggernum, trigger)

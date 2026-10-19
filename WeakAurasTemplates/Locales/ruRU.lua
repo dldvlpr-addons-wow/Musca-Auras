@@ -38,7 +38,6 @@ local L = WeakAuras.L
 	L["Back"] = "Назад"
 	L["Basic Show On Cooldown"] = "Показать восстановление"
 	L["Basic Show On Ready"] = "Основной: Показать по готовности"
-	L["Bloodlust/Heroism"] = "Жажда крови / Героизм"
 	L["buff"] = "(бафф)"
 	L["Buffs"] = "Баффы"
 	L["Charge and Buff Tracking"] = "Отслеживание заряда и баффов"

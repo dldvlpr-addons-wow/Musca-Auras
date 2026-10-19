@@ -5,7 +5,7 @@ local Private = select(2, ...)
 
 Private.Features:Register({
   id = "undo",
-  autoEnable = {"dev", "pr", "alpha"},
+  autoEnable = {"dev", "pr", "alpha", "beta", "release"},
   enabled = true,
   persist = true,
 })
@@ -213,6 +213,148 @@ TimeMachine:RegisterAction("move",
   end,
   {"add", "options_cu"}
 )
+
+-- Most option panels write the aura themselves and then call WeakAuras.Add. Those edits are recorded as whole copies
+-- of the aura: the options watch the picked auras, and WeakAuras.Add compares each watched aura with its last copy.
+-- The id and the group links stay out of the copy, so an undo never renames an aura nor moves it between groups.
+local structureKeys = { id = true, uid = true, parent = true, controlledChildren = true }
+local maxChanges = 50
+-- Edits closer than this, a slider drag or a multi-selection, are one step of the history.
+local mergeDelay = 1
+
+local function copyContent(data)
+  local content = {}
+  for key, value in pairs(data) do
+    if not structureKeys[key] then
+      content[key] = type(value) == "table" and CopyTable(value) or value
+    end
+  end
+  return content
+end
+
+local function sameContent(content, data)
+  for key, value in pairs(data) do
+    if not structureKeys[key] then
+      local other = content[key]
+      if type(value) == "table" then
+        if type(other) ~= "table" or not tCompare(value, other, math.huge) then
+          return false
+        end
+      elseif value ~= other then
+        return false
+      end
+    end
+  end
+  for key in pairs(content) do
+    if data[key] == nil then
+      return false
+    end
+  end
+  return true
+end
+
+TimeMachine:RegisterAction("restore",
+  function(data, _path, content)
+    for key in pairs(data) do
+      if not structureKeys[key] then
+        data[key] = nil
+      end
+    end
+    for key, value in pairs(content) do
+      data[key] = type(value) == "table" and CopyTable(value) or value
+    end
+  end,
+  function(data, path)
+    return "restore", path, copyContent(data)
+  end,
+  {"add", "options_cu"}
+)
+
+-- Name, group and children of an aura: a change of them is a rename or a move, which a restore cannot undo.
+local function placeOf(data)
+  return table.concat({ data.id, data.parent or "", table.concat(data.controlledChildren or {}, ",") }, "|")
+end
+
+---@type table<uid, table>
+TimeMachine.copies = {}
+---@type table<uid, string>
+TimeMachine.places = {}
+
+function TimeMachine:Remember(data)
+  self.copies[data.uid] = copyContent(data)
+  self.places[data.uid] = placeOf(data)
+end
+
+--- Watches the aura, its children and its groups, so that their next WeakAuras.Add is recorded.
+---@param data auraData
+function TimeMachine:Watch(data)
+  if not self.copiesFollowAdd then
+    -- Every add, by an undo or by any other path, keeps the copy of a watched aura current.
+    Private.callbacks:RegisterCallback("Add", function(_, uid, _, addedData)
+      if self.copies[uid] then
+        self:Remember(addedData)
+      end
+    end)
+    self.copiesFollowAdd = true
+  end
+  for watched in Private.TraverseAll(data) do
+    if not self.copies[watched.uid] then
+      self:Remember(watched)
+    end
+  end
+  for parent in Private.TraverseParents(data) do
+    if not self.copies[parent.uid] then
+      self:Remember(parent)
+    end
+  end
+end
+
+function TimeMachine:ForgetWatched()
+  self.copies = {}
+  self.places = {}
+end
+
+--- Called by WeakAuras.Add before the aura is added again. An edit that cannot be undone clears the history, since
+--- the steps before it would no longer match the auras: an edit of an aura that is not watched, a rename, a move, an
+--- import. The other auras added in the same frame belong to that operation and are not recorded either.
+---@param data auraData
+function TimeMachine:RecordEdit(data)
+  local now = GetTime()
+  local before = self.copies[data.uid]
+  if not before or self.transaction or WeakAuras.IsImporting() or self.clearedAt == now
+    or self.places[data.uid] ~= placeOf(data) then
+    self.clearedAt = now
+    self:DestroyTheUniverse(data.id)
+    return
+  end
+  if sameContent(before, data) then
+    return
+  end
+  local change = self.changes[self.index]
+  if not (change and change.editedAt and self.index == #self.changes and now - change.editedAt < mergeDelay) then
+    while self.index < #self.changes do
+      table.remove(self.changes)
+    end
+    change = { forward = {}, backward = {}, edited = {} }
+    table.insert(self.changes, change)
+    while #self.changes > maxChanges do
+      table.remove(self.changes, 1)
+    end
+    self.index = #self.changes
+  end
+  change.editedAt = now
+  local after = { uid = data.uid, actionType = "restore", payload = copyContent(data) }
+  if change.edited[data.uid] then
+    change.forward[change.edited[data.uid]] = after
+  else
+    table.insert(change.forward, after)
+    change.edited[data.uid] = #change.forward
+    table.insert(change.backward, 1, { uid = data.uid, actionType = "restore", payload = before })
+  end
+  if self.sub:HasSubscribers("Record") then
+    self.sub:Notify("Record", self.index)
+  end
+end
 
 ---@param path keyPath
 local function keyPathToString(path)

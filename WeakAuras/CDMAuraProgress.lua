@@ -152,6 +152,7 @@ local function createNativeContainer(owner, finishButton)
       button:SetFrameLevel(frame:GetFrameLevel())
       button:EnableMouse(false)
       finishButton(container, button)
+      Private.SnapLateTextures(button)
     end,
   })
   owner:HookScript("OnHide", function()
