@@ -57,7 +57,7 @@ Les identifiants de sorts suivent `Classes/Shaman.md` (DB2 client 1.60.1.70245),
 - Affichable seulement (widget, pas de comparaison en Lua) : puissance, vie, absorptions, durées de recharge et d'aura (objets Duration), charges courantes, cast ennemi.
 - Seuils quand même possibles par le jeu : courbe en escalier (`Show only below (%)`, `Show at or above the value instead`), conditions alpha, couleur et désaturation sur valeur secrète, temps restant inférieur ou supérieur via l'objet Duration. Effets visuels seulement, un seul seuil par aura.
 - Bloqué : journal de combat (`COMBAT_LOG_EVENT_UNFILTERED`, `CombatLogGetCurrentEventInfo`), stacks et champs d'aura secrets, sons ou actions selon un seuil.
-- Non tranché par le source : types de puissance et sorts « jamais secrets ».
+- Types de puissance et sorts « jamais secrets » (relevé en jeu 1.60.1.70450 du 2026-10-20, hors combat, `C_Secrets.GetPowerTypeSecrecy` et `GetSpell*Secrecy`) : seul `ComboPoints` est `NeverSecret`, les 29 autres types sont `ContextuallySecret` (mana compris). 31964 sorts sur 31970 sont `ContextuallySecret` sur l'aura, le lancement et la recharge ; les 6 autres (1283884 à 1283896) ne sont pas des sorts de classe. Aucun sort du chaman n'est lisible en combat par son niveau de secret.
 
 ## Recherche à faire avant la v2
 

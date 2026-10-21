@@ -51,4 +51,4 @@ Discord: https://discord.gg/EyYpyMq2km
 
 ## ⚖ License
 
-Fork of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2) © The WeakAuras Team. Includes code from [ForeverAuras](https://github.com/neroxrw/foreverauras) (Neroxrw), GPL v2; versions before 1.10 also held code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq). Changes © 2026 dldvlpr. [GPL v2](LICENSE), no warranty. Changes: [CHANGES.md](CHANGES.md). Data: talentsforever.com (CC-BY 4.0). Not affiliated with the WeakAuras Team or Blizzard Entertainment.
+Fork of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2) © The WeakAuras Team. Imports [ForeverAuras](https://github.com/neroxrw/foreverauras) auras: saved field names stay compatible. Versions up to 1.12 held code from ForeverAuras (Neroxrw), GPL v2, and versions before 1.10 code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq). Changes © 2026 dldvlpr. [GPL v2](LICENSE), no warranty. Changes: [CHANGES.md](CHANGES.md). Data: talentsforever.com (CC-BY 4.0). Not affiliated with the WeakAuras Team or Blizzard Entertainment.

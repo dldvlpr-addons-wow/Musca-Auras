@@ -52,7 +52,7 @@ What that means for your auras, tested in game on Forever unless marked otherwis
   A recast by someone else is not seen.
 - **A buff or debuff applied for the first time in combat** is only seen when combat ends.
 - **Logic on secret data keeps its last state.** A condition such as "Health < 50%" keeps the state it had when
-  combat started, then updates when combat ends. The health of a target that is not a player is secret even out of
+  combat started, then updates when combat ends. The health of a target that is not a player is hidden by the game even out of
   combat: such a condition on the Target unit never changes. Use "Show only below (%)" on the Health trigger instead.
 
 ### The combat log is closed
@@ -113,7 +113,7 @@ Triggers that use the combat log (`CLEU`, "Combat Log") never fire. For damage t
 
 **Does not work:**
 
-- Aura trigger filtered by **Native Filter** (crowd control, cast by me...): nothing shows at the moment.
+- Aura trigger filtered by **Game Categories** (crowd control, cast by me...): nothing shows at the moment.
 - Other players' casts.
 - Enemy names and IDs in instances.
 - Mana or energy tick timer in combat.
@@ -327,7 +327,7 @@ Musca Auras converts them on import, and lists in the chat what it could not con
 | Cooldown Manager trigger, cooldown | Cooldown trigger (spell ID, or name if ForeverAuras used names) |
 | Cooldown Manager trigger, buff | Aura trigger (your buffs, or your debuffs on the target) |
 | Cooldown Manager trigger, item | Item cooldown trigger |
-| Aura (Blizzard) trigger | Aura trigger with Native Filter (sorting removed). The Native Filter shows nothing at the moment. |
+| Aura (Blizzard) trigger | Aura trigger with Game Categories (sorting removed). The Game Categories shows nothing at the moment. |
 | Dispel type icon | Dispel Type Icon sub element |
 | Dispel type border | Border colored by dispel type |
 | Swing Timer, Ammo | Same triggers (Ammo: the item list now filters the equipped ammo) |

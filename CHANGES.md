@@ -5,9 +5,10 @@ a Classic client running on the modern 12.x engine (interface 16001).
 
 Original work: The WeakAuras Team, GPL-2.0 (see `WeakAuras/LICENSE`).
 Modifications: dldvlpr, GPL-2.0.
-Portions derived from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever, are in this fork. The
-rewrites listed below replaced most of them. A comparison with ForeverAuras 0.87.6 on 2026-10-17 still finds short
-shared sequences (call order, default values, color values), listed in the 2026-10-17 section.
+Versions up to 1.12 held code derived from ForeverAuras (Neroxrw, GPL-2.0), a WeakAuras fork for WoW Forever. All
+of it is now rewritten from behavior specifications, without ForeverAuras code, as listed below. The lines still
+shared with ForeverAuras 0.87.6 are fixed by the kept behavior: WoW API calls, saved field names, public names and
+default values. Rewriting them again gives the same lines (2026-10-21 section).
 The rewrites of 2026-10-04 changed local names and equivalent expressions only. The features "also found in
 ForeverAuras" listed on 2026-10-04 were written for this fork, with ForeverAuras as the behavior reference only.
 Rewritten without ForeverAuras code:
@@ -38,7 +39,17 @@ Rewritten without ForeverAuras code:
 - on 2026-10-17: `WeakAuras/CooldownViewerCatalog.lua` and `WeakAuras/SecretAuraAppearance.lua` again, and the fork
   blocks of `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/RegionTypes/Icon.lua`, `WeakAuras/CDMSetup.lua`,
   `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/ColorPalette.lua`, `WeakAurasOptions/CooldownViewerOptions.lua` and
-  `WeakAurasOptions/SecretAuraTriggerOptions.lua`.
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`;
+- on 2026-10-21: `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/CooldownViewerCatalog.lua`,
+  `WeakAuras/CooldownViewerSelection.lua`, `WeakAuras/CDMAuraProgress.lua`, `WeakAuras/SecretAuraGlow.lua`,
+  `WeakAuras/SecretAuraPreview.lua`, `WeakAuras/SpellCooldownState.lua`, `WeakAuras/BuffTriggerNativeFilter.lua`,
+  `WeakAuras/SubRegionTypes/DispelIcon.lua`, `WeakAurasTemplates/TriggerTemplatesDataForever.lua`, and the fork code
+  of `WeakAuras/RegionTypes/AuraBar.lua`, `WeakAuras/RegionTypes/ProgressTexture.lua`,
+  `WeakAuras/SubRegionTypes/Border.lua`, `WeakAuras/Animations.lua`, `WeakAuras/Transmission.lua`,
+  `WeakAurasOptions/LoadOptions.lua` and `WeakAurasOptions/OptionsFrames/Update.lua`. The lines still shared with
+  ForeverAuras in `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasSpinBox.lua`,
+  `WeakAurasOptions/OptionsFrames/FrameChooser.lua` and `WeakAurasOptions/SubRegionOptions/SubText.lua` are WoW API
+  calls (`IsMouseOver`) and a public name (`IsCDMBuffText`), kept unchanged.
 `WeakAuras/RegionTypes/ProgressTextureSecret.lua`, `WeakAuras/SubRegionTypes/SubTextNative.lua` and
 `WeakAuras/BuffTriggerRestrictedAuras.lua`, created by the moves of 2026-10-04, hold code written for this fork only.
 `WeakAuras/SecretRestrictions.lua`, created the same day, held code derived from ForeverAuras until 2026-10-16.
@@ -50,6 +61,91 @@ Specialization data in `WeakAuras/PlayerSpecialization.lua` comes from talentsfo
 too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
+
+## 2026-10-21
+
+Released as 1.13.0. Tested in game on WoW Forever: the options toolbar and footer in French, and the combo points
+of the Rogue HUD (text and pips) after a target change, in and out of combat. Not yet tested in game: Show Absorb and
+Show Heal Absorb. Headless test bench: 75 scenarios, 0 failed. luacheck: 0 warnings in 259 files.
+
+### Added
+- Health trigger: added Show Absorb and Show Heal Absorb toggles. They store `absorb` and `healabsorb`
+  (UnitGetTotalAbsorbs / UnitGetTotalHealAbsorbs) for text display and listen to UNIT_ABSORB_AMOUNT_CHANGED /
+  UNIT_HEAL_ABSORB_AMOUNT_CHANGED. Both amounts are always secret on WoW Forever: they are shown through native text,
+  kept out of the readable-state scrub, and give no numeric condition or threshold. Formatting a secret placeholder
+  value now runs the formatter protected and falls back to the raw value. The absorb overlay on the health bar is not
+  provided because it requires arithmetic on a secret value. Scenario 76 also checks that the absorb events are
+  registered only with their toggle and that the amounts offer no condition. Files: `WeakAuras/Prototypes.lua`,
+  `WeakAuras/WeakAuras.lua`, `WeakAuras/SubRegionTypes/SubTextNative.lua`, `WeakAuras/Locales/enUS.lua`,
+  `WeakAuras/Locales/frFR.lua`, `Tests/Harness/Units.lua`, `Tests/Scenarios/76_HealthAbsorbs.lua`.
+
+### Changed
+- All code derived from ForeverAuras is rewritten from behavior specifications, without reading the ForeverAuras or
+  previous code (files listed in the header, "on 2026-10-21"). The behavior stays the same, with four differences
+  from the first rewrite corrected after review: Cooldown Manager progress skips unloaded auras only while the options
+  are closed (`WeakAuras/CDMAuraProgress.lua`), the Aura (Modern) preview walks sparse element lists
+  (`WeakAuras/SecretAuraPreview.lua`), tiled border pieces keep their vertical texture coordinates, and a missing
+  LibSharedMedia entry falls back to the default media (`WeakAuras/SecretAuraAppearance.lua`).
+  `WeakAurasOptions/ClassPacks.lua` is regenerated from the rewritten templates, byte for byte identical.
+  `README.md` and `DESCRIPTION.md` now credit ForeverAuras for import compatibility only.
+- Split the two largest Lua files by responsibility, with no change of behavior. `WeakAuras/BlizzardAuraDisplay.lua`
+  now holds the catalogs and the `Display` table; the rest moved to `WeakAuras/BlizzardAuraDisplayUnits.lua`,
+  `BlizzardAuraDisplayTrigger.lua`, `BlizzardAuraDisplayMigration.lua`, `BlizzardAuraDisplaySounds.lua`,
+  `BlizzardAuraDisplayValidation.lua`, `BlizzardAuraDisplayPlacement.lua`, `BlizzardAuraDisplayButtons.lua`,
+  `BlizzardAuraDisplayInstances.lua`, `BlizzardAuraDisplayUnitRefresh.lua`, `BlizzardAuraDisplayQueues.lua`,
+  `BlizzardAuraDisplayLifecycle.lua` and `BlizzardAuraDisplayEvents.lua`. `WeakAuras/SecretAuraSingle.lua` keeps the
+  constants, helpers and predicates; the rest moved to `WeakAuras/SecretAuraSingleFallback.lua`,
+  `SecretAuraSingleLearning.lua`, `SecretAuraSingleGates.lua`, `SecretAuraSingleGateDisplay.lua`,
+  `SecretAuraSingleStatus.lua`, `SecretAuraSingleFollow.lua`, `SecretAuraSingleMissing.lua` and
+  `SecretAuraSingleRemaining.lua`. The pieces share their locals through `Private.AuraDisplayShared` and
+  `Private.AuraSingleShared`. `WeakAuras/WeakAuras.toc` lists the new files.
+- Split the longest functions of the options editor and of the dynamic group region into smaller named local
+  functions, with no change in behavior:
+  - `addControlsForChange`, `addControlsForIfLine` and `addControlsForCondition` (condition editor)
+  - `addAuthorModeOption`, `addUserModeOption` and the `group` control adder (custom options editor)
+  - `modify` (dynamic group region)
+  Files: `WeakAurasOptions/ConditionOptions.lua`, `WeakAurasOptions/AuthorOptions.lua`,
+  `WeakAuras/RegionTypes/DynamicGroup.lua`.
+- Player-facing texts rewritten without internal jargon ("secret", "native"), all routed through `L[]` with enUS and
+  frFR. Labels renamed: "Native Filter" -> "Game Categories", "Secret Restrictions Active" -> "Game Hides Combat
+  Data". The in-game tutorial gains section 10 "Coming from ForeverAuras" and its Secret values section now carries
+  the non-player-target health note. Scenario 75 compares every tutorial section with `TUTORIAL.md`. Files:
+  `WeakAuras/ForeverTutorial.lua`, `SecretAuraTrigger.lua`, `WeakAuras.lua` (welcome popup), `Prototypes.lua` (texts
+  only), `BlizzardAuraDisplayButtons.lua`, `BlizzardAuraDisplaySounds.lua`, `BlizzardAuraDisplayValidation.lua`,
+  `SecretAuraAppearance.lua`, `SecretAuraConditions.lua`, `Locales/enUS.lua`, `Locales/frFR.lua`;
+  `WeakAurasOptions/TriggerSecretWarnings.lua`, `OptionsFrames/Update.lua`, `AuraDisplayOptions.lua`,
+  `ActionOptions.lua`, `CooldownViewerOptions.lua`, `CommonOptions.lua`, `BuffTrigger2.lua`, `Locales/enUS.lua`,
+  `Locales/frFR.lua`;
+  `TUTORIAL.md`, `GUIDE.md`; `Tests/Scenarios` 31, 34, 39, 47, 50 and 75 (new).
+- `WeakAuras/Compatibility.lua`: removed the dead branches on the global `GetSpellInfo`, `GetSpellTexture` and
+  `IsUsableSpell`, absent from the WoW Forever client. `Private.ExecEnv.GetSpellInfo` is built on
+  `C_Spell.GetSpellInfo`; `GetSpellName`, `GetSpellIcon` and `IsUsableSpell` map to `C_Spell.GetSpellName`,
+  `C_Spell.GetSpellTexture` and `C_Spell.IsSpellUsable`.
+- Templates: removed spell IDs absent from the WoW Forever client (in-game spell survey 1.60.1.70450): Season of
+  Discovery Avenger's Shield 407669, Crusader Strike 407676, Hand of Reckoning 407631 (Paladin), Explosive Shot 409552
+  and a duplicate entry reusing its ID (Hunter), Envenom 399963 (Rogue), and the Troll Berserking variants 26297,
+  26296, 26635 (only 20554 remains). Metamorphosis 403789 and the other Season of Discovery IDs present in Forever are
+  kept. File: `WeakAurasTemplates/TriggerTemplatesDataClassicEra.lua`.
+- Options window: the toolbar overflowed the window, most of all in French. Unused Auras, Replace and Hide
+  Blizzard's CDM now show an icon or a checkbox alone, with their name in the tooltip, like Aura Set. The Guide
+  button takes the width of its text. Shorter French labels: Verrouiller, Aimantation, Annuler, Rétablir,
+  Mettre à jour, Signaler un bug. Files: `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`,
+  `WeakAurasOptions/Locales/frFR.lua`.
+
+### Fixed
+- Scenario 32 used the wrong `Enum.SecrecyLevel` values. It now uses those of the client
+  (`NeverSecret = 0, AlwaysSecret = 1, ContextuallySecret = 2`), and the case without a secrecy level uses a spell ID
+  that is never secret, so the case fails if the trigger ignores the missing enum. File: `Tests/Scenarios/32_SecretTriggerContract.lua`.
+  The pack notes record the in-game survey of 1.60.1.70450 (only the ComboPoints power type is never secret) in
+  `Tests/Packs/Chaman/NOTES.md` and `Tests/Packs/Voleur/NOTES.md`, and the new file of each moved function in
+  `Tests/Packs/DurationText/NOTES.md`.
+- Power trigger, Combo Points on the player: the value stayed the same after a target change. On WoW Forever the
+  combo points are stored on the target (`GetComboPoints("player", "target")`), and the client sends
+  `PLAYER_TARGET_CHANGED` and `COMBO_TARGET_CHANGED`, not a power event, when they move. The trigger now listens to
+  both through the existing `Private.WatchCOMBO_TARGET_CHANGED`, which was never called. The native threshold
+  (combo point pips) is now computed from the readable combo point count instead of `UnitPowerPercent`, which
+  does not follow the target. Files: `WeakAuras/Prototypes.lua`, `WeakAuras/GenericTrigger.lua`,
+  `WeakAuras/PrototypeSecretHelpers.lua`, new scenario `Tests/Scenarios/77_ComboPointsTarget.lua`.
 
 ## 2026-10-19
 

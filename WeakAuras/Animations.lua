@@ -103,11 +103,15 @@ local function RunAnimation(key, anim, elapsed, time)
       anim.region:SetAnimRotation(rotate)
     end
   end
+  local colorRegion = anim.colorFunc and anim.region.ColorAnim and anim.region
   local startR, startG, startB, startA
-  if anim.colorFunc and anim.region.ColorAnim then
-    startR, startG, startB, startA = anim.region:GetColor()
+  if colorRegion then
+    startR, startG, startB, startA = colorRegion:GetColor()
+    if Private.IsSecret(startR, startG, startB, startA) then
+      colorRegion = nil
+    end
   end
-  if anim.colorFunc and anim.region.ColorAnim and not Private.IsSecret(startR, startG, startB, startA) then
+  if colorRegion then
     local errorHandler = WeakAuras.IsOptionsOpen() and noopErrorHandler
                                                    or Private.GetErrorHandlerUid(anim.auraUID, L["Color Animation"])
     startR, startG, startB, startA = startR or 1, startG or 1, startB or 1, startA or 1
@@ -241,13 +245,11 @@ function Private.Animate(namespace, uid, type, anim, region, inverse, onFinished
       end
       anim.alpha = anim.alpha or 0;
       startAlpha = region:GetAlpha();
-      if Private.IsSecret(startAlpha) then
-        startAlpha = 1
-      end
+      startAlpha = Private.IsSecret(startAlpha) and 1 or startAlpha;
       anim.scalex = anim.scalex or 1;
       anim.scaley = anim.scaley or 1;
       startWidth, startHeight = region:GetWidth(), region:GetHeight();
-      if Private.IsSecret(startWidth, startHeight) then
+      if Private.IsSecret(startWidth) or Private.IsSecret(startHeight) then
         startWidth, startHeight = region.width or 0, region.height or 0
       end
       anim.rotate = anim.rotate or 0;
@@ -413,8 +415,8 @@ function Private.Animate(namespace, uid, type, anim, region, inverse, onFinished
 end
 
 function Private.IsMainAnimationReplaceable(region)
-  local animation = animations[tostring(region)]
-  return not animation or animation.type == "main"
+  local running = animations[tostring(region)]
+  return running == nil or running.type == "main"
 end
 
 function Private.CancelAnimation(region, resetPos, resetAlpha, resetScale, resetRotation, resetColor, doOnFinished)

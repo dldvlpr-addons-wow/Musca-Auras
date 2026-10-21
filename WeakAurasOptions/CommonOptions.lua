@@ -2241,7 +2241,7 @@ local function AddCommonTriggerOptions(options, data, triggernum, doubleWidth)
     fontSize = "small",
     order = 1.12,
     hidden = function() return trigger.type ~= "aura2" and trigger.type ~= "secretAura" end,
-    name = L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. Most auras turn secret in combat and stop updating."],
+    name = L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. In combat, the game hides most auras and they stop updating."],
   }
 end
 

@@ -485,7 +485,7 @@ return function(test)
   -- TriggerSecretWarnings
   ---------------------------------------------------------------------------------------------------------------
   local Warnings = optionsPrivate.TriggerSecretWarnings
-  Same(Warnings.message, "Secret detected. Some features may be restricted in combat.", "warning message")
+  Same(Warnings.message, "In combat, the game hides some values of this trigger. The aura can display them but cannot compare them, so some features may not work in combat.", "warning message")
   Same(Warnings.text, "|cffff0000" .. Warnings.message .. "|r", "warning text")
 
   local realSecrets = C_Secrets

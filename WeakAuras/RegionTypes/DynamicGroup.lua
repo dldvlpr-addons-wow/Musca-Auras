@@ -1095,11 +1095,7 @@ local function clearCache(cache, id, cloneId)
   end
 end
 
-local function modify(parent, region, data)
-  Private.FixGroupChildrenOrderForGroup(data)
-  region:SetScale(data.scale and data.scale > 0 and data.scale <= 10 and data.scale or 1)
-  Private.regionPrototype.modify(parent, region, data)
-
+local function applyGroupBackground(region, data)
   if data.border and not data.useAnchorPerUnit then
     local background = region.background
     background:SetBackdrop({
@@ -1125,7 +1121,9 @@ local function modify(parent, region, data)
   else
     region.background:Hide();
   end
+end
 
+local function installSuspendMethods(region)
   function region:IsSuspended()
     return not WeakAuras.IsLoginFinished() or self.suspended > 0
   end
@@ -1164,7 +1162,9 @@ local function modify(parent, region, data)
       end
     end
   end
+end
 
+local function installChildStoreMethods(region, data)
   local function createRegionData(childData, childRegion, childID, cloneID, dataIndex)
     cloneID = cloneID or ""
     local controlPoint = region.controlPoints:Acquire()
@@ -1317,9 +1317,9 @@ local function modify(parent, region, data)
     clearCache(self.growStates, childID, cloneID)
     self:SortUpdatedChildren()
   end
+end
 
-  region.sortFunc, region.sortOn = createSortFunc(data)
-
+local function installSortMethod(region, data)
   function region:SortUpdatedChildren()
     -- iterates through cache to insert all updated children in the right spot
     -- Called when the Group is Resume()d
@@ -1362,11 +1362,77 @@ local function modify(parent, region, data)
       self.needToSort = true
     end
   end
+end
 
-  region.growFunc, region.growOn = createGrowFunc(data)
-  region.anchorPerUnit = data.useAnchorPerUnit and data.anchorPerUnit
+local function buildPositionAnimation(data, anchor, x, y, xPrev, yPrev, xDelta, yDelta)
+  local anim
+  if data.grow == "CIRCLE" or data.grow == "COUNTERCIRCLE" then
+    local originX, originY = 0,0
+    local radius1, previousAngle = WeakAuras.GetPolarCoordinates(xPrev, yPrev, originX, originY)
+    local radius2, newAngle = WeakAuras.GetPolarCoordinates(x, y, originX, originY)
+    local dAngle = newAngle - previousAngle
+    dAngle = ((dAngle > 180 and dAngle - 360) or (dAngle < -180 and dAngle + 360) or dAngle)
+    if(math.abs(radius1 - radius2) > 0.1) then
+      local translateFunc = [[
+                        function(progress, _, _, previousAngle, dAngle)
+                            local previousRadius, dRadius = %f, %f;
+                            local targetX, targetY = %f, %f
+                            local radius = previousRadius + (1 - progress) * dRadius;
+                            local angle = previousAngle + (1 - progress) * dAngle;
+                            return cos(angle) * radius - targetX, sin(angle) * radius - targetY;
+                        end
+                    ]]
+      anim = {
+        type = "custom",
+        duration = 0.2,
+        use_translate = true,
+        translateType = "custom",
+        translateFunc = translateFunc:format(radius1, radius2 - radius1, x, y),
+        x = previousAngle,
+        y = dAngle,
+        selfPoint = data.selfPoint,
+        anchor = anchor,
+        anchorPoint = data.selfPoint,
+      }
+    else
+      local translateFunc = [[
+                        function(progress, _, _, previousAngle, dAngle)
+                            local radius = %f;
+                            local targetX, targetY = %f, %f
+                            local angle = previousAngle + (1 - progress) * dAngle;
+                            return cos(angle) * radius - targetX, sin(angle) * radius - targetY;
+                        end
+                    ]]
+      anim = {
+        type = "custom",
+        duration = 0.2,
+        use_translate = true,
+        translateType = "custom",
+        translateFunc = translateFunc:format(radius1, x, y),
+        x = previousAngle,
+        y = dAngle,
+        selfPoint = data.selfPoint,
+        anchor = anchor,
+        anchorPoint = data.selfPoint,
+      }
+    end
+  end
+  if not(anim) then
+    anim = {
+      type = "custom",
+      duration = 0.2,
+      use_translate = true,
+      x = xDelta,
+      y = yDelta,
+      selfPoint = data.selfPoint,
+      anchor = anchor,
+      anchorPoint = data.selfPoint,
+    }
+  end
+  return anim
+end
 
-  local animate = data.animate
+local function installPositionMethods(region, data, animate)
   function region:PositionChildren()
     if DeferProtectedLayout(self) then return end
     -- Repositions active children according to their index
@@ -1464,70 +1530,7 @@ local function modify(parent, region, data)
         local xDelta = xPrev - x
         local yDelta = yPrev - y
         if show and (abs(xDelta) > 0.01 or abs(yDelta) > 0.01) then
-          local anim
-          if data.grow == "CIRCLE" or data.grow == "COUNTERCIRCLE" then
-            local originX, originY = 0,0
-            local radius1, previousAngle = WeakAuras.GetPolarCoordinates(xPrev, yPrev, originX, originY)
-            local radius2, newAngle = WeakAuras.GetPolarCoordinates(x, y, originX, originY)
-            local dAngle = newAngle - previousAngle
-            dAngle = ((dAngle > 180 and dAngle - 360) or (dAngle < -180 and dAngle + 360) or dAngle)
-            if(math.abs(radius1 - radius2) > 0.1) then
-              local translateFunc = [[
-                                function(progress, _, _, previousAngle, dAngle)
-                                    local previousRadius, dRadius = %f, %f;
-                                    local targetX, targetY = %f, %f
-                                    local radius = previousRadius + (1 - progress) * dRadius;
-                                    local angle = previousAngle + (1 - progress) * dAngle;
-                                    return cos(angle) * radius - targetX, sin(angle) * radius - targetY;
-                                end
-                            ]]
-              anim = {
-                type = "custom",
-                duration = 0.2,
-                use_translate = true,
-                translateType = "custom",
-                translateFunc = translateFunc:format(radius1, radius2 - radius1, x, y),
-                x = previousAngle,
-                y = dAngle,
-                selfPoint = data.selfPoint,
-                anchor = self,
-                anchorPoint = data.selfPoint,
-              }
-            else
-              local translateFunc = [[
-                                function(progress, _, _, previousAngle, dAngle)
-                                    local radius = %f;
-                                    local targetX, targetY = %f, %f
-                                    local angle = previousAngle + (1 - progress) * dAngle;
-                                    return cos(angle) * radius - targetX, sin(angle) * radius - targetY;
-                                end
-                            ]]
-              anim = {
-                type = "custom",
-                duration = 0.2,
-                use_translate = true,
-                translateType = "custom",
-                translateFunc = translateFunc:format(radius1, x, y),
-                x = previousAngle,
-                y = dAngle,
-                selfPoint = data.selfPoint,
-                anchor = self,
-                anchorPoint = data.selfPoint,
-              }
-            end
-          end
-          if not(anim) then
-            anim = {
-              type = "custom",
-              duration = 0.2,
-              use_translate = true,
-              x = xDelta,
-              y = yDelta,
-              selfPoint = data.selfPoint,
-              anchor = self,
-              anchorPoint = data.selfPoint,
-            }
-          end
+          local anim = buildPositionAnimation(data, self, x, y, xPrev, yPrev, xDelta, yDelta)
           -- update animated expand & collapse for this child
           Private.Animate("controlPoint", data.uid, "controlPoint", anim, regionData.controlPoint, true)
         end
@@ -1575,8 +1578,9 @@ local function modify(parent, region, data)
     Private.StopProfileAura(data.id)
     self:Resize()
   end
+end
 
-
+local function installResizeMethod(region, data)
   function region:Resize()
     if DeferProtectedLayout(self) then return end
     -- Resizes the dynamic group, for background and border purposes
@@ -1648,6 +1652,30 @@ local function modify(parent, region, data)
       self.needToResize = true
     end
   end
+end
+
+local function modify(parent, region, data)
+  Private.FixGroupChildrenOrderForGroup(data)
+  region:SetScale(data.scale and data.scale > 0 and data.scale <= 10 and data.scale or 1)
+  Private.regionPrototype.modify(parent, region, data)
+
+  applyGroupBackground(region, data)
+
+  installSuspendMethods(region)
+
+  installChildStoreMethods(region, data)
+
+  region.sortFunc, region.sortOn = createSortFunc(data)
+
+  installSortMethod(region, data)
+
+  region.growFunc, region.growOn = createGrowFunc(data)
+  region.anchorPerUnit = data.useAnchorPerUnit and data.anchorPerUnit
+
+  local animate = data.animate
+  installPositionMethods(region, data, animate)
+
+  installResizeMethod(region, data)
 
   region:ReloadControlledChildren()
 

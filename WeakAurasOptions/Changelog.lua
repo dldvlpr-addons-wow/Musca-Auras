@@ -10,15 +10,36 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.12.0',
-  dateString = '2026-10-19',
+  versionString = '1.13.0',
+  dateString = '2026-10-21',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Undo and Redo buttons for every tab, and a Replace button for spells, textures, fonts and sounds in all your auras
-- Tags, and an Aura Set per character that loads only the auras with its tag
-- Move your auras in the Blizzard Edit Mode, and preview them all with /wa demo
-- Stance and form triggers store the spell, so a new stance no longer shifts them
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.12.0 (2026-10-19):
+- The combo point pips of the Rogue and Druid HUDs now follow the target
+- Show Absorb and Show Heal Absorb options in the Health trigger
+- The options toolbar fits in the window, in French too
+- Clearer texts, and a tutorial section for ForeverAuras users
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.13.0 (2026-10-21):
+
+New:
+
+- Health trigger: "Show Absorb" and "Show Heal Absorb" options. The %absorb and %healabsorb texts show the shield and the heal absorb of the unit. The game hides these amounts, so they give no condition and no threshold
+
+Changed:
+
+- Options window: the toolbar now fits in the window, in French too. Unused Auras, Replace and Hide Blizzard's CDM show an icon or a checkbox alone, with their name in the tooltip. Shorter French labels
+- Clearer texts, without technical words: "Native Filter" is now "Game Categories", and "Secret Restrictions Active" is now "Game Hides Combat Data". The in-game tutorial has a new section, "Coming from ForeverAuras"
+- The code derived from ForeverAuras is rewritten without ForeverAuras code. ForeverAuras auras still import as before
+- Templates: removed spells that do not exist on WoW Forever (Season of Discovery versions, Troll Berserking variants)
+
+Fixed:
+
+- Combo points: the Power trigger on Combo Points now follows the target. The combo point pips of the Rogue and Druid HUDs, and the %power text of a Combo Points aura, no longer keep the points of the previous target
+
+After the update:
+
+Nothing to convert, and the class HUDs do not need an update. Going back to 1.12 is possible.
+
+1.12.0 (2026-10-19):
 
 New:
 

@@ -8,9 +8,10 @@ local _, Private = ...
 -- unit the trigger follows.
 
 local Display = Private.BlizzardAuraDisplay
+local L = WeakAuras.L
 
-local TRIGGER_NAME = "Aura (Modern)"
-local DEFAULT_NAME = "Secret Auras"
+local TRIGGER_NAME = L["Aura (Modern)"]
+local DEFAULT_NAME = L["Secret Auras"]
 local DEFAULT_ICON = 134400
 local PREVIEW_DURATION = 6
 local PREVIEW_STACKS = 3
@@ -232,7 +233,7 @@ end
 
 local function DescribeSpellIDs(spellIDs, enabled)
   if not enabled or type(spellIDs) ~= "table" or #spellIDs == 0 then
-    return "None"
+    return L["None"]
   end
   local count = #spellIDs
   local text = tostring(spellIDs[1])
@@ -241,14 +242,14 @@ local function DescribeSpellIDs(spellIDs, enabled)
   end
   local hidden = count - 3
   if hidden > 0 then
-    text = ("%s (+%d more)"):format(text, hidden)
+    text = (L["%s (+%d more)"]):format(text, hidden)
   end
   return text
 end
 
 local function UnitLabel(trigger)
   if trigger.unit == "member" then
-    return Display.SpecificUnit(trigger) or "Specific Unit"
+    return Display.SpecificUnit(trigger) or L["Specific Unit"]
   end
   return Display.units[trigger.unit] or trigger.unit
 end
@@ -259,15 +260,15 @@ local function ShowOnLabel(trigger)
   if not (comparator and seconds) then
     return label
   end
-  return ("%s, remaining %s %s s"):format(tostring(label), comparator, seconds)
+  return (L["%s, remaining %s %s s"]):format(tostring(label), comparator, seconds)
 end
 
 function system.GetTriggerDescription(data, triggernum, lines)
   local trigger = GetTrigger(data, triggernum)
   lines[#lines + 1] = { DEFAULT_NAME, UnitLabel(trigger) }
-  lines[#lines + 1] = { "Show On", ShowOnLabel(trigger) }
-  lines[#lines + 1] = { "Spell IDs (All Ranks)", DescribeSpellIDs(trigger.auraRankSpellIDs, Display.UsesRankSpellIDs(trigger)) }
-  lines[#lines + 1] = { "Exact Spell IDs", DescribeSpellIDs(trigger.auraspellids, Display.UsesSpellIDs(trigger)) }
+  lines[#lines + 1] = { L["Show On"], ShowOnLabel(trigger) }
+  lines[#lines + 1] = { L["Spell IDs (All Ranks)"], DescribeSpellIDs(trigger.auraRankSpellIDs, Display.UsesRankSpellIDs(trigger)) }
+  lines[#lines + 1] = { L["Exact Spell IDs"], DescribeSpellIDs(trigger.auraspellids, Display.UsesSpellIDs(trigger)) }
 end
 
 WeakAuras.RegisterTriggerSystem({ "secretAura" }, system)

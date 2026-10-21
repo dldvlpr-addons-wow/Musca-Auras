@@ -2556,20 +2556,18 @@ StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
 
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   text = "|cff00ccffMusca Auras|r\n\n"
-    .. "WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, "
-    .. "so many Classic auras need changes.\n\n"
-    .. "|cffffcc00Not possible or limited:|r\n"
-    .. "- Combat log triggers never fire: the game closes the combat log to addons.\n"
-    .. "- During combat, the game can hide combat data (buffs, casts, cooldowns) from addons. "
-    .. "Buff and debuff triggers then keep their last state and update when combat ends.\n"
-    .. "- The swing timer does not reset on melee hits.\n"
-    .. "- Talent load options work for your own specialization only.\n"
-    .. "- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs.\n"
-    .. "- The \"Chat Message\" action may not send in instances or during combat.\n\n"
-    .. "Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about WeakAuras here.\n\n"
-    .. "Report other problems on the addon page.",
+    .. L["WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, so many Classic auras need changes."] .. "\n\n"
+    .. L["|cffffcc00Not possible or limited:|r"] .. "\n"
+    .. L["- Combat log triggers never fire: the game closes the combat log to addons."] .. "\n"
+    .. L["- During combat, the game can hide combat data (buffs, casts, cooldowns) from addons. Buff and debuff triggers then keep their last state and update when combat ends."] .. "\n"
+    .. L["- The swing timer does not reset on melee hits."] .. "\n"
+    .. L["- Talent load options work for your own specialization only."] .. "\n"
+    .. L["- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs."] .. "\n"
+    .. L["- The \"Chat Message\" action may not send in instances or during combat."] .. "\n\n"
+    .. L["Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about WeakAuras here."] .. "\n\n"
+    .. L["Report other problems on the addon page."],
   button1 = OKAY,
-  button2 = "Guide",
+  button2 = L["Guide"],
   OnCancel = function(_, _, reason)
     if reason == "clicked" then
       Private.ShowForeverTutorial()
@@ -5438,6 +5436,7 @@ local function ScrubSecretState(state)
   for key, value in pairs(state) do
     if key ~= "secretValue" and key ~= "secretTotal" and key ~= "secretPercent" and key ~= "secretPercentText"
        and key ~= "secretStacks" and key ~= "secretIcon" and key ~= "secretName" and key ~= "thresholdAlpha"
+       and key ~= "absorb" and key ~= "healabsorb"
        and not (type(key) == "string" and key:find("^secretFlag"))
     then
       if issecretvalue(value) then
@@ -5764,6 +5763,17 @@ end
 
 Private.ContainsPlaceHoldersPredicate = ContainsPlaceHolders
 
+local function FormatSymbolValue(formatter, value, state, triggerNum)
+  if Private.IsSecret(value) then
+    local ok, formatted = pcall(formatter, value, state, triggerNum)
+    if ok and formatted then
+      return tostring(formatted)
+    end
+    return tostring(value)
+  end
+  return tostring(formatter(value, state, triggerNum) or "") or ""
+end
+
 local function ValueForSymbol(symbol, region, customCache, regionState, regionStates, useHiddenStates, formatters)
   local triggerNum, sym = string.match(symbol, "(.+)%.(.+)")
   triggerNum = triggerNum and tonumber(triggerNum)
@@ -5775,7 +5785,7 @@ local function ValueForSymbol(symbol, region, customCache, regionState, regionSt
         elseif regionStates[triggerNum][sym] then
           local value = regionStates[triggerNum][sym]
           if formatters[symbol] then
-            return tostring(formatters[symbol](value, regionStates[triggerNum], triggerNum) or "") or ""
+            return FormatSymbolValue(formatters[symbol], value, regionStates[triggerNum], triggerNum)
           else
             return tostring(value) or ""
           end
@@ -5795,7 +5805,7 @@ local function ValueForSymbol(symbol, region, customCache, regionState, regionSt
     if useHiddenStates or regionState.show ~= false then
       local value = regionState[symbol]
       if formatters[symbol] then
-        return tostring(formatters[symbol](value, regionState, regionState.triggernum) or "") or ""
+        return FormatSymbolValue(formatters[symbol], value, regionState, regionState.triggernum)
       else
         return tostring(value) or ""
       end

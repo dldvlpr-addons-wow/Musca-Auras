@@ -46,15 +46,12 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ---
 
-## <span style="color: #3c3;">🆕 New in 1.12</span>
+## <span style="color: #3c3;">🆕 New in 1.13</span>
 
-- <span style="color: #ffd100;"><strong>Undo and Redo buttons for every tab,</strong></span> and a Replace button that swaps a spell, texture, font or sound in all your auras at once.
-- <span style="color: #ffd100;"><strong>Tags and Aura Sets:</strong></span> tag your auras, search them with `#tag`, and let each character load only the auras of its set.
-- <span style="color: #ffd100;"><strong>Place your HUD in the Blizzard Edit Mode,</strong></span> and preview every aura without a fight with `/wa demo`.
-- <span style="color: #ffd100;"><strong>Group conditions and an Aura Shown trigger:</strong></span> change a whole group in combat, or show an aura while another one is shown.
-- <span style="color: #ffd100;"><strong>Know what is out of date:</strong></span> a small padlock on auras the game freezes in combat.
-- <span style="color: #ffd100;"><strong>Pixel Perfect option</strong></span> for sharp edges.
-- <span style="color: #ffd100;"><strong>Stance and form triggers store the spell,</strong></span> so learning a new stance no longer shifts them. Auras loaded for a single class are converted at login.
+- <span style="color: #ffd100;"><strong>Combo points follow your target:</strong></span> the combo point pips of the Rogue and Druid HUDs, and the `%power` text of your own combo point auras, no longer keep the points of the previous target.
+- <span style="color: #ffd100;"><strong>Shields on health:</strong></span> Show Absorb and Show Heal Absorb options in the Health trigger, with the `%absorb` and `%healabsorb` texts.
+- <span style="color: #ffd100;"><strong>Options window that fits,</strong></span> in French too, and clearer texts without technical words.
+- <span style="color: #ffd100;"><strong>Coming from ForeverAuras?</strong></span> A new section of the in-game tutorial explains what each aura becomes.
 
 Full list in the **Files** tab.
 
@@ -88,14 +85,14 @@ Install the latest version, then click <span style="color: #ffd100;"><strong>Upd
 
 - <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> 1.12 converts stance and form auras: an older version no longer reads them correctly.
 - <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
+- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
 
 ---
 
 ## <span style="color: #0cf;">⚖ License and credits</span>
 
 - **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/LICENSE). Changes © 2026 dldvlpr, same license.
-- Includes code from [ForeverAuras](https://github.com/neroxrw/foreverauras) (Neroxrw), GPL v2. Versions before 1.10 also held code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq).
+- Imports [ForeverAuras](https://github.com/neroxrw/foreverauras) auras: saved field names stay compatible. Versions up to 1.12 held code from ForeverAuras (Neroxrw), GPL v2, and versions before 1.10 code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq).
 - **Specialization and spell rank data** come from talentsforever.com, under CC-BY 4.0.
 - **Bundled libraries** keep their own licenses, included in their folders under `WeakAuras/Libs/`.
 - **Source code and change list:** every modified file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md), as required by the GPL v2 section 2a. Full source: [github.com/dldvlpr-addons-wow/Musca-Auras](https://github.com/dldvlpr-addons-wow/Musca-Auras).

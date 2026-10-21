@@ -1,103 +1,122 @@
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
 
--- Spell cooldown state under secret values, shared by the spell cooldown trigger,
--- its conditions and the cooldown desaturation:
--- * per spell secret detection (C_Secrets predicate when the client has it),
--- * charges read from never secret fields,
--- * GCD only cooldowns (event flag isOnGCD, or a readable empty timer),
--- * loss of control replacing the normal cooldown,
--- * wand hold: while Shoot runs, other spells report the Shoot timer, so the
---   last timer seen before the shot is kept and shown instead.
+local IsSecret = Private.IsSecret
+local ShouldCooldownBeSecret = C_Secrets and C_Secrets.ShouldSpellCooldownBeSecret
 
-local type, pcall, wipe, GetTime = type, pcall, wipe, GetTime
-
-local SHOOT_SPELL_ID = 5019
-local WAND_HOLD_WINDOW = 3
-local WAND_SHOT_MERGE_WINDOW = 0.05
--- Pre-shot timers are copied at most this often per spell.
-local WAND_SNAPSHOT_INTERVAL = 0.5
-local ACTIVE_REMAINING_THRESHOLD = 0.001
+local SHOOT = 5019
+local HOLD_WINDOW = 3
+local SHOT_MERGE_WINDOW = 0.05
+local SNAPSHOT_INTERVAL = 0.5
+local ACTIVE_THRESHOLD = 0.001
+local NEVER = -math.huge
 
 local SpellCooldownState = {
-  SHOOT_SPELL_ID = SHOOT_SPELL_ID,
+  SHOOT_SPELL_ID = SHOOT,
 }
 Private.SpellCooldownState = SpellCooldownState
 
-local function ReadRemainingMethod(value)
+local gcdFlags, gcdFlagSince = {}, {}
+local castAfterShot, lastCastAt = {}, {}
+local wandSnapshots, wandSnapshotAt = {}, {}
+local wandShotAt, wandLastShotUpdate = NEVER, NEVER
+local wandUsed = false
+local emptyDuration
+local selectCurves = {}
+
+local function PlainBoolean(value)
+  if type(value) == "boolean" and not IsSecret(value) then
+    return value
+  end
+end
+
+local function PlainNumber(value)
+  if type(value) == "number" and not IsSecret(value) then
+    return value
+  end
+end
+
+local function RemainingField(value)
   return value.GetRemainingDuration
 end
 
--- Same answer as Private.IsDurationObject, without allocating a closure per call.
+local function Remaining(duration)
+  return duration:GetRemainingDuration()
+end
+
+local function Zero(duration)
+  return duration:IsZero()
+end
+
+local function CopyOf(duration)
+  return duration:Copy()
+end
+
 local function IsDuration(value)
   if type(value) ~= "userdata" then
     return false
   end
-  local ok, method = pcall(ReadRemainingMethod, value)
-  return ok and method ~= nil
+  local ok, field = pcall(RemainingField, value)
+  return ok and field ~= nil
 end
 SpellCooldownState.IsDuration = IsDuration
 
-local function ReadableBoolean(value)
-  if type(value) == "boolean" and not Private.IsSecret(value) then
+local function CheckedDuration(ok, value)
+  if ok and IsDuration(value) then
     return value
   end
 end
 
-local function ReadableNumber(value)
-  if type(value) == "number" and not Private.IsSecret(value) then
-    return value
+local function SafeDuration(getter, ...)
+  if getter then
+    return CheckedDuration(pcall(getter, ...))
   end
 end
 
-local function CallForDuration(apiFunction, ...)
-  if not apiFunction then
+local function CooldownInfo(spellID)
+  local getter = C_Spell and C_Spell.GetSpellCooldown
+  if not getter then
     return nil
   end
-  local ok, duration = pcall(apiFunction, ...)
-  if ok and IsDuration(duration) then
-    return duration
+  local ok, info = pcall(getter, spellID)
+  if ok and type(info) == "table" then
+    return info
   end
 end
 
-local function ReadableIsZero(duration)
-  local ok, isZero = pcall(duration.IsZero, duration)
+local function DurationIgnoringGCD(spellID)
+  return SafeDuration(C_Spell and C_Spell.GetSpellCooldownDuration, spellID, true)
+end
+
+function SpellCooldownState.ReadableRemaining(duration)
+  local ok, remaining = pcall(Remaining, duration)
   if ok then
-    return ReadableBoolean(isZero)
+    return PlainNumber(remaining)
   end
 end
+local ReadableRemaining = SpellCooldownState.ReadableRemaining
 
-local function ReadableRemaining(duration)
-  local ok, remaining = pcall(duration.GetRemainingDuration, duration)
-  return ok and ReadableNumber(remaining) or nil
-end
-SpellCooldownState.ReadableRemaining = ReadableRemaining
-
-local shouldSpellCooldownBeSecret = C_Secrets and C_Secrets.ShouldSpellCooldownBeSecret
-
--- true / false from the client predicate, nil when the client cannot tell.
 function SpellCooldownState.IsCooldownSecret(spellID)
-  if not shouldSpellCooldownBeSecret then
+  if not ShouldCooldownBeSecret then
     return nil
   end
-  local ok, isSecret = pcall(shouldSpellCooldownBeSecret, spellID)
+  local ok, secret = pcall(ShouldCooldownBeSecret, spellID)
   if ok then
-    return ReadableBoolean(isSecret)
+    return PlainBoolean(secret)
   end
 end
-
--- GCD flags: isOnGCD is only trustworthy while handling SPELL_UPDATE_COOLDOWN.
-local gcdFlags, gcdFlagSince = {}, {}
 
 function SpellCooldownState.UpdateGCDFlag(spellID)
-  local info = C_Spell.GetSpellCooldown(spellID)
-  local onGCD = info and ReadableBoolean(info.isOnGCD)
-  if onGCD ~= true then
+  local info = CooldownInfo(spellID)
+  local flag = info and PlainBoolean(info.isOnGCD)
+  if flag == true then
+    if gcdFlags[spellID] ~= true then
+      gcdFlagSince[spellID] = GetTime()
+    end
+  else
     gcdFlagSince[spellID] = nil
-  elseif gcdFlags[spellID] ~= true then
-    gcdFlagSince[spellID] = GetTime()
   end
-  gcdFlags[spellID] = onGCD
+  gcdFlags[spellID] = flag
 end
 
 function SpellCooldownState.GetGCDFlag(spellID)
@@ -105,7 +124,8 @@ function SpellCooldownState.GetGCDFlag(spellID)
 end
 
 function SpellCooldownState.ForgetGCDFlag(spellID)
-  gcdFlags[spellID], gcdFlagSince[spellID] = nil, nil
+  gcdFlags[spellID] = nil
+  gcdFlagSince[spellID] = nil
 end
 
 function SpellCooldownState.ClearGCDFlags()
@@ -113,21 +133,17 @@ function SpellCooldownState.ClearGCDFlags()
   wipe(gcdFlagSince)
 end
 
--- Wand hold
-local wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
-local wandUsed = false
-local castAfterShot, lastCastAt, wandSnapshots, wandSnapshotAt = {}, {}, {}, {}
-
 function SpellCooldownState.ClearWandHold()
   wipe(castAfterShot)
   wipe(wandSnapshots)
   wipe(wandSnapshotAt)
-  wandShotAt, wandLastShotUpdate = -math.huge, -math.huge
+  wandShotAt, wandLastShotUpdate = NEVER, NEVER
 end
+local ClearWandHold = SpellCooldownState.ClearWandHold
 
-local function NoteWandShot()
+local function RecordShot()
   local now = GetTime()
-  if now - wandLastShotUpdate > WAND_SHOT_MERGE_WINDOW then
+  if now - wandLastShotUpdate > SHOT_MERGE_WINDOW then
     wandShotAt = now
     wipe(castAfterShot)
   end
@@ -136,10 +152,10 @@ local function NoteWandShot()
 end
 
 function SpellCooldownState.NotePlayerCast(spellID)
-  if type(spellID) ~= "number" or Private.IsSecret(spellID) then
-    SpellCooldownState.ClearWandHold()
-  elseif spellID == SHOOT_SPELL_ID then
-    NoteWandShot()
+  if type(spellID) ~= "number" or IsSecret(spellID) then
+    ClearWandHold()
+  elseif spellID == SHOOT then
+    RecordShot()
   else
     lastCastAt[spellID] = GetTime()
     castAfterShot[spellID] = true
@@ -148,12 +164,12 @@ function SpellCooldownState.NotePlayerCast(spellID)
 end
 
 function SpellCooldownState.NoteCooldownEvent(spellID, baseSpellID)
-  if ReadableNumber(spellID) ~= SHOOT_SPELL_ID and ReadableNumber(baseSpellID) ~= SHOOT_SPELL_ID then
+  if PlainNumber(spellID) ~= SHOOT and PlainNumber(baseSpellID) ~= SHOOT then
     return
   end
-  local info = C_Spell.GetSpellCooldown(SHOOT_SPELL_ID)
-  if info and ReadableBoolean(info.isActive) then
-    NoteWandShot()
+  local info = CooldownInfo(SHOOT)
+  if info and PlainBoolean(info.isActive) == true then
+    RecordShot()
   end
 end
 
@@ -161,120 +177,141 @@ function SpellCooldownState.GetLastCast(spellID)
   return lastCastAt[spellID]
 end
 
-local function IsWandHeld(spellID)
-  return spellID ~= SHOOT_SPELL_ID and GetTime() - wandShotAt < WAND_HOLD_WINDOW and not castAfterShot[spellID]
+function SpellCooldownState.IsWandHeld(spellID)
+  return spellID ~= SHOOT and GetTime() - wandShotAt < HOLD_WINDOW and not castAfterShot[spellID]
 end
-SpellCooldownState.IsWandHeld = IsWandHeld
+local IsWandHeld = SpellCooldownState.IsWandHeld
 
 function SpellCooldownState.GetWandHoldEnd()
-  return wandShotAt + WAND_HOLD_WINDOW
+  return wandShotAt + HOLD_WINDOW
 end
 
-local function ApplyWandHold(spellID, duration)
+function SpellCooldownState.ApplyWandHold(spellID, duration)
   if IsWandHeld(spellID) then
     return wandSnapshots[spellID] or duration, true
   end
-  local now = GetTime()
-  if wandUsed and duration and now - (wandSnapshotAt[spellID] or -math.huge) >= WAND_SNAPSHOT_INTERVAL then
-    wandSnapshots[spellID], wandSnapshotAt[spellID] = duration:Copy(), now
+  if wandUsed and duration ~= nil then
+    local now = GetTime()
+    if now - (wandSnapshotAt[spellID] or NEVER) >= SNAPSHOT_INTERVAL then
+      local ok, copy = pcall(CopyOf, duration)
+      if ok then
+        wandSnapshots[spellID] = copy
+        wandSnapshotAt[spellID] = now
+      end
+    end
   end
   return duration, false
 end
-SpellCooldownState.ApplyWandHold = ApplyWandHold
+local ApplyWandHold = SpellCooldownState.ApplyWandHold
 
--- Durations
-local emptyDuration
-local function GetEmptyDuration()
+local function GCDOnly(spellID, durationWithoutGCD)
+  local info = CooldownInfo(spellID)
+  if not info or PlainBoolean(info.isActive) ~= true or PlainBoolean(info.isEnabled) == false then
+    return false
+  end
+  if durationWithoutGCD then
+    local ok, isZero = pcall(Zero, durationWithoutGCD)
+    if ok then
+      local plain = PlainBoolean(isZero)
+      if plain ~= nil then
+        return plain
+      end
+    end
+  end
+  return gcdFlags[spellID] == true
+end
+
+function SpellCooldownState.IsGCDOnly(spellID)
+  return GCDOnly(spellID, DurationIgnoringGCD(spellID))
+end
+
+local function EmptyDuration()
   if not emptyDuration and C_DurationUtil and C_DurationUtil.CreateDuration then
     emptyDuration = C_DurationUtil.CreateDuration()
   end
   return emptyDuration
 end
 
-local function IsGCDOnly(spellID, durationWithoutGCD)
-  local info = C_Spell.GetSpellCooldown(spellID)
-  if not (info and ReadableBoolean(info.isActive) and ReadableBoolean(info.isEnabled) ~= false) then
-    return false
-  end
-  local isZero = durationWithoutGCD and ReadableIsZero(durationWithoutGCD)
-  if isZero ~= nil then
-    return isZero
-  end
-  return gcdFlags[spellID] == true
-end
-
-function SpellCooldownState.IsGCDOnly(spellID)
-  return IsGCDOnly(spellID, CallForDuration(C_Spell.GetSpellCooldownDuration, spellID, true))
-end
-
--- Own cooldown of the spell: GCD only shows as an empty timer, wand hold shows the pre-shot timer.
 function SpellCooldownState.GetCooldownDurationWithoutGCD(spellID)
-  local duration = CallForDuration(C_Spell.GetSpellCooldownDuration, spellID, true)
-  if IsGCDOnly(spellID, duration) then
-    return GetEmptyDuration() or duration
+  local duration = DurationIgnoringGCD(spellID)
+  if GCDOnly(spellID, duration) then
+    return EmptyDuration() or duration
   end
   return (ApplyWandHold(spellID, duration))
 end
+local GetCooldownDurationWithoutGCD = SpellCooldownState.GetCooldownDurationWithoutGCD
 
-local function GetLossOfControlDuration(spellID)
-  if not C_Spell.GetSpellLossOfControlCooldownInfo then
+local function LossOfControlDuration(spellID)
+  local getInfo = C_Spell and C_Spell.GetSpellLossOfControlCooldownInfo
+  if not getInfo then
     return nil
   end
-  local ok, info = pcall(C_Spell.GetSpellLossOfControlCooldownInfo, spellID)
-  if ok and info and ReadableBoolean(info.shouldReplaceNormalCooldown) then
-    return CallForDuration(C_Spell.GetSpellLossOfControlCooldownDuration, spellID)
+  local ok, info = pcall(getInfo, spellID)
+  if ok and type(info) == "table" and PlainBoolean(info.shouldReplaceNormalCooldown) == true then
+    return SafeDuration(C_Spell.GetSpellLossOfControlCooldownDuration, spellID)
   end
 end
 
--- Returns the timer to display, then the same timer without the GCD.
 function SpellCooldownState.GetDisplayDurations(spellID, useCharges, showGCD, showLossOfControl)
-  local lossOfControl = showLossOfControl and GetLossOfControlDuration(spellID)
-  if lossOfControl then
-    return lossOfControl, lossOfControl
+  if showLossOfControl then
+    local lossOfControl = LossOfControlDuration(spellID)
+    if lossOfControl then
+      return lossOfControl, lossOfControl
+    end
   end
   if useCharges then
-    local charge = CallForDuration(C_Spell.GetSpellChargeDuration, spellID)
+    local charge = SafeDuration(C_Spell and C_Spell.GetSpellChargeDuration, spellID)
     return charge, charge
   end
-  local withoutGCD = SpellCooldownState.GetCooldownDurationWithoutGCD(spellID)
+  local withoutGCD = GetCooldownDurationWithoutGCD(spellID)
   if showGCD and not IsWandHeld(spellID) then
-    return CallForDuration(C_Spell.GetSpellCooldownDuration, spellID, false), withoutGCD
+    return SafeDuration(C_Spell and C_Spell.GetSpellCooldownDuration, spellID, false), withoutGCD
   end
   return withoutGCD, withoutGCD
 end
 
--- Charges: maxCharges is never secret, current charges and cast count become nil when secret.
 function SpellCooldownState.ReadCharges(spellID)
   local current, maximum, count
-  local info = C_Spell.GetSpellCharges and C_Spell.GetSpellCharges(spellID)
-  if info then
-    current = ReadableNumber(info.currentCharges)
-    maximum = ReadableNumber(info.maxCharges)
+  local getCharges = C_Spell and C_Spell.GetSpellCharges
+  if getCharges then
+    local ok, info = pcall(getCharges, spellID)
+    if ok and type(info) == "table" then
+      current = PlainNumber(info.currentCharges)
+      maximum = PlainNumber(info.maxCharges)
+    end
   end
-  if C_Spell.GetSpellCastCount then
-    local ok, castCount = pcall(C_Spell.GetSpellCastCount, spellID)
-    count = ok and ReadableNumber(castCount) or nil
+  local getCount = C_Spell and C_Spell.GetSpellCastCount
+  if getCount then
+    local ok, value = pcall(getCount, spellID)
+    if ok then
+      count = PlainNumber(value)
+    end
   end
   return current, maximum, count
 end
 
--- Selectors: valueIfTrue while the timer runs, possibly as a secret only usable by secret aware sinks.
-local remainingCurves = {}
-local function GetRemainingCurve(valueIfTrue, valueIfFalse)
-  local key = valueIfTrue .. "|" .. valueIfFalse
-  local curve = remainingCurves[key]
+local function SelectCurve(valueIfTrue, valueIfFalse)
+  local byFalse = selectCurves[valueIfTrue]
+  if not byFalse then
+    byFalse = {}
+    selectCurves[valueIfTrue] = byFalse
+  end
+  local curve = byFalse[valueIfFalse]
   if not curve then
     curve = C_CurveUtil.CreateCurve()
     curve:SetType(Enum.LuaCurveType.Step)
     curve:AddPoint(0, valueIfFalse)
-    curve:AddPoint(ACTIVE_REMAINING_THRESHOLD, valueIfTrue)
-    remainingCurves[key] = curve
+    curve:AddPoint(ACTIVE_THRESHOLD, valueIfTrue)
+    byFalse[valueIfFalse] = curve
   end
   return curve
 end
 
--- Returns nil when the duration cannot answer, so callers keep their readable fallback.
-local function SelectDuration(duration, valueIfTrue, valueIfFalse)
+local function EvaluateRemaining(duration, curve)
+  return duration:EvaluateRemainingDuration(curve)
+end
+
+function SpellCooldownState.SelectDuration(duration, valueIfTrue, valueIfFalse)
   if not IsDuration(duration) then
     return nil
   end
@@ -285,21 +322,25 @@ local function SelectDuration(duration, valueIfTrue, valueIfFalse)
     end
     return valueIfFalse
   end
-  if type(valueIfTrue) == "number" and type(valueIfFalse) == "number" and C_CurveUtil and C_CurveUtil.CreateCurve
-     and not Private.IsSecret(valueIfTrue, valueIfFalse) then
-    local ok, value = pcall(duration.EvaluateRemainingDuration, duration, GetRemainingCurve(valueIfTrue, valueIfFalse))
-    if ok then
-      return value
+  if type(valueIfTrue) == "number" and type(valueIfFalse) == "number"
+    and not IsSecret(valueIfTrue, valueIfFalse)
+    and C_CurveUtil and C_CurveUtil.CreateCurve then
+    local curveOk, curve = pcall(SelectCurve, valueIfTrue, valueIfFalse)
+    if curveOk then
+      local ok, value = pcall(EvaluateRemaining, duration, curve)
+      if ok then
+        return value
+      end
     end
   end
-  local ok, isZero = pcall(duration.IsZero, duration)
+  local ok, isZero = pcall(Zero, duration)
   if ok and C_CurveUtil and C_CurveUtil.EvaluateColorValueFromBoolean then
     return C_CurveUtil.EvaluateColorValueFromBoolean(isZero, valueIfFalse, valueIfTrue)
   end
+  return nil
 end
-SpellCooldownState.SelectDuration = SelectDuration
+local SelectDuration = SpellCooldownState.SelectDuration
 
--- Spell on its own cooldown: GCD, wand hold and charges left count as ready.
 function SpellCooldownState.SelectSpell(spellID, valueIfTrue, valueIfFalse)
-  return SelectDuration(SpellCooldownState.GetCooldownDurationWithoutGCD(spellID), valueIfTrue, valueIfFalse)
+  return SelectDuration(GetCooldownDurationWithoutGCD(spellID), valueIfTrue, valueIfFalse)
 end

@@ -65,45 +65,59 @@ local function checkAnimation(codes, id, a)
 end
 
 local removedFunctions = {
-  "UnitAura", "UnitBuff", "UnitDebuff", "GetSpellInfo", "GetSpellCooldown", "GetSpellCharges", "GetSpellTexture",
-  "IsUsableSpell", "IsSpellOverlayed", "CombatLogGetCurrentEventInfo", "GetTalentInfo", "GetNumTalentTabs",
-  "GetSpecialization", "GetItemCooldown", "GetContainerItemInfo",
+  "UnitAura", "UnitBuff", "UnitDebuff", "GetSpellInfo", "GetSpellCooldown", "GetSpellCharges",
+  "GetSpellTexture", "IsUsableSpell", "IsSpellOverlayed", "CombatLogGetCurrentEventInfo", "GetTalentInfo",
+  "GetNumTalentTabs", "GetSpecialization", "GetItemCooldown", "GetContainerItemInfo",
 }
 
 local function usesCombatLog(trigger)
-  if trigger.event == "Combat Log" then return true end
+  if trigger.event == "Combat Log" then
+    return true
+  end
   return trigger.type == "custom" and type(trigger.events) == "string"
-    and trigger.events:find("COMBAT_LOG_EVENT", 1, true) ~= nil
+         and trigger.events:find("COMBAT_LOG_EVENT", 1, true) ~= nil
+end
+
+local function triggerWarning(aura, triggernum, trigger)
+  if usesCombatLog(trigger) then
+    return L["%s: uses the combat log, which addons cannot read on WoW Forever. Use a custom trigger on the UNIT_COMBAT:player event instead."]:format(aura.id)
+  end
+  local warnings = OptionsPrivate.TriggerSecretWarnings
+  local secretOk, hasSecretAura = pcall(warnings.HasSecretAuraSpell, trigger)
+  if secretOk and hasSecretAura then
+    return L["%s: tracks an aura that the game hides in combat. Change the trigger type to Aura (Modern)."]:format(aura.id)
+  end
+  local probe = setmetatable({ id = "" }, { __index = aura })
+  local scopeOk, scope = pcall(warnings.GetScope, probe, triggernum)
+  if not scopeOk or scope == nil then
+    return nil
+  end
+  if scope == L["Caster unit checks:"] then
+    return L["%s: casts of units other than the player or the pet cannot be read, in or out of combat."]:format(aura.id)
+  end
+  return L["%s: %s may not work in combat, because the game hides the data."]:format(aura.id, (scope:gsub(":$", "")))
+end
+
+local function callsFunction(code, name)
+  return ("\n" .. code):find("[^%w_%.:]" .. name .. "%s*%(") ~= nil
 end
 
 local function compatibilityReport(auras, codes)
   local lines = {}
-  local warnings = OptionsPrivate.TriggerSecretWarnings
   for _, aura in ipairs(auras) do
-    local probe = setmetatable({id = ""}, {__index = aura})
-    for triggernum, triggerData in ipairs(type(aura.triggers) == "table" and aura.triggers or {}) do
-      local trigger = type(triggerData) == "table" and triggerData.trigger
+    for triggernum, triggerData in ipairs(aura.triggers or {}) do
+      local trigger = triggerData.trigger
       if type(trigger) == "table" then
-        if usesCombatLog(trigger) then
-          tinsert(lines, L["%s: uses the combat log, which addons cannot read on WoW Forever. Use a custom trigger on the UNIT_COMBAT:player event instead."]:format(aura.id))
-        else
-          local ok, secretAura = pcall(warnings.HasSecretAuraSpell, trigger)
-          local scopeOk, scope = pcall(warnings.GetScope, probe, triggernum)
-          if ok and secretAura then
-            tinsert(lines, L["%s: tracks an aura that turns secret in combat. Change the trigger type to Aura (Modern)."]:format(aura.id))
-          elseif scopeOk and scope == L["Caster unit checks:"] then
-            tinsert(lines, L["%s: casts of units other than the player or the pet cannot be read, in or out of combat."]:format(aura.id))
-          elseif scopeOk and scope then
-            tinsert(lines, L["%s: %s may not work in combat (secret values)."]:format(aura.id, (scope:gsub(":$", ""))))
-          end
+        local warning = triggerWarning(aura, triggernum, trigger)
+        if warning then
+          tinsert(lines, warning)
         end
       end
     end
   end
   for _, code in ipairs(codes) do
-    local source = " " .. code.code
     for _, name in ipairs(removedFunctions) do
-      if _G[name] == nil and source:find("[^%w_%.:]" .. name .. "%s*%(") then
+      if _G[name] == nil and callsFunction(code.code, name) then
         if OptionsPrivate.Private.HasRemovedFunctionReplacement(name) then
           tinsert(lines, L["%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."]:format(code.text, name))
         else
