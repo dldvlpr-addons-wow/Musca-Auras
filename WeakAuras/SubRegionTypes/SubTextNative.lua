@@ -41,6 +41,7 @@ local secretValuePlaceholders = {
   p = "value", value = "value", health = "value", power = "value",
   t = "total", total = "total", maxhealth = "total", maxpower = "total",
   percenthealth = "percent", percentpower = "percent",
+  absorb = "absorb", healabsorb = "absorb",
 }
 
 local function UpdateNativeText(holder, parent, textStr, formatters)
@@ -93,7 +94,10 @@ local function UpdateNativeText(holder, parent, textStr, formatters)
       if kind == "value" then
         secret, field, secretField = value, "value", "secretValue"
       end
-      if type(secret) == "number" then
+      if kind == "absorb" then
+        secret = state and state[placeholder]
+        anySecret = anySecret or Private.IsSecret(secret)
+      elseif type(secret) == "number" then
         anySecret = true
       elseif state and state.progressType == "static" and state[secretField] == nil then
         secret = state[field]

@@ -15,7 +15,7 @@ TEMP=$TMPDIR WOW_UI_SOURCE=$HOME/wow-ui-source/forever lua Tests/run.lua --scena
 
 ## Réglages testés
 
-Champs du sous-texte `%p` : `text_text_format_p_time_format`, `text_text_format_p_time_legacy_floor` (vrai = arrondi vers le bas, format 0), `text_text_format_p_time_dynamic_threshold`, `text_text_format_p_time_precision`. Chemin : `SecretAuraAppearance.lua` `BindDurationText`. L'icône 7 ajoute le filtre du trigger « Total Duration >= 1 » : le texte passe alors par les chiffres du cooldown (`SecretAuraSingle.lua` `styleCountdownNumbers`).
+Champs du sous-texte `%p` : `text_text_format_p_time_format`, `text_text_format_p_time_legacy_floor` (vrai = arrondi vers le bas, format 0), `text_text_format_p_time_dynamic_threshold`, `text_text_format_p_time_precision`. Chemin : `SecretAuraAppearance.lua` `BindDurationText`. L'icône 7 ajoute le filtre du trigger « Total Duration >= 1 » : le texte passe alors par les chiffres du cooldown (`SecretAuraSingleGateDisplay.lua` `StyleCountdown`).
 
 Les formats 1 et 2 ne sont pas proposés dans les options d'une aura « Aura (Modern) » (seulement Blizzard Default, Minutes and seconds, Seconds) : ils viennent de l'import. Ne pas modifier ces deux icônes dans les options.
 
@@ -40,5 +40,5 @@ Points de bascule à surveiller : passage de 1:00 à 59 (icônes 1 et 6 : « 60 
 ## Non couvert
 
 - `CDMAuraProgress.lua` (triggers du Cooldown Manager) : demande un trigger Cooldown Viewer, pas dans ce pack.
-- `SecretAuraSingle.lua` repli `GetDurationTextFormatter(99, 0, 0)` (affichage « manquant » qui suit un autre trigger) : pas de réglage, non testé.
+- `SecretAuraSingleFollow.lua` repli `GetDurationTextFormatter(99, 0, 0)` (affichage « manquant » qui suit un autre trigger) : pas de réglage, non testé.
 - Le banc n'émule pas `AuraContainer` ni `C_StringUtil` en rendu : le texte se vérifie en jeu seulement.

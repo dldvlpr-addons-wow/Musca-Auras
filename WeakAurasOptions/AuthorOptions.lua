@@ -911,11 +911,7 @@ local function validateNonDuplicateKey(option)
   end
 end
 
----@type fun(options: Option[], args: table, data: auraData, order: function, prefix: string, i: number)
-local function addAuthorModeOption(options, args, data, order, prefix, i)
-  -- add header controls
-  local option = options[i]
-
+local function isAuthorOptionCollapsed(option)
   local collapsed = false
   for id, optionData in pairs(option.references) do
     if OptionsPrivate.IsCollapsed(id, "author", optionData.path, true) then
@@ -923,29 +919,10 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
       break
     end
   end
+  return collapsed
+end
 
-  local _, optionData = next(option.references)
-  local isInGroup = optionData.parent ~= nil
-  local buttonWidth = 0.6
-  if isInGroup then
-    buttonWidth = buttonWidth + 0.3
-  end
-
-  local optionBelow = options[i + 1]
-  local isAboveGroup = optionBelow and OptionsPrivate.Private.author_option_classes[optionBelow.type] == "group"
-  if isAboveGroup then
-    buttonWidth = buttonWidth + 0.15
-  end
-
-  local optionAbove = options[i - 1]
-  local isBelowGroup = optionAbove and OptionsPrivate.Private.author_option_classes[optionAbove.type] == "group"
-  if isBelowGroup then
-    buttonWidth = buttonWidth + 0.15
-  end
-  local optionClass = OptionsPrivate.Private.author_option_classes[option.type]
-  local optionName = optionClass == "noninteractive" and OptionsPrivate.Private.author_option_types[option.type]
-                     or option.name
-
+local function addCollapseHeaderControl(args, prefix, data, option, optionName, order, buttonWidth, collapsed)
   args[prefix .. "collapse"] = {
     type = "execute",
     name = nameHead(data, option, optionName),
@@ -963,7 +940,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 18,
     control = "WeakAurasExpand"
   }
+end
 
+local function addMoveIntoAboveGroupControl(args, prefix, order, option, optionAbove, isBelowGroup)
   args[prefix .. "upAndIn"] = {
     type = "execute",
     width = 0.15,
@@ -1012,6 +991,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
+
+local function addMoveIntoBelowGroupControl(args, prefix, order, option, optionBelow, isAboveGroup)
   args[prefix .. "downAndIn"] = {
     type = "execute",
     width = 0.15,
@@ -1061,7 +1043,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
 
+local function addMoveAboveGroupControl(args, prefix, order, data, option, isInGroup)
   args[prefix .. "upAndOut"] = {
     type = "execute",
     width = 0.15,
@@ -1132,6 +1116,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
+
+local function addMoveBelowGroupControl(args, prefix, order, data, option, isInGroup)
   args[prefix .. "downAndOut"] = {
     type = "execute",
     width = 0.15,
@@ -1205,6 +1192,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
+
+local function addMoveAndDuplicateControls(args, prefix, order, data, options, i)
   local upDisable, upFunc = up(data, options, i)
   args[prefix .. "up"] = {
     type = "execute",
@@ -1244,7 +1234,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
 
+local function addDeleteControl(args, prefix, order, data, option)
   args[prefix .. "delete"] = {
     type = "execute",
     width = 0.15,
@@ -1292,9 +1284,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     imageHeight = 24,
     control = "WeakAurasIcon"
   }
+end
 
-  if collapsed then return end
-
+local function addOptionTypeControl(args, prefix, order, data, option, i)
   args[prefix .. "type"] = {
     type = "select",
     width = WeakAuras.doubleWidth,
@@ -1380,7 +1372,9 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
       OptionsPrivate.Private.TimeMachine:Commit()
     end
   }
+end
 
+local function addNameKeyAndTooltipControls(args, prefix, order, data, option, optionClass)
   if optionClass ~= "noninteractive" then
     args[prefix .. "name"] = {
       type = "input",
@@ -1431,6 +1425,53 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
       end
     }
   end
+end
+
+---@type fun(options: Option[], args: table, data: auraData, order: function, prefix: string, i: number)
+local function addAuthorModeOption(options, args, data, order, prefix, i)
+  -- add header controls
+  local option = options[i]
+
+  local collapsed = isAuthorOptionCollapsed(option)
+
+  local _, optionData = next(option.references)
+  local isInGroup = optionData.parent ~= nil
+  local buttonWidth = 0.6
+  if isInGroup then
+    buttonWidth = buttonWidth + 0.3
+  end
+
+  local optionBelow = options[i + 1]
+  local isAboveGroup = optionBelow and OptionsPrivate.Private.author_option_classes[optionBelow.type] == "group"
+  if isAboveGroup then
+    buttonWidth = buttonWidth + 0.15
+  end
+
+  local optionAbove = options[i - 1]
+  local isBelowGroup = optionAbove and OptionsPrivate.Private.author_option_classes[optionAbove.type] == "group"
+  if isBelowGroup then
+    buttonWidth = buttonWidth + 0.15
+  end
+  local optionClass = OptionsPrivate.Private.author_option_classes[option.type]
+  local optionName = optionClass == "noninteractive" and OptionsPrivate.Private.author_option_types[option.type]
+                     or option.name
+
+  addCollapseHeaderControl(args, prefix, data, option, optionName, order, buttonWidth, collapsed)
+
+  addMoveIntoAboveGroupControl(args, prefix, order, option, optionAbove, isBelowGroup)
+  addMoveIntoBelowGroupControl(args, prefix, order, option, optionBelow, isAboveGroup)
+
+  addMoveAboveGroupControl(args, prefix, order, data, option, isInGroup)
+  addMoveBelowGroupControl(args, prefix, order, data, option, isInGroup)
+  addMoveAndDuplicateControls(args, prefix, order, data, options, i)
+
+  addDeleteControl(args, prefix, order, data, option)
+
+  if collapsed then return end
+
+  addOptionTypeControl(args, prefix, order, data, option, i)
+
+  addNameKeyAndTooltipControls(args, prefix, order, data, option, optionClass)
 
   args[prefix .. "width"] = {
     type = "range",
@@ -1449,6 +1490,266 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
   local addControlsForType = typeControlAdders[option.type]
   if addControlsForType then
     addControlsForType(options, args, data, order, prefix, i)
+  end
+end
+
+local function addGroupBehaviorControls(args, prefix, order, data, option)
+  args[prefix .. "groupType"] = {
+    type = "select",
+    name = name(option, "groupType", L["Group Type"]),
+    order = order(),
+    width = WeakAuras.doubleWidth,
+    values = OptionsPrivate.Private.group_option_types,
+    get = get(option, "groupType"),
+    set = function(_, value)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = childData.uid,
+          actionType = "set",
+          path = expandPath(optionData.path, "groupType"),
+          payload = value
+        })
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end
+  }
+  args[prefix .. "useCollapse"] = {
+    type = "toggle",
+    name = name(option, "useCollapse", L["Collapsible Group"]),
+    desc = desc(option, "useCollapse", L["If checked, then this option group can be temporarily collapsed by the user."]),
+    order = order(),
+    width = WeakAuras.normalWidth,
+    get = get(option, "useCollapse"),
+    set = set(data, option, "useCollapse"),
+  }
+  args[prefix .. "collapseDefault"] = {
+    type = "toggle",
+    name = name(option, "collapse", L["Start Collapsed"]),
+    desc = desc(option, "collapse", L["If checked, then this option group will start collapsed."]),
+    order = order(),
+    width = WeakAuras.normalWidth,
+    get = get(option, "collapse"),
+    set = function(_, value)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = childData.uid,
+          actionType = "set",
+          path = expandPath(optionData.path, "collapse"),
+          payload = value,
+        })
+        -- TODO: make undo/redo across options like this also set collapsed value
+        OptionsPrivate.SetCollapsed(id, "config", optionData.path, value)
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end,
+    disabled = function() return not option.useCollapse end
+  }
+  args[prefix .. "noMerge"] = {
+    type = "toggle",
+    name = WeakAuras.newFeatureString .. name(option, "noMerge", L["Prevent Merging"]),
+    desc = desc(option, "noMerge", L["If checked, then this group will not merge with other group when selecting multiple auras."]),
+    order = order(),
+    width = option.groupType =="simple" and WeakAuras.doubleWidth or WeakAuras.normalWidth,
+    get = get(option, "noMerge"),
+    set = set(data, option, "noMerge"),
+  }
+end
+
+local function addGroupEntryLimitControls(args, prefix, order, data, option)
+  args[prefix .. "limitType"] = {
+    type = "select",
+    name = name(option, "limitType", L["Number of Entries"]),
+    desc = desc(option, "limitType", L["Determines how many entries can be in the table."]),
+    order = order(),
+    width = WeakAuras.normalWidth,
+    values = OptionsPrivate.Private.group_limit_types,
+    get = get(option, "limitType"),
+    set = function(_, value)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = childData.uid,
+          actionType = "set",
+          path = expandPath(optionData.path, "limitType"),
+          payload = value
+        })
+        if childOption.limitType == "fixed" and childOption.nameSource == -1 and value ~= "fixed" then
+          OptionsPrivate.Private.TimeMachine:Append({
+            uid = childData.uid,
+            actionType = "set",
+            path = expandPath(optionData.path, "entryNames"),
+            payload = nil
+          })
+          OptionsPrivate.Private.TimeMachine:Append({
+            uid = childData.uid,
+            actionType = "set",
+            path = expandPath(optionData.path, "nameSource"),
+            payload = 0
+          })
+        end
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end,
+  }
+  args[prefix .. "size"] = {
+    type = "range",
+    control = "WeakAurasSpinBox",
+    name = name(option, "limitType", option.limitType == "max" and L["Entry limit"] or L["Number of Entries"]),
+    desc = desc(option, "limitType"),
+    order = order(),
+    width = WeakAuras.normalWidth,
+    min = 1, -- no point in a table with no entries
+    softMax = 20, -- 20 people in a mythic raid group
+    step = 1,
+    get = get(option, "size"),
+    set = function(_, value)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        if childOption.nameSource == -1 then
+          if value < childOption.size then
+            for i = childOption.size,  value + 1, -1 do
+              OptionsPrivate.Private.TimeMachine:Append({
+                uid = childData.uid,
+                actionType = "remove",
+                path = expandPath(optionData.path, "entryNames"),
+                payload = i,
+              })
+            end
+          else
+            for i = childOption.size + 1, value do
+              OptionsPrivate.Private.TimeMachine:Append({
+                uid = childData.uid,
+                actionType = "insert",
+                path = expandPath(optionData.path, "entryNames"),
+                payload = { index = i, value = L["Entry %i"]:format(i) }
+              })
+            end
+          end
+        end
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = childData.uid,
+          actionType = "set",
+          path = expandPath(optionData.path, "size"),
+          payload = value
+        })
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end,
+    disabled = function() return option.limitType == "none" end,
+  }
+  args[prefix .. "hideReorder"] = {
+    type = "toggle",
+    name = name(option, "hideReorder", L["Disallow Entry Reordering"]),
+    desc = desc(option, "hideReorder"),
+    order = order(),
+    width = WeakAuras.normalWidth,
+    get = function()
+      return option.hideReorder or option.nameSource == -1
+    end,
+    set = set(data, option, "hideReorder"),
+    disabled = function()
+      return option.nameSource == -1
+    end,
+  }
+end
+
+local function addGroupEntryNameControls(args, prefix, order, data, option)
+  local nameSources = CopyTable(OptionsPrivate.Private.array_entry_name_types)
+  local validNameSourceTypes = OptionsPrivate.Private.name_source_option_types
+  if option.limitType ~= "fixed" then
+    nameSources[-1] = nil
+  end
+  for subIndex, subOption in ipairs(option.subOptions) do
+    if validNameSourceTypes[subOption.type] then
+      local allShareThisOption = true
+      for id in pairs(option.references) do
+        if not subOption.references[id] then
+          allShareThisOption = false
+          break
+        end
+      end
+      if allShareThisOption then
+        nameSources[subIndex] = subOption.key
+      end
+    end
+  end
+  args[prefix .. "nameSource"] = {
+    type = "select",
+    name = name(option, "nameSource", L["Entry Name Source"]),
+    desc = desc(option, "nameSource"),
+    order = order(),
+    values = nameSources,
+    width = WeakAuras.doubleWidth,
+    get = function()
+      return option.nameSource or 0
+    end,
+    set = function(_, value)
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        if (value == -1) ~= (childOption.nameSource == -1) then
+          if value == -1 then -- Name Sourrce: Fixed Names
+            local entryNames = {}
+            for i = 1, childOption.size do
+              entryNames[i] = L["Entry %i"]:format(i)
+            end
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "set",
+              path = expandPath(optionData.path, "entryNames"),
+              payload = entryNames
+            })
+          else
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "remove",
+              path = expandPath(optionData.path, "entryNames"),
+              payload = nil,
+            })
+          end
+        end
+        if value > 0 then -- Name Source: SubOption
+          OptionsPrivate.Private.TimeMachine:Append({
+            uid = childData.uid,
+            actionType = "set",
+            path = expandPath(optionData.path, "nameSource"),
+            payload = option.subOptions[value].references[id].index,
+          })
+        else
+          OptionsPrivate.Private.TimeMachine:Append({
+            uid = childData.uid,
+            actionType = "set",
+            path = expandPath(optionData.path, "nameSource"),
+            payload = value,
+          })
+        end
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end,
+  }
+  if option.nameSource == -1 then
+    for i = 1, option.size do
+      args[prefix .. "entry" .. i .. "name"] = {
+        type = "input",
+        name = nameArray(option, "entryNames", i, L["Entry %i"]:format(i)),
+        desc = descArray(option, "entryNames", i),
+        order = order(),
+        width = WeakAuras.doubleWidth,
+        get = getArrayStr(option, "entryNames", i),
+        set = setArrayStr(data, option, "entryNames", i),
+      }
+    end
   end
 end
 
@@ -2176,71 +2477,7 @@ typeControlAdders = {
   group = function(options, args, data, order, prefix, i)
     local option = options[i]
     args[prefix .. "width"] = nil
-    args[prefix .. "groupType"] = {
-      type = "select",
-      name = name(option, "groupType", L["Group Type"]),
-      order = order(),
-      width = WeakAuras.doubleWidth,
-      values = OptionsPrivate.Private.group_option_types,
-      get = get(option, "groupType"),
-      set = function(_, value)
-        OptionsPrivate.Private.TimeMachine:StartTransaction()
-        for id, optionData in pairs(option.references) do
-          local childOption = optionData.options[optionData.index]
-          local childData = optionData.data
-          OptionsPrivate.Private.TimeMachine:Append({
-            uid = childData.uid,
-            actionType = "set",
-            path = expandPath(optionData.path, "groupType"),
-            payload = value
-          })
-        end
-        OptionsPrivate.Private.TimeMachine:Commit()
-      end
-    }
-    args[prefix .. "useCollapse"] = {
-      type = "toggle",
-      name = name(option, "useCollapse", L["Collapsible Group"]),
-      desc = desc(option, "useCollapse", L["If checked, then this option group can be temporarily collapsed by the user."]),
-      order = order(),
-      width = WeakAuras.normalWidth,
-      get = get(option, "useCollapse"),
-      set = set(data, option, "useCollapse"),
-    }
-    args[prefix .. "collapseDefault"] = {
-      type = "toggle",
-      name = name(option, "collapse", L["Start Collapsed"]),
-      desc = desc(option, "collapse", L["If checked, then this option group will start collapsed."]),
-      order = order(),
-      width = WeakAuras.normalWidth,
-      get = get(option, "collapse"),
-      set = function(_, value)
-        OptionsPrivate.Private.TimeMachine:StartTransaction()
-        for id, optionData in pairs(option.references) do
-          local childOption = optionData.options[optionData.index]
-          local childData = optionData.data
-          OptionsPrivate.Private.TimeMachine:Append({
-            uid = childData.uid,
-            actionType = "set",
-            path = expandPath(optionData.path, "collapse"),
-            payload = value,
-          })
-          -- TODO: make undo/redo across options like this also set collapsed value
-          OptionsPrivate.SetCollapsed(id, "config", optionData.path, value)
-        end
-        OptionsPrivate.Private.TimeMachine:Commit()
-      end,
-      disabled = function() return not option.useCollapse end
-    }
-    args[prefix .. "noMerge"] = {
-      type = "toggle",
-      name = WeakAuras.newFeatureString .. name(option, "noMerge", L["Prevent Merging"]),
-      desc = desc(option, "noMerge", L["If checked, then this group will not merge with other group when selecting multiple auras."]),
-      order = order(),
-      width = option.groupType =="simple" and WeakAuras.doubleWidth or WeakAuras.normalWidth,
-      get = get(option, "noMerge"),
-      set = set(data, option, "noMerge"),
-    }
+    addGroupBehaviorControls(args, prefix, order, data, option)
     if option.groupType ~="simple" then
       args[prefix .. "sortAlphabetically"] = {
         type = "toggle",
@@ -2253,192 +2490,8 @@ typeControlAdders = {
       }
     end
     if option.groupType ~="simple" then
-      args[prefix .. "limitType"] = {
-        type = "select",
-        name = name(option, "limitType", L["Number of Entries"]),
-        desc = desc(option, "limitType", L["Determines how many entries can be in the table."]),
-        order = order(),
-        width = WeakAuras.normalWidth,
-        values = OptionsPrivate.Private.group_limit_types,
-        get = get(option, "limitType"),
-        set = function(_, value)
-          OptionsPrivate.Private.TimeMachine:StartTransaction()
-          for id, optionData in pairs(option.references) do
-            local childOption = optionData.options[optionData.index]
-            local childData = optionData.data
-            OptionsPrivate.Private.TimeMachine:Append({
-              uid = childData.uid,
-              actionType = "set",
-              path = expandPath(optionData.path, "limitType"),
-              payload = value
-            })
-            if childOption.limitType == "fixed" and childOption.nameSource == -1 and value ~= "fixed" then
-              OptionsPrivate.Private.TimeMachine:Append({
-                uid = childData.uid,
-                actionType = "set",
-                path = expandPath(optionData.path, "entryNames"),
-                payload = nil
-              })
-              OptionsPrivate.Private.TimeMachine:Append({
-                uid = childData.uid,
-                actionType = "set",
-                path = expandPath(optionData.path, "nameSource"),
-                payload = 0
-              })
-            end
-          end
-          OptionsPrivate.Private.TimeMachine:Commit()
-        end,
-      }
-      args[prefix .. "size"] = {
-        type = "range",
-        control = "WeakAurasSpinBox",
-        name = name(option, "limitType", option.limitType == "max" and L["Entry limit"] or L["Number of Entries"]),
-        desc = desc(option, "limitType"),
-        order = order(),
-        width = WeakAuras.normalWidth,
-        min = 1, -- no point in a table with no entries
-        softMax = 20, -- 20 people in a mythic raid group
-        step = 1,
-        get = get(option, "size"),
-        set = function(_, value)
-          OptionsPrivate.Private.TimeMachine:StartTransaction()
-          for id, optionData in pairs(option.references) do
-            local childOption = optionData.options[optionData.index]
-            local childData = optionData.data
-            if childOption.nameSource == -1 then
-              if value < childOption.size then
-                for i = childOption.size,  value + 1, -1 do
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "remove",
-                    path = expandPath(optionData.path, "entryNames"),
-                    payload = i,
-                  })
-                end
-              else
-                for i = childOption.size + 1, value do
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "insert",
-                    path = expandPath(optionData.path, "entryNames"),
-                    payload = { index = i, value = L["Entry %i"]:format(i) }
-                  })
-                end
-              end
-            end
-            OptionsPrivate.Private.TimeMachine:Append({
-              uid = childData.uid,
-              actionType = "set",
-              path = expandPath(optionData.path, "size"),
-              payload = value
-            })
-          end
-          OptionsPrivate.Private.TimeMachine:Commit()
-        end,
-        disabled = function() return option.limitType == "none" end,
-      }
-      args[prefix .. "hideReorder"] = {
-        type = "toggle",
-        name = name(option, "hideReorder", L["Disallow Entry Reordering"]),
-        desc = desc(option, "hideReorder"),
-        order = order(),
-        width = WeakAuras.normalWidth,
-        get = function()
-          return option.hideReorder or option.nameSource == -1
-        end,
-        set = set(data, option, "hideReorder"),
-        disabled = function()
-          return option.nameSource == -1
-        end,
-      }
-      local nameSources = CopyTable(OptionsPrivate.Private.array_entry_name_types)
-      local validNameSourceTypes = OptionsPrivate.Private.name_source_option_types
-      if option.limitType ~= "fixed" then
-        nameSources[-1] = nil
-      end
-      for subIndex, subOption in ipairs(option.subOptions) do
-        if validNameSourceTypes[subOption.type] then
-          local allShareThisOption = true
-          for id in pairs(option.references) do
-            if not subOption.references[id] then
-              allShareThisOption = false
-              break
-            end
-          end
-          if allShareThisOption then
-            nameSources[subIndex] = subOption.key
-          end
-        end
-      end
-      args[prefix .. "nameSource"] = {
-        type = "select",
-        name = name(option, "nameSource", L["Entry Name Source"]),
-        desc = desc(option, "nameSource"),
-        order = order(),
-        values = nameSources,
-        width = WeakAuras.doubleWidth,
-        get = function()
-          return option.nameSource or 0
-        end,
-        set = function(_, value)
-          OptionsPrivate.Private.TimeMachine:StartTransaction()
-          for id, optionData in pairs(option.references) do
-            local childOption = optionData.options[optionData.index]
-            local childData = optionData.data
-            if (value == -1) ~= (childOption.nameSource == -1) then
-              if value == -1 then -- Name Sourrce: Fixed Names
-                local entryNames = {}
-                for i = 1, childOption.size do
-                  entryNames[i] = L["Entry %i"]:format(i)
-                end
-                OptionsPrivate.Private.TimeMachine:Append({
-                  uid = childData.uid,
-                  actionType = "set",
-                  path = expandPath(optionData.path, "entryNames"),
-                  payload = entryNames
-                })
-              else
-                OptionsPrivate.Private.TimeMachine:Append({
-                  uid = childData.uid,
-                  actionType = "remove",
-                  path = expandPath(optionData.path, "entryNames"),
-                  payload = nil,
-                })
-              end
-            end
-            if value > 0 then -- Name Source: SubOption
-              OptionsPrivate.Private.TimeMachine:Append({
-                uid = childData.uid,
-                actionType = "set",
-                path = expandPath(optionData.path, "nameSource"),
-                payload = option.subOptions[value].references[id].index,
-              })
-            else
-              OptionsPrivate.Private.TimeMachine:Append({
-                uid = childData.uid,
-                actionType = "set",
-                path = expandPath(optionData.path, "nameSource"),
-                payload = value,
-              })
-            end
-          end
-          OptionsPrivate.Private.TimeMachine:Commit()
-        end,
-      }
-      if option.nameSource == -1 then
-        for i = 1, option.size do
-          args[prefix .. "entry" .. i .. "name"] = {
-            type = "input",
-            name = nameArray(option, "entryNames", i, L["Entry %i"]:format(i)),
-            desc = descArray(option, "entryNames", i),
-            order = order(),
-            width = WeakAuras.doubleWidth,
-            get = getArrayStr(option, "entryNames", i),
-            set = setArrayStr(data, option, "entryNames", i),
-          }
-        end
-      end
+      addGroupEntryLimitControls(args, prefix, order, data, option)
+      addGroupEntryNameControls(args, prefix, order, data, option)
     end
     args[prefix .. "groupStart"] = {
       type = "header",
@@ -2495,6 +2548,336 @@ typeControlAdders = {
     }
   end
 }
+local function addUserGroupCollapseControl(args, prefix, order, data, option)
+  local collapsed = false
+  if option.useCollapse then
+    local defaultCollapsed = true
+    if option.collapse ~= nil then
+      defaultCollapsed = option.collapse
+    end
+    for id, optionData in pairs(option.references) do
+      if OptionsPrivate.IsCollapsed(id, "config", optionData.path, defaultCollapsed) then
+        collapsed = true
+        break
+      end
+    end
+    args[prefix .. "collapse"] = {
+      type = "execute",
+      name = option.name,
+      order = order(),
+      width = WeakAuras.doubleWidth,
+      func = function()
+        for id, optionData in pairs(option.references) do
+          OptionsPrivate.SetCollapsed(id, "config", optionData.path, not collapsed)
+        end
+        WeakAuras.ClearAndUpdateOptions(data.id, true)
+      end,
+      image = collapsed and "Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand" or
+        "Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse",
+      imageWidth = 18,
+      imageHeight = 18,
+      control = "WeakAurasExpand"
+    }
+  end
+  return collapsed
+end
+
+local function buildArrayEntryValues(option)
+  local values, firstChild = {}, true
+  local nameSource = option.nameSource or 0
+  if nameSource > 0 then
+    nameSource = option.subOptions[option.nameSource].key
+  end
+  if nameSource == -1 then
+    for id, optionData in pairs(option.references) do
+      local i = 1
+      local childOption = optionData.options[optionData.index]
+      local entryNames = childOption.entryNames
+      while i <= #values or i <= childOption.size do
+        if firstChild then
+          values[i] = entryNames[i]
+        elseif values[i] ~= entryNames[i] then
+          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+        end
+        i = i + 1
+      end
+      firstChild = false
+    end
+  elseif nameSource == 0 then
+    for id, optionData in pairs(option.references) do
+      local i = 1
+      local childOption = optionData.options[optionData.index]
+      local childValues = optionData.config[childOption.key]
+      while i <= #values or i <= #childValues do
+        if firstChild then
+          values[i] = L["Entry %i"]:format(i)
+        elseif values[i] == nil or childValues[i] == nil then
+          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+        end
+        i = i + 1
+      end
+      firstChild = false
+    end
+  else
+    for id, optionData in pairs(option.references) do
+      local i = 1
+      local childOption = optionData.options[optionData.index]
+      local childValues = optionData.config[option.key]
+      while i <= #values or i <= #childValues do
+        if firstChild then
+          values[i] = childValues[i][nameSource] or conflictBlue .. L["Entry %i"]:format(i)
+        elseif not childValues[i] or childValues[i][nameSource] ~= values[i] then
+          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+        end
+        i = i + 1
+      end
+      firstChild = false
+    end
+  end
+  return values
+end
+
+local function addArrayEntryChoiceControls(args, prefix, order, data, option, values, skipSubOptions)
+  local buttonWidth = 0.75
+  if option.limitType == "fixed" then
+    buttonWidth = buttonWidth - 0.30
+  end
+  if option.hideReorder or option.nameSource == -1 then
+    buttonWidth = buttonWidth - 0.30
+  end
+  args[prefix .. "entryChoice"] = {
+    type = "select",
+    name = nameUser(option),
+    order = order(),
+    width = WeakAuras.doubleWidth - buttonWidth,
+    values = values,
+    get = function()
+      if skipSubOptions then
+        return 1 -- show the "create" prompt, which is at index 1
+      end
+      local value
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childConfigList = optionData.config[childOption.key]
+        if value == nil then
+          value = getPage(id, optionData.path, #childConfigList)
+        elseif value ~= getPage(id, optionData.path, #childConfigList) then
+          return ""
+        end
+      end
+      return value
+    end,
+    set = function(_, value)
+      for id, optionData in pairs(option.references) do
+        setPage(id, optionData.path, value) -- XXX: mergeOptions will reset this to the maximum value if it's too big
+      end
+      WeakAuras.ClearAndUpdateOptions(data.id, true)
+    end,
+    sorting = option.sortAlphabetically and OptionsPrivate.Private.SortOrderForValues(values) or nil
+  }
+  args[prefix .. "resetEntry"] = {
+    type = "execute",
+    name = L["Reset Entry"],
+    order = order(),
+    func = function()
+      OptionsPrivate.Private.TimeMachine:StartTransaction()
+      for id, optionData in pairs(option.references) do
+        local childOption = optionData.options[optionData.index]
+        local childData = optionData.data
+        local childPage = getPage(id, optionData.path)
+        OptionsPrivate.Private.TimeMachine:Append({
+          uid = childData.uid,
+          actionType = "set",
+          path = expandUserPath(childData, optionData.path),
+          payload = {},
+        })
+      end
+      OptionsPrivate.Private.TimeMachine:Commit()
+    end,
+    width = 0.15,
+    image = "Interface\\Addons\\WeakAuras\\Media\\Textures\\reset",
+    imageWidth = 18,
+    imageHeight = 18,
+    control = "WeakAurasIcon"
+  }
+end
+
+local function addArrayEntryCreateAndDeleteControls(args, prefix, order, data, option, values, skipSubOptions)
+  if option.limitType ~= "fixed" then
+    args[prefix .. "createEntry"] = {
+      type = "execute",
+      name = L["Add Entry"],
+      order = order(),
+      func = function()
+        OptionsPrivate.Private.TimeMachine:StartTransaction()
+        for id, optionData in pairs(option.references) do
+          local childOption = optionData.options[optionData.index]
+          local childConfigList = optionData.config[childOption.key]
+          local childData = optionData.data
+          if childOption.limitType == "none" or #childConfigList < childOption.size then
+            local expandedPath = expandUserPath(childData, optionData.path)
+            -- expandUserPath adds the page at the end, which we don't need here
+            expandedPath[#expandedPath] = nil
+            local insertPos = #childConfigList + 1
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "insert",
+              path = expandedPath,
+              payload = {
+                index = insertPos,
+                value = {}
+              }
+            })
+
+            setPage(id, optionData.path, insertPos)
+          end
+        end
+        OptionsPrivate.Private.TimeMachine:Commit()
+      end,
+      disabled = function()
+        if option.limitType == "none" then
+          return false
+        else
+          for id, optionData in pairs(option.references) do
+            local childOption = optionData.options[optionData.index]
+            local childConfigList = optionData.config[childOption.key]
+            if #childConfigList >= childOption.size then
+              return true
+            end
+          end
+        end
+      end,
+      width = 0.15,
+      image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\add",
+      imageWidth = 18,
+      imageHeight = 18,
+      control = "WeakAurasIcon"
+    }
+    args[prefix .. "deleteEntry"] = {
+      type = "execute",
+      name = L["Delete Entry"],
+      order = order(),
+      confirm = true,
+      func = function()
+        OptionsPrivate.Private.TimeMachine:StartTransaction()
+        for id, optionData in pairs(option.references) do
+          local childOption = optionData.options[optionData.index]
+          local childConfigList = optionData.config[childOption.key]
+          local childData = optionData.data
+          local page = getPage(id, optionData.path)
+          if #childConfigList ~= 0 then
+            local expandedPath = expandUserPath(childData, optionData.path)
+            -- expandUserPath adds the page at the end, which we don't need here
+            expandedPath[#expandedPath] = nil
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "remove",
+              path = expandedPath,
+              payload = page,
+            })
+            setPage(id, optionData.path, min(#childConfigList, page))
+          end
+        end
+        OptionsPrivate.Private.TimeMachine:Commit()
+      end,
+      disabled = function()
+        return skipSubOptions
+      end,
+      width = 0.15,
+      image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\delete",
+      imageWidth = 18,
+      imageHeight = 18,
+      control = "WeakAurasIcon"
+    }
+  end
+end
+
+local function addArrayEntryMoveControls(args, prefix, order, data, option, values)
+  if option.nameSource ~= -1 and not option.hideReorder then
+    args[prefix .. "moveEntryUp"] = {
+      type = "execute",
+      name = L["Move Entry Up"],
+      order = order(),
+      func = function()
+        OptionsPrivate.Private.TimeMachine:StartTransaction()
+        for id, optionData in pairs(option.references) do
+          local childOption = optionData.options[optionData.index]
+          local childConfigList = optionData.config[childOption.key]
+          local childData = optionData.data
+          local childPage = getPage(id, optionData.path, #childConfigList)
+          if childConfigList[childPage] then
+            local expandedPath = expandUserPath(childData, optionData.path)
+            -- expandUserPath adds the page at the end, which we don't need here
+            expandedPath[#expandedPath] = nil
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "swap",
+              path = expandedPath,
+              payload = {childPage, childPage - 1}
+            })
+            setPage(id, optionData.path, childPage - 1)
+          end
+        end
+        OptionsPrivate.Private.TimeMachine:Commit()
+      end,
+      disabled = function()
+        for id, optionData in pairs(option.references) do
+          if getPage(id, optionData.path) <= 1 then
+            return true
+          end
+        end
+      end,
+      width = 0.15,
+      image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\moveup",
+      imageWidth = 18,
+      imageHeight = 18,
+      control = "WeakAurasIcon"
+    }
+    args[prefix .. "moveEntryDown"] = {
+      type = "execute",
+      name = L["Move Entry Down"],
+      order = order(),
+      func = function()
+        OptionsPrivate.Private.TimeMachine:StartTransaction()
+        for id, optionData in pairs(option.references) do
+          local childOption = optionData.options[optionData.index]
+          local childConfigList = optionData.config[childOption.key]
+          local childData = optionData.data
+          local childPage = getPage(id, optionData.path, #childConfigList)
+          if childConfigList[childPage] then
+            local expandedPath = expandUserPath(childData, optionData.path)
+            -- expandUserPath adds the page at the end, which we don't need here
+            expandedPath[#expandedPath] = nil
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "swap",
+              path = expandedPath,
+              payload = {childPage, childPage + 1}
+            })
+            setPage(id, optionData.path, childPage + 1)
+          end
+        end
+        OptionsPrivate.Private.TimeMachine:Commit()
+      end,
+      disabled = function()
+        for id, optionData in pairs(option.references) do
+          local childPage = getPage(id, optionData.path)
+          local childOption = optionData.options[optionData.index]
+          local childConfigList = optionData.config[childOption.key]
+          if childPage >= #childConfigList then
+            return true
+          end
+        end
+      end,
+      width = 0.15,
+      image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\movedown",
+      imageWidth = 18,
+      imageHeight = 18,
+      control = "WeakAurasIcon"
+    }
+  end
+end
+
 
 
 
@@ -2523,323 +2906,15 @@ local function addUserModeOption(options, args, data, order, prefix, i)
       width = (option.width or 1) * WeakAuras.normalWidth
     }
   elseif optionClass == "group" then
-    local collapsed = false
-    if option.useCollapse then
-      local defaultCollapsed = true
-      if option.collapse ~= nil then
-        defaultCollapsed = option.collapse
-      end
-      for id, optionData in pairs(option.references) do
-        if OptionsPrivate.IsCollapsed(id, "config", optionData.path, defaultCollapsed) then
-          collapsed = true
-          break
-        end
-      end
-      args[prefix .. "collapse"] = {
-        type = "execute",
-        name = option.name,
-        order = order(),
-        width = WeakAuras.doubleWidth,
-        func = function()
-          for id, optionData in pairs(option.references) do
-            OptionsPrivate.SetCollapsed(id, "config", optionData.path, not collapsed)
-          end
-          WeakAuras.ClearAndUpdateOptions(data.id, true)
-        end,
-        image = collapsed and "Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand" or
-          "Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse",
-        imageWidth = 18,
-        imageHeight = 18,
-        control = "WeakAurasExpand"
-      }
-    end
+    local collapsed = addUserGroupCollapseControl(args, prefix, order, data, option)
     if not collapsed then
       local skipSubOptions = false
       if option.groupType == "array" then
-        local values, firstChild = {}, true
-        local nameSource = option.nameSource or 0
-        if nameSource > 0 then
-          nameSource = option.subOptions[option.nameSource].key
-        end
-        if nameSource == -1 then
-          for id, optionData in pairs(option.references) do
-            local i = 1
-            local childOption = optionData.options[optionData.index]
-            local entryNames = childOption.entryNames
-            while i <= #values or i <= childOption.size do
-              if firstChild then
-                values[i] = entryNames[i]
-              elseif values[i] ~= entryNames[i] then
-                values[i] = conflictBlue .. L["Entry %i"]:format(i)
-              end
-              i = i + 1
-            end
-            firstChild = false
-          end
-        elseif nameSource == 0 then
-          for id, optionData in pairs(option.references) do
-            local i = 1
-            local childOption = optionData.options[optionData.index]
-            local childValues = optionData.config[childOption.key]
-            while i <= #values or i <= #childValues do
-              if firstChild then
-                values[i] = L["Entry %i"]:format(i)
-              elseif values[i] == nil or childValues[i] == nil then
-                values[i] = conflictBlue .. L["Entry %i"]:format(i)
-              end
-              i = i + 1
-            end
-            firstChild = false
-          end
-        else
-          for id, optionData in pairs(option.references) do
-            local i = 1
-            local childOption = optionData.options[optionData.index]
-            local childValues = optionData.config[option.key]
-            while i <= #values or i <= #childValues do
-              if firstChild then
-                values[i] = childValues[i][nameSource] or conflictBlue .. L["Entry %i"]:format(i)
-              elseif not childValues[i] or childValues[i][nameSource] ~= values[i] then
-                values[i] = conflictBlue .. L["Entry %i"]:format(i)
-              end
-              i = i + 1
-            end
-            firstChild = false
-          end
-        end
+        local values = buildArrayEntryValues(option)
         skipSubOptions = #values == 0
-        local buttonWidth = 0.75
-        if option.limitType == "fixed" then
-          buttonWidth = buttonWidth - 0.30
-        end
-        if option.hideReorder or option.nameSource == -1 then
-          buttonWidth = buttonWidth - 0.30
-        end
-        args[prefix .. "entryChoice"] = {
-          type = "select",
-          name = nameUser(option),
-          order = order(),
-          width = WeakAuras.doubleWidth - buttonWidth,
-          values = values,
-          get = function()
-            if skipSubOptions then
-              return 1 -- show the "create" prompt, which is at index 1
-            end
-            local value
-            for id, optionData in pairs(option.references) do
-              local childOption = optionData.options[optionData.index]
-              local childConfigList = optionData.config[childOption.key]
-              if value == nil then
-                value = getPage(id, optionData.path, #childConfigList)
-              elseif value ~= getPage(id, optionData.path, #childConfigList) then
-                return ""
-              end
-            end
-            return value
-          end,
-          set = function(_, value)
-            for id, optionData in pairs(option.references) do
-              setPage(id, optionData.path, value) -- XXX: mergeOptions will reset this to the maximum value if it's too big
-            end
-            WeakAuras.ClearAndUpdateOptions(data.id, true)
-          end,
-          sorting = option.sortAlphabetically and OptionsPrivate.Private.SortOrderForValues(values) or nil
-        }
-        args[prefix .. "resetEntry"] = {
-          type = "execute",
-          name = L["Reset Entry"],
-          order = order(),
-          func = function()
-            OptionsPrivate.Private.TimeMachine:StartTransaction()
-            for id, optionData in pairs(option.references) do
-              local childOption = optionData.options[optionData.index]
-              local childData = optionData.data
-              local childPage = getPage(id, optionData.path)
-              OptionsPrivate.Private.TimeMachine:Append({
-                uid = childData.uid,
-                actionType = "set",
-                path = expandUserPath(childData, optionData.path),
-                payload = {},
-              })
-            end
-            OptionsPrivate.Private.TimeMachine:Commit()
-          end,
-          width = 0.15,
-          image = "Interface\\Addons\\WeakAuras\\Media\\Textures\\reset",
-          imageWidth = 18,
-          imageHeight = 18,
-          control = "WeakAurasIcon"
-        }
-        if option.limitType ~= "fixed" then
-          args[prefix .. "createEntry"] = {
-            type = "execute",
-            name = L["Add Entry"],
-            order = order(),
-            func = function()
-              OptionsPrivate.Private.TimeMachine:StartTransaction()
-              for id, optionData in pairs(option.references) do
-                local childOption = optionData.options[optionData.index]
-                local childConfigList = optionData.config[childOption.key]
-                local childData = optionData.data
-                if childOption.limitType == "none" or #childConfigList < childOption.size then
-                  local expandedPath = expandUserPath(childData, optionData.path)
-                  -- expandUserPath adds the page at the end, which we don't need here
-                  expandedPath[#expandedPath] = nil
-                  local insertPos = #childConfigList + 1
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "insert",
-                    path = expandedPath,
-                    payload = {
-                      index = insertPos,
-                      value = {}
-                    }
-                  })
-
-                  setPage(id, optionData.path, insertPos)
-                end
-              end
-              OptionsPrivate.Private.TimeMachine:Commit()
-            end,
-            disabled = function()
-              if option.limitType == "none" then
-                return false
-              else
-                for id, optionData in pairs(option.references) do
-                  local childOption = optionData.options[optionData.index]
-                  local childConfigList = optionData.config[childOption.key]
-                  if #childConfigList >= childOption.size then
-                    return true
-                  end
-                end
-              end
-            end,
-            width = 0.15,
-            image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\add",
-            imageWidth = 18,
-            imageHeight = 18,
-            control = "WeakAurasIcon"
-          }
-          args[prefix .. "deleteEntry"] = {
-            type = "execute",
-            name = L["Delete Entry"],
-            order = order(),
-            confirm = true,
-            func = function()
-              OptionsPrivate.Private.TimeMachine:StartTransaction()
-              for id, optionData in pairs(option.references) do
-                local childOption = optionData.options[optionData.index]
-                local childConfigList = optionData.config[childOption.key]
-                local childData = optionData.data
-                local page = getPage(id, optionData.path)
-                if #childConfigList ~= 0 then
-                  local expandedPath = expandUserPath(childData, optionData.path)
-                  -- expandUserPath adds the page at the end, which we don't need here
-                  expandedPath[#expandedPath] = nil
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "remove",
-                    path = expandedPath,
-                    payload = page,
-                  })
-                  setPage(id, optionData.path, min(#childConfigList, page))
-                end
-              end
-              OptionsPrivate.Private.TimeMachine:Commit()
-            end,
-            disabled = function()
-              return skipSubOptions
-            end,
-            width = 0.15,
-            image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\delete",
-            imageWidth = 18,
-            imageHeight = 18,
-            control = "WeakAurasIcon"
-          }
-        end
-        if option.nameSource ~= -1 and not option.hideReorder then
-          args[prefix .. "moveEntryUp"] = {
-            type = "execute",
-            name = L["Move Entry Up"],
-            order = order(),
-            func = function()
-              OptionsPrivate.Private.TimeMachine:StartTransaction()
-              for id, optionData in pairs(option.references) do
-                local childOption = optionData.options[optionData.index]
-                local childConfigList = optionData.config[childOption.key]
-                local childData = optionData.data
-                local childPage = getPage(id, optionData.path, #childConfigList)
-                if childConfigList[childPage] then
-                  local expandedPath = expandUserPath(childData, optionData.path)
-                  -- expandUserPath adds the page at the end, which we don't need here
-                  expandedPath[#expandedPath] = nil
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "swap",
-                    path = expandedPath,
-                    payload = {childPage, childPage - 1}
-                  })
-                  setPage(id, optionData.path, childPage - 1)
-                end
-              end
-              OptionsPrivate.Private.TimeMachine:Commit()
-            end,
-            disabled = function()
-              for id, optionData in pairs(option.references) do
-                if getPage(id, optionData.path) <= 1 then
-                  return true
-                end
-              end
-            end,
-            width = 0.15,
-            image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\moveup",
-            imageWidth = 18,
-            imageHeight = 18,
-            control = "WeakAurasIcon"
-          }
-          args[prefix .. "moveEntryDown"] = {
-            type = "execute",
-            name = L["Move Entry Down"],
-            order = order(),
-            func = function()
-              OptionsPrivate.Private.TimeMachine:StartTransaction()
-              for id, optionData in pairs(option.references) do
-                local childOption = optionData.options[optionData.index]
-                local childConfigList = optionData.config[childOption.key]
-                local childData = optionData.data
-                local childPage = getPage(id, optionData.path, #childConfigList)
-                if childConfigList[childPage] then
-                  local expandedPath = expandUserPath(childData, optionData.path)
-                  -- expandUserPath adds the page at the end, which we don't need here
-                  expandedPath[#expandedPath] = nil
-                  OptionsPrivate.Private.TimeMachine:Append({
-                    uid = childData.uid,
-                    actionType = "swap",
-                    path = expandedPath,
-                    payload = {childPage, childPage + 1}
-                  })
-                  setPage(id, optionData.path, childPage + 1)
-                end
-              end
-              OptionsPrivate.Private.TimeMachine:Commit()
-            end,
-            disabled = function()
-              for id, optionData in pairs(option.references) do
-                local childPage = getPage(id, optionData.path)
-                local childOption = optionData.options[optionData.index]
-                local childConfigList = optionData.config[childOption.key]
-                if childPage >= #childConfigList then
-                  return true
-                end
-              end
-            end,
-            width = 0.15,
-            image = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\movedown",
-            imageWidth = 18,
-            imageHeight = 18,
-            control = "WeakAurasIcon"
-          }
-        end
+        addArrayEntryChoiceControls(args, prefix, order, data, option, values, skipSubOptions)
+        addArrayEntryCreateAndDeleteControls(args, prefix, order, data, option, values, skipSubOptions)
+        addArrayEntryMoveControls(args, prefix, order, data, option, values)
       end
 
       if not skipSubOptions then

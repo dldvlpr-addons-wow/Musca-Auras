@@ -189,8 +189,8 @@ return function(test)
 
   -- ValidateAppearance
   local MESSAGE_CODES = "You can only use %p, %s, %n or hardcoded text. Put each code in its own text element. Custom text (%c) is not supported."
-  local MESSAGE_DUPLICATE = "Secret auras support one text element for each of %p, %s and %n. Remove the duplicate or turn off Show Text."
-  local MESSAGE_UNSUPPORTED = "This sub element is not supported by Secret Auras. Use Text, Texture or Glow."
+  local MESSAGE_DUPLICATE = "Aura (Modern) supports one text element for each of %p, %s and %n. Remove the duplicate or turn off Show Text."
+  local MESSAGE_UNSUPPORTED = "This sub element is not supported by Aura (Modern). Use Text, Texture or Glow."
   local MESSAGE_DETACHED = "Detached Text uses hardcoded text. Use other triggers and Conditions to control when it appears."
   local MESSAGE_GLOW = "Choose Action Button Glow, Pixel Glow, Autocast Shine or Proc Glow."
   local function Validate(elements, extra)

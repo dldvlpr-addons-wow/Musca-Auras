@@ -24,7 +24,7 @@ Fichiers : `PackVoleur.lua` (données), `PackVoleur.txt` (chaîne encodée). Pr�
 - Règle des 5 secondes : sans objet (énergie). Le tick d'énergie n'est volontairement pas fait.
 
 ## À tester en jeu
-- Barre des points de combo (type 4) : affichage en combat, remise à zéro hors cible.
+- Barre des points de combo (type 4) : affichage en combat, remise à zéro hors cible. `ComboPoints` est le seul type de puissance `NeverSecret` (relevé en jeu 1.60.1.70450) : en combat, `/dump issecretvalue(GetComboPoints("player","target")), issecretvalue(UnitPower("player",4)), issecretvalue(UnitPowerMax("player",4))` doit rendre `false, false, false`.
 - Barre d'énergie (type 3).
 - Swing main gauche (`off`) avec deux armes.
 - Riposte (Action Usable) : apparition après une parade, sort connu.

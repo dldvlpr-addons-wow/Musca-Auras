@@ -22,7 +22,7 @@ local BUFF_SHOW_MODES = { always = L["Always"], active = L["Aura Active"], missi
 local TRACK_MODES = { auto = L["Auto"], cooldown = L["Cooldown"], charges = L["Charge recharge"] }
 
 local function TimedFilterDesc(what)
-  return L["Filters active, timed auras using readable CDM %s time. Missing, permanent, or secret timers do not match."]:format(what)
+  return L["Filters active, timed auras using readable CDM %s time. Missing and permanent timers, or timers the game hides, do not match."]:format(what)
 end
 
 local NUMERIC_FILTERS = {
@@ -36,7 +36,7 @@ local NUMERIC_FILTERS = {
     enabled = "cdmUseElapsed", operator = "cdmElapsedOperator", defaultOperator = ">=",
     amount = "cdmElapsedTime", defaultAmount = 10 },
   { key = "stacks", label = L["Stack Count"],
-    desc = L["Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match."],
+    desc = L["Filters active auras using readable CDM stack counts. Missing stack counts, or counts the game hides, do not match. All enabled filters must match."],
     enabled = "cdmUseStacks", operator = "cdmStackOperator", defaultOperator = ">=",
     amount = "cdmStackCount", defaultAmount = 1, whole = true },
 }

@@ -23,7 +23,7 @@ local function CorrectSpellName(input)
   local inputId = tonumber(input)
   if(inputId) then
     return inputId
-  elseif input then -- Classic does not create a hyperlink, instead returns plain spellName
+  elseif input then
     local _, _, _, _, _, _, spellId = OptionsPrivate.Private.ExecEnv.GetSpellInfo(input)
     if spellId then
       return spellId
@@ -302,10 +302,15 @@ function OptionsPrivate.ConstructOptions(prototype, data, startorder, triggernum
           fontSize = "large",
         }
         order = order + 1;
+        local descriptionText = arg.text
+        if type(descriptionText) == "function" then
+          local textFunction = descriptionText
+          descriptionText = function() return textFunction(trigger) end
+        end
         options["description_"..name] = {
           type = "description",
           width = WeakAuras.doubleWidth,
-          name = type(arg.text) == "function" and function() return arg.text(trigger) end or arg.text,
+          name = descriptionText,
           order = order,
           hidden = hidden,
         }
@@ -753,13 +758,17 @@ function OptionsPrivate.ConstructOptions(prototype, data, startorder, triggernum
               name = L["From the Cooldown Manager"],
               order = order,
               hidden = disabled or hidden,
-              values = OptionsPrivate.Private.GetCooldownManagerSpells,
-              get = function()
-                local value = WeakAuras.SafeToNumber(getValue(trigger, nil, realname, multiEntry, entryNumber))
-                return value and OptionsPrivate.Private.GetCooldownManagerSpells()[value] and value or nil
+              values = function()
+                return OptionsPrivate.Private.GetCooldownManagerSpells()
               end,
-              set = function(info, v)
-                setValue(trigger, realname, v, multiEntry, entryNumber)
+              get = function()
+                local current = WeakAuras.SafeToNumber(getValue(trigger, nil, realname, multiEntry, entryNumber))
+                if current and OptionsPrivate.Private.GetCooldownManagerSpells()[current] then
+                  return current
+                end
+              end,
+              set = function(info, spellID)
+                setValue(trigger, realname, spellID, multiEntry, entryNumber)
                 setValue(trigger, "use_exact_"..realname, true, multiEntry, entryNumber)
                 WeakAuras.Add(data);
                 WeakAuras.ClearAndUpdateOptions(data.id)

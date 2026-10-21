@@ -87,14 +87,14 @@ local properties = {
   foregroundColor = {
     display = L["Foreground Color"],
     setter = "Color",
-    secretCapable = true,
-    type = "color"
+    type = "color",
+    secretCapable = true
   },
   backgroundColor = {
     display = L["Background Color"],
     setter = "SetBackgroundColor",
-    secretCapable = true,
-    type = "color"
+    type = "color",
+    secretCapable = true
   },
   width = {
     display = L["Width"],
@@ -173,7 +173,10 @@ Private.regionPrototype.AddProperties(properties, default);
 local function GetProperties(data)
   local overlayInfo = Private.GetOverlayInfo(data);
   local auraProperties = CopyTable(properties)
-  if Private.CDMAuraProgress.IsConfigured(data) then auraProperties.adjustedMin, auraProperties.adjustedMax = nil, nil end
+  if Private.CDMAuraProgress.IsConfigured(data) then
+    auraProperties.adjustedMin = nil
+    auraProperties.adjustedMax = nil
+  end
   auraProperties.progressSource.values = Private.GetProgressSourcesForUi(data)
   if (overlayInfo and next(overlayInfo)) then
     for id, display in ipairs(overlayInfo) do
@@ -561,8 +564,8 @@ local funcs = {
     self.foreground:SetColor(r or self.color_r, g or self.color_g, b or self.color_b, a or self.color_a)
     self.foregroundSpinner:SetColor(r or self.color_r, g or self.color_g, b or self.color_b, a or self.color_a)
     if self.nativeRadial then
-      self.nativeRadial:SetVertexColor(r or self.color_r or 1, g or self.color_g or 1, b or self.color_b or 1,
-                                       a or self.color_a or 1)
+      self.nativeRadial:SetVertexColor(r or self.color_r or 1, g or self.color_g or 1,
+                                       b or self.color_b or 1, a or self.color_a or 1)
     end
   end,
   GetColor = function(self)
@@ -707,6 +710,7 @@ local funcs = {
     for _, extraSpinner in ipairs(self.extraSpinners) do
       extraSpinner:SetTextureOrAtlas(texture);
     end
+
     if self.nativeRadial then
       Private.SetTextureOrAtlas(self.nativeRadial, texture, self.textureWrapMode, self.textureWrapMode)
     end

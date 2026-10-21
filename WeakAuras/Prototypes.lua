@@ -1292,7 +1292,7 @@ Private.load_prototype = {
     },
     {
       name = "addonRestrictionsActive",
-      display = L["Secret Restrictions Active"],
+      display = L["Game Hides Combat Data"],
       type = "tristate",
       init = "arg",
       width = WeakAuras.normalWidth,
@@ -2663,6 +2663,12 @@ Private.event_prototypes = {
       if trigger.use_showIncomingHeal then
         AddUnitEventForEvents(result, unit, "UNIT_HEAL_PREDICTION")
       end
+      if trigger.use_showAbsorb then
+        AddUnitEventForEvents(result, unit, "UNIT_ABSORB_AMOUNT_CHANGED")
+      end
+      if trigger.use_showHealAbsorb then
+        AddUnitEventForEvents(result, unit, "UNIT_HEAL_ABSORB_AMOUNT_CHANGED")
+      end
       if trigger.use_ignoreDead or trigger.use_ignoreDisconnected then
         AddUnitEventForEvents(result, unit, "UNIT_FLAGS")
       end
@@ -2847,6 +2853,40 @@ Private.event_prototypes = {
           operator = "and",
           limit = 2
         },
+      },
+      {
+        name = "showAbsorb",
+        display = L["Show Absorb"],
+        type = "toggle",
+        test = "true",
+        reloadOptions = true,
+      },
+      {
+        name = "absorb",
+        display = L["Damage Absorb"],
+        hidden = true,
+        init = "UnitGetTotalAbsorbs(unit)",
+        store = true,
+        test = "true",
+        enable = function(trigger) return trigger.use_showAbsorb end,
+        formatter = "BigNumber",
+      },
+      {
+        name = "showHealAbsorb",
+        display = L["Show Heal Absorb"],
+        type = "toggle",
+        test = "true",
+        reloadOptions = true,
+      },
+      {
+        name = "healabsorb",
+        display = L["Heal Absorb"],
+        hidden = true,
+        init = "UnitGetTotalHealAbsorbs(unit)",
+        store = true,
+        test = "true",
+        enable = function(trigger) return trigger.use_showHealAbsorb end,
+        formatter = "BigNumber",
       },
       {
         type = "header",
@@ -3087,11 +3127,17 @@ Private.event_prototypes = {
       if trigger.use_showCost and trigger.unit == "player" then
         tinsert(result, "WA_UNIT_QUEUED_SPELL_CHANGED");
       end
+      if trigger.use_powertype and trigger.powertype == 4 and trigger.unit == "player" then
+        tinsert(result, "WA_COMBO_TARGET_CHANGED")
+      end
       return result
     end,
     loadFunc = function(trigger)
       if trigger.use_showCost and trigger.unit == "player" then
         WeakAuras.WatchForQueuedSpell()
+      end
+      if trigger.use_powertype and trigger.powertype == 4 and trigger.unit == "player" then
+        Private.WatchCOMBO_TARGET_CHANGED()
       end
       local includePets = trigger.use_includePets == true and trigger.includePets or nil
       AddWatchedUnits(trigger.unit, includePets)
@@ -3301,7 +3347,7 @@ Private.event_prototypes = {
       {
         name = "thresholdAlpha",
         hidden = true,
-        init = "Private.ExecEnv.ThresholdAlpha('power', unit, powerTypeToCheck, nativeThreshold, nativeThresholdAbove)",
+        init = "Private.ExecEnv.ThresholdAlpha('power', unit, powerTypeToCheck, nativeThreshold, nativeThresholdAbove, powerType == 4 and power, total)",
         test = "true",
         store = true
       },
@@ -8151,7 +8197,7 @@ Private.event_prototypes = {
       {
         name = "important",
         display = L["Important"],
-        desc = L["Casts the game marks as important. Unknown while the spell is secret: the filter then hides the cast."],
+        desc = L["Casts the game marks as important. Unknown while the game hides the spell: the filter then hides the cast."],
         type = "tristate",
         enable = function(trigger) return not trigger.use_inverse end,
         store = true,
@@ -8980,7 +9026,7 @@ Private.event_prototypes = {
       },
       {
         name = "restricted",
-        display = L["Secret Restrictions Active"],
+        display = L["Game Hides Combat Data"],
         desc = L["The game hides combat data from addons: in combat, boss encounters and PvP matches."],
         type = "tristate",
         init = "WeakAuras.IsRestricted()",

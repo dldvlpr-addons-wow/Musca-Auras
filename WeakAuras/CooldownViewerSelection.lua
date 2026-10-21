@@ -1,39 +1,20 @@
 -- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
-
--- Cooldown Manager trigger, part 1 of 3: which catalogue entries a trigger selects.
--- Owns the cached view of the catalogue (CooldownViewerCatalog.lua stays the source of truth),
--- the text queries of a trigger (names, spell ids, item ids), their resolution to cooldownIDs
--- and the checked entries of the picker. Part 2 (CooldownViewerStates.lua) turns a selection
--- into states, part 3 (CooldownViewerTrigger.lua) declares the prototypes.
---
--- Shared helpers live in Private.CooldownViewer so the three files read the same rules.
---
--- A selection is a sorted list of cooldownIDs with extra fields:
---   singleClone          all entries share one clone, keyed "spell"
---   buffSpellIDsByEntry  cooldownID -> aura spell ids of the entry
---   buffEntryIDs         buff entries matching a name, best first
---   buffSpellIDs         aura spell ids matching a name
---   buffName             resolved display name of a buff query
---   buffResolvedSpellID  spell id imposed on the state of a buff found by name
---   previewSpell         stand-in shown by the options when nothing matches
---   picked               checked in the picker: admitted even when the entry is not learned
-
 local _, Private = ...
 
-local CooldownViewer = {}
-Private.CooldownViewer = CooldownViewer
+local IsSecret = Private.IsSecret
+local ReadableOrNil = Private.ReadableOrNil
 
-local EVENT_COOLDOWN = "Blizzard Cooldown Manager"
-local EVENT_BUFF = "Blizzard CDM Buff"
-local EVENT_ITEM = "Blizzard CDM Item"
-local EVENT_UTILITY = "Blizzard CDM Utility"
+local COOLDOWN_EVENT = "Blizzard Cooldown Manager"
+local BUFF_EVENT = "Blizzard CDM Buff"
+local ITEM_EVENT = "Blizzard CDM Item"
+local UTILITY_EVENT = "Blizzard CDM Utility"
 local LAYOUT_EVENT = "WA_CDM_LAYOUT_CHANGED"
-local MAX_SPELL_ID = 2147483647
-local PREVIEW_ICON = 134400
+local OPTIONS_EVENT = "OPTIONS"
+local FALLBACK_ICON = 134400
+local SPELL_ID_LIMIT = 2147483647
 
--- Events after which the Cooldown Manager may describe other entries.
-local RELOAD_EVENTS = {
+local reloadEvents = {
   PLAYER_ENTERING_WORLD = true,
   PLAYER_SPECIALIZATION_CHANGED = true,
   SPELLS_CHANGED = true,
@@ -44,252 +25,125 @@ local RELOAD_EVENTS = {
   COOLDOWN_VIEWER_SPELL_OVERRIDE_UPDATED = true,
 }
 
--- Text lists of a trigger, each one producing queries of one kind.
-local QUERY_LISTS = {
-  { enabled = "cdmUseNames", values = "cdmNames" },
-  { enabled = "cdmUseExactIDs", values = "cdmExactIDs", exact = true },
-  { enabled = "cdmUseItemIDs", values = "cdmItemIDs", itemExact = true, itemOnly = true },
-}
+local CooldownViewer = {}
+Private.CooldownViewer = CooldownViewer
 
-local IsSecret, ReadableOrNil = Private.IsSecret, Private.ReadableOrNil
+local function categoryValue(name)
+  local categories = Enum and Enum.CooldownViewerCategory
+  return categories and categories[name]
+end
 
----------------------------------------------------------------------------------------------------
--- Small shared rules
----------------------------------------------------------------------------------------------------
+local function isCategory(category, name)
+  local value = categoryValue(name)
+  return value ~= nil and category ~= nil and not IsSecret(category) and category == value
+end
 
--- "buff", "item" or "spell" for a trigger event; unknown events behave as cooldowns.
-function CooldownViewer.KindOf(event)
-  if event == EVENT_BUFF then
-    return "buff"
-  elseif event == EVENT_ITEM then
-    return "item"
-  end
+local function kindOf(event)
+  if event == BUFF_EVENT then return "buff" end
+  if event == ITEM_EVENT then return "item" end
   return "spell"
 end
+CooldownViewer.KindOf = kindOf
 
--- Saved cdmSource derived from the event, kept for the options that read it.
 function CooldownViewer.SyncSource(trigger)
-  trigger.cdmSource = trigger.event == EVENT_BUFF and "buff" or "cooldown"
+  trigger.cdmSource = trigger.event == BUFF_EVENT and "buff" or "cooldown"
 end
 
--- Visibility mode of a trigger with its per-kind default.
-function CooldownViewer.ShowModeOf(trigger)
-  if trigger.event == EVENT_BUFF then
+local function showModeOf(trigger)
+  if trigger.event == BUFF_EVENT then
     return trigger.cdmBuffShow or "active"
   end
   return trigger.cdmShow or "always"
 end
+CooldownViewer.ShowModeOf = showModeOf
 
--- Trimmed text, or "" for anything that is not a readable string or number.
-function CooldownViewer.Trim(value)
-  if IsSecret(value) or (type(value) ~= "string" and type(value) ~= "number") then
-    return ""
-  end
+local function trim(value)
+  if IsSecret(value) then return "" end
+  local valueType = type(value)
+  if valueType ~= "string" and valueType ~= "number" then return "" end
   return (tostring(value):match("^%s*(.-)%s*$"))
 end
+CooldownViewer.Trim = trim
 
--- Readable positive spell id, or nil.
-local function SpellIDOrNil(value)
+local function spellIDOrNil(value)
   value = ReadableOrNil(value)
-  if type(value) == "number" and value > 0 and value < MAX_SPELL_ID then
+  if type(value) == "number" and value > 0 and value < SPELL_ID_LIMIT then
     return value
   end
+  return nil
 end
-CooldownViewer.SpellIDOrNil = SpellIDOrNil
+CooldownViewer.SpellIDOrNil = spellIDOrNil
 
--- Lower-cased readable spell name, or nil.
-local function LowerSpellName(spellID)
-  local info = spellID and C_Spell.GetSpellInfo(spellID)
-  local name = info and ReadableOrNil(info.name)
-  return type(name) == "string" and name:lower() or nil
-end
-
--- Rank number read from the spell subtext ("Rank 3" -> 3), 0 when absent.
-local function SpellRank(spellID)
-  if not (spellID and C_Spell.GetSpellSubtext) then
-    return 0
-  end
-  local text = ReadableOrNil(C_Spell.GetSpellSubtext(spellID))
-  return type(text) == "string" and tonumber(text:match("%d+")) or 0
-end
-
--- Appends the readable spell ids among the values to list, once each, and returns list.
-local function AppendSpells(list, ...)
-  for index = 1, select("#", ...) do
-    local spellID = SpellIDOrNil((select(index, ...)))
-    local present = false
-    for _, listed in ipairs(list) do
-      present = present or listed == spellID
-    end
-    if spellID and not present then
-      list[#list + 1] = spellID
-    end
-  end
-  return list
-end
-
--- Linked spell ids of a cooldown info, as values.
-local function LinkedSpells(info)
-  if type(info.linkedSpellIDs) == "table" then
-    return unpack(info.linkedSpellIDs)
-  end
-end
-
--- Empty selection of a query or a picker.
-local function EmptySelection(selectionMode)
-  return { singleClone = selectionMode == "spell", buffSpellIDsByEntry = {} }
-end
-
--- Spell shown in place of spellID by the spellbook, or spellID itself.
-function CooldownViewer.DisplayedSpell(spellID)
-  if spellID and C_SpellBook and C_SpellBook.FindSpellOverrideByID then
-    return SpellIDOrNil(C_SpellBook.FindSpellOverrideByID(spellID)) or spellID
+local function displayedSpell(spellID)
+  if spellID ~= nil and C_SpellBook and C_SpellBook.FindSpellOverrideByID then
+    return spellIDOrNil(C_SpellBook.FindSpellOverrideByID(spellID)) or spellID
   end
   return spellID
 end
+CooldownViewer.DisplayedSpell = displayedSpell
 
----------------------------------------------------------------------------------------------------
--- Catalogue cache
----------------------------------------------------------------------------------------------------
-
--- One cached load of Private.CDMCatalog with the infos and resolutions computed from it.
-local Catalog = { entries = nil, loadedAt = nil, infos = {}, resolutions = {} }
-CooldownViewer.Catalog = Catalog
-
--- Reads the catalogue again and forgets everything derived from the previous load.
-function Catalog:Load()
-  self.entries = Private.CDMCatalog()
-  self.loadedAt = GetTime()
-  wipe(self.infos)
-  wipe(self.resolutions)
-end
-
--- Drops the cached load; the next read reloads.
-function Catalog:Invalidate()
-  self.entries = nil
-end
-
--- Entries for an event: reload events reload once per scan batch, OPTIONS once per instant.
-function Catalog:Get(event)
-  if RELOAD_EVENTS[event] then
-    local batch = Private.cdmScanBatch
-    if not (batch and batch.cdmCatalogReloaded) then
-      if batch then
-        batch.cdmCatalogReloaded = true
-      end
-      Private.CDMResetIdentities()
-      self:Load()
-    end
-  elseif not self.entries or (event == "OPTIONS" and self.loadedAt ~= GetTime()) then
-    self:Load()
-  end
-  return self.entries or {}
-end
-
--- Cooldown info of an entry, read once per load.
-function Catalog:Info(cooldownID)
-  local info = self.infos[cooldownID]
-  if info == nil then
-    local ok, result = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldownID)
-    info = ok and result or false
-    self.infos[cooldownID] = info
-  end
-  return info or nil
-end
-
--- The layout of the Cooldown Manager changed: forget now, tell the triggers next frame.
-local layoutPending = false
-local function OnLayoutDataChanged()
-  Catalog:Invalidate()
-  if layoutPending then
-    return
-  end
-  layoutPending = true
-  C_Timer.After(0, function()
-    layoutPending = false
-    if Private.ScanEvents then
-      Private.ScanEvents(LAYOUT_EVENT)
-    end
-  end)
-end
-
-if EventRegistry and EventRegistry.RegisterCallback then
-  EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", OnLayoutDataChanged, Catalog)
-end
-
----------------------------------------------------------------------------------------------------
--- Entry rules
----------------------------------------------------------------------------------------------------
-
-local SPELL_CATEGORIES = { "Essential", "Utility" }
-local EQUIPMENT_CATEGORIES = { "EquipSlotEssential", "EquipSlotTracked" }
-
--- Whether a viewer category is one of the named Enum.CooldownViewerCategory values.
-local function InCategories(value, names)
-  local categories = Enum.CooldownViewerCategory
-  for _, name in ipairs(names) do
-    if value == categories[name] then
-      return true
-    end
-  end
-  return false
-end
-
--- True for entries that track an item (equipment slot, item category or item viewer source).
-local function IsItemEntry(entry, info)
-  return (info and (info.equipSlot or info.spellCategoryID)) and true or InCategories(entry.sourceCategory, EQUIPMENT_CATEGORIES)
-end
-
--- "buff", "item" or "spell" for a catalogue entry.
-function CooldownViewer.EntryKind(entry, info)
-  if Private.CDMIsBuff(entry.category) then
-    return "buff"
-  elseif IsItemEntry(entry, info) then
+local function entryKind(entry, info)
+  if Private.CDMIsBuff(entry.category) then return "buff" end
+  if info and (info.equipSlot or info.spellCategoryID) then return "item" end
+  local source = entry.sourceCategory
+  if isCategory(source, "EquipSlotEssential") or isCategory(source, "EquipSlotTracked") then
     return "item"
   end
   return "spell"
 end
+CooldownViewer.EntryKind = entryKind
 
--- Whether a catalogue entry suits the event of a trigger: same kind, and spells only from the
--- spell viewers. Hidden entries count only in the options preview.
-function Private.CDMEntryMatches(trigger, entry, info, preview)
-  local visible = entry ~= nil and (preview or entry.displayed == true)
-  if not visible then
-    return false
+local function spellCollector()
+  local list, seen = {}, {}
+  return list, function(value)
+    local spellID = spellIDOrNil(value)
+    if spellID and not seen[spellID] then
+      seen[spellID] = true
+      list[#list + 1] = spellID
+    end
   end
-  local kind = CooldownViewer.EntryKind(entry, info)
-  return kind == CooldownViewer.KindOf(trigger.event) and (kind ~= "spell" or InCategories(entry.category, SPELL_CATEGORIES))
 end
 
--- Sorted unique readable aura spell ids carried by a cooldown info.
-function Private.CDMAuraSpellIDs(info)
-  if not info then
-    return {}
+local function relatedSpells(info)
+  local list, add = spellCollector()
+  add(info.overrideSpellID)
+  add(info.overrideTooltipSpellID)
+  add(displayedSpell(spellIDOrNil(info.spellID)))
+  if type(info.linkedSpellIDs) == "table" then
+    for _, spellID in ipairs(info.linkedSpellIDs) do add(spellID) end
   end
-  local list = AppendSpells({}, LinkedSpells(info))
-  AppendSpells(list, info.linkedSpellID, info.overrideTooltipSpellID, info.overrideSpellID, info.spellID)
+  return list
+end
+CooldownViewer.RelatedSpells = relatedSpells
+
+function Private.CDMAuraSpellIDs(info)
+  local list, add = spellCollector()
+  if not info then return list end
+  if type(info.linkedSpellIDs) == "table" then
+    for _, spellID in pairs(info.linkedSpellIDs) do add(spellID) end
+  end
+  add(info.linkedSpellID)
+  add(info.overrideTooltipSpellID)
+  add(info.overrideSpellID)
+  add(info.spellID)
   table.sort(list)
   return list
 end
 
--- Readable spell ids an entry points to besides its own spell: overrides, displayed spell, linked spells.
-function CooldownViewer.RelatedSpells(info)
-  local list = AppendSpells({}, info.overrideSpellID, info.overrideTooltipSpellID,
-    CooldownViewer.DisplayedSpell(SpellIDOrNil(info.spellID)))
-  return AppendSpells(list, LinkedSpells(info))
+function Private.CDMEntryMatches(trigger, entry, info, preview)
+  if not entry then return false end
+  if not preview and entry.displayed ~= true then return false end
+  local kind = entryKind(entry, info)
+  if kind ~= kindOf(trigger.event) then return false end
+  return kind ~= "spell" or isCategory(entry.category, "Essential") or isCategory(entry.category, "Utility")
 end
 
----------------------------------------------------------------------------------------------------
--- Queries
----------------------------------------------------------------------------------------------------
-
--- Query table carrying the display settings of a trigger and one text to look up.
-function CooldownViewer.QueryFromTrigger(trigger, text, exact, itemExact, selectionMode)
-  local kind = CooldownViewer.KindOf(trigger.event)
+local function queryFromTrigger(trigger, text, exact, itemExact, selectionMode)
+  local isBuff = kindOf(trigger.event) == "buff"
   return {
     type = trigger.type,
     event = trigger.event,
-    cdmSource = kind == "buff" and "buff" or "cooldown",
+    cdmSource = isBuff and "buff" or "cooldown",
     cdmSelection = selectionMode,
     cdmSpell = text,
     cdmExact = exact == true,
@@ -298,24 +152,33 @@ function CooldownViewer.QueryFromTrigger(trigger, text, exact, itemExact, select
     showGCD = trigger.use_cdmShowGCD == true,
     track = trigger.cdmTrack or "auto",
     hideGCDText = trigger.cdmHideGCDText ~= false,
-    showMode = CooldownViewer.ShowModeOf(trigger),
-    requireTarget = kind == "buff" and trigger.cdmRequireTarget == true,
+    showMode = showModeOf(trigger),
+    requireTarget = isBuff and trigger.cdmRequireTarget == true,
   }
 end
+CooldownViewer.QueryFromTrigger = queryFromTrigger
 
--- One query per distinct non-empty value of the enabled lists, or nil when no list is enabled.
+local queryLists = {
+  { toggle = "cdmUseNames", values = "cdmNames" },
+  { toggle = "cdmUseExactIDs", values = "cdmExactIDs", exact = true },
+  { toggle = "cdmUseItemIDs", values = "cdmItemIDs", itemExact = true, itemOnly = true },
+}
+
 function Private.CDMSpellQueries(trigger)
-  local isItem = CooldownViewer.KindOf(trigger.event) == "item"
+  local isItem = kindOf(trigger.event) == "item"
   local queries
-  for _, list in ipairs(QUERY_LISTS) do
-    if trigger[list.enabled] and (isItem or not list.itemOnly) then
+  for _, list in ipairs(queryLists) do
+    if trigger[list.toggle] and (isItem or not list.itemOnly) then
       queries = queries or {}
-      local seen = {}
-      for _, value in ipairs(type(trigger[list.values]) == "table" and trigger[list.values] or {}) do
-        local text = CooldownViewer.Trim(value)
-        if text ~= "" and not seen[text] then
-          seen[text] = true
-          queries[#queries + 1] = CooldownViewer.QueryFromTrigger(trigger, text, list.exact, list.itemExact, "spell")
+      local values = trigger[list.values]
+      if type(values) == "table" then
+        local seen = {}
+        for _, value in ipairs(values) do
+          local text = trim(value)
+          if text ~= "" and not seen[text] then
+            seen[text] = true
+            queries[#queries + 1] = queryFromTrigger(trigger, text, list.exact, list.itemExact, "spell")
+          end
         end
       end
     end
@@ -323,248 +186,327 @@ function Private.CDMSpellQueries(trigger)
   return queries
 end
 
--- Legacy free text of a trigger, as a query, or nil.
 function CooldownViewer.LegacyQuery(trigger)
-  local text = CooldownViewer.Trim(trigger.cdmSpell)
-  if text == "" or CooldownViewer.KindOf(trigger.event) == "item" then
-    return nil
-  end
-  return CooldownViewer.QueryFromTrigger(trigger, text, trigger.cdmExact, false, trigger.cdmSelection)
+  local text = trim(trigger.cdmSpell)
+  if text == "" or kindOf(trigger.event) == "item" then return nil end
+  return queryFromTrigger(trigger, text, trigger.cdmExact, false, trigger.cdmSelection)
 end
 
----------------------------------------------------------------------------------------------------
--- Resolution of a query
----------------------------------------------------------------------------------------------------
+local Catalog = { entries = nil, loadedAt = nil, infos = {}, resolutions = {} }
+CooldownViewer.Catalog = Catalog
 
--- Spells of an entry: the two strong ones identify it, weak ones only point to it (may hold nils).
-local function EntrySpells(kind, info, identity)
-  local strong = { identity.spellID, info.spellID }
-  if kind == "buff" then
-    return strong, Private.CDMAuraSpellIDs(info)
-  end
-  return strong, CooldownViewer.RelatedSpells(info)
+function Catalog:Load()
+  self.entries = Private.CDMCatalog()
+  self.loadedAt = GetTime()
+  wipe(self.infos)
+  wipe(self.resolutions)
 end
 
--- Spell granted by the item of an entry, and its name.
-local function ItemSpell(identity)
-  if not (identity.itemID and C_Item and C_Item.GetItemSpell) then
-    return nil
-  end
-  local name, spellID = C_Item.GetItemSpell(identity.itemID)
-  return SpellIDOrNil(spellID), ReadableOrNil(name)
+function Catalog:Invalidate()
+  self.entries = nil
 end
 
--- Lower-cased name a query looks for; a numeric text stands for the name of that spell.
-local function QueryName(query)
-  local text = query.cdmSpell
-  return LowerSpellName(SpellIDOrNil(tonumber(text))) or text:lower()
-end
-
--- How a query recognises a spell: by exact id or by lower-cased name.
-local function NewMatcher(query)
-  if query.cdmExact then
-    local wantedID = tonumber(query.cdmSpell)
-    return function(spellID) return spellID ~= nil and spellID == wantedID end
-  end
-  local lowered = QueryName(query)
-  return function(spellID) return LowerSpellName(spellID) == lowered end
-end
-
--- Best match of an entry for a query: {id, spellID, score, rank, known, displayed} or nil.
-local function MatchEntry(query, kind, id, entry, info, identity, matches)
-  if kind == "item" then
-    local itemSpellID, itemSpellName = ItemSpell(identity)
-    local hit
-    if query.cdmItemExact then
-      hit = identity.itemID == tonumber(query.cdmSpell)
-    elseif query.cdmExact then
-      hit = matches(SpellIDOrNil(info.spellID)) or matches(identity.spellID) or matches(itemSpellID)
-    else
-      local lowered = QueryName(query)
-      hit = (type(identity.name) == "string" and not IsSecret(identity.name) and identity.name:lower() == lowered)
-        or (type(itemSpellName) == "string" and itemSpellName:lower() == lowered)
+function Catalog:Get(event)
+  if reloadEvents[event] then
+    local batch = Private.cdmScanBatch
+    if not (batch and batch.cdmCatalogReloaded) then
+      if batch then batch.cdmCatalogReloaded = true end
+      Private.CDMResetIdentities()
+      self:Load()
     end
-    return hit and { id = id, spellID = identity.spellID, score = 2 } or nil
+  elseif self.entries == nil or (event == OPTIONS_EVENT and self.loadedAt ~= GetTime()) then
+    self:Load()
   end
-  local strong, weak = EntrySpells(kind, info, identity)
+  return self.entries or {}
+end
+
+function Catalog:Info(cooldownID)
+  if cooldownID == nil then return nil end
+  local cached = self.infos[cooldownID]
+  if cached == nil then
+    local ok, info = pcall(C_CooldownViewer.GetCooldownViewerCooldownInfo, cooldownID)
+    cached = ok and info or false
+    self.infos[cooldownID] = cached
+  end
+  return cached or nil
+end
+
+if EventRegistry and EventRegistry.RegisterCallback then
+  local layoutEmitPending = false
+  local function emitLayoutChanged()
+    layoutEmitPending = false
+    if Private.ScanEvents then
+      Private.ScanEvents(LAYOUT_EVENT)
+    end
+  end
+  EventRegistry:RegisterCallback("CooldownViewerSettings.OnDataChanged", function()
+    Catalog:Invalidate()
+    if layoutEmitPending then return end
+    layoutEmitPending = true
+    C_Timer.After(0, emitLayoutChanged)
+  end, Catalog)
+end
+
+local function spellName(spellID)
+  if spellID == nil or not C_Spell or not C_Spell.GetSpellInfo then return nil end
+  local info = C_Spell.GetSpellInfo(spellID)
+  if type(info) ~= "table" then return nil end
+  local name = ReadableOrNil(info.name)
+  if type(name) == "string" then return name end
+  return nil
+end
+
+local function lowerSpellName(spellID)
+  local name = spellName(spellID)
+  return name and name:lower()
+end
+
+local function spellRank(spellID)
+  if spellID == nil or not C_Spell or not C_Spell.GetSpellSubtext then return 0 end
+  local subtext = ReadableOrNil(C_Spell.GetSpellSubtext(spellID))
+  if type(subtext) ~= "string" then return 0 end
+  return tonumber(subtext:match("%d+")) or 0
+end
+
+local function itemGrantedSpell(itemID)
+  if itemID == nil or not C_Item or not C_Item.GetItemSpell then return nil end
+  local _, spellID = C_Item.GetItemSpell(itemID)
+  return spellIDOrNil(spellID)
+end
+
+local function newSelection(selectionMode)
+  return { singleClone = selectionMode == "spell", buffSpellIDsByEntry = {} }
+end
+
+local function matchItem(search, identity, info)
+  local itemID = ReadableOrNil(identity.itemID)
+  local identitySpell = ReadableOrNil(identity.spellID)
+  if search.itemExact then
+    return itemID ~= nil and itemID == search.id, identitySpell
+  end
+  local granted = itemGrantedSpell(itemID)
+  if search.exact then
+    local wanted = search.id
+    local found = spellIDOrNil(info.spellID) == wanted or identitySpell == wanted
+      or (granted ~= nil and granted == wanted)
+    return found, identitySpell
+  end
+  local name = ReadableOrNil(identity.name)
+  if type(name) == "string" and name:lower() == search.name then
+    return true, identitySpell
+  end
+  local grantedName = granted and lowerSpellName(granted)
+  return grantedName ~= nil and grantedName == search.name, identitySpell
+end
+
+local function matchSpell(search, kind, identity, info)
+  local strongSpells = { spellIDOrNil(identity.spellID), spellIDOrNil(info.spellID) }
   for index = 1, 2 do
-    local spellID = SpellIDOrNil(strong[index])
-    if spellID and matches(spellID) then
-      return { id = id, spellID = spellID, score = 2 }
+    local spellID = strongSpells[index]
+    if spellID and search.recognizes(spellID) then return true, spellID, 2 end
+  end
+  local weakSpells = kind == "buff" and Private.CDMAuraSpellIDs(info) or relatedSpells(info)
+  local baseRank
+  for _, spellID in ipairs(weakSpells) do
+    if search.recognizes(spellID) then
+      if kind == "buff" then return true, spellID, 1 end
+      baseRank = baseRank or spellRank(spellIDOrNil(info.spellID))
+      if spellRank(spellID) == baseRank then return true, spellID, 1 end
     end
   end
-  local entryRank = SpellRank(SpellIDOrNil(info.spellID))
-  for _, spellID in ipairs(weak) do
-    if matches(spellID) and (kind == "buff" or SpellRank(spellID) == entryRank) then
-      return { id = id, spellID = spellID, score = 1 }
-    end
-  end
+  return false
 end
 
--- Order of preference between matches: learned, direct, higher rank, displayed, smaller id.
-local function BetterMatch(a, b)
-  if a.known ~= b.known then
-    return a.known
-  elseif a.score ~= b.score then
-    return a.score > b.score
-  elseif a.rank ~= b.rank then
-    return a.rank > b.rank
-  elseif a.displayed ~= b.displayed then
-    return a.displayed
-  end
+local function betterMatch(a, b)
+  if a.known ~= b.known then return a.known end
+  if a.score ~= b.score then return a.score > b.score end
+  if a.rank ~= b.rank then return a.rank > b.rank end
+  if a.displayed ~= b.displayed then return a.displayed end
   return a.id < b.id
 end
 
--- Every catalogue entry of the query's kind matching its text, best first.
-local function FindMatches(query, catalog, preview)
-  local kind = CooldownViewer.KindOf(query.event)
-  local frames = Private.CDMFrames()
-  local matches = NewMatcher(query)
-  local found = {}
-  for id, entry in pairs(catalog) do
-    local info = Catalog:Info(id)
+local function higherRankFirst(a, b)
+  if a.rank ~= b.rank then return a.rank > b.rank end
+  return betterMatch(a, b)
+end
+
+local function newSearch(query, text)
+  local search = {
+    exact = query.cdmExact == true,
+    itemExact = query.cdmItemExact == true,
+    id = tonumber(text),
+  }
+  if search.exact or search.itemExact then
+    search.recognizes = function(spellID) return spellID == search.id end
+  else
+    local asSpell = spellIDOrNil(search.id)
+    search.name = (asSpell and lowerSpellName(asSpell)) or text:lower()
+    search.recognizes = function(spellID)
+      local name = lowerSpellName(spellID)
+      return name ~= nil and name == search.name
+    end
+  end
+  return search
+end
+
+local function findMatches(query, search, kind, catalog, preview)
+  local matches = {}
+  local frames
+  for cooldownID, entry in pairs(catalog) do
+    local info = Catalog:Info(cooldownID)
     if info and Private.CDMEntryMatches(query, entry, info, preview) then
-      local identity = Private.CDMIdentity(id, entry, info, frames[id])
-      local match = MatchEntry(query, kind, id, entry, info, identity, matches)
-      if match then
-        match.known = entry.known == true
-        match.rank = SpellRank(match.spellID)
-        match.displayed = entry.displayed == true
-        found[#found + 1] = match
+      frames = frames or Private.CDMFrames()
+      local identity = Private.CDMIdentity(cooldownID, entry, info, frames[cooldownID])
+      local found, spellID, score
+      if kind == "item" then
+        found, spellID = matchItem(search, identity, info)
+        score = 2
+      else
+        found, spellID, score = matchSpell(search, kind, identity, info)
+      end
+      if found then
+        matches[#matches + 1] = {
+          id = cooldownID,
+          spellID = spellID,
+          score = score,
+          known = entry.known == true,
+          rank = spellRank(spellID),
+          displayed = entry.displayed == true,
+        }
       end
     end
   end
-  table.sort(found, BetterMatch)
-  return found, kind
+  table.sort(matches, betterMatch)
+  return matches
 end
 
--- Buff matches whose spell the player knows, highest rank first; every match when none is known.
-local function KnownBuffMatches(found)
-  local known = {}
-  for _, match in ipairs(found) do
-    if WeakAuras.IsSpellKnownIncludingPet(match.spellID) then
-      known[#known + 1] = match
+local function keepLearnedBuffs(matches)
+  local learned = {}
+  for _, match in ipairs(matches) do
+    if match.spellID and WeakAuras.IsSpellKnownIncludingPet(match.spellID) then
+      learned[#learned + 1] = match
     end
   end
-  if not known[1] then
-    return found
-  end
-  table.sort(known, function(a, b)
-    if a.rank ~= b.rank then
-      return a.rank > b.rank
-    end
-    return BetterMatch(a, b)
-  end)
-  return known
+  if #learned == 0 then return matches end
+  table.sort(learned, higherRankFirst)
+  return learned
 end
 
--- Stand-in of a query text for the options: the real spell when the text names one.
-local function PreviewSpell(text)
-  local info = C_Spell.GetSpellInfo(tonumber(text) or text)
-  local name = info and ReadableOrNil(info.name)
-  local icon = info and ReadableOrNil(info.iconID)
+local function fillBuffFields(selection, matches, text, preview)
+  local entryIDs, spellIDs, seen = {}, {}, {}
+  for index, match in ipairs(matches) do
+    entryIDs[index] = match.id
+    local spellID = match.spellID
+    if spellID ~= nil and not seen[spellID] then
+      seen[spellID] = true
+      spellIDs[#spellIDs + 1] = spellID
+    end
+  end
+  table.sort(spellIDs)
+  local best = matches[1]
+  selection.buffEntryIDs = entryIDs
+  selection.buffSpellIDs = spellIDs
+  selection.buffName = spellName(best.spellID) or text
+  if not preview then
+    selection.buffResolvedSpellID = best.spellID
+  end
+end
+
+local function previewSpellFor(text)
+  local wantedID = tonumber(text)
+  local info = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(wantedID or text)
+  if type(info) ~= "table" then
+    return { name = text, iconID = FALLBACK_ICON, spellID = wantedID }
+  end
+  local name = ReadableOrNil(info.name)
   return {
     name = type(name) == "string" and name or text,
-    iconID = icon or PREVIEW_ICON,
-    spellID = info and SpellIDOrNil(info.spellID) or tonumber(text),
+    iconID = ReadableOrNil(info.iconID) or FALLBACK_ICON,
+    spellID = spellIDOrNil(info.spellID) or wantedID,
   }
 end
 
--- Builds the selection of a query from the catalogue.
-local function BuildSelection(query, event, catalog)
-  local preview = event == "OPTIONS"
-  local selection = EmptySelection(query.cdmSelection)
-  local text = query.cdmSpell
-  if (query.cdmExact or query.cdmItemExact) and not tonumber(text) then
-    return selection
+local function buildSelection(query, text, event, catalog)
+  local selection = newSelection(query.cdmSelection)
+  if text == "" then return selection end
+  local search = newSearch(query, text)
+  if (search.exact or search.itemExact) and not search.id then return selection end
+  local preview = event == OPTIONS_EVENT
+  local kind = kindOf(query.event)
+  local matches = findMatches(query, search, kind, catalog, preview)
+
+  if kind == "buff" and not search.exact and not search.itemExact and not preview then
+    matches = keepLearnedBuffs(matches)
   end
 
-  local found, kind = FindMatches(query, catalog, preview)
-  if kind == "buff" and not query.cdmExact and not preview then
-    found = KnownBuffMatches(found)
-  end
   if kind == "item" then
-    for _, match in ipairs(found) do
-      selection[#selection + 1] = match.id
-    end
+    for index, match in ipairs(matches) do selection[index] = match.id end
     table.sort(selection)
-  elseif found[1] then
-    selection[1] = found[1].id
+  elseif matches[1] then
+    selection[1] = matches[1].id
   end
 
-  if kind == "buff" and found[1] and not query.cdmExact then
-    local spellIDs, seen = {}, {}
-    selection.buffEntryIDs = {}
-    for _, match in ipairs(found) do
-      selection.buffEntryIDs[#selection.buffEntryIDs + 1] = match.id
-      if not seen[match.spellID] then
-        seen[match.spellID] = true
-        spellIDs[#spellIDs + 1] = match.spellID
-      end
-    end
-    table.sort(spellIDs)
-    selection.buffSpellIDs = spellIDs
-    local info = C_Spell.GetSpellInfo(found[1].spellID)
-    selection.buffName = info and ReadableOrNil(info.name) or text
-    if not preview then
-      selection.buffResolvedSpellID = found[1].spellID
-    end
+  if kind == "buff" and matches[1] and not search.exact and not search.itemExact then
+    fillBuffFields(selection, matches, text, preview)
   end
 
-  if preview and not selection[1] then
-    selection.previewSpell = PreviewSpell(text)
+  if preview and #selection == 0 then
+    selection.previewSpell = previewSpellFor(text)
   end
-  for _, id in ipairs(selection) do
-    selection.buffSpellIDsByEntry[id] = Private.CDMAuraSpellIDs(Catalog:Info(id))
+
+  for _, cooldownID in ipairs(selection) do
+    selection.buffSpellIDsByEntry[cooldownID] = Private.CDMAuraSpellIDs(Catalog:Info(cooldownID))
   end
   return selection
 end
 
--- Selection of a query (or of a legacy trigger), memoised until the next catalogue load.
+local KEY_SEPARATOR = "\031"
+
 function Private.ResolveCDMSpell(trigger, event)
   CooldownViewer.SyncSource(trigger)
   local catalog = Catalog:Get(event)
-  local text = CooldownViewer.Trim(trigger.cdmSpell)
+  local text = trim(trigger.cdmSpell)
   local query = trigger
-  if text ~= trigger.cdmSpell then
+  if IsSecret(trigger.cdmSpell) or text ~= trigger.cdmSpell then
     query = setmetatable({ cdmSpell = text }, { __index = trigger })
   end
   local key = table.concat({
-    tostring(trigger.cdmSelection), tostring(trigger.event), text, tostring(trigger.cdmExact == true),
-    tostring(trigger.cdmItemExact == true), tostring(trigger.cdmSource),
-    tostring(trigger.use_ignoreSpellKnown == true), tostring(event == "OPTIONS"),
-  }, "\031")
+    tostring(query.cdmSelection),
+    tostring(query.event),
+    text,
+    tostring(query.cdmExact == true),
+    tostring(query.cdmItemExact == true),
+    tostring(query.cdmSource),
+    tostring(query.use_ignoreSpellKnown == true),
+    tostring(event == OPTIONS_EVENT),
+  }, KEY_SEPARATOR)
   local selection = Catalog.resolutions[key]
   if not selection then
-    if text == "" then
-      selection = EmptySelection(trigger.cdmSelection)
-    else
-      selection = BuildSelection(query, event, catalog)
-    end
+    selection = buildSelection(query, text, event, catalog)
     Catalog.resolutions[key] = selection
   end
   return selection
 end
 
----------------------------------------------------------------------------------------------------
--- Picker
----------------------------------------------------------------------------------------------------
-
--- Checked entries of the picker present in the catalogue and suiting the event, sorted.
 function Private.GetCDMPickerSelections(trigger, event)
-  local preview = event == "OPTIONS"
+  local preview = event == OPTIONS_EVENT
   local catalog = Catalog:Get(event)
-  local selection = EmptySelection(trigger.cdmSelection)
+  local selection = newSelection(trigger.cdmSelection)
   selection.picked = true
-  local checked = type(trigger.cdmSpells) == "table" and trigger.cdmSpells.multi
-  for key, isChecked in pairs(type(checked) == "table" and checked or {}) do
-    local id = tonumber(key)
-    local entry = id and catalog[id]
-    if isChecked and entry and not selection.buffSpellIDsByEntry[id] then
-      local info = Catalog:Info(id)
-      if info and Private.CDMEntryMatches(trigger, entry, info, preview) then
-        selection[#selection + 1] = id
-        selection.buffSpellIDsByEntry[id] = Private.CDMAuraSpellIDs(info)
+  local spells = trigger.cdmSpells
+  local multi = type(spells) == "table" and spells.multi
+  if type(multi) == "table" then
+    local added = {}
+    for key, checked in pairs(multi) do
+      local cooldownID = checked and tonumber(key)
+      if cooldownID and not added[cooldownID] then
+        local entry = catalog[cooldownID]
+        local info = entry and Catalog:Info(cooldownID)
+        if info and Private.CDMEntryMatches(trigger, entry, info, preview) then
+          added[cooldownID] = true
+          selection[#selection + 1] = cooldownID
+          selection.buffSpellIDsByEntry[cooldownID] = Private.CDMAuraSpellIDs(info)
+        end
       end
     end
   end
@@ -573,14 +515,9 @@ function Private.GetCDMPickerSelections(trigger, event)
 end
 Private.ExecEnv.GetCDMPickerSelections = Private.GetCDMPickerSelections
 
----------------------------------------------------------------------------------------------------
--- Migration
----------------------------------------------------------------------------------------------------
-
--- Moves legacy Utility triggers to the Cooldown event.
 function Private.MigrateCDMCooldownTrigger(trigger)
-  if trigger.type == "cdm" and trigger.event == EVENT_UTILITY then
-    trigger.event = EVENT_COOLDOWN
+  if trigger and trigger.type == "cdm" and trigger.event == UTILITY_EVENT then
+    trigger.event = COOLDOWN_EVENT
     trigger.cdmSource = "cooldown"
   end
 end

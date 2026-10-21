@@ -869,7 +869,7 @@ iconInset | desc="Aura (Modern) does not apply this effect." disabled=true name=
 iconSource | name="Icon Source" order=1 type="select" values={-1="Automatic",0="Manual"}
 notAnOption = "text"
 secretSwipeColor | get=<fn> hasAlpha=true hidden=fn:false name="Swipe Color" order=11.900000000 set=<fn> type="color" width=1.300000000
-secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=13.900000000 type="execute" width=1.300000000
+secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=13.900000000 type="execute" width=1.300000000
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
 spark | desc="Aura (Modern) does not apply this effect." disabled=true name="Spark" order=4 type="toggle"
 useTooltip | desc="The Aura (Modern) display ignores the mouse, so it shows no tooltip." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
@@ -895,8 +895,8 @@ __order = 2
 __title = "Text"
 anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
-automaticWidth | desc="Native aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
-secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=15 type="execute" width=1.300000000
+automaticWidth | desc="The game's own aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
+secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=15 type="execute" width=1.300000000
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
 text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
@@ -913,16 +913,16 @@ __order = 3
 __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
-secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5 type="execute" width=1.300000000
+secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5 type="execute" width=1.300000000
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
-slanted | desc="The game fills the bar or the swipe itself from secret values: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
+slanted | desc="The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
 __title = "Glow"
 glowColor | name="Color" order=3.500000000 type="color"
 glowStartAnim | desc="The game starts this glow itself, without the start animation." disabled=true name="Start Anim" order=2 type="toggle"
 glowType | name="Glow Type" order=1 type="select" values={"ACShine"="Autocast Shine","Pixel"="Pixel Glow","Proc"="Proc Glow","buttonOverlay"="Action Button Glow"}
-secretSwitchToClassic | confirm=true confirmText="Aura stops updating in combat once the aura turns secret. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5.500000000 type="execute" width=1.300000000
+secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5.500000000 type="execute" width=1.300000000
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
 [sub.4.subtext]
 __order = 5
@@ -959,7 +959,7 @@ __order = 2
 __title = "Text"
 anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
-automaticWidth | desc="Native aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
+automaticWidth | desc="The game's own aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
 text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
@@ -977,7 +977,7 @@ __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
 secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
-slanted | desc="The game fills the bar or the swipe itself from secret values: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
+slanted | desc="The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
 __title = "Glow"
@@ -996,7 +996,7 @@ not enabled leaves groups untouched: true
 aurabar anchor_area: {"ALL"="Whole Area","bar"="Bar","icon"="Icon"} swipe=false
 ]==],
     ["display.action.new"] = [==[
-finish_do_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=34 type="toggle"
+finish_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=34 type="toggle"
 finish_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=31 type="toggle"
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
@@ -1004,16 +1004,16 @@ finish_sound | name="Sound" order=33 sorting={1=" custom",2=" Fojji",3=554003,4=
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
-start_choose_glow_frame | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
-start_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
-start_do_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:false name="Custom" order=9 type="toggle"
+start_choose_glow_frame | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
+start_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
+start_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:false name="Custom" order=9 type="toggle"
 start_do_glow | desc="Use Unit Frames anchoring in Display. The frame glows while any aura matches your filters and stops automatically. Exact Spell IDs are not required." disabled=fn:true get=<fn> name="Glow Anchored Unit Frame" order=11 set=<fn> type="toggle"
 start_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=2 type="toggle"
 start_do_sound | desc="Play when one of the trigger's exact spell IDs is added. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=4 type="toggle"
 start_do_sound_fade | hidden=true name="Fade" order=7 type="toggle"
 start_glow_XOffset | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:true name="X" order=18 set=<fn> type="range"
 start_glow_YOffset | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:true name="Y" order=19 set=<fn> type="range"
-start_glow_action | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Action" order=12 type="select"
+start_glow_action | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Action" order=12 type="select"
 start_glow_color | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:true name="Color" order=16 set=<fn> type="color"
 start_glow_duration | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:true name="Animation Duration" order=17 set=<fn> type="range"
 start_glow_padding | control="WeakAurasSpinBox" desc="Extra space around the unit frame. Zero follows its edges." disabled=fn:true get=<fn> hidden=fn:true max=40 min=0 name="Padding" order=10.865000000 set=<fn> step=1 type="range" width=1.300000000
@@ -1046,7 +1046,7 @@ unitframe: glow_type.hidden=false disabled=false color.disabled=true do_glow.dis
 custom disabled: false do_custom=fn:false
 ]==],
     ["display.action.existing"] = [==[
-finish_do_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=34 type="toggle"
+finish_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=34 type="toggle"
 finish_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=31 type="toggle"
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
@@ -1054,16 +1054,16 @@ finish_sound | name="Sound" order=33 sorting={1=" custom",2=" Fojji",3=554003,4=
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
-start_choose_glow_frame | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
-start_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
-start_do_custom | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=9 type="toggle"
+start_choose_glow_frame | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
+start_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
+start_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=9 type="toggle"
 start_do_glow | desc="Use Unit Frames anchoring in Display. The frame glows while any aura matches your filters and stops automatically. Exact Spell IDs are not required." disabled=fn:false get=<fn> name="Glow Anchored Unit Frame" order=11 set=<fn> type="toggle"
 start_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=2 type="toggle"
 start_do_sound | desc="Play when one of the trigger's exact spell IDs is added. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=4 type="toggle"
 start_do_sound_fade | hidden=true name="Fade" order=7 type="toggle"
 start_glow_XOffset | desc="Style the glow on the anchored unit frame." disabled=fn:false get=<fn> hidden=fn:false name="X" order=18 set=<fn> type="range"
 start_glow_YOffset | desc="Style the glow on the anchored unit frame." disabled=fn:false get=<fn> hidden=fn:false name="Y" order=19 set=<fn> type="range"
-start_glow_action | desc="Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Action" order=12 type="select"
+start_glow_action | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Action" order=12 type="select"
 start_glow_color | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:false name="Color" order=16 set=<fn> type="color"
 start_glow_duration | desc="Style the glow on the anchored unit frame." disabled=fn:false get=<fn> hidden=fn:false name="Animation Duration" order=17 set=<fn> type="range"
 start_glow_padding | control="WeakAurasSpinBox" desc="Extra space around the unit frame. Zero follows its edges." disabled=fn:false get=<fn> hidden=fn:false max=40 min=0 name="Padding" order=10.865000000 set=<fn> step=1 type="range" width=1.300000000
@@ -1382,7 +1382,7 @@ member: specificUnit.hidden=fn:false nameplateOnly.hidden=fn:true
 cdmPicker_available | get=<fn> name="Show only available" order=35.002000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_buffShow | get=<fn> hidden=fn:false name="Show" order=10.016000000 set=<fn> type="select" values={"active"="Aura Active","always"="Always","missing"="Aura Missing"} width=1.300000000
 cdmPicker_display | hidden=fn:false name="Display" order=10.014000000 type="header"
-cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:false name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:false name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_elapsedOperator | get=<fn> hidden=fn:true name="" order=10.025000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_elapsedSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.026000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_entries | name="Blizzard CDM Entries" order=35.004000000 type="header"
@@ -1403,7 +1403,7 @@ cdmPicker_nameToggle | get=<fn> name="Name(s)" order=21 set=<fn> type="toggle" w
 cdmPicker_nameicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=21.010200000 type="execute" width=0.200000000
 cdmPicker_open | disabled=fn:false func=<fn> name="Open CDM" order=10.012000000 type="execute" width=1.300000000
 cdmPicker_refresh | func=<fn> name="Refresh from Blizzard CDM" order=10.013000000 type="execute" width=1.300000000
-cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:false name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:false name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_remainingOperator | get=<fn> hidden=fn:true name="" order=10.019000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_remainingSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.020000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_requireTarget | desc="Only show this trigger's auras while you have a target you can attack. Applies to all selected entries and all Show modes." get=<fn> hidden=fn:false name="Require attackable target" order=10.017000000 set=<fn> type="toggle" width=1.300000000
@@ -1415,9 +1415,9 @@ cdmPicker_spellidDisabledSpace | hidden=fn:false name="" order=25.001000000 type
 cdmPicker_spellidToggle | get=<fn> name="Exact Spell ID(s)" order=25 set=<fn> type="toggle" width=1.100000000
 cdmPicker_spellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=25.010200000 type="execute" width=0.200000000
 cdmPicker_stacksCount | get=<fn> hidden=fn:true name="Stacks" order=10.029000000 set=<fn> type="input" validate=<fn> width=0.800000000
-cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match." get=<fn> hidden=fn:false name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing stack counts, or counts the game hides, do not match. All enabled filters must match." get=<fn> hidden=fn:false name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_stacksOperator | get=<fn> hidden=fn:true name="" order=10.028000000 set=<fn> type="select" values={"<"="<","<="="<=","=="="=",">"=">",">="=">=","~="="!="} width=0.500000000
-cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:false name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:false name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_totalOperator | get=<fn> hidden=fn:true name="" order=10.022000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_totalSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.023000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_track | get=<fn> hidden=fn:true name="Track cooldowns" order=10.031000000 set=<fn> type="select" values={"auto"="Auto","charges"="Charge recharge","cooldown"="Cooldown"} width=1.300000000
@@ -1466,7 +1466,7 @@ rebuilt with view state: entries={1="cdmPicker_entry101",2="cdmPicker_entry102",
 cdmPicker_available | get=<fn> name="Show only available" order=35.002000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_buffShow | get=<fn> hidden=fn:true name="Show" order=10.016000000 set=<fn> type="select" values={"active"="Aura Active","always"="Always","missing"="Aura Missing"} width=1.300000000
 cdmPicker_display | hidden=fn:false name="Display" order=10.014000000 type="header"
-cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_elapsedOperator | get=<fn> hidden=fn:true name="" order=10.025000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_elapsedSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.026000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_entries | name="Blizzard CDM Entries" order=35.004000000 type="header"
@@ -1491,7 +1491,7 @@ cdmPicker_nameicon2 | control="WeakAurasIcon" hidden=fn:false name="" order=21.0
 cdmPicker_nameicon3 | control="WeakAurasIcon" hidden=fn:false name="" order=21.030200000 type="execute" width=0.200000000
 cdmPicker_open | disabled=fn:false func=<fn> name="Open CDM" order=10.012000000 type="execute" width=1.300000000
 cdmPicker_refresh | func=<fn> name="Refresh from Blizzard CDM" order=10.013000000 type="execute" width=1.300000000
-cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_remainingOperator | get=<fn> hidden=fn:true name="" order=10.019000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_remainingSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.020000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_requireTarget | desc="Only show this trigger's auras while you have a target you can attack. Applies to all selected entries and all Show modes." get=<fn> hidden=fn:true name="Require attackable target" order=10.017000000 set=<fn> type="toggle" width=1.300000000
@@ -1505,9 +1505,9 @@ cdmPicker_spellidToggle | get=<fn> name="Exact Spell ID(s)" order=25 set=<fn> ty
 cdmPicker_spellidicon1 | control="WeakAurasIcon" hidden=fn:false name="" order=25.010200000 type="execute" width=0.200000000
 cdmPicker_spellidicon2 | control="WeakAurasIcon" hidden=fn:false name="" order=25.020200000 type="execute" width=0.200000000
 cdmPicker_stacksCount | get=<fn> hidden=fn:true name="Stacks" order=10.029000000 set=<fn> type="input" validate=<fn> width=0.800000000
-cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match." get=<fn> hidden=fn:true name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing stack counts, or counts the game hides, do not match. All enabled filters must match." get=<fn> hidden=fn:true name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_stacksOperator | get=<fn> hidden=fn:true name="" order=10.028000000 set=<fn> type="select" values={"<"="<","<="="<=","=="="=",">"=">",">="=">=","~="="!="} width=0.500000000
-cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_totalOperator | get=<fn> hidden=fn:true name="" order=10.022000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_totalSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.023000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_track | get=<fn> hidden=fn:true name="Track cooldowns" order=10.031000000 set=<fn> type="select" values={"auto"="Auto","charges"="Charge recharge","cooldown"="Cooldown"} width=1.300000000
@@ -1543,7 +1543,7 @@ after timer: calls: Add=1 UpdateFakeStatesFor=1
 cdmPicker_available | get=<fn> name="Show only available" order=35.002000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_buffShow | get=<fn> hidden=fn:true name="Show" order=10.016000000 set=<fn> type="select" values={"active"="Aura Active","always"="Always","missing"="Aura Missing"} width=1.300000000
 cdmPicker_display | hidden=fn:true name="Display" order=10.014000000 type="header"
-cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_elapsedEnabled | desc="Filters active, timed auras using readable CDM elapsed time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Elapsed Time" order=10.024000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_elapsedOperator | get=<fn> hidden=fn:true name="" order=10.025000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_elapsedSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.026000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_entries | name="Blizzard CDM Entries" order=35.004000000 type="header"
@@ -1572,7 +1572,7 @@ cdmPicker_nameicon1 | control="WeakAurasIcon" hidden=fn:false name="" order=21.0
 cdmPicker_nameicon2 | control="WeakAurasIcon" hidden=fn:false name="" order=21.020200000 type="execute" width=0.200000000
 cdmPicker_open | disabled=fn:false func=<fn> name="Open CDM" order=10.012000000 type="execute" width=1.300000000
 cdmPicker_refresh | func=<fn> name="Refresh from Blizzard CDM" order=10.013000000 type="execute" width=1.300000000
-cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_remainingEnabled | desc="Filters active, timed auras using readable CDM remaining time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Remaining Time" order=10.018000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_remainingOperator | get=<fn> hidden=fn:true name="" order=10.019000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_remainingSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.020000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_requireTarget | desc="Only show this trigger's auras while you have a target you can attack. Applies to all selected entries and all Show modes." get=<fn> hidden=fn:true name="Require attackable target" order=10.017000000 set=<fn> type="toggle" width=1.300000000
@@ -1584,9 +1584,9 @@ cdmPicker_spellidDisabledSpace | hidden=fn:false name="" order=25.001000000 type
 cdmPicker_spellidToggle | get=<fn> name="Exact Spell ID(s)" order=25 set=<fn> type="toggle" width=1.100000000
 cdmPicker_spellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=25.010200000 type="execute" width=0.200000000
 cdmPicker_stacksCount | get=<fn> hidden=fn:true name="Stacks" order=10.029000000 set=<fn> type="input" validate=<fn> width=0.800000000
-cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match." get=<fn> hidden=fn:true name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_stacksEnabled | desc="Filters active auras using readable CDM stack counts. Missing stack counts, or counts the game hides, do not match. All enabled filters must match." get=<fn> hidden=fn:true name="Stack Count" order=10.027000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_stacksOperator | get=<fn> hidden=fn:true name="" order=10.028000000 set=<fn> type="select" values={"<"="<","<="="<=","=="="=",">"=">",">="=">=","~="="!="} width=0.500000000
-cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing, permanent, or secret timers do not match." get=<fn> hidden=fn:true name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
+cdmPicker_totalEnabled | desc="Filters active, timed auras using readable CDM total time. Missing and permanent timers, or timers the game hides, do not match." get=<fn> hidden=fn:true name="Total Duration" order=10.021000000 set=<fn> type="toggle" width=1.300000000
 cdmPicker_totalOperator | get=<fn> hidden=fn:true name="" order=10.022000000 set=<fn> type="select" values={"<"="<","<="="<=",">"=">",">="=">="} width=0.500000000
 cdmPicker_totalSeconds | get=<fn> hidden=fn:true name="Seconds" order=10.023000000 set=<fn> type="input" validate=<fn> width=0.800000000
 cdmPicker_track | get=<fn> hidden=fn:true name="Track cooldowns" order=10.031000000 set=<fn> type="select" values={"auto"="Auto","charges"="Charge recharge","cooldown"="Cooldown"} width=1.300000000

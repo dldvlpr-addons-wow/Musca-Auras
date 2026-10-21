@@ -215,7 +215,7 @@ end
 --------------------------------------------------------------------------------
 
 -- Why each option is greyed out, shown in its tooltip.
-local progressReason = L["The game fills the bar or the swipe itself from secret values: this effect needs to read the progress."]
+local progressReason = L["The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress."]
 local customTextReason = L["The game writes this text itself: custom code cannot run on it."]
 local notAppliedReason = L["Aura (Modern) does not apply this effect."]
 local tooltipReason = L["The Aura (Modern) display ignores the mouse, so it shows no tooltip."]
@@ -257,7 +257,7 @@ local displayOptionAdjustments = {
   end,
   automaticWidth = function(option)
     option.values = { Fixed = L["Fixed"] }
-    option.desc = L["Native aura layout uses a fixed text area."]
+    option.desc = L["The game's own aura layout uses a fixed text area."]
   end,
   glowType = function(option)
     option.values = {
@@ -379,7 +379,7 @@ local function RestrictGroup(groupKey, group, data)
         name = L["Switch to classic mode"],
         desc = L["Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options."],
         confirm = true,
-        confirmText = L["Aura stops updating in combat once the aura turns secret. Switch to classic mode?"],
+        confirmText = L["The aura stops updating in combat once the game hides it. Switch to classic mode?"],
         func = function() SwitchToClassic(data) end,
       }
     end
@@ -466,7 +466,7 @@ local function RestrictActionOption(data, when, field, option, soundValues, soun
     option.disabled = function()
       return not (option.type == "toggle" and ActionValues(data, when)[field])
     end
-    option.desc = L["Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not."]
+    option.desc = L["Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not."]
   elseif field == "sound" then
     option.values = soundValues
     option.sorting = soundSorting

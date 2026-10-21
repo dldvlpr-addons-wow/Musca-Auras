@@ -7,9 +7,9 @@ local L = WeakAuras.L
 local Warnings = {}
 OptionsPrivate.TriggerSecretWarnings = Warnings
 
-Warnings.message = L["Secret detected. Some features may be restricted in combat."]
+Warnings.message = L["In combat, the game hides some values of this trigger. The aura can display them but cannot compare them, so some features may not work in combat."]
 Warnings.text = "|cffff0000" .. Warnings.message .. "|r"
-Warnings.casterText = "|cffff0000" .. L["Secret detected. Casts of units other than the player or the pet cannot be read, in or out of combat."] .. "|r"
+Warnings.casterText = "|cffff0000" .. L["The game hides the spells cast by units other than you or your pet, in or out of combat. This trigger cannot read them."] .. "|r"
 
 local function IsSecret(value)
   return issecretvalue ~= nil and issecretvalue(value) == true

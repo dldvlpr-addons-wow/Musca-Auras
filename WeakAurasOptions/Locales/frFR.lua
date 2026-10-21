@@ -147,8 +147,8 @@ local L = WeakAuras.L
 	L["Extra Options:"] = "Options supplémentaires :"
 	L["Extra space around the unit frame. Zero follows its edges."] = "Espace supplémentaire autour du cadre d'unité. Zéro suit ses bords."
 	L["Favourites"] = "Favoris"
-	L["Filters active auras using readable CDM stack counts. Missing or secret stack counts do not match. All enabled filters must match."] = "Filtre les auras actives selon les nombres de piles lisibles du CDM. Les nombres de piles absents ou secrets ne correspondent pas. Tous les filtres activés doivent correspondre."
-	L["Filters active, timed auras using readable CDM %s time. Missing, permanent, or secret timers do not match."] = "Filtre les auras actives et temporisées selon le temps %s lisible du CDM. Les minuteurs absents, permanents ou secrets ne correspondent pas."
+	L["Filters active auras using readable CDM stack counts. Missing stack counts, or counts the game hides, do not match. All enabled filters must match."] = "Filtre les auras actives selon les nombres de piles lisibles du CDM. Les nombres de piles absents, ou cachés par le jeu, ne correspondent pas. Tous les filtres activés doivent correspondre."
+	L["Filters active, timed auras using readable CDM %s time. Missing and permanent timers, or timers the game hides, do not match."] = "Filtre les auras actives à durée selon le temps %s lisible du CDM. Les minuteurs absents, permanents ou cachés par le jeu ne correspondent pas."
 	L["Filters with the aura categories of the game. They work in combat too: without a name or spell ID filter and any other filter, auras applied in combat show, with the icon, timer and stack text drawn by the game."] = "Filtre avec les catégories d'aura du jeu. Ils fonctionnent aussi en combat : sans filtre de nom ou d'ID de sort ni autre filtre, les auras appliquées en combat s'affichent, avec l'icône, le minuteur et le texte de piles dessiné par le jeu."
 	L["Find in all auras: a spell ID or name, a texture, a font or a sound."] = "Chercher dans toutes les auras : un ID ou nom de sort, une texture, une police ou un son."
 	L["Find in the selected auras: a spell ID or name, a texture, a font or a sound."] = "Chercher dans les auras sélectionnées : un ID ou nom de sort, une texture, une police ou un son."
@@ -189,14 +189,14 @@ local L = WeakAuras.L
 	L["Musca Auras Guide"] = "Guide de Musca Auras"
 	L["Musca Auras: WoW Forever 1.60 port by dldvlpr, based on WeakAuras by The WeakAuras Team."] = "Musca Auras : portage pour WoW Forever 1.60 par dldvlpr, basé sur WeakAuras de The WeakAuras Team."
 	L["Name of the aura"] = "Nom de l'aura"
-	L["Native aura layout uses a fixed text area."] = "La disposition native des auras utilise une zone de texte fixe."
-	L["Native Filter"] = "Filtre natif"
+	L["The game's own aura layout uses a fixed text area."] = "La disposition d'aura propre au jeu utilise une zone de texte fixe."
+	L["Game Categories"] = "Catégories du jeu"
 	L["New group for Aura (Modern) displays: laid out left to right, 2 pixels apart, with the layout kept in combat."] = "Nouveau groupe pour les affichages Aura (moderne) : disposés de gauche à droite, espacés de 2 pixels, avec la disposition conservée en combat."
 	L["Next"] = "Suivant"
 	L["Next Active Trigger"] = "Prochain déclencheur actif"
 	L["Nothing equal to \"%s\"."] = "Rien n'est égal à \"%s\"."
 	L["Not %s"] = "Pas %s"
-	L["Not available for secret aura On Show/On Hide. Sound files are supported; live TTS and custom callbacks are not."] = "Indisponible pour les auras secrètes à l'affichage ou au masquage. Les fichiers son sont pris en charge ; la synthèse vocale en direct et les rappels personnalisés ne le sont pas."
+	L["Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not."] = "Indisponible à l'affichage ou au masquage pour les auras Aura (moderne). Les fichiers son sont pris en charge ; la synthèse vocale en direct et les rappels personnalisés ne le sont pas."
 	L["Not Usable"] = "Inutilisable"
 	L["Note: Trigger Always Active"] = "Note : déclencheur toujours actif"
 	L["Number of stacks"] = "Nombre de piles"
@@ -222,9 +222,9 @@ local L = WeakAuras.L
 	L["remaining"] = "restant"
 	L["removed"] = "retiré"
 	L["Replace"] = "Remplacer"
-	L["Replace %s value(s) in %s aura(s)? Undo reverts it."] = "Remplacer %s valeur(s) dans %s aura(s) ? Undo les rétablit."
+	L["Replace %s value(s) in %s aura(s)? Undo reverts it."] = "Remplacer %s valeur(s) dans %s aura(s) ? Annuler les rétablit."
 	L["Replace \"%s\" with:"] = "Remplacer \"%s\" par :"
-	L["Replaces a spell, a texture, a font or a sound in the selected auras, or in all auras when none is selected.\nThe changes are shown in the chat before the confirmation, and Undo reverts them."] = "Remplace un sort, une texture, une police ou un son dans les auras sélectionnées, ou dans toutes les auras si aucune n'est sélectionnée.\nLes changements s'affichent dans le chat avant la confirmation, et Undo les rétablit."
+	L["Replaces a spell, a texture, a font or a sound in the selected auras, or in all auras when none is selected.\nThe changes are shown in the chat before the confirmation, and Undo reverts them."] = "Remplace un sort, une texture, une police ou un son dans les auras sélectionnées, ou dans toutes les auras si aucune n'est sélectionnée.\nLes changements s'affichent dans le chat avant la confirmation, et Annuler les rétablit."
 	L["Require attackable target"] = "Exiger une cible attaquable"
 	L["Reverse Sort"] = "Inverser le tri"
 	L["Reverse the selected order. For Remaining time, later expirations and permanent auras come first."] = "Inverse l'ordre sélectionné. Pour Remaining time, les expirations les plus tardives et les auras permanentes passent en premier."
@@ -232,8 +232,8 @@ local L = WeakAuras.L
 	L["Right-click to remove"] = "Clic droit pour retirer"
 	L["Save favourite"] = "Enregistrer en favori"
 	L["Search"] = "Rechercher"
-	L["Secret detected. Some features may be restricted in combat."] = "Secret détecté. Certaines fonctions peuvent être restreintes en combat."
-	L["Secret detected. Casts of units other than the player or the pet cannot be read, in or out of combat."] = "Secret détecté. Les sorts lancés par une autre unité que le joueur ou son familier sont illisibles, en combat comme hors combat."
+	L["In combat, the game hides some values of this trigger. The aura can display them but cannot compare them, so some features may not work in combat."] = "En combat, le jeu cache certaines valeurs de ce déclencheur. L'aura peut les afficher mais pas les comparer, donc certaines fonctions peuvent ne pas marcher en combat."
+	L["The game hides the spells cast by units other than you or your pet, in or out of combat. This trigger cannot read them."] = "Le jeu cache les sorts lancés par d'autres unités que vous ou votre familier, en combat comme hors combat. Ce déclencheur ne peut pas les lire."
 	L["Selected value checks:"] = "Vérifications des valeurs sélectionnées :"
 	L["Sets the Cooldown Manager viewers to zero opacity. They stay shown, so aura tracking is unaffected."] = "Règle l'opacité des fenêtres du gestionnaire de temps de recharge à zéro. Elles restent affichées, le suivi des auras n'est donc pas affecté."
 	L["Share one display per unit between the auras of this group, and start a new line after a set number of auras."] = "Partage un affichage par unité entre les auras de ce groupe, et commence une nouvelle ligne après un nombre d'auras défini."
@@ -273,7 +273,7 @@ local L = WeakAuras.L
 	L["Trigger that supplies Dynamic Information while no aura passes the Aura (Modern) filters."] = "Déclencheur qui fournit les informations dynamiques tant qu'aucune aura ne passe les filtres d'Aura (moderne)."
 	L["Type the phrase exactly as it is named in the FojjiCore recorded voice pack you selected. Live text to speech is not supported here."] = "Saisissez la phrase exactement telle qu'elle est nommée dans le pack de voix enregistrée FojjiCore sélectionné. La synthèse vocale en direct n'est pas prise en charge ici."
 	L["Unassigned"] = "Non assigné"
-	L["Unit frame glows set from Display > Aura (Modern) Settings are removed too. Secret glows also stop once no aura matches or the display unloads."] = "Les brillances de cadre d'unité définies depuis Affichage > Paramètres d'Aura (moderne) sont aussi retirées. Les brillances secrètes s'arrêtent aussi quand plus aucune aura ne correspond ou que l'affichage se décharge."
+	L["Unit frame glows set from Display > Aura (Modern) Settings are removed too. Aura (Modern) glows also stop once no aura matches or the display unloads."] = "Les brillances de cadre d'unité définies depuis Affichage > Paramètres d'Aura (moderne) sont aussi retirées. Les brillances d'Aura (moderne) s'arrêtent aussi quand plus aucune aura ne correspond ou que l'affichage se décharge."
 	L["Unit identity checks:"] = "Vérifications de l'identité de l'unité :"
 	L["Unknown Item"] = "Objet inconnu"
 	L["Unknown spell name. Enter its Spell ID, or its exact name as shown in the game."] = "Nom de sort inconnu. Saisissez son ID de sort, ou son nom exact tel qu'affiché dans le jeu."
@@ -307,7 +307,7 @@ local L = WeakAuras.L
 	--[[Translation missing --]]
 	L["|cFFffcc00Font Flags:|r none"] = "|cFFffcc00Font Flags:|r none"
 	L["|cffffcc00Format Options|r"] = "|cffffcc00Options de formatage|r"
-	L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. Most auras turn secret in combat and stop updating."] = "|cffffd100Aura (moderne)|r : fonctionne en combat. Minuteur, piles et brillance. Texte limité à %p, %s et %n, sous-éléments limités à Texte, Texture, Encadrement et Brillance. Auras Icône, Barre de progression, Texture de progression et Texte uniquement.\n|cffffd100Aura|r : hors combat ou conditions avancées. La plupart des auras deviennent secrètes en combat et cessent de se mettre à jour."
+	L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. In combat, the game hides most auras and they stop updating."] = "|cffffd100Aura (moderne)|r : fonctionne en combat. Minuteur, piles et brillance. Texte limité à %p, %s et %n, sous-éléments limités à Texte, Texture, Encadrement et Brillance. Auras Icône, Barre de progression, Texture de progression et Texte uniquement.\n|cffffd100Aura|r : hors combat ou conditions avancées. En combat, le jeu cache la plupart des auras et elles cessent de se mettre à jour."
 	L[ [=[• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.
 • |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.
 |cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.
@@ -399,7 +399,7 @@ Off Screen]=] ] = "L’aura est hors écran"
 	L["Aura Name Pattern"] = "Modèle de Nom de l'Aura"
 	L["Aura Order"] = "Ordre des auras"
 	L["Aura received from: %s"] = "Aura reçue de : %s"
-	L["Aura stops updating in combat once the aura turns secret. Switch to classic mode?"] = "Aura ne se met plus à jour en combat dès que l'aura devient secrète. Passer en mode classique ?"
+	L["The aura stops updating in combat once the game hides it. Switch to classic mode?"] = "L'aura ne se met plus à jour en combat dès que le jeu la cache. Passer en mode classique ?"
 	L["Aura: '%s'"] = "Aura : '%s'"
 	L["Auras to Import"] = "Auras à importer"
 	L["Auto-Clone (Show All Matches)"] = "Clonage Automatique (Afficher tous les résultats)"
@@ -701,7 +701,7 @@ Can use \ to escape -.]=]
 	L["Flat Framelevels"] = "Flat Framelevels"
 	L["Foreground Texture"] = "Texture premier-plan"
 	L["Format for %s"] = "Format pour %s"
-	L["Found a Bug?"] = "Vous avez découvert un bug ?"
+	L["Found a Bug?"] = "Signaler un bug"
 	L["Frame"] = "Cadre"
 	--[[Translation missing --]]
 	L["Frame Count"] = "Frame Count"
@@ -896,9 +896,9 @@ Si cette case est cochée, ce séparateur inclura du texte. Sinon, ce sera juste
 	L["Loaded"] = "Chargé"
 	--[[Translation missing --]]
 	L["Loaded/Standby"] = "Loaded/Standby"
-	L["Lock Positions"] = "Verrouiller les positions"
+	L["Lock Positions"] = "Verrouiller"
 	L["Low Mana"] = "Mana bas"
-	L["Magnetically Align"] = "Alignement magnétique"
+	L["Magnetically Align"] = "Aimantation"
 	L["Main"] = "Principal"
 	--[[Translation missing --]]
 	L["Manual with %i/%i"] = "Manual with %i/%i"
@@ -1073,7 +1073,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	--[[Translation missing --]]
 	L["Reciprocal TRIGGER:# requests will be ignored!"] = "Reciprocal TRIGGER:# requests will be ignored!"
 	--[[Translation missing --]]
-	L["Redo"] = "Redo"
+	L["Redo"] = "Rétablir"
 	L["Regions of type \"%s\" are not supported."] = "Les régions de type \"%s\" ne sont pas prises en charge."
 	L["Remove"] = "Retirer"
 	--[[Translation missing --]]
@@ -1299,7 +1299,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["The Aura (Modern) display ignores the mouse, so it shows no tooltip."] = "L'affichage Aura (Modern) ignore la souris, il n'a donc pas d'infobulle."
 	L["The duration of the animation in seconds."] = "La durée de l'animation en secondes."
 	L["The duration of the animation in seconds. The finish animation does not start playing until after the display would normally be hidden."] = "La durée de l'animation en secondes. L'animation de fin ne commence qu'après le moment où l'affichage est normalement caché."
-	L["The game fills the bar or the swipe itself from secret values: this effect needs to read the progress."] = "Le jeu remplit lui-même la barre ou le balayage à partir de valeurs secrètes : cet effet doit lire la progression."
+	L["The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress."] = "Le jeu remplit lui-même la barre ou le balayage et cache la progression aux addons : cet effet a besoin de lire la progression."
 	L["The game starts this glow itself, without the start animation."] = "Le jeu lance lui-même cette surbrillance, sans l'animation de départ."
 	L["The game writes this text itself: custom code cannot run on it."] = "Le jeu écrit lui-même ce texte : du code personnalisé ne peut pas s'y appliquer."
 	L["The game writes this value itself: only the time format applies."] = "Le jeu écrit lui-même cette valeur : seul le format de temps s'applique."
@@ -1396,7 +1396,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	--[[Translation missing --]]
 	L["Type 'select' for '%s' requires a values member'"] = "Type 'select' for '%s' requires a values member'"
 	--[[Translation missing --]]
-	L["Undo"] = "Undo"
+	L["Undo"] = "Annuler"
 	L["Ungroup"] = "Dissocier"
 	--[[Translation missing --]]
 	L["Unit %s is not a valid unit for RegisterUnitEvent"] = "Unit %s is not a valid unit for RegisterUnitEvent"
@@ -1412,7 +1412,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["Unused for %d days, listed above:"] = "Inutilisées depuis %d jours, listées ci-dessus :"
 	--[[Translation missing --]]
 	L["Update"] = "Update"
-	L["Update Auras"] = "Mettre à jour les auras"
+	L["Update Auras"] = "Mettre à jour"
 	L["Update Custom Text On..."] = "Mettre à jour le texte personnalisé sur..."
 	L["URL"] = "URL"
 	--[[Translation missing --]]

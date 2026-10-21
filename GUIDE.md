@@ -93,13 +93,13 @@ Musca Auras handles this for you:
 | Health, mana, energy, rage bars | Keep moving, drawn by the game. |
 | Border colored by dispel type | Colored by the game. |
 | Dispel type icon | Colored by the game. |
-| Buff or debuff applied during combat | Shown. With **Native Filter** only, even when the game hides it completely. |
+| Buff or debuff applied during combat | Shown. With **Game Categories** only, even when the game hides it completely. |
 | Conditions and thresholds on secret values | Keep their last state, and update when combat ends. |
 
 When the restriction ends, every aura reads the data again and updates by itself. Out of combat, everything works
 like in regular WeakAuras.
 
-The **Conditions** trigger has a **Secret Restrictions Active** option, if you want to show or hide something
+The **Conditions** trigger has a **Game Hides Combat Data** option, if you want to show or hide something
 while data is secret.
 
 ### The one rule
@@ -134,14 +134,14 @@ Type **Aura**. Main options:
 | **Name(s)** | Match by name. |
 | **Exact Spell ID(s)** | Match by spell ID. Recommended: one line per rank. |
 | **From the Cooldown Manager** | Adds the spell IDs of a buff tracked by the Blizzard Cooldown Manager. |
-| **Native Filter** | Match by the game's aura categories, see below. |
+| **Game Categories** | Match by the game's aura categories, see below. |
 | **Debuff Type** | Magic, Curse, Disease, Poison, Bleed, Enrage. |
 | **Own Only** | Only auras cast by you or your pet. |
 | **Stack Count**, **Remaining Time**, **Elapsed Time**, **Total Time** | Filters on the aura's numbers. |
 | **Show On** | Aura(s) Found, Aura(s) Missing, Always, Match Count. |
 | **Auto-Clone (Show All Matches)** | One icon per matching aura (in a Dynamic Group). |
 
-**Native Filter** uses the categories the game itself gives every aura. Check a category in **Is** to require it,
+**Game Categories** uses the categories the game itself gives every aura. Check a category in **Is** to require it,
 in **Is Not** to exclude it:
 
 | Category | Meaning |
@@ -157,7 +157,7 @@ in **Is Not** to exclude it:
 | Big Defensive | A strong personal defensive. |
 | External Defensive | A defensive cast on you by someone else. |
 
-**Native Filter alone shows everything, even hidden auras.** When Native Filter is the only filter of the trigger
+**Game Categories alone shows everything, even hidden auras.** When Game Categories is the only filter of the trigger
 (no name, no spell ID, no other filter), auras applied during combat show even when the game hides all their data.
 Their icon, timer and stack text are drawn by the game; their name stays empty until combat ends.
 
@@ -203,7 +203,7 @@ Conditions on the spell cooldown: **On Cooldown**, **On Global Cooldown**, charg
 
 | Trigger | Watches |
 | --- | --- |
-| **Conditions** | In combat, alive, resting, mounted, moving, in a group, pet, instance, Secret Restrictions Active. |
+| **Conditions** | In combat, alive, resting, mounted, moving, in a group, pet, instance, Game Hides Combat Data. |
 | **Unit Characteristics** | Class, level, hostility, name, NPC ID of a unit. |
 | **Role** | Your group role: Tank, Healer, Damager. |
 | **Bag Space** | Free and used slots of your bags. Specialty bags (quiver, soul bag) on request. |
@@ -331,7 +331,7 @@ To see your DoT on every mob, use Unit **Nameplate** and **Auto-Clone** inside a
 ### 8.3 Every crowd control on your target
 
 1. **New**, **Dynamic Group**, then an **Icon** inside.
-2. Trigger **Aura**: Unit **Target**, Aura Type **Debuff**, **Native Filter** checked, **Is** = Crowd Control.
+2. Trigger **Aura**: Unit **Target**, Aura Type **Debuff**, **Game Categories** checked, **Is** = Crowd Control.
    Nothing else. **Auto-Clone (Show All Matches)** checked.
 3. Display: **Text** with `%p`, **Border** with **Color by Dispel Type**.
 
@@ -341,7 +341,7 @@ Add **Is** = Cast by Me or my Pet to see only yours.
 ### 8.4 Big defensives on your group
 
 1. **New**, **Dynamic Group** (Grow: Right), then an **Icon** inside.
-2. Trigger **Aura**: Unit **Smart Group**, Aura Type **Buff**, **Native Filter**, **Is** = Big Defensive and
+2. Trigger **Aura**: Unit **Smart Group**, Aura Type **Buff**, **Game Categories**, **Is** = Big Defensive and
    External Defensive in two auras (or one each). **Auto-Clone** checked.
 3. Display: **Text** with `%p`, **Text** with `%unitName`.
 
@@ -350,7 +350,7 @@ Add **Is** = Cast by Me or my Pet to see only yours.
 For healers and anyone who can dispel.
 
 1. **New**, **Dynamic Group**, then an **Icon** inside.
-2. Trigger **Aura**: Unit **Smart Group**, Aura Type **Debuff**, **Native Filter**, **Is** = Can Apply or Dispel.
+2. Trigger **Aura**: Unit **Smart Group**, Aura Type **Debuff**, **Game Categories**, **Is** = Can Apply or Dispel.
    **Auto-Clone** checked.
 3. Display: **Dispel Type Icon** (top right), **Border** with **Color by Dispel Type**, **Text** with `%unitName`.
 4. Actions, On Show: a sound.
@@ -543,7 +543,7 @@ on import, and the chat lists anything that could not be converted.
 | Cooldown Manager trigger, cooldown | Cooldown trigger |
 | Cooldown Manager trigger, buff | Aura trigger, with the buff's spell IDs, stacks, remaining, elapsed and total filters |
 | Cooldown Manager trigger, item | Item cooldown trigger |
-| Aura (Blizzard) trigger | Aura trigger with Native Filter |
+| Aura (Blizzard) trigger | Aura trigger with Game Categories |
 | Dispel type icon / border | Dispel Type Icon / Border colored by dispel type |
 | Swing Timer, Ammo, Role, Tracking, Equipment Durability, Bag Space | Same triggers |
 
@@ -574,7 +574,7 @@ combat ends. Use the display (bar, timer, `%p`, `%s`) for live information.
 
 **My custom code errors.** Add the `issecretvalue` check (section 9), and replace old functions.
 
-**My icon has no name in combat.** It is an aura hidden by the game, found by Native Filter: the name comes back
+**My icon has no name in combat.** It is an aura hidden by the game, found by Game Categories: the name comes back
 when combat ends.
 
 **Performance.** Load auras only where you need them, and use `/wa pstart combat` then `/wa pprint` to find the
@@ -593,7 +593,7 @@ These come from the game, not from WeakAuras:
 - **Logic on secret data waits for the end of combat.** Thresholds, comparisons and custom code on secret values
   keep their last result during combat.
 - **Other players' casts** and enemy names are hidden in instances.
-- **Auras hidden by the game** are only found by Native Filter, and have no name until combat ends.
+- **Auras hidden by the game** are only found by Game Categories, and have no name until combat ends.
 - **Chat messages** can be blocked during encounters and PvP matches.
 - **Nameplate addons** (Plater, ElvUI, Kui...) replace the Blizzard nameplates that "Group by Frame: Nameplates"
   attaches to.

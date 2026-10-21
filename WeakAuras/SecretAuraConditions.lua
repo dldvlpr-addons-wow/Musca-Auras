@@ -1,6 +1,7 @@
 -- Musca Auras, original work by dldvlpr, GPL-2.0. See CHANGES.md.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
+local L = WeakAuras.L
 
 -- Native conditions of the secret aura display. Two registries drive everything: the condition
 -- variables (editor models, validation, threshold rules, highlights, preview) and the properties
@@ -114,8 +115,8 @@ end
 
 local MESSAGES = {
   grouping = "Aura (Modern) conditions cannot be combined with AND, OR or Else If.",
-  timeOperator = "Native time checks only accept < (less than) and >= (at least).",
-  typeOperator = "Native kind and dispel checks only accept == (is) and ~= (is not).",
+  timeOperator = L["In Aura (Modern) conditions, time checks only accept < (less than) and >= (at least)."],
+  typeOperator = L["In Aura (Modern) conditions, kind and dispel checks only accept == (is) and ~= (is not)."],
   missingRegion = "Aura Missing works on Icon, Bar, Progress Texture and Text displays.",
   missingShowOn = "Aura Missing needs the trigger's Show On set to Aura(s) Missing or Always.",
   remainingGlow = "To light a glow from the seconds left, compare with < and set the glow to on.",

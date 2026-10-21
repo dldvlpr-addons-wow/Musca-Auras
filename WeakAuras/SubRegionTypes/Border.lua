@@ -41,7 +41,6 @@ local properties = {
   },
 }
 
-
 local dispelColors = {
   magic = {0.2, 0.6, 1},
   curse = {0.6, 0, 1},
@@ -51,29 +50,38 @@ local dispelColors = {
   enrage = {1, 0.5, 0},
 }
 
-local dispelTypeIds = { magic = 1, curse = 2, disease = 3, poison = 4, enrage = 9, bleed = 11 }
+local dispelTypeIds = {
+  magic = 1,
+  curse = 2,
+  disease = 3,
+  poison = 4,
+  enrage = 9,
+  bleed = 11,
+}
 
 local function CreateDispelCurve(noneColor)
   if not (C_UnitAuras and C_UnitAuras.GetAuraDispelTypeColor and C_CurveUtil and C_CurveUtil.CreateColorCurve
-          and Enum and Enum.LuaCurveType) then
+          and Enum.LuaCurveType) then
     return nil
   end
-  local ok, curve = pcall(C_CurveUtil.CreateColorCurve)
-  if not ok or not curve then
-    return nil
+  local ok, curve = pcall(function()
+    local colorCurve = C_CurveUtil.CreateColorCurve()
+    colorCurve:SetType(Enum.LuaCurveType.Step)
+    colorCurve:AddPoint(0, CreateColor(noneColor[1], noneColor[2], noneColor[3], noneColor[4] or 1))
+    for debuffClass, typeId in pairs(dispelTypeIds) do
+      local color = dispelColors[debuffClass]
+      colorCurve:AddPoint(typeId, CreateColor(color[1], color[2], color[3], 1))
+    end
+    return colorCurve
+  end)
+  if ok then
+    return curve
   end
-  curve:SetType(Enum.LuaCurveType.Step)
-  curve:AddPoint(0, CreateColor(noneColor[1], noneColor[2], noneColor[3], noneColor[4] or 1))
-  for debuffClass, id in pairs(dispelTypeIds) do
-    local color = dispelColors[debuffClass]
-    curve:AddPoint(id, CreateColor(color[1], color[2], color[3], 1))
-  end
-  return curve
 end
 
 local function ReadDispelColor(unit, auraInstanceID, curve)
   local color = C_UnitAuras.GetAuraDispelTypeColor(unit, auraInstanceID, curve)
-  return color.r, color.g, color.b, color.a
+  return color:GetRGBA()
 end
 
 local function ReadableDebuffClass(state)

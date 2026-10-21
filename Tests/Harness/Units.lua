@@ -497,6 +497,12 @@ function Units.Install(target, fire, wowApi)
     end
     return value
   end
+  target.UnitGetTotalAbsorbs = function(token)
+    return Secret.Wrap(Read(token, "absorb") or 0)
+  end
+  target.UnitGetTotalHealAbsorbs = function(token)
+    return Secret.Wrap(Read(token, "healAbsorb") or 0)
+  end
   target.UnitPower = function(token)
     return Secret.Wrap(Read(token, "power") or 0)
   end

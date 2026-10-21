@@ -1214,7 +1214,7 @@ function OptionsPrivate.GetActionOptions(data)
         type = "toggle",
         width = WeakAuras.doubleWidth,
         name = L["Hide Glows applied by this aura"],
-        desc = L["Unit frame glows set from Display > Aura (Modern) Settings are removed too. Secret glows also stop once no aura matches or the display unloads."],
+        desc = L["Unit frame glows set from Display > Aura (Modern) Settings are removed too. Aura (Modern) glows also stop once no aura matches or the display unloads."],
         order = 31,
       },
       finish_do_custom = {

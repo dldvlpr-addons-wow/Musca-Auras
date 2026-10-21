@@ -271,7 +271,7 @@ return function(test)
     Same(region.blizzardAuraDisplay, nil, "no state under restriction")
     local warning = Warning("ApplyLater", "blizzard_aura_display")
     assert(warning and warning.severity == "warning", "restriction warning missing")
-    Same(warning.text, "Display > Secret Aura Settings changes will apply when aura restrictions end.", "restriction text")
+    Same(warning.text, "Display > Aura (Modern) Settings changes will apply when the game stops hiding combat data.", "restriction text")
     Drain(1)
     Same(region.blizzardAuraDisplay, nil, "still nothing while restricted")
     restricted = false

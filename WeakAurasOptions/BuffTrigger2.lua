@@ -444,7 +444,7 @@ local function GetBuffTriggerOptions(data, triggernum)
     useNativeFilter = {
       type = "toggle",
       width = WeakAuras.doubleWidth,
-      name = L["Native Filter"],
+      name = L["Game Categories"],
       desc = L["Filters with the aura categories of the game. They work in combat too: without a name or spell ID filter and any other filter, auras applied in combat show, with the icon, timer and stack text drawn by the game."],
       order = 11.5,
       hidden = function()

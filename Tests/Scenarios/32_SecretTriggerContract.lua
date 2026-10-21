@@ -172,8 +172,8 @@ return function(test)
   Same(status({ unit = "target", use_spellIds = true, spellIds = {} }), Blocked("Exact Spell ID(s)"), "status empty list")
   Same(status({ unit = "target", use_spellIds = true, spellIds = { 1, 2 } }), Blocked("Exact Spell ID(s)"),
     "status ids unreadable without SecrecyLevel")
-  Override(C_Secrets, "GetSpellCastSecrecy", function(id) return id == 2 and 0 or 2 end)
-  Override(Enum, "SecrecyLevel", { NeverSecret = 2 })
+  Override(C_Secrets, "GetSpellCastSecrecy", function(id) return id == 2 and 2 or 0 end)
+  Override(Enum, "SecrecyLevel", { NeverSecret = 0, AlwaysSecret = 1, ContextuallySecret = 2 })
   Same(status({ unit = "target", use_spellIds = true, spellIds = { 1, 3 } }), unfiltered, "status all never secret")
   Same(status({ unit = "target", use_spellIds = true, spellIds = { 1, 2 } }), Blocked("Exact Spell ID(s)"),
     "status one secret id blocks")
@@ -182,7 +182,7 @@ return function(test)
   Same(status({ unit = "target", use_spellId = true, spellId = { 1 } }), Blocked("Spell ID"),
     "status spellId never readable")
   Enum.SecrecyLevel = nil
-  Same(status({ unit = "target", use_spellIds = true, spellIds = { 2 } }), Blocked("Exact Spell ID(s)"),
+  Same(status({ unit = "target", use_spellIds = true, spellIds = { 1 } }), Blocked("Exact Spell ID(s)"),
     "status without SecrecyLevel")
 
   ---------------------------------------------------------------------------------------------

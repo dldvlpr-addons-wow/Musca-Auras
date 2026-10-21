@@ -6,33 +6,18 @@ local AddonName = ...
 ---@class Private
 local Private = select(2, ...)
 
-if GetSpellInfo then
-  Private.ExecEnv.GetSpellInfo = GetSpellInfo
-  Private.ExecEnv.GetSpellName = GetSpellInfo
-else
-  Private.ExecEnv.GetSpellInfo = function(spellID)
-    if not spellID then
-      return nil
-    end
-    local spellInfo = C_Spell.GetSpellInfo(spellID)
-    if spellInfo then
-      return spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellID, spellInfo.originalIconID
-    end
+Private.ExecEnv.GetSpellInfo = function(spellID)
+  if not spellID then
+    return nil
   end
-  Private.ExecEnv.GetSpellName = C_Spell.GetSpellName
+  local spellInfo = C_Spell.GetSpellInfo(spellID)
+  if spellInfo then
+    return spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellID, spellInfo.originalIconID
+  end
 end
-
-if GetSpellTexture then
-  Private.ExecEnv.GetSpellIcon = GetSpellTexture
-else
-  Private.ExecEnv.GetSpellIcon = C_Spell.GetSpellTexture
-end
-
-if IsUsableSpell then
-  Private.ExecEnv.IsUsableSpell = IsUsableSpell
-else
-  Private.ExecEnv.IsUsableSpell = C_Spell.IsSpellUsable
-end
+Private.ExecEnv.GetSpellName = C_Spell.GetSpellName
+Private.ExecEnv.GetSpellIcon = C_Spell.GetSpellTexture
+Private.ExecEnv.IsUsableSpell = C_Spell.IsSpellUsable
 
 if C_SpecializationInfo and C_SpecializationInfo.GetSpecialization then
   Private.ExecEnv.GetSpecialization = C_SpecializationInfo.GetSpecialization

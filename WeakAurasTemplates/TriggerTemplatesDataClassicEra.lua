@@ -250,16 +250,10 @@ if SoD then
   table.insert(buffs, { spell = 407804, type = "buff", unit = "player", known = true })
   table.insert(abilities, { spell = 407804, type = "ability", buff = true, known = true})
   -- 6/12 https://www.wowhead.com/classic/spell=407880/inspiration-exemplar
-  -- 7/12 https://www.wowhead.com/classic/spell=407669/avengers-shield
-  table.insert(abilities, { spell = 407669, type = "ability", requiresTarget = true, known = true})
   -- 8/12 https://www.wowhead.com/classic/spell=415076/exorcist
   -- 9/12 https://www.wowhead.com/classic/spell=425609/rebuke
   table.insert(abilities, { spell = 425609, type = "ability", requiresTarget = true, known = true})
   -- 10/12 https://www.wowhead.com/classic/spell=407613/beacon-of-light
-  -- 11/12 https://www.wowhead.com/classic/spell=407676/crusader-strike
-  table.insert(abilities, { spell = 407676, type = "ability", requiresTarget = true, known = true })
-  -- 12/12 https://www.wowhead.com/classic/spell=407631/hand-of-reckoning
-  table.insert(abilities, { spell = 407631, type = "ability", debuff = true, known = true })
 end
 
 templates.class.HUNTER = {
@@ -366,10 +360,7 @@ if SoD then
   -- 9/12 https://www.wowhead.com/classic/spell=409368/beast-mastery
   -- 10/12 https://www.wowhead.com/classic/spell=409433/chimera-shot
   table.insert(abilities, { spell = 409433, type = "ability", requiresTarget = true, known = true })
-  -- 11/12 https://www.wowhead.com/classic/spell=409552/explosive-shot
-  table.insert(abilities, { spell = 409552, type = "ability", requiresTarget = true, known = true })
   -- 12/12 https://www.wowhead.com/classic/spell=425711/carve
-  table.insert(abilities, { spell = 409552, type = "ability", known = true })
 end
 
 templates.class.ROGUE = {
@@ -460,9 +451,6 @@ if SoD then
   -- 6/12 https://www.wowhead.com/classic/spell=400012/blade-dance
   table.insert(buffs, { spell = 400012, type = "buff", unit = "player", known = true })
   table.insert(abilities, { spell = 400012, type = "ability", usable = true, buff = true, known = true })
-  -- 7/12 https://www.wowhead.com/classic/spell=399963/envenom
-  table.insert(buffs, { spell = 399963, type = "buff", unit = "player", known = true })
-  table.insert(abilities, { spell = 399963, type = "ability", requiresTarget = true, usable = true, buff = true, known = true })
   -- 8/12 https://www.wowhead.com/classic/spell=399960/mutilate
   table.insert(abilities, { spell = 399960, type = "ability", requiresTarget = true, usable = true, known = true })
   -- 9/12 https://www.wowhead.com/classic/spell=399985/shadowstrike
@@ -1198,10 +1186,7 @@ tinsert(templates.race.Scourge, { spell = 7744, type = "buff", unit = "player", 
 tinsert(templates.race.Tauren, { spell = 20549, type = "ability", titleSuffix = L["cooldown"]});
 tinsert(templates.race.Tauren, { spell = 20549, type = "debuff", titleSuffix = L["debuff"]});
 --Beserking
-tinsert(templates.race.Troll, { spell = 26297, type = "ability", titleSuffix = L["Rogue cooldown"]});
-tinsert(templates.race.Troll, { spell = 26296, type = "ability", titleSuffix = L["Warrior cooldown"]});
 tinsert(templates.race.Troll, { spell = 20554, type = "ability", titleSuffix = L["Other cooldown"]});
-tinsert(templates.race.Troll, { spell = 26635, type = "buff", unit = "player", titleSuffix = L["buff"]});
 
 ------------------------------
 -- Helper code for options

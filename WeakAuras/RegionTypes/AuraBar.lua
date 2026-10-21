@@ -188,7 +188,10 @@ Private.regionPrototype.AddProperties(properties, default);
 local function GetProperties(data)
   local overlayInfo = Private.GetOverlayInfo(data);
   local auraProperties = CopyTable(properties)
-  if Private.CDMAuraProgress.IsConfigured(data) then auraProperties.adjustedMin, auraProperties.adjustedMax = nil, nil end
+  if Private.CDMAuraProgress.IsConfigured(data) then
+    auraProperties.adjustedMin = nil
+    auraProperties.adjustedMax = nil
+  end
   if (overlayInfo and next(overlayInfo)) then
     for id, display in ipairs(overlayInfo) do
       auraProperties["overlays." .. id] = {
@@ -272,7 +275,6 @@ local anchorAlignment = {
 }
 
 local extraTextureWrapMode = "REPEAT";
-
 local canDrawDurationObject = Private.AuraBarNative.canDrawDurationObject
 
 -- Emulate blizzard statusbar with advanced features (more grow directions)
@@ -375,13 +377,13 @@ local barPrototype = {
     if (type(self.additionalBars) == "table") then
       if self:UsesNativeAdditionalBars() then
         for i = 1, #self.extraTextures do
-          self.extraTextures[i]:Hide();
+          self.extraTextures[i]:Hide()
         end
         self:UpdateNativeAdditionalBars()
         return
       end
       for i = 1, #self.secretExtraTextures do
-        self.secretExtraTextures[i]:Hide();
+        self.secretExtraTextures[i]:Hide()
       end
       for index, additionalBar in ipairs(self.additionalBars) do
         if (not self.extraTextures[index]) then
@@ -496,7 +498,7 @@ local barPrototype = {
         self.extraTextures[i]:Hide();
       end
       for i = 1, #self.secretExtraTextures do
-        self.secretExtraTextures[i]:Hide();
+        self.secretExtraTextures[i]:Hide()
       end
     end
   end,
@@ -665,7 +667,10 @@ local barPrototype = {
   ["rotate"] = true,
   ["orientation"] = "HORIZONTAL",
 }
-for k, v in pairs(Private.AuraBarNative.barFuncs) do barPrototype[k] = v end
+
+for k, v in pairs(Private.AuraBarNative.barFuncs) do
+  barPrototype[k] = v
+end
 
 local GetRealSize = {
   ["HORIZONTAL"] = {
@@ -1161,10 +1166,15 @@ local funcs = {
     self.subRegionEvents:Notify("OrientationChanged")
   end,
   UpdateForegroundColor = function(self)
-    if self.enableGradient and
-       not Private.IsSecret(self.color_anim_r or self.color_r, self.color_anim_g or self.color_g,
-                            self.color_anim_b or self.color_b, self.color_anim_a or self.color_a,
-                            self.barColor2[1], self.barColor2[2], self.barColor2[3], self.barColor2[4]) then
+    if self.enableGradient
+       and not Private.IsSecret(self.color_anim_r or self.color_r,
+                                self.color_anim_g or self.color_g,
+                                self.color_anim_b or self.color_b,
+                                self.color_anim_a or self.color_a,
+                                self.barColor2[1],
+                                self.barColor2[2],
+                                self.barColor2[3],
+                                self.barColor2[4]) then
       self.bar:SetForegroundGradient(self.gradientOrientation,
                                      self.color_anim_r or self.color_r,
                                      self.color_anim_g or self.color_g,

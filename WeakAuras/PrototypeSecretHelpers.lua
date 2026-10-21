@@ -99,9 +99,12 @@ function ExecEnv.UnitPercentStep(kind, unit, powerType, below, threshold, above)
   end
 end
 
-function ExecEnv.ThresholdAlpha(kind, unit, powerType, threshold, above)
+function ExecEnv.ThresholdAlpha(kind, unit, powerType, threshold, above, value, total)
   if not threshold or threshold <= 0 then
     return nil
+  end
+  if type(value) == "number" and type(total) == "number" and not IsSecret(value) and not IsSecret(total) then
+    return ((value / total >= threshold / 100) == (above == true)) and 1 or 0
   end
   return ExecEnv.UnitPercentStep(kind, unit, powerType, above and 0 or 1, threshold / 100, above and 1 or 0)
 end

@@ -4583,6 +4583,7 @@ do
     if not watchFrame then
       watchFrame = CreateFrame("Frame")
       watchFrame:RegisterEvent("COMBO_TARGET_CHANGED")
+      watchFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
       watchFrame:SetScript("OnEvent", function()
         Private.StartProfileSystem("generictrigger COMBO_TARGET_CHANGED")
         Private.ScanEvents("WA_COMBO_TARGET_CHANGED", "player")
