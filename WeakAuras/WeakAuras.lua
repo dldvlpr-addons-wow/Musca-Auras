@@ -1824,7 +1824,7 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
   end
 
   local mounted = IsMounted()
-  local addonRestrictionsActive = WeakAuras.IsSecretStateActive()
+  local addonRestrictionsActive = WeakAuras.IsRestricted()
   local raidID = UnitInRaid("player")
   if raidID then
     raidRole = select(10, GetRaidRosterInfo(raidID))
@@ -4985,31 +4985,83 @@ do
 
   local UpdateFakeTimesHandle
 
+  -- /wa demo: sample timers get random durations, and an expired one hides for a few seconds before it starts again,
+  -- like cooldowns and buffs in a fight. demoShuffle spreads the timers that all started together.
+  local demoActive, demoShuffle = false, false
+  --- @type table<state, {id: auraId, triggernum: integer, cloneId: string, returnTime: number}>
+  local demoHidden = {}
+
+  local function startDemoTimer(state, t, elapsed)
+    state.duration = math.random(4, 20)
+    state.expirationTime = t + state.duration - (elapsed and math.random(0, state.duration - 1) or 0)
+    if type(state.stacks) == "number" then
+      state.stacks = math.random(1, 5)
+    end
+    state.changed = true
+  end
+
+  local function hasSampleTimer(state)
+    return state.progressType == "timed" and type(state.expirationTime) == "number"
+       and type(state.duration) == "number" and state.duration > 0
+  end
+
+  -- New sample states replace the old ones: a hidden old one must not come back next to them.
+  local function forgetDemoHidden(id)
+    for state, hidden in pairs(demoHidden) do
+      if hidden.id == id then
+        demoHidden[state] = nil
+      end
+    end
+  end
+
   local function UpdateFakeTimers()
     local suspended = Private.PauseAllDynamicGroups()
     local t = GetTime()
+    local changedIds = {}
     for id, triggers in pairs(triggerState) do
-      local changed = false
       for triggernum, triggerData in ipairs(triggers) do
-        for id, state in pairs(triggerData) do
-          if state.progressType == "timed" then
-            local expirationTime = state.expirationTime
-            local duration = state.duration
-            if expirationTime and type(expirationTime) == "number" and expirationTime < t
-               and duration and type(duration) == "number" and duration > 0
-            then
-              state.expirationTime = t + state.duration
+        for cloneId, state in pairs(triggerData) do
+          if hasSampleTimer(state) then
+            if demoShuffle then
+              startDemoTimer(state, t, true)
+              changedIds[id] = true
+            elseif state.expirationTime < t then
+              if demoActive then
+                state.show = false
+                demoHidden[state] = { id = id, triggernum = triggernum, cloneId = cloneId,
+                                      returnTime = t + math.random(1, 6) }
+              else
+                state.expirationTime = t + state.duration
+              end
               state.changed = true
-              changed = true
+              changedIds[id] = true
             end
           end
         end
       end
-      if changed then
-        Private.UpdatedTriggerState(id)
+    end
+    demoShuffle = false
+    for state, hidden in pairs(demoHidden) do
+      if hidden.returnTime <= t then
+        demoHidden[state] = nil
+        local states = triggerState[hidden.id] and triggerState[hidden.id][hidden.triggernum]
+        -- The eye toggled meanwhile: the aura has new sample states, or none.
+        if states and states[hidden.cloneId] == nil and visibleFakeStates[hidden.id] then
+          state.show = true
+          startDemoTimer(state, t)
+          states[hidden.cloneId] = state
+          changedIds[hidden.id] = true
+        end
       end
     end
+    for id in pairs(changedIds) do
+      Private.UpdatedTriggerState(id)
+    end
     Private.ResumeAllDynamicGroups(suspended)
+  end
+
+  function Private.StartDemoTimers()
+    demoActive, demoShuffle = true, true
   end
 
   function Private.SetFakeStates()
@@ -5031,6 +5083,10 @@ do
 
   function Private.ClearFakeStates()
     timer:CancelTimer(UpdateFakeTimesHandle)
+    -- Without this, the sample timers stop looping from the second opening of the options.
+    UpdateFakeTimesHandle = nil
+    demoActive, demoShuffle = false, false
+    wipe(demoHidden)
     for id in pairs(triggerState) do
       Private.FakeStatesFor(id, false)
     end
@@ -5045,6 +5101,7 @@ do
       Private.UpdateFakeStatesFor(id)
     else
       visibleFakeStates[id] = false
+      forgetDemoHidden(id)
       if triggerState[id] then
         local changed = false
         for triggernum in ipairs(triggerState[id]) do
@@ -5062,11 +5119,19 @@ do
     if (WeakAuras.IsOptionsOpen() and visibleFakeStates[id]) then
       local data = WeakAuras.GetData(id)
       if (data) then
+        forgetDemoHidden(id)
         for triggernum in ipairs(data.triggers) do
           Private.SetAllStatesHidden(id, triggernum)
           local triggerSystem = GetTriggerSystem(data, triggernum)
           if triggerSystem and triggerSystem.CreateFakeStates then
             triggerSystem.CreateFakeStates(id, triggernum)
+          end
+          if demoActive then
+            for _, state in pairs(WeakAuras.GetTriggerStateForTrigger(id, triggernum)) do
+              if hasSampleTimer(state) then
+                startDemoTimer(state, GetTime(), true)
+              end
+            end
           end
         end
         Private.UpdatedTriggerState(id)

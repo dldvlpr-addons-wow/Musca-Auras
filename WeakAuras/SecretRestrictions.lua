@@ -76,8 +76,6 @@ function WeakAuras.IsRestricted()
   return InCombatLockdown() or IsKindRestricted("auras") or IsKindRestricted("cooldowns")
 end
 
-WeakAuras.IsSecretStateActive = WeakAuras.IsRestricted
-
 do
   local restricted, aurasRestricted, cooldownsRestricted, unitStatsRestricted
   local function Update()

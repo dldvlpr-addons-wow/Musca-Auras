@@ -42,4 +42,15 @@ return function(test)
   for index, import in ipairs(imports) do
     assert(markdown:find(import, 1, true), "import string " .. index .. " of the tutorial is missing from TUTORIAL.md")
   end
+
+  -- Every tutorial text is a locale key (Tests/GenerateTutorial.py rewrites them from TUTORIAL.md): a text changed
+  -- without its frFR entry would show in English to French players.
+  local french = {}
+  local chunk = assert(loadfile(directory .. "/WeakAuras/Locales/frFR.lua"))
+  setfenv(chunk, { GAME_LOCALE = "frFR", WeakAuras = { L = french } })
+  chunk()
+  for index, block in ipairs(blocks) do
+    local text = block.text or block.title or block.subtitle or block.label
+    assert(french[text], ("tutorial block %d has no frFR translation: %q"):format(index, text:sub(1, 80)))
+  end
 end

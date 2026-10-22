@@ -146,7 +146,23 @@ local function Tick(region, sample, button, elapsed)
   button.elapsed = 0
 
   local now = GetTime()
-  if not button.expires or button.expires <= now then
+  -- /wa demo gives the sample state a random timer and stacks: show them instead of the fixed sample loop.
+  local state = region.state
+  local total = SAMPLE_DURATION
+  if state and state.progressType == "timed" and type(state.expirationTime) == "number"
+     and type(state.duration) == "number" and state.duration > 0
+     and not (issecretvalue and (issecretvalue(state.expirationTime) or issecretvalue(state.duration)))
+  then
+    total = state.duration
+    if button.expires ~= state.expirationTime then
+      button.expires = state.expirationTime
+      EachBound(button, "DurationCooldown", function(widget) widget:SetCooldown(button.expires - total, total) end)
+      EachBound(button, "DurationBar", function(widget) widget:SetMinMaxValues(0, total) end)
+      if type(state.stacks) == "number" and not (issecretvalue and issecretvalue(state.stacks)) then
+        EachBound(button, "ApplicationCount", function(widget) widget:SetText(tostring(state.stacks)) end)
+      end
+    end
+  elseif not button.expires or button.expires <= now then
     button.expires = now + SAMPLE_DURATION
     EachBound(button, "DurationCooldown", function(widget) widget:SetCooldown(now, SAMPLE_DURATION) end)
   end
@@ -161,7 +177,7 @@ local function Tick(region, sample, button, elapsed)
     label = string.format("%d", math.ceil(remaining))
   end
   EachBound(button, "DurationText", function(widget) widget:SetText(label) end)
-  local barValue = button.inverse and (SAMPLE_DURATION - remaining) or remaining
+  local barValue = button.inverse and (total - remaining) or remaining
   EachBound(button, "DurationBar", function(widget) widget:SetValue(barValue) end)
 end
 

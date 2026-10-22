@@ -95,6 +95,17 @@ Code relu le 2026-10-09 contre l'API Forever 70291 : Durability et Tracking coll
 Le titre de l'étape 8 portait « bug » sans précision. Les tests de l'étape 8 sont OK le 2026-10-09, sauf le mode
 groupe, non testé faute de groupe. À rouvrir avec le test concerné et ce qui a été vu si le bug revient.
 
+### B5. Fenêtre /wa : la barre d'outils déborde (clos 2026-10-21 : corrigé en 1.13.0, OK en jeu)
+Signalé le 2026-10-21 sur capture, client en français : la barre d'outils dépasse la fenêtre, le bouton Guide est
+tronqué, « Changelog » chevauche « Mettre à jour les auras ». Auras inutilisées, Remplacer et Masquer le CDM en
+icône ou case seule, bouton Guide à la largeur de son texte, libellés français raccourcis. OK en jeu le 2026-10-21,
+taille minimale comprise.
+
+### B6. HUD Voleur : les points de combo ne suivent pas la cible (clos 2026-10-21 : corrigé en 1.13.0, OK en jeu)
+Signalé le 2026-10-21 : après un changement de cible, les pastilles gardent les points de la cible précédente. Le
+trigger écoute `PLAYER_TARGET_CHANGED` et `COMBO_TARGET_CHANGED`, et le seuil des pastilles se calcule sur
+`GetComboPoints` au lieu de `UnitPowerPercent`. Scénario 77. OK en jeu le 2026-10-21, en combat et hors combat.
+
 ---
 
 # 2. Audit `wow-api` du 2026-10-08
@@ -107,6 +118,8 @@ sont en Interface 16001 : seul Forever est concerné. Aucun bug bloquant.
   `UNIT_HEAL_ABSORB_AMOUNT_CHANGED`) et `Prototypes.lua:3578-3592` (champs `absorb`, `healabsorb`) sont réservés à
   `IsMistsOrRetail()`. Or `UnitGetTotalAbsorbs` et `UnitGetTotalHealAbsorbs` existent sur Forever
   (`UnitDocumentation.lua:1286` et `:1302`, événements `:4090` et `:4297`). Comportement en jeu non prouvé : étape 12.2.
+  Fait le 2026-10-21 (1.13.0) : options Show Absorb et Show Heal Absorb du trigger Health, texte seulement (montants
+  toujours secrets, ni condition ni seuil). Reste le test en jeu avec un bouclier : étape 12.2, test 5.
 
 ### Risques (information non vérifiée, à tester en jeu)
 - **A2. Cooldown des icônes sans `pcall`.** `RegionTypes/Icon.lua:454-455`, `:686-688`, `:715` appellent `SetCooldown`
@@ -249,7 +262,7 @@ Reporté le 2026-10-09 : pas de source de débuffs disponible pour le moment.
 - [ok, corrigé] **Role** : en groupe, choisis un rôle dans la recherche de groupe, l'aura suit.
 - [ok 2026-10-09] **Tracking** : Find Herbs par son ID de sort, l'aura suit l'activation ; Inverse fait l'inverse.
 - [ok 2026-10-09] **Load, Instance Type** : dans un donjon, la liste des difficultés est remplie et le filtre marche.
-- [ok 2026-10-09, chaman] **Conditions, Secret Restrictions Active** : vrai en combat, faux après.
+- [ok 2026-10-09, chaman] **Conditions, Game Hides Combat Data** (ex-Secret Restrictions Active) : vrai en combat, faux après.
 - [ ok] **Cooldown, condition On Global Cooldown** (avec Show Global Cooldown) + Hide Cooldown Text : le chiffre disparaît pendant le GCD seulement.
 - [ ok] **Aura, Elapsed Time ≥ 5** : l'aura s'affiche 5 s après la pose du buff.
 - [ok 2026-10-09 après correctif : WeakAuras `9:59`, Old `9m`, Modern `9m 59s` (groupe « Test %p Old Modern », Bouclier de foudre). Règles Old / Modern ajoutées au formatter natif (`DurationText.lua`). ko 2026-10-09, chaman, Bouclier de foudre en secretAura : les 3 formats (WeakAuras, Old, Modern) donnent le même affichage `9:59`. Formatter natif `SubTextNative.lua:8-29` mis hors de cause : `/run` hors combat, `CreateSecondsFormatter` puis `Format(599)` donne « 9 Minutes 59 Seconds » par défaut, « 9 m » avec SetDesiredUnitCount(1) + OneLetter, « 9 m 59 s » avec 2, pcall true. Le texte `9:59` ne vient donc pas de ce formatter : le binding n'est pas utilisé ou ignore SetFormatter. À corriger après les tests] **Texte `%p`** : format Old / Modern et Increase Precision Below suivent les réglages, en combat aussi.
@@ -292,7 +305,7 @@ l'étape 4. Si la commande 2 ou 3 affiche une erreur, copie-la en entier.
 
 Passée le 2026-10-09 : pas de contrôle disponible (chaman niveau 16). Aura de test prête (groupe « Test 7 Filtres natifs »). Reste bloquante pour la release.
 
-- [ ] Trigger Aura sur `target`, Debuff, **Native Filter** seul, Is = Crowd Control.
+- [ ] Trigger Aura sur `target`, Debuff, **Game Categories** (ex-Native Filter) seul, Is = Crowd Control.
 - [ ] Hors combat : un contrôle posé s'affiche, avec son nom.
 - [ ] En combat : un contrôle posé s'affiche sans nom, avec icône, durée et stacks dessinés par le jeu.
 - [ ] Même aura avec **Clones** et deux contrôles : pas d'erreur, deux icônes.
@@ -410,6 +423,7 @@ Exports à importer avec `/wa` > Import. Relance le jeu avant (nouveaux fichiers
 ### 12.2 Absorbs (A1)
 4. [fait 2026-10-09, chaman sans bouclier : « secret 0 » (valeur secrète, puis 0)] `/dump UnitGetTotalAbsorbs("player"), UnitGetTotalHealAbsorbs("player")` sans bouclier : noter (0 attendu).
 5. [ ] Avec un bouclier d'absorption sur toi (prêtre : Power Word: Shield, ou un objet) : refaire la commande 4, noter.
+   Puis une aura texte, trigger Health sur player, Show Absorb coché, texte `%absorb` : le montant du bouclier s'affiche.
    Deux nombres corrects = les absorbs peuvent être ouverts sur Forever.
 
 ### 12.3 Rôle et portée en groupe, en combat (A3)

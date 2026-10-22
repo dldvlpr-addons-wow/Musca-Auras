@@ -6,6 +6,7 @@ local Private = select(2, ...)
 
 local L = WeakAuras.L
 
+-- Generated from TUTORIAL.md by Tests/GenerateTutorial.py: edit TUTORIAL.md, then run the script.
 local blocks = {
   { text = L["|cffffd100Everything you need to learn WeakAuras on WoW Forever:|r how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import.\n\nOpen this guide again with the |cffffd100Guide|r button at the top of the |cffffd100/wa|r window, or with |cffffd100/wa tutorial|r."] },
   { text = L["How WeakAuras works on WoW Forever, and how to build auras that keep working in combat.\n\nWoW Forever looks like Classic, but it runs on the modern 12.1 game engine. This engine hides most combat data from addons. This guide explains what that changes and gives step-by-step recipes.\n\nSection 3 says what was tested in game on Forever, and what was not. When you are not sure, test in game."] },

@@ -98,6 +98,34 @@ local function expandPath(path, ...)
   return bigPath
 end
 
+-- "Start Collapsed" also collapses the option group on screen, so that an undo or a redo collapses it back.
+local function optionPathOf(bigPath)
+  local path = {}
+  for i = 2, #bigPath - 1, 2 do
+    tinsert(path, bigPath[i])
+  end
+  return path
+end
+
+-- OptionsPrivate.Private only exists once the options open, so the action is registered on first use.
+local function registerSetCollapse()
+  local TimeMachine = OptionsPrivate.Private.TimeMachine
+  if TimeMachine.actions.setcollapse then
+    return
+  end
+  TimeMachine:RegisterAction("setcollapse",
+    function(data, path, value)
+      TimeMachine.actions.set.actor(data, path, value)
+      OptionsPrivate.SetCollapsed(data.id, "config", optionPathOf(path), value)
+    end,
+    function(data, path)
+      local _, inversePath, value = TimeMachine.actions.set.inverter(data, path)
+      return "setcollapse", inversePath, value
+    end,
+    {"add", "options_cu"}
+  )
+end
+
 ---@param path number[]
 local function expandSubOptionsPath(path)
   local bigPath = {"authorOptions"}
@@ -1533,18 +1561,16 @@ local function addGroupBehaviorControls(args, prefix, order, data, option)
     width = WeakAuras.normalWidth,
     get = get(option, "collapse"),
     set = function(_, value)
+      registerSetCollapse()
       OptionsPrivate.Private.TimeMachine:StartTransaction()
       for id, optionData in pairs(option.references) do
-        local childOption = optionData.options[optionData.index]
         local childData = optionData.data
         OptionsPrivate.Private.TimeMachine:Append({
           uid = childData.uid,
-          actionType = "set",
+          actionType = "setcollapse",
           path = expandPath(optionData.path, "collapse"),
           payload = value,
         })
-        -- TODO: make undo/redo across options like this also set collapsed value
-        OptionsPrivate.SetCollapsed(id, "config", optionData.path, value)
       end
       OptionsPrivate.Private.TimeMachine:Commit()
     end,

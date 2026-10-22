@@ -62,6 +62,46 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-22
+
+Not yet tested in game: undo and redo of Start Collapsed, `/wa tutorial` in French, the random timers of
+`/wa demo`. Headless test bench: 80 scenarios, 0 failed.
+
+### Changed
+- `/wa demo`: sample timers now get a random duration of 4 to 20 seconds and random stacks (1 to 5). An expired
+  timer hides for 1 to 6 seconds, then starts again, like cooldowns and buffs in a fight. The timers that start
+  together are spread at the start of the demo, and sample states made again during the demo (eye toggled, aura
+  edited) get a demo timer too. Aura (Modern) samples now show the timer and stacks of their sample state. The demo
+  ends when the options close. Files: `WeakAuras/WeakAuras.lua`, `WeakAuras/SecretAuraPreview.lua`,
+  `WeakAurasOptions/WeakAurasOptions.lua`, `Tests/Scenarios/84_DemoRandomTimers.lua`.
+
+- Author options: Start Collapsed on an option group now goes through the undo history. Undo and redo set the saved
+  value back and collapse or expand the group on screen. Files: `WeakAurasOptions/AuthorOptions.lua`,
+  `Tests/Scenarios/78_StartCollapsedUndo.lua`.
+- `TUTORIAL.md` is now the only source of the in-game tutorial texts. `Tests/GenerateTutorial.py` rewrites the
+  `blocks` table of `WeakAuras/ForeverTutorial.lua` from it; with `--check` it writes nothing and exits with code 1
+  when the table is out of date. Text shown only in game sits in `<!-- game: ... -->` comments, import button labels
+  in `<!-- import label: ... -->` comments. The generated table is identical to the previous one. Scenario 75 now
+  also checks that every tutorial text has a French translation. Files: `TUTORIAL.md`,
+  `WeakAuras/ForeverTutorial.lua`, `Tests/GenerateTutorial.py`, `Tests/Scenarios/75_TutorialCopies.lua`.
+- `IsTargetInSwingRange`, `GetSpellCooldownDurationObject` and `IsSpellCooldownSecret` move from the global
+  `WeakAuras` table to the private trigger environment, and the `WeakAuras.IsSecretStateActive` alias is removed.
+  Custom code that called these four names through `WeakAuras` no longer works.
+  Files: `WeakAuras/GenericTrigger.lua`, `WeakAuras/Prototypes.lua`, `WeakAuras/WeakAuras.lua`,
+  `WeakAuras/SecretRestrictions.lua`.
+- Split the last five functions over 200 lines into file-level local functions, with no change of behavior:
+  `Initialize` of the aura list button, `modify` of the icon and of the text sub-element, `replaceNameDescFuncs` of
+  the common options and `GenericTrigger.Add`. New scenarios cover them first: 79 (aura list button menu and
+  callbacks), 80 (custom triggers) and 83 (names and descriptions of a multiple selection). Files:
+  `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`, `WeakAuras/RegionTypes/Icon.lua`,
+  `WeakAuras/SubRegionTypes/SubText.lua`, `WeakAurasOptions/CommonOptions.lua`, `WeakAuras/GenericTrigger.lua`,
+  `Tests/Scenarios/79_DisplayButtonInitialize.lua`, `Tests/Scenarios/80_GenericTriggerCustomAdd.lua`,
+  `Tests/Scenarios/83_ReplaceNameDescFuncs.lua`.
+
+### Fixed
+- Options: sample timers stopped looping from the second opening of the options in a session (bug also in
+  WeakAuras 5.22). File: `WeakAuras/WeakAuras.lua`.
+
 ## 2026-10-21
 
 Released as 1.13.0. Tested in game on WoW Forever: the options toolbar and footer in French, and the combo points

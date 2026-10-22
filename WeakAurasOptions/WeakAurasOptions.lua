@@ -931,6 +931,7 @@ function OptionsPrivate.ShowDemo(id)
       frame.loadedButton.view:Click()
     end
   end
+  OptionsPrivate.Private.StartDemoTimers()
 end
 
 local function LayoutDisplayButtons(msg)
