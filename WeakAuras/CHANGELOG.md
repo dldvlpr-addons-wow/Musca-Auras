@@ -1,3 +1,27 @@
+# Musca Auras 1.14.0 (2026-10-22)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Changed
+
+- `/wa demo`: sample timers now start and end at random, like cooldowns and buffs in a fight. Each one runs for 4 to
+  20 seconds with 1 to 5 stacks, hides for 1 to 6 seconds, then starts again. Aura (Modern) samples show the same
+  timer and stacks. The demo ends when the options close.
+- Author options: Start Collapsed on an option group now goes through Undo and Redo.
+- Custom code: `WeakAuras.IsTargetInSwingRange`, `WeakAuras.GetSpellCooldownDurationObject`,
+  `WeakAuras.IsSpellCooldownSecret` and `WeakAuras.IsSecretStateActive` are removed from the `WeakAuras` table.
+  Triggers and conditions that use them still work.
+
+## Fixed
+
+- Options: sample timers stopped looping from the second opening of the options in a session (bug also in
+  WeakAuras 5.22).
+
+## After the update
+
+- Nothing to convert, and the class HUDs do not need an update. Going back to 1.13 is possible.
+- Custom code that calls one of the four removed `WeakAuras` functions above stops working: remove the call.
+
 # Musca Auras 1.13.0 (2026-10-21)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
