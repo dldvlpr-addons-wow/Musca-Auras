@@ -1,10 +1,10 @@
 <h1 style="text-align: center;"><span style="color: #0cf;">Musca</span> <span style="color: #ffd100;">Auras</span></h1>
 
-<p style="text-align: center;"><strong>The WeakAuras you know, with a ready-made HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></p>
+<h3 style="text-align: center;"><strong>The WeakAuras you know, with a ready-made HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></h3>
 
-<p style="text-align: center;"><a href="https://discord.gg/EyYpyMq2km"><strong>💬 Discord</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/GUIDE.md"><strong>📖 Guide</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/issues"><strong>🐞 Report a bug</strong></a></p>
+<h3 style="text-align: center;"><a href="https://discord.gg/EyYpyMq2km"><strong>💬 Discord</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/GUIDE.md"><strong>📖 Guide</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/issues"><strong>🐞 Report a bug</strong></a></h3>
 
----
+***
 
 ## <span style="color: #ff6b35;">🎮 Your class HUD, ready to play</span>
 
@@ -12,7 +12,32 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 <p style="text-align: center;"><strong><span style="color: #FF7C0A;">Druid</span> · <span style="color: #AAD372;">Hunter</span> · <span style="color: #3FC7EB;">Mage</span> · <span style="color: #F48CBA;">Paladin</span> · <span style="color: #FFFFFF;">Priest</span> · <span style="color: #FFF468;">Rogue</span> · <span style="color: #0070DD;">Shaman</span> · <span style="color: #8788EE;">Warlock</span> · <span style="color: #C69B6D;">Warrior</span></strong></p>
 
----
+***
+
+## <span style="color: #3c3;">🆕 New in 1.12 and 1.13</span>
+
+### <span style="color: #0cf;">1.13</span>
+
+- <span style="color: #ffd100;"><strong>Combo points follow your target:</strong></span> the combo point pips of the Rogue and Druid HUDs, and the `%power` text of your own combo point auras, no longer keep the points of the previous target.
+- <span style="color: #ffd100;"><strong>Shields on health:</strong></span> Show Absorb and Show Heal Absorb options in the Health trigger, with the `%absorb` and `%healabsorb` texts.
+- <span style="color: #ffd100;"><strong>Options window that fits,</strong></span> in French too, and clearer texts without technical words.
+- <span style="color: #ffd100;"><strong>Coming from ForeverAuras?</strong></span> A new section of the in-game tutorial explains what each aura becomes.
+
+### <span style="color: #0cf;">1.12</span>
+
+- <span style="color: #ffd100;"><strong>Undo and Redo</strong></span> in the options window, on every tab, up to 50 steps.
+- <span style="color: #ffd100;"><strong>Find and replace:</strong></span> swap a spell, texture, font or sound in the selected auras, or in all of them, with a preview in the chat.
+- <span style="color: #ffd100;"><strong>Tags and Aura Sets:</strong></span> tag your auras, search them with `#tag`, and load only one set per character.
+- <span style="color: #ffd100;"><strong>Edit Mode placement:</strong></span> move your auras and groups with the Blizzard Edit Mode, grid snap included.
+- <span style="color: #ffd100;"><strong>Demo mode:</strong></span> `/wa demo` shows every loaded aura with sample values, to set up a HUD without a fight.
+- <span style="color: #ffd100;"><strong>Aura Shown trigger and group conditions:</strong></span> show an aura when another one is shown, and give a group its own conditions.
+- <span style="color: #ffd100;"><strong>Frozen value padlock:</strong></span> a small padlock warns when the game hides an aura in combat and its value may be out of date.
+- <span style="color: #ffd100;"><strong>Pixel Perfect</strong></span> option for sharp edges.
+- <span style="color: #ffd100;"><strong>Stances and forms that stay right:</strong></span> the trigger stores the form spell, not its position on the stance bar. Your stance and form auras are converted at login.
+
+Full list in the **Files** tab.
+
+***
 
 ## <span style="color: #0cf;">🚀 Quick start</span>
 
@@ -22,20 +47,20 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
 
----
+***
 
 ## <span style="color: #0cf;">⚡ Why Musca Auras?</span>
 
 WoW Forever looks like Classic, but it runs on the **modern game engine**. That engine hides most combat data from addons, and the regular WeakAuras breaks. **Musca Auras** is WeakAuras 5.22.0 ported to WoW Forever (client 1.60.1).
 
-| | Regular WeakAuras | Musca Auras |
+| &nbsp; | Regular WeakAuras | Musca Auras |
 |---|:---:|:---:|
 | Buffs, debuffs, cooldowns, health and power keep updating in combat | ✖ | ✔ |
 | No flood of Lua errors in combat | ✖ | ✔ |
 | Ready-made HUD for all nine classes | ✖ | ✔ |
 | Import check that warns about auras that cannot work on WoW Forever | ✖ | ✔ |
 
----
+***
 
 ## <span style="color: #0cf;">🧰 What you get</span>
 
@@ -44,18 +69,7 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 - <span style="color: #ffd100;"><strong>Damage over time timers from your own casts,</strong></span> with no code to write.
 - <span style="color: #ffd100;"><strong>Type spells by name,</strong></span> in your game language: every rank of the spell is tracked.
 
----
-
-## <span style="color: #3c3;">🆕 New in 1.13</span>
-
-- <span style="color: #ffd100;"><strong>Combo points follow your target:</strong></span> the combo point pips of the Rogue and Druid HUDs, and the `%power` text of your own combo point auras, no longer keep the points of the previous target.
-- <span style="color: #ffd100;"><strong>Shields on health:</strong></span> Show Absorb and Show Heal Absorb options in the Health trigger, with the `%absorb` and `%healabsorb` texts.
-- <span style="color: #ffd100;"><strong>Options window that fits,</strong></span> in French too, and clearer texts without technical words.
-- <span style="color: #ffd100;"><strong>Coming from ForeverAuras?</strong></span> A new section of the in-game tutorial explains what each aura becomes.
-
-Full list in the **Files** tab.
-
----
+***
 
 ## <span style="color: #0cf;">🎯 Limits</span>
 
@@ -69,7 +83,7 @@ Full list in the **Files** tab.
 - Combat log triggers never fire: the game forbids the combat log to addons.
 - Other players' casts, enemy names and IDs in instances are hidden.
 
----
+***
 
 ## <span style="color: #0cf;">🌐 Auras made elsewhere</span>
 
@@ -77,7 +91,7 @@ Full list in the **Files** tab.
 - <span style="color: #4caf50;"><strong>Coming from ForeverAuras?</strong></span> Its Aura (Modern) and Cooldown Manager auras import as they are.
 - Some removed functions (`GetSpellInfo`, `UnitBuff`…) are replaced in custom code, but `UnitAura`, `UnitBuff` and `UnitDebuff` stop in combat on a hidden aura. Auras that call other removed functions need to be updated: the import report tells you which ones.
 
----
+***
 
 ## <span style="color: #ff6b35;">🔄 Updating from an older version</span>
 
@@ -87,7 +101,7 @@ Install the latest version, then click <span style="color: #ffd100;"><strong>Upd
 - <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
 - <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
 
----
+***
 
 ## <span style="color: #0cf;">⚖ License and credits</span>
 

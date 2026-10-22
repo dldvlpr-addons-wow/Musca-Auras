@@ -476,214 +476,299 @@ local function disabledOrHiddenChild(childOptionTable, info)
 end
 
 
-local function replaceNameDescFuncs(intable, data, subOption)
-  local function compareTables(tableA, tableB)
-    if(#tableA == #tableB) then
-      for j=1,#tableA do
-        if(type(tableA[j]) == "number" and type(tableB[j]) == "number") then
-          if((math.floor(tableA[j] * 100) / 100) ~= (math.floor(tableB[j] * 100) / 100)) then
-            return false;
-          end
-        else
-          if(tableA[j] ~= tableB[j]) then
-            return false;
-          end
+local function compareTables(tableA, tableB)
+  if(#tableA == #tableB) then
+    for j=1,#tableA do
+      if(type(tableA[j]) == "number" and type(tableB[j]) == "number") then
+        if((math.floor(tableA[j] * 100) / 100) ~= (math.floor(tableB[j] * 100) / 100)) then
+          return false;
+        end
+      else
+        if(tableA[j] ~= tableB[j]) then
+          return false;
         end
       end
-    else
-      return false;
     end
-    return true;
+  else
+    return false;
   end
+  return true;
+end
 
-  local function getValueFor(options, info, key)
-    local childOptionTable = {[0] = options};
-    for i=1,#info do
-      options = options.args[info[i]];
-      if (not options) then
-        return nil;
-      end
-      childOptionTable[i] = options;
-    end
-
-    if (disabledOrHiddenChild(childOptionTable, info)) then
+local function getValueFor(options, info, key)
+  local childOptionTable = {[0] = options};
+  for i=1,#info do
+    options = options.args[info[i]];
+    if (not options) then
       return nil;
     end
+    childOptionTable[i] = options;
+  end
 
-    for i=#childOptionTable,0,-1 do
-      if(childOptionTable[i][key]) then
-        return childOptionTable[i][key];
-      end
-    end
+  if (disabledOrHiddenChild(childOptionTable, info)) then
     return nil;
   end
 
-  local function combineKeys(info)
-    local combinedKeys = nil;
-    for child in OptionsPrivate.Private.TraverseLeafs(data) do
-      local values = getValueFor(OptionsPrivate.EnsureOptions(child, subOption), info, "values");
-      if (values) then
-        if (type(values) == "function") then
-          values = values(info);
-        end
-        if (type(values) == "table") then
-          combinedKeys = combinedKeys or {};
-          for k, v in pairs(values) do
-            combinedKeys[k] = v;
-          end
+  for i=#childOptionTable,0,-1 do
+    if(childOptionTable[i][key]) then
+      return childOptionTable[i][key];
+    end
+  end
+  return nil;
+end
+
+local function combineKeys(data, subOption, info)
+  local combinedKeys = nil;
+  for child in OptionsPrivate.Private.TraverseLeafs(data) do
+    local values = getValueFor(OptionsPrivate.EnsureOptions(child, subOption), info, "values");
+    if (values) then
+      if (type(values) == "function") then
+        values = values(info);
+      end
+      if (type(values) == "table") then
+        combinedKeys = combinedKeys or {};
+        for k, v in pairs(values) do
+          combinedKeys[k] = v;
         end
       end
     end
-    return combinedKeys;
+  end
+  return combinedKeys;
+end
+
+local function regionPrefix(input)
+  local index = string.find(input, ".", 1, true);
+  if (index) then
+    local regionType = string.sub(input, 1, index - 1);
+    return OptionsPrivate.Private.regionOptions[regionType] and regionType;
+  end
+  return nil;
+end
+
+local function computeSameAll(data, subOption, info)
+  local cached = commonOptionsCache:GetSameAll(info)
+  if (cached ~= nil) then
+    return cached
   end
 
-  local function regionPrefix(input)
-    local index = string.find(input, ".", 1, true);
-    if (index) then
-      local regionType = string.sub(input, 1, index - 1);
-      return OptionsPrivate.Private.regionOptions[regionType] and regionType;
-    end
-    return nil;
-  end
+  local combinedValues = {};
+  local first = true;
+  local combinedKeys = combineKeys(data, subOption, info);
 
-  local function sameAll(info)
-    local cached = commonOptionsCache:GetSameAll(info)
-    if (cached ~= nil) then
-      return cached
+  local isToggle = nil
+
+  for child in OptionsPrivate.Private.TraverseLeafs(data) do
+    if isToggle == nil then
+      local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info)
+      isToggle = childOption and childOption.type == "toggle"
     end
 
-    local combinedValues = {};
-    local first = true;
-    local combinedKeys = combineKeys(info);
-
-    local isToggle = nil
-
-    for child in OptionsPrivate.Private.TraverseLeafs(data) do
-      if isToggle == nil then
-        local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info)
-        isToggle = childOption and childOption.type == "toggle"
-      end
-
-      local regionType = regionPrefix(info[#info]);
-      if(child and (not regionType or child.regionType == regionType or regionType == "sub")) then
-        local childOptions = OptionsPrivate.EnsureOptions(child, subOption)
-        local get = getValueFor(childOptions, info, "get");
-        if (combinedKeys) then
-          for key in pairs(combinedKeys) do
-            local values = {};
-            if (get) then
-              values = { get(info, key) };
-            end
-            if (combinedValues[key] == nil) then
-              combinedValues[key] = values;
-            else
-              if (not compareTables(combinedValues[key], values)) then
-                commonOptionsCache:SetSameAll(info, false)
-                return nil;
-              end
-            end
-          end
-        else
+    local regionType = regionPrefix(info[#info]);
+    if(child and (not regionType or child.regionType == regionType or regionType == "sub")) then
+      local childOptions = OptionsPrivate.EnsureOptions(child, subOption)
+      local get = getValueFor(childOptions, info, "get");
+      if (combinedKeys) then
+        for key in pairs(combinedKeys) do
           local values = {};
           if (get) then
-            values = { get(info) };
-            if isToggle and values[1] == nil then
-              values[1] = false
-            end
+            values = { get(info, key) };
           end
-          if(first) then
-            combinedValues = values;
-            first = false;
+          if (combinedValues[key] == nil) then
+            combinedValues[key] = values;
           else
-            if (not compareTables(combinedValues, values)) then
+            if (not compareTables(combinedValues[key], values)) then
               commonOptionsCache:SetSameAll(info, false)
               return nil;
             end
           end
         end
-      end
-    end
-
-    commonOptionsCache:SetSameAll(info, true)
-    return true;
-  end
-
-  local function nameAll(info)
-    local cached = commonOptionsCache:GetNameAll(info)
-    if (cached ~= nil) then
-      return cached
-    end
-
-    local combinedName;
-    local first = true;
-    local foundNames = {};
-    for child in OptionsPrivate.Private.TraverseLeafs(data) do
-      local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info);
-      if (childOption) then
-        local name;
-        if(type(childOption.name) == "function") then
-          name = childOption.name(info);
-        else
-          name = childOption.name;
-          commonOptionsCache:SetNameAll(info, name)
-          return name
-        end
-        if (not name) then
-        -- Do nothing
-        elseif(first) then
-          if (name ~= "") then
-            combinedName = name;
-            first = false;
+      else
+        local values = {};
+        if (get) then
+          values = { get(info) };
+          if isToggle and values[1] == nil then
+            values[1] = false
           end
-          foundNames[name] = true;
-        elseif not(foundNames[name]) then
-          if (name ~= "") then
-            if (childOption.type == "description") then
-              combinedName = combinedName .. "\n\n" .. name;
-            else
-              combinedName = combinedName .. " / " .. name;
-            end
-          end
-          foundNames[name] = true;
-        end
-      end
-    end
-    if combinedName then
-      commonOptionsCache:SetNameAll(info, combinedName)
-    end
-
-    return combinedName or ""
-  end
-
-  local function descAll(info)
-    local combinedDesc;
-    local first = true;
-    for child in OptionsPrivate.Private.TraverseLeafs(data) do
-      local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info);
-      if (childOption) then
-        local desc;
-        if(type(childOption.desc) == "function") then
-          desc = childOption.desc(info);
-        else
-          desc = childOption.desc;
         end
         if(first) then
-          combinedDesc = desc;
+          combinedValues = values;
           first = false;
-        elseif not(combinedDesc == desc) then
-          return L["Not all children have the same value for this option"];
+        else
+          if (not compareTables(combinedValues, values)) then
+            commonOptionsCache:SetSameAll(info, false)
+            return nil;
+          end
         end
       end
     end
-    return combinedDesc;
   end
 
+  commonOptionsCache:SetSameAll(info, true)
+  return true;
+end
+
+local function computeNameAll(data, subOption, info)
+  local cached = commonOptionsCache:GetNameAll(info)
+  if (cached ~= nil) then
+    return cached
+  end
+
+  local combinedName;
+  local first = true;
+  local foundNames = {};
+  for child in OptionsPrivate.Private.TraverseLeafs(data) do
+    local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info);
+    if (childOption) then
+      local name;
+      if(type(childOption.name) == "function") then
+        name = childOption.name(info);
+      else
+        name = childOption.name;
+        commonOptionsCache:SetNameAll(info, name)
+        return name
+      end
+      if (not name) then
+      -- Do nothing
+      elseif(first) then
+        if (name ~= "") then
+          combinedName = name;
+          first = false;
+        end
+        foundNames[name] = true;
+      elseif not(foundNames[name]) then
+        if (name ~= "") then
+          if (childOption.type == "description") then
+            combinedName = combinedName .. "\n\n" .. name;
+          else
+            combinedName = combinedName .. " / " .. name;
+          end
+        end
+        foundNames[name] = true;
+      end
+    end
+  end
+  if combinedName then
+    commonOptionsCache:SetNameAll(info, combinedName)
+  end
+
+  return combinedName or ""
+end
+
+local function computeDescAll(data, subOption, info)
+  local combinedDesc;
+  local first = true;
+  for child in OptionsPrivate.Private.TraverseLeafs(data) do
+    local childOption = getChildOption(OptionsPrivate.EnsureOptions(child, subOption), info);
+    if (childOption) then
+      local desc;
+      if(type(childOption.desc) == "function") then
+        desc = childOption.desc(info);
+      else
+        desc = childOption.desc;
+      end
+      if(first) then
+        combinedDesc = desc;
+        first = false;
+      elseif not(combinedDesc == desc) then
+        return L["Not all children have the same value for this option"];
+      end
+    end
+  end
+  return combinedDesc;
+end
+
+-- Description shown when the children of the selection have different values: one line per child.
+local function describeChildValues(intable, data, subOption, info)
+  local combinedKeys = nil;
+  if (intable.type == "multiselect") then
+    combinedKeys = combineKeys(data, subOption, info)
+  end
+
+  local values = {};
+  for child in OptionsPrivate.Private.TraverseLeafs(data) do
+    local childOptions = OptionsPrivate.EnsureOptions(child, subOption)
+    local childOption = childOptions;
+    local childOptionTable = {[0] = childOption};
+    for i=1,#info do
+      childOption = childOption.args[info[i]];
+      childOptionTable[i] = childOption;
+    end
+    if (childOption and not hiddenChild(childOptionTable, info)) then
+      for i=#childOptionTable,0,-1 do
+        if(childOptionTable[i].get) then
+          if(intable.type == "toggle") then
+            local name, tri;
+            if(type(childOption.name) == "function") then
+              name = childOption.name(info);
+              tri = true;
+            else
+              name = childOption.name;
+            end
+            if(tri and childOptionTable[i].get(info)) then
+              tinsert(values, "|cFFE0E000"..child.id..": |r"..name);
+            elseif(tri) then
+              tinsert(values, "|cFFE0E000"..child.id..": |r"..L["Ignored"]);
+            elseif(childOptionTable[i].get(info)) then
+              tinsert(values, "|cFFE0E000"..child.id..": |r|cFF00FF00"..L["Enabled"].."|r");
+            else
+              tinsert(values, "|cFFE0E000"..child.id..": |r|cFFFF0000"..L["Disabled"].."|r");
+            end
+          elseif(intable.type == "color") then
+            local r, g, b = childOptionTable[i].get(info);
+            r, g, b = r or 1, g or 1, b or 1;
+            tinsert(values, ("|cFF%2x%2x%2x%s|r"):format(r * 220 + 35, g * 220 + 35, b * 220 + 35, child.id));
+          elseif(intable.type == "select") then
+            local selectValues = type(intable.values) == "table" and intable.values or intable.values(info);
+            local key = childOptionTable[i].get(info);
+            local display = key and selectValues[key] or L["None"];
+            if intable.dialogControl == "LSM30_Font" then
+              tinsert(values, "|cFFE0E000"..child.id..": |r" .. key);
+            else
+              if type(display) == "string" then
+                tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
+              elseif type(display) == "table" then
+                tinsert(values, "|cFFE0E000"..child.id..": |r"..display[1].."/"..display[2] );
+              end
+            end
+          elseif(intable.type == "multiselect") then
+            local selectedValues = {};
+            for k, v in pairs(combinedKeys) do
+              if (childOptionTable[i].get(info, k)) then
+                tinsert(selectedValues, tostring(v))
+              end
+            end
+            tinsert(values, "|cFFE0E000"..child.id..": |r"..table.concat(selectedValues, ","));
+          else
+            local display = childOptionTable[i].get(info) or L["None"];
+            if(type(display) == "number") then
+              display = math.floor(display * 100) / 100;
+            else
+              local nullBytePos = display:find("\0", nil, true)
+              if nullBytePos then
+                display = display:sub(1, nullBytePos - 1)
+              end
+
+              if #display > 50 then
+                display = display:sub(1, 50) .. "..."
+              end
+            end
+            tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
+          end
+          break;
+        end
+      end
+    end
+  end
+  return table.concat(values, "\n");
+end
+
+local function replaceNameDescFuncs(intable, data, subOption)
   local function recurse(intable)
     for i,v in pairs(intable) do
       if(i == "name" and type(v) ~= "table") then
         intable.name = function(info)
-          local name = nameAll(info);
-          if(sameAll(info)) then
+          local name = computeNameAll(data, subOption, info);
+          if(computeSameAll(data, subOption, info)) then
             return name;
           else
             if(name == "") then
@@ -694,90 +779,10 @@ local function replaceNameDescFuncs(intable, data, subOption)
           end
         end
         intable.desc = function(info)
-          if(sameAll(info)) then
-            return descAll(info);
+          if(computeSameAll(data, subOption, info)) then
+            return computeDescAll(data, subOption, info);
           else
-            local combinedKeys = nil;
-            if (intable.type == "multiselect") then
-              combinedKeys = combineKeys(info)
-            end
-
-            local values = {};
-            for child in OptionsPrivate.Private.TraverseLeafs(data) do
-              local childOptions = OptionsPrivate.EnsureOptions(child, subOption)
-              local childOption = childOptions;
-              local childOptionTable = {[0] = childOption};
-              for i=1,#info do
-                childOption = childOption.args[info[i]];
-                childOptionTable[i] = childOption;
-              end
-              if (childOption and not hiddenChild(childOptionTable, info)) then
-                for i=#childOptionTable,0,-1 do
-                  if(childOptionTable[i].get) then
-                    if(intable.type == "toggle") then
-                      local name, tri;
-                      if(type(childOption.name) == "function") then
-                        name = childOption.name(info);
-                        tri = true;
-                      else
-                        name = childOption.name;
-                      end
-                      if(tri and childOptionTable[i].get(info)) then
-                        tinsert(values, "|cFFE0E000"..child.id..": |r"..name);
-                      elseif(tri) then
-                        tinsert(values, "|cFFE0E000"..child.id..": |r"..L["Ignored"]);
-                      elseif(childOptionTable[i].get(info)) then
-                        tinsert(values, "|cFFE0E000"..child.id..": |r|cFF00FF00"..L["Enabled"].."|r");
-                      else
-                        tinsert(values, "|cFFE0E000"..child.id..": |r|cFFFF0000"..L["Disabled"].."|r");
-                      end
-                    elseif(intable.type == "color") then
-                      local r, g, b = childOptionTable[i].get(info);
-                      r, g, b = r or 1, g or 1, b or 1;
-                      tinsert(values, ("|cFF%2x%2x%2x%s|r"):format(r * 220 + 35, g * 220 + 35, b * 220 + 35, child.id));
-                    elseif(intable.type == "select") then
-                      local selectValues = type(intable.values) == "table" and intable.values or intable.values(info);
-                      local key = childOptionTable[i].get(info);
-                      local display = key and selectValues[key] or L["None"];
-                      if intable.dialogControl == "LSM30_Font" then
-                        tinsert(values, "|cFFE0E000"..child.id..": |r" .. key);
-                      else
-                        if type(display) == "string" then
-                          tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
-                        elseif type(display) == "table" then
-                          tinsert(values, "|cFFE0E000"..child.id..": |r"..display[1].."/"..display[2] );
-                        end
-                      end
-                    elseif(intable.type == "multiselect") then
-                      local selectedValues = {};
-                      for k, v in pairs(combinedKeys) do
-                        if (childOptionTable[i].get(info, k)) then
-                          tinsert(selectedValues, tostring(v))
-                        end
-                      end
-                      tinsert(values, "|cFFE0E000"..child.id..": |r"..table.concat(selectedValues, ","));
-                    else
-                      local display = childOptionTable[i].get(info) or L["None"];
-                      if(type(display) == "number") then
-                        display = math.floor(display * 100) / 100;
-                      else
-                        local nullBytePos = display:find("\0", nil, true)
-                        if nullBytePos then
-                          display = display:sub(1, nullBytePos - 1)
-                        end
-
-                        if #display > 50 then
-                          display = display:sub(1, 50) .. "..."
-                        end
-                      end
-                      tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
-                    end
-                    break;
-                  end
-                end
-              end
-            end
-            return table.concat(values, "\n");
+            return describeChildValues(intable, data, subOption, info);
           end
         end
       elseif(type(v) == "table" and i ~= "values") then

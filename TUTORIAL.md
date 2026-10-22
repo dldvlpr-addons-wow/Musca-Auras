@@ -1,5 +1,9 @@
 # Musca Auras tutorial
 
+<!-- game: **Everything you need to learn WeakAuras on WoW Forever:** how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import.
+
+Open this guide again with the **Guide** button at the top of the **/wa** window, or with **/wa tutorial**. -->
+
 How WeakAuras works on WoW Forever, and how to build auras that keep working in combat.
 
 WoW Forever looks like Classic, but it runs on the modern 12.1 game engine. This engine hides most combat data
@@ -169,6 +173,7 @@ tells misses is not available to addons on WoW Forever.
 
 Ready-made example for Immolate rank 1 (spell ID 348, 15 seconds). Copy this text, then `/wa`, **Import**:
 
+<!-- import label: Import the DoT timer -->
 ```
 !WA:2!DjvVUrnqq4afePniKIfefHO40ricAIGJKiAJdXIt6q5KTbr3DR9o2EKS31A)5cHsxbT5r4QP6AONNGvriEa4ripbS7DxOGQ9BN1Z89Z47ef0eWcyFD75yUGNimYC4jBCn1OReYZB1OGRiZLqPdKEzle6)mjnF5dhhR0uPMKvGCuvrcDhAsNwILLGu9G9LRH)ou76ngMbCTu1c11dzpEWRp8n)rzYwwnXuuGFEXKtpjjDss6jXPDmJK6PP)RoYE)2hM4BR3PuLUxIjphagWcnocZARPxcYfgfmz9SN2TgOiXCAdOi)JOXsWruCY4ZgnQZ3IFetBFKhwHm4CEkvwc63cuD105miZPmVZLV7SrJJ(WORm81UI0UTpiMbPRU)Ebd((g3GCni506p6IaN8)Xvuo2S0jhBVx013ARj(irQaxEYu2Tc5co8tGQGeTe4L6Qn7838uB3lSHI8iBF7tTBz3Z(SnT77o28)R0hzT7oSPrut1qpn2aYEppsiDox(I4lqMUIUa5fc5kbrgyq2nfZUTf3gHsZCkQaljZ9kdx9hqwfGLvA6cgQ8X9q3B7E3GV1Lle1mXf8PH1cklkttRDH8oXnMAnscDRH8DShsIZRPkLhfQWVaEqGk7Odgm4Gxgm7xF6V)
 ```
@@ -199,6 +204,7 @@ not know if the spell was resisted or dispelled.
 
 Ready-made example for Immolate rank 1 (spell ID 348, 15 seconds). Copy this text, then `/wa`, **Import**:
 
+<!-- import label: Import the nameplate DoT timer -->
 ```
 !WA:2!nwv3UXrTxCcuOTMac2kvAccWD)tRskllPH2Q2k1lYS7SjlkFSA2nvcHqB9mJNDT6S2JS9KpavUixvUnxWdqUMB(hP(c0NaR8O0Nao2ZUPzs3cDUWJ95C85ZFNJN5XvIM)5x5iwKG3vKlJOZeMrKuUod3E0irkrtXcoMtgrZShu4fAjK0DOYfpsshWe8E7Nr9S3xsI0Wz19cuAIuJctyCMAiYd(PrhOLSbdOs1NEt54T)LNgUByuUslgDCXV(wshdkqtZZIH1aWwCD4AusQEOxoOQqWr2NkdDmuz)02B2Ux)UD8xF9gR0f2TDJg((n9B(Wc5WBUYg(97S(k9877enWFJTESFtmq6N9d63BLGv971VzB)MhOYOPPTJvOaBaRqMpzVl8)tY5UaBbsAQZXu1WoBxdxVE9fry4lversXtKedX)aQUJnHTqHa2VeHeZWpcF7A47SeowCkJxRbT4Puois1tt4vbJGzLeLLG3gYd(7XuA1cURSiMWJDuBRSRfuRHRw4jvxeRhs5L0I9ts15sEHvlXKYJrNF)K)G5DHp(rGF(2s(vlBWIOZw9QHJik9QB3UznCr6UjeVqIeDMWJPu0iW52HKMtDHwjklm(Ifr1KOiHKQOL8CqttmXF8i8pEN7)FiF5AW0lIGo5c9yH(3v3P4LFXj9Vc683lLLvdf7AnKmNwReJOHe(aA8u5LjfdKuLY23zrkA2iAC1YYeNljoGia2UBzw09Yyfm7bxeeyvQ2UBHfXF3BimjxlwJftNQJyRMwgoK2PCEg68Gl4If4hi)uc78wAmRIH(Kxl1B2MovS1KQ27G6T4jaWznZ0RXfA0v7MeGUlD(cAjGMt63OlZrU(4cTdImf2Ll3OP1HEw6NVH8Saqeq8OyAyEsIfGixZF9oT2E9dZ5Jh6IY(C7C6DO9koVHiM(3V3RyCnvYjPpgMqdyJxCiHZg5Gj3ZCXwNmbq5gplHwrbpwzM1Jl40xsjkAxn8OXa9WlEG9K10MR7nIW4TmFJbBM1CDt1lA(FWVlDEkvzXzx70hBoDWh2cSLhejePXID5p54yMYorVny7R9(v(ZGDzX6Hp4eaJoui3kZ92dA5Cw8Rs2XQoxvfA6jEPcsCRqnjfGgxnyuEQMH8Gjdrx1uhfeLsuk7opf73O2nhPYddCpUPU1vnZEcCmKe90bsrop(EMzLabnDp9H2L(2LQ3i7e3Hebx3fuZCHdPSbd1p4iBQIv4ChZ4WBafPvuiWiHnavzuL4kXpFopq97ge0E116Lvb4PLI0uACJHS0yi3oV5gMfrY93kjrr1x2CHxgVpKRyrwVk7ecpcYcDOs70)dTqFhYp7ZYv0volVNy(iOIImxczUmYGM)MMpULPI5kMzdiqrEzZCM5nFbY8Li5Ef2AgZx9Idv00KocaLe6TvVEBTH5RT4IZxB)23PQT5doES7Av4Y92QtajLnGh2WFZE(bVQGzljGeSaPWUnc893uc9kwa7mMBD2c8QYSBhOYir0p0tjKAWq1Az(EBz08dU1LCR32TEFK5biZdrvuH3T(YlxFPk7CHN9pp
 ```
@@ -244,6 +250,7 @@ Ready-made example for a Warlock (tested in game on Forever). Copy this text, th
 None of them loads in combat. Buffs are matched by spell ID, so the group works with any client language.
 The IDs come from Classic 1.12 data: if an icon stays visible while you have the buff, report it.
 
+<!-- import label: Import the pre-pull checklist -->
 ```
 !WA:2!nxzZUTTrxyy7206e2uxh628RtlB7xvtw0urkjkj30cy6iLyu)lLBcqakSgsouCQPijMzOCCa6gJIaJU0l)wQ1DLbYnGVcoWxc9sWxb9mucoUjObbDrqxOxnZHCgEMN3zoZKpu3)X7pJtCkjyWH5c6wSKE808Si(4gx2TFESKvYTOxxhoHf01tsIPjYldNtZ1pMieQwdvd3pTVhrg5iYO(QGoc2tPQgNWsKuEcj(HuUGLM88Hm)0KoP5CF6CtCajH1NiX42UcjHlBFCqoViWwYDZWHqX3oq4O64KKMqpIse0osonPNmAQ9u92eFgmRtFclPnmdCjqhMf(4PGpbM1lKLWerVC4Jj5YOu(AzQpKq7qwsykFuEO5LrWjxMn36C63KLhhB4hr93oMjKg3QDkNoGYVT7oSaz0gd50E4yujGJAz5H)cz90(cwqM(kmHaH58g4GKmzEa1kNfCs4aCIvZRkCztVikRxKCJHQ1jBu(Wj(fnSHpsdUIMdUgKA7j5SE9qImDj(4Mp7iccle5XXSaXV7yAvTIsQQKAow1BA6AwUzL6fAdxlZA2wfAvq3vnwRduAcPpvODc6JTEc(P7OMWLc6YXaRIpk6yenieeDIs3zTKJff)nE5nmG6LhgQqa)bTwE92)0Yo5y(6Lft2LYpipzCYQLDj1YAaDZr9xjnG(htS)mWKdG3jcExCZsj496cVFxyk1gh48f6fIaTIgFqHEXNdF4CtatJO5Lnv4YVsKR8krUQgCnn46WnG52aUj8PWNvywx7uZAfcFBJ0qdze14rS4a4ZFHJTsQCNYMWxUb8)0GVAS7aL0GVE6sWTEgC7)VJPPLTtnRkwo21Rv0QQtJMLR70SrJQkPgY)gvBQ0ALXmZcQObv7c1IaBOo0aAcZdFhCxn47)piDwG7tsOglHNPJJP(YZsNfWOVw68loMvR1ef7YkrT3e3kwO1DTQu2QXBcpcpOOEJQ6ZPSOKNk9IP8hTG7YRT4p(2dn34u0CpA)0eJoBZsm(wKt9t5Nfo3dJ8AHZtTSBu3YUPTv9Y2oMLBGGXSELkfA1cT2BeEGnEbwaxOZBpwmZYP7mVbwAp2OteHhiola6eXd(NbqiO7WK0(J82uSOrx3I)0RSNkUQm05V6UUyX3e5WLWiglQE8Fw8sBLIfFiYuU(Dhtc9(6b6b7Ffh82RDCDx6(pyZmDScRKNI7BdwmcpzJv5Fmya)aSeSj8Z4IIV7AHHcQ83UiCZJc2fRkY8lU9ZrGLQHzDfzeF6f(7z)1XSVDHhOmh0pChvnvLiiN)3YyKNiENS9yRu7mN5l8q(tgLRtEcjXhVkRnh)QQIWEDw0TvRv54TPQQStIEZbcAC46P4fXEl2A1nB5E4OXueceUKywVeqOmg0wpJNDF1I3ux4v7oww3PS(GZ9R)f
 ```
@@ -319,19 +326,21 @@ https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 
 ## 10. Coming from ForeverAuras
 
-Export your auras from ForeverAuras, then paste the strings in the WeakAuras import window. Groups work too.
+Export your auras from ForeverAuras, then paste the strings in the WeakAuras import window. Groups work too.\
 Musca Auras converts them on import, and lists in the chat what it could not convert.
+
+What each one becomes:
 
 | ForeverAuras | Musca Auras |
 | --- | --- |
 | Cooldown Manager trigger, cooldown | Cooldown trigger (spell ID, or name if ForeverAuras used names) |
 | Cooldown Manager trigger, buff | Aura trigger (your buffs, or your debuffs on the target) |
 | Cooldown Manager trigger, item | Item cooldown trigger |
-| Aura (Blizzard) trigger | Aura trigger with Game Categories (sorting removed). The Game Categories shows nothing at the moment. |
+| Aura (Blizzard) trigger | Aura trigger with Game Categories (sorting removed). Game Categories shows nothing at the moment. |
 | Dispel type icon | Dispel Type Icon sub element |
 | Dispel type border | Border colored by dispel type |
-| Swing Timer, Ammo | Same triggers (Ammo: the item list now filters the equipped ammo) |
-| Role, Tracking, Equipment Durability, Bag Space | Same triggers (Tracking: by spell ID only, no "always" mode) |
+| Swing Timer, Ammo | same triggers (Ammo: the item list now filters the equipped ammo) |
+| Role, Tracking, Equipment Durability, Bag Space | same triggers (Tracking: by spell ID only, no "always" mode) |
 
-Not converted: TimelineParser triggers (they need the ExRT_Reminder addon and a boss timeline, which WoW Forever does not show). A Cooldown Manager cooldown trigger with several spells keeps the first one.
+Not converted: TimelineParser triggers (they need the ExRT_Reminder addon and a boss timeline, which WoW Forever does not show). A Cooldown Manager cooldown trigger with several spells keeps the first one.\
 Do not run both addons at the same time.

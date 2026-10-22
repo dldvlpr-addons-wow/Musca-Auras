@@ -4392,7 +4392,7 @@ Private.event_prototypes = {
             state.changed = true;
           end
           local durationObject, durationObjectWithoutGCD
-            = WeakAuras.GetSpellCooldownDurationObject(effectiveSpellId, showgcd, ignoreSpellKnown, track, showlossofcontrol)
+            = Private.ExecEnv.GetSpellCooldownDurationObject(effectiveSpellId, showgcd, ignoreSpellKnown, track, showlossofcontrol)
           if state.durationObject ~= durationObject then
             state.durationObject = durationObject
             state.changed = true
@@ -4441,7 +4441,7 @@ Private.event_prototypes = {
       end
       table.insert(ret, [=[
         local secretStacks
-        if (maxCharges and maxCharges ~= 1 or spellCount and spellCount > 0) and WeakAuras.IsSpellCooldownSecret(effectiveSpellId) then
+        if (maxCharges and maxCharges ~= 1 or spellCount and spellCount > 0) and Private.ExecEnv.IsSpellCooldownSecret(effectiveSpellId) then
           secretStacks = Private.ExecEnv.GetSpellDisplayCount(effectiveSpellId)
         end
         if Private.ExecEnv.IsSecret(state.secretStacks, secretStacks) or state.secretStacks ~= secretStacks then
@@ -5668,7 +5668,7 @@ Private.event_prototypes = {
         local rangeFilter = %s;
         local triggerRemaining = %s
         local duration, expirationTime, name, icon = WeakAuras.GetSwingTimerInfo(hand)
-        local inRange = WeakAuras.IsTargetInSwingRange and WeakAuras.IsTargetInSwingRange(hand)
+        local inRange = Private.ExecEnv.IsTargetInSwingRange(hand)
         local remaining = expirationTime and expirationTime - GetTime()
         local remainingCheck = not triggerRemaining or remaining and remaining %s triggerRemaining
 

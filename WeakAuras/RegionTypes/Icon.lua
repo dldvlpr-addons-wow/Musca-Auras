@@ -336,29 +336,7 @@ local function RefreshCountdownAlpha(region)
   end
 end
 
-local function modify(parent, region, data)
-  -- Legacy members stacks and text2
-  region.stacks = nil
-  region.text2 = nil
-
-  Private.regionPrototype.modify(parent, region, data);
-
-  local button, icon, cooldown = region.button, region.icon, region.cooldown;
-
-  region.iconSource = data.iconSource
-  region.displayIcon = data.displayIcon
-
-  if MSQ then
-    local masqueId = data.id:lower():gsub(" ", "_");
-    if region.masqueId ~= masqueId then
-      region.masqueId = masqueId
-      region.MSQGroup = MSQ:Group("WeakAuras", region.masqueId, data.uid);
-      region.MSQGroup:SetName(data.id)
-      region.MSQGroup:AddButton(button, {Icon = icon, Cooldown = cooldown}, "WA_Aura", true);
-      button.data = data
-    end
-  end
-
+local function installSizeMethods(region, icon, button)
   function region:UpdateSize()
     local width = region.width * math.abs(region.scalex);
     local height = region.height * math.abs(region.scaley);
@@ -414,35 +392,32 @@ local function modify(parent, region, data)
     end
   end
 
-  region.width = data.width;
-  region.height = data.height;
-  region.scalex = 1;
-  region.scaley = 1;
-  region.keepAspectRatio = data.keepAspectRatio;
-  region.zoom = data.zoom;
-  region.texXOffset = data.texXOffset or 0
-  region.texYOffset = data.texYOffset or 0
-  region:UpdateSize()
-
-  region.desaturateWanted = data.desaturate or false
-  icon:SetDesaturated(data.desaturate);
-
-  local tooltipType = Private.CanHaveTooltip(data);
-  if(tooltipType and data.useTooltip) then
-    if not region.tooltipFrame then
-      region.tooltipFrame = CreateFrame("Frame", nil, region);
-      region.tooltipFrame:SetAllPoints(region);
-      region.tooltipFrame:SetScript("OnEnter", function()
-        Private.ShowMouseoverTooltip(region, region);
-      end);
-      region.tooltipFrame:SetScript("OnLeave", Private.HideTooltip);
+  function region:Scale(scalex, scaley)
+    if region.scalex == scalex and region.scaley == scaley then
+      return
     end
-    region.tooltipFrame:EnableMouseMotion(true);
-    region.tooltipFrame:SetMouseClickEnabled(false);
-  elseif region.tooltipFrame then
-    region.tooltipFrame:EnableMouseMotion(false);
+    region.scalex = scalex;
+    region.scaley = scaley;
+    region:UpdateSize();
   end
 
+  function region:SetRegionWidth(width)
+    region.width = width
+    region:UpdateSize();
+  end
+
+  function region:SetRegionHeight(height)
+    region.height = height
+    region:UpdateSize();
+  end
+
+  function region:SetZoom(zoom)
+    region.zoom = zoom;
+    region:UpdateTexCoords();
+  end
+end
+
+local function installCountdownMethods(region, cooldown)
   function region:SetInverse(inverse)
     if region.inverseDirection == inverse then
       return
@@ -482,7 +457,6 @@ local function modify(parent, region, data)
                             cooldown.useCooldownModRate and cooldown.modRate or nil)
     end
   end
-  region:SetInverse(data.inverse)
 
   function region:SetHideCountdownNumbers(cooldownTextDisabled)
     region.cdmConfiguredHideNumbers = cooldownTextDisabled
@@ -516,8 +490,9 @@ local function modify(parent, region, data)
       cooldown:SetHideCountdownNumbers(hideNumbers);
     end
   end
-  region:SetHideCountdownNumbers(data.cooldownTextDisabled)
+end
 
+local function installColorMethods(region, data, icon)
   function region:Color(r, g, b, a)
     region.color_r = r;
     region.color_g = g;
@@ -551,9 +526,9 @@ local function modify(parent, region, data)
     return region.color_r or data.color[1], region.color_g or data.color[2],
       region.color_b or data.color[3], region.color_a or data.color[4];
   end
+end
 
-  region:Color(data.color[1], data.color[2], data.color[3], data.color[4]);
-
+local function installIconMethods(region, icon)
   function region:SetIcon(iconPath)
     if self.displayIcon == iconPath then
       return
@@ -595,15 +570,6 @@ local function modify(parent, region, data)
     Private.SetTextureOrAtlas(self.icon, iconPath)
   end
 
-  function region:Scale(scalex, scaley)
-    if region.scalex == scalex and region.scaley == scaley then
-      return
-    end
-    region.scalex = scalex;
-    region.scaley = scaley;
-    region:UpdateSize();
-  end
-
   function region:SetSecretDesaturation(value)
     self.secretDesaturation = true
     icon:SetDesaturation(value)
@@ -617,19 +583,9 @@ local function modify(parent, region, data)
       Private.ApplyCooldownDesaturation(self)
     end
   end
+end
 
-  function region:SetRegionWidth(width)
-    region.width = width
-    region:UpdateSize();
-  end
-
-  function region:SetRegionHeight(height)
-    region.height = height
-    region:UpdateSize();
-  end
-
-
-
+local function installCooldownDrawMethods(region, cooldown)
   function region:UpdateCooldownDrawState()
     local state = self.cdmProgressState
     local suppressed = (state and state.cdmSuppressGCD) and true or false
@@ -651,21 +607,9 @@ local function modify(parent, region, data)
   function region:SetCooldownEdge(cooldownEdge)
     SetDrawOption("cooldownEdge", cooldownEdge)
   end
+end
 
-  region:SetCooldownSwipe(data.cooldownSwipe)
-  region:SetCooldownEdge(data.cooldownEdge)
-
-  function region:SetZoom(zoom)
-    region.zoom = zoom;
-    region:UpdateTexCoords();
-  end
-
-  cooldown.expirationTime = nil;
-  cooldown.duration = nil;
-  cooldown.modRate = nil
-  cooldown.durationObject = nil
-  cooldown.useCooldownModRate = data.useCooldownModRate
-  cooldown:Hide()
+local function installCooldownProgressMethods(region, data, cooldown)
   if(data.cooldown) then
     function region:UpdateValue()
       if self.cdmNativeProgress then return end
@@ -796,6 +740,82 @@ local function modify(parent, region, data)
       region:UpdateIcon()
     end
   end
+end
+
+local function modify(parent, region, data)
+  -- Legacy members stacks and text2
+  region.stacks = nil
+  region.text2 = nil
+
+  Private.regionPrototype.modify(parent, region, data);
+
+  local button, icon, cooldown = region.button, region.icon, region.cooldown;
+
+  region.iconSource = data.iconSource
+  region.displayIcon = data.displayIcon
+
+  if MSQ then
+    local masqueId = data.id:lower():gsub(" ", "_");
+    if region.masqueId ~= masqueId then
+      region.masqueId = masqueId
+      region.MSQGroup = MSQ:Group("WeakAuras", region.masqueId, data.uid);
+      region.MSQGroup:SetName(data.id)
+      region.MSQGroup:AddButton(button, {Icon = icon, Cooldown = cooldown}, "WA_Aura", true);
+      button.data = data
+    end
+  end
+
+  installSizeMethods(region, icon, button)
+
+  region.width = data.width;
+  region.height = data.height;
+  region.scalex = 1;
+  region.scaley = 1;
+  region.keepAspectRatio = data.keepAspectRatio;
+  region.zoom = data.zoom;
+  region.texXOffset = data.texXOffset or 0
+  region.texYOffset = data.texYOffset or 0
+  region:UpdateSize()
+
+  region.desaturateWanted = data.desaturate or false
+  icon:SetDesaturated(data.desaturate);
+
+  local tooltipType = Private.CanHaveTooltip(data);
+  if(tooltipType and data.useTooltip) then
+    if not region.tooltipFrame then
+      region.tooltipFrame = CreateFrame("Frame", nil, region);
+      region.tooltipFrame:SetAllPoints(region);
+      region.tooltipFrame:SetScript("OnEnter", function()
+        Private.ShowMouseoverTooltip(region, region);
+      end);
+      region.tooltipFrame:SetScript("OnLeave", Private.HideTooltip);
+    end
+    region.tooltipFrame:EnableMouseMotion(true);
+    region.tooltipFrame:SetMouseClickEnabled(false);
+  elseif region.tooltipFrame then
+    region.tooltipFrame:EnableMouseMotion(false);
+  end
+
+  installCountdownMethods(region, cooldown)
+  region:SetInverse(data.inverse)
+  region:SetHideCountdownNumbers(data.cooldownTextDisabled)
+
+  installColorMethods(region, data, icon)
+  region:Color(data.color[1], data.color[2], data.color[3], data.color[4]);
+
+  installIconMethods(region, icon)
+
+  installCooldownDrawMethods(region, cooldown)
+  region:SetCooldownSwipe(data.cooldownSwipe)
+  region:SetCooldownEdge(data.cooldownEdge)
+
+  cooldown.expirationTime = nil;
+  cooldown.duration = nil;
+  cooldown.modRate = nil
+  cooldown.durationObject = nil
+  cooldown.useCooldownModRate = data.useCooldownModRate
+  cooldown:Hide()
+  installCooldownProgressMethods(region, data, cooldown)
 
   -- Backwards compability function
   function region:SetGlow(glow)

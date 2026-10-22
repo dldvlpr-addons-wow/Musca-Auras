@@ -224,8 +224,8 @@ local function onRelease(subRegion)
   subRegion:Hide()
 end
 
-local function modify(parent, region, parentData, data, first)
-  if region:GetParent() ~= parent then region:SetParent(parent) end
+-- Applies font, shadow, wrapping and width settings; returns the resolved font flags
+local function applyFontAndWidth(region, data)
   local text = region.text;
   local fontObject = region.fontObject
 
@@ -266,42 +266,48 @@ local function modify(parent, region, parentData, data, first)
     text:SetNonSpaceWrap(true);
   end
 
-  if first then
-    local containsCustomText = false
-    for index, subRegion in ipairs(parentData.subRegions) do
-      if subRegion.type == "subtext" and Private.ContainsCustomPlaceHolder(subRegion.text_text) then
-        containsCustomText = true
-        break
-      end
+  return fontType
+end
+
+-- Decides whether the parent needs its custom text function, then resets the shared custom text state
+local function resetParentCustomText(parent, parentData)
+  local containsCustomText = false
+  for index, subRegion in ipairs(parentData.subRegions) do
+    if subRegion.type == "subtext" and Private.ContainsCustomPlaceHolder(subRegion.text_text) then
+      containsCustomText = true
+      break
     end
-    if not containsCustomText then
-      if type(parentData.conditions) == "table" then
-        for _, condition in ipairs(parentData.conditions) do
-          if type(condition.changes) == "table" then
-            for _, change in ipairs(condition.changes) do
-              if type(change.property) == "string"
-                and change.property:match("sub%.%d+%.text_text")
-              then
-                containsCustomText = true
-                break
-              end
+  end
+  if not containsCustomText then
+    if type(parentData.conditions) == "table" then
+      for _, condition in ipairs(parentData.conditions) do
+        if type(condition.changes) == "table" then
+          for _, change in ipairs(condition.changes) do
+            if type(change.property) == "string"
+              and change.property:match("sub%.%d+%.text_text")
+            then
+              containsCustomText = true
+              break
             end
           end
         end
       end
     end
-    if containsCustomText and parentData.customText and parentData.customText ~= "" then
-      parent.customTextFunc = WeakAuras.LoadFunction("return "..parentData.customText, parentData.id)
-      parent.values.customTextUpdateThrottle = parentData.customTextUpdateThrottle or 0
-    else
-      parent.customTextFunc = nil
-      parent.values.customTextUpdateThrottle = 0
-    end
-    parent.values.custom = nil
-    parent.values.lastCustomTextUpdate = nil
-    parent.values.customTextUpdated = false
   end
+  if containsCustomText and parentData.customText and parentData.customText ~= "" then
+    parent.customTextFunc = WeakAuras.LoadFunction("return "..parentData.customText, parentData.id)
+    parent.values.customTextUpdateThrottle = parentData.customTextUpdateThrottle or 0
+  else
+    parent.customTextFunc = nil
+    parent.values.customTextUpdateThrottle = 0
+  end
+  parent.values.custom = nil
+  parent.values.lastCustomTextUpdate = nil
+  parent.values.customTextUpdated = false
+end
 
+-- Collects the base text and every text a condition can set for this subregion
+local function collectTextSources(data, parentData)
   local texts = {}
   local textStr = data.text_text or ""
   if textStr ~= "" then
@@ -330,15 +336,12 @@ local function modify(parent, region, parentData, data, first)
     end
   end
 
-  local getter = function(key, default)
-    local fullKey = "text_text_format_" .. key
-    if (data[fullKey] == nil) then
-      data[fullKey] = default
-    end
-    return data[fullKey]
-  end
+  return texts
+end
 
-  region.subTextFormatters, region.everyFrameFormatters = Private.CreateFormatters(texts, getter, false, parentData)
+-- Installs the methods that (re)configure the text update callbacks and their subscriptions
+local function installTextUpdateMethods(region, parent, parentData, data)
+  local text = region.text
 
   function region:ConfigureTextUpdate()
     UnbindDurationText(region)
@@ -457,13 +460,11 @@ local function modify(parent, region, parentData, data, first)
     region:ConfigureTextUpdate()
     region:ConfigureSubscribers()
   end
+end
 
-  region.text_text = data.text_text
-  region.durationTimeFormat = data.text_text_format_p_time_format
-  region.durationThreshold = data.text_text_format_p_time_dynamic_threshold
-  region.durationPrecision = data.text_text_format_p_time_precision
-  region.durationLegacyFloor = data.text_text_format_p_time_legacy_floor
-  region:ConfigureTextUpdate()
+-- Installs the methods that style and show or hide the text
+local function installStyleMethods(region, data, fontType)
+  local text = region.text
 
   function region:SetTextHeight(size)
     local fontPath = SharedMedia:Fetch("font", data.text_font);
@@ -504,7 +505,10 @@ local function modify(parent, region, parentData, data, first)
                       region.color_anim_b or b, region.color_anim_a or a)
     Private.CDMAuraProgress.StyleText(region)
   end
+end
 
+-- Resolves the anchor point of the text itself, AUTO depending on the parent region type
+local function resolveSelfPoint(data, parentData)
   local selfPoint = data.text_selfPoint
   if selfPoint == "AUTO" then
     if parentData.regionType == "icon" then
@@ -530,10 +534,12 @@ local function modify(parent, region, parentData, data, first)
     end
   end
 
-  region.text_anchorXOffset = data.text_anchorXOffset
-  region.text_anchorYOffset = data.text_anchorYOffset
+  return selfPoint
+end
 
-  local textDegrees = data.rotateText == "LEFT" and 90 or data.rotateText == "RIGHT" and -90 or 0;
+-- Installs the methods that anchor and offset the text
+local function installAnchorMethods(region, parent, parentData, data, selfPoint, textDegrees)
+  local text = region.text
 
   function region:AnchorNativeText(nativeText)
     nativeText:ClearAllPoints()
@@ -569,10 +575,50 @@ local function modify(parent, region, parentData, data, first)
     self.text_anchorYOffset = yOffset
     self:Anchor()
   end
+end
+
+local function modify(parent, region, parentData, data, first)
+  if region:GetParent() ~= parent then region:SetParent(parent) end
+  local fontType = applyFontAndWidth(region, data)
+
+  if first then
+    resetParentCustomText(parent, parentData)
+  end
+
+  local texts = collectTextSources(data, parentData)
+
+  local getter = function(key, default)
+    local fullKey = "text_text_format_" .. key
+    if (data[fullKey] == nil) then
+      data[fullKey] = default
+    end
+    return data[fullKey]
+  end
+
+  region.subTextFormatters, region.everyFrameFormatters = Private.CreateFormatters(texts, getter, false, parentData)
+  installTextUpdateMethods(region, parent, parentData, data)
+
+  region.text_text = data.text_text
+  region.durationTimeFormat = data.text_text_format_p_time_format
+  region.durationThreshold = data.text_text_format_p_time_dynamic_threshold
+  region.durationPrecision = data.text_text_format_p_time_precision
+  region.durationLegacyFloor = data.text_text_format_p_time_legacy_floor
+  region:ConfigureTextUpdate()
+
+  installStyleMethods(region, data, fontType)
+
+  local selfPoint = resolveSelfPoint(data, parentData)
+
+  region.text_anchorXOffset = data.text_anchorXOffset
+  region.text_anchorYOffset = data.text_anchorYOffset
+
+  local textDegrees = data.rotateText == "LEFT" and 90 or data.rotateText == "RIGHT" and -90 or 0;
+
+  installAnchorMethods(region, parent, parentData, data, selfPoint, textDegrees)
 
   region:Color(data.text_color[1], data.text_color[2], data.text_color[3], data.text_color[4]);
   region:SetVisible(data.text_visible)
-  animRotate(text, textDegrees, selfPoint)
+  animRotate(region.text, textDegrees, selfPoint)
   Private.CDMAuraProgress.ModifyText(parent, region, parentData, data)
 end
 

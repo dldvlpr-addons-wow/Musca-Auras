@@ -1722,328 +1722,286 @@ do
   end
 end
 
---- Adds a display, creating all internal data structures for all triggers.
----@param data auraData
----@param region table
-function GenericTrigger.Add(data, region)
-  local id = data.id;
-  events[id] = nil;
-  watched_trigger_events[id] = nil
+--- Fills a trigger entry from the event prototype of a trigger of a category event type.
+--- Raises an error when the trigger has no usable event.
+---@param id auraId
+---@param trigger table
+---@param untrigger table
+---@param entry table the trigger entry being built, with its empty event lists
+local function loadPrototypeTrigger(id, trigger, untrigger, entry)
+  if not(trigger.event) then
+    error("Improper arguments to WeakAuras.Add - trigger type is \"event\" but event is not defined");
+  elseif not(event_prototypes[trigger.event]) then
+    if(event_prototypes["Health"]) then
+      trigger.event = "Health";
+    else
+      error("Improper arguments to WeakAuras.Add - no event prototype can be found for event type \""..trigger.event.."\" and default prototype reset failed.");
+    end
+  else
+    if (trigger.event == "Combat Log") then
+      if (not trigger.subeventPrefix) then
+        trigger.subeventPrefix = ""
+      end
+      if (not trigger.subeventSuffix) then
+        trigger.subeventSuffix = "";
+      end
+      if not(Private.subevent_actual_prefix_types[trigger.subeventPrefix]) then
+        trigger.subeventSuffix = "";
+      end
+    end
 
+    local prototype = event_prototypes[trigger.event]
+    entry.prototype = prototype
+    local triggerFuncStr = ConstructFunction(prototype, trigger);
+
+    entry.statesParameter = prototype.statesParameter;
+    entry.triggerFunc = Private.LoadFunction(triggerFuncStr, id);
+
+    entry.durationFunc = prototype.durationFunc;
+    entry.nameFunc = prototype.nameFunc;
+    entry.iconFunc = prototype.iconFunc;
+    entry.textureFunc = prototype.textureFunc;
+    entry.stacksFunc = prototype.stacksFunc;
+    entry.loadFunc = prototype.loadFunc;
+    entry.loadInternalEventFunc = prototype.loadInternalEventFunc;
+
+    if (prototype.overlayFuncs) then
+      local overlayFuncs = {};
+      entry.overlayFuncs = overlayFuncs
+      local dest = 1;
+      for i, v in ipairs(prototype.overlayFuncs) do
+        local enable = true
+        if type(v.enable) == "function" then
+          enable = v.enable(trigger)
+        elseif type(v.enable) == "boolean" then
+          enable = v.enable
+        end
+        if enable then
+          overlayFuncs[dest] = v.func;
+          dest = dest + 1;
+        end
+      end
+    end
+
+    if (prototype.automaticrequired) then
+      entry.untriggerFunc = trueFunction
+    elseif prototype.timedrequired then
+      entry.automaticAutoHide = true
+      entry.duration = tonumber(trigger.duration or "1")
+    else
+      WeakAuras.prettyPrint("Invalid Prototype found: " .. prototype.name)
+    end
+
+    if prototype.countEvents then
+      if trigger.use_count and type(trigger.count) == "string" and trigger.count ~= "" then
+        entry.counter = Private.ExecEnv.CreateTriggerCounter(trigger.count)
+      else
+        entry.counter = Private.ExecEnv.CreateTriggerCounter()
+      end
+    end
+
+    local trigger_all_events = prototype.events;
+    local internal_events = prototype.internal_events;
+    local force_events = prototype.force_events;
+    if prototype.subevents then
+      local trigger_subevents = prototype.subevents
+      if trigger_subevents and type(trigger_subevents) == "function" then
+        trigger_subevents = trigger_subevents(trigger, untrigger)
+      end
+      entry.subevents = trigger_subevents
+    end
+
+    if trigger.event == "Combat Log" and trigger.subeventPrefix and trigger.subeventSuffix then
+      tinsert(entry.subevents, trigger.subeventPrefix .. trigger.subeventSuffix)
+    end
+
+    if (type(trigger_all_events) == "function") then
+      trigger_all_events = trigger_all_events(trigger, untrigger);
+    end
+    entry.events = trigger_all_events.events
+    entry.unit_events = trigger_all_events.unit_events
+    if (type(internal_events) == "function") then
+      internal_events = internal_events(trigger, untrigger);
+    end
+    entry.internal_events = internal_events
+    if (type(force_events) == "function") then
+      force_events = force_events(trigger, untrigger)
+    end
+    entry.force_events = force_events
+
+    if prototype.includePets then
+      entry.includePets = trigger.use_includePets == true and trigger.includePets or nil
+    end
+  end
+end
+
+--- Reads the events of a custom trigger into its entry: plain events, unit events, internal events, combat log
+--- subevents and the triggers it watches. Returns true when one of them is the unfiltered combat log.
+---@param id auraId
+---@param triggernum number
+---@param trigger table
+---@param entry table
+---@return boolean warnAboutCLEUEvents
+local function loadCustomTriggerEvents(id, triggernum, trigger, entry)
   local warnAboutCLEUEvents = false
-  local warnAboutEveryFrame = false
+  local trigger_events = entry.events
+  local trigger_subevents = entry.subevents
+  local trigger_unit_events = entry.unit_events
+  local rawEvents = WeakAuras.split(trigger.events);
+  for index, event in pairs(rawEvents) do
+    -- custom events in the form of event:unit1:unit2:unitX are registered with RegisterUnitEvent
+    local trueEvent
+    local hasParam = false
+    local isCLEU = false
+    local isTrigger = false
+    local isUnitEvent = false
+    if event == "CLEU" or event == "COMBAT_LOG_EVENT_UNFILTERED" then
+      warnAboutCLEUEvents = true
+    end
+    for i in event:gmatch("[^:]+") do
+      if not trueEvent then
+        trueEvent = string.upper(i)
+        isCLEU = trueEvent == "CLEU" or trueEvent == "COMBAT_LOG_EVENT_UNFILTERED"
+        isTrigger = trueEvent == "TRIGGER"
+      elseif isCLEU then
+        local subevent = string.upper(i)
+        if Private.IsCLEUSubevent(subevent) then
+          tinsert(trigger_subevents, subevent)
+          hasParam = true
+        end
+      elseif Private.InternalEventByIDList[trueEvent] then
+        tinsert(trigger_events, trueEvent..":"..i)
+      elseif trueEvent:match("^UNIT_") or Private.UnitEventList[trueEvent] then
+        isUnitEvent = true
 
-  for triggernum, triggerData in ipairs(data.triggers) do
-    local trigger, untrigger = triggerData.trigger, triggerData.untrigger
-    local triggerType;
-    if(trigger and type(trigger) == "table") then
-      triggerType = trigger.type;
-      if(Private.category_event_prototype[triggerType] or triggerType == "custom") then
-        local triggerFuncStr, triggerFunc, untriggerFunc, statesParameter;
-        local trigger_events = {};
-        local internal_events = {};
-        local trigger_unit_events = {};
-        local includePets
-        local trigger_subevents = {};
-        local ignorePartyUnitsInRaid
-        ---@type boolean|string|table
-        local force_events = false;
-        local durationFunc, overlayFuncs, nameFunc, iconFunc, textureFunc, stacksFunc, loadFunc, loadInternalEventFunc;
-        local tsuConditionVariables;
-        local prototype = nil
-        local automaticAutoHide
-        local duration
-        local counter
-        local fixUpShowNil
-        if(Private.category_event_prototype[triggerType]) then
-          if not(trigger.event) then
-            error("Improper arguments to WeakAuras.Add - trigger type is \"event\" but event is not defined");
-          elseif not(event_prototypes[trigger.event]) then
-            if(event_prototypes["Health"]) then
-              trigger.event = "Health";
-            else
-              error("Improper arguments to WeakAuras.Add - no event prototype can be found for event type \""..trigger.event.."\" and default prototype reset failed.");
-            end
-          else
-            if (trigger.event == "Combat Log") then
-              if (not trigger.subeventPrefix) then
-                trigger.subeventPrefix = ""
-              end
-              if (not trigger.subeventSuffix) then
-                trigger.subeventSuffix = "";
-              end
-              if not(Private.subevent_actual_prefix_types[trigger.subeventPrefix]) then
-                trigger.subeventSuffix = "";
-              end
-            end
-
-            prototype = event_prototypes[trigger.event]
-            triggerFuncStr = ConstructFunction(prototype, trigger);
-
-            statesParameter = prototype.statesParameter;
-            triggerFunc = Private.LoadFunction(triggerFuncStr, id);
-
-            durationFunc = prototype.durationFunc;
-            nameFunc = prototype.nameFunc;
-            iconFunc = prototype.iconFunc;
-            textureFunc = prototype.textureFunc;
-            stacksFunc = prototype.stacksFunc;
-            loadFunc = prototype.loadFunc;
-            loadInternalEventFunc = prototype.loadInternalEventFunc;
-
-            if (prototype.overlayFuncs) then
-              overlayFuncs = {};
-              local dest = 1;
-              for i, v in ipairs(prototype.overlayFuncs) do
-                local enable = true
-                if type(v.enable) == "function" then
-                  enable = v.enable(trigger)
-                elseif type(v.enable) == "boolean" then
-                  enable = v.enable
-                end
-                if enable then
-                  overlayFuncs[dest] = v.func;
-                  dest = dest + 1;
-                end
-              end
-            end
-
-            if (prototype.automaticrequired) then
-              untriggerFunc = trueFunction
-            elseif prototype.timedrequired then
-              automaticAutoHide = true
-              duration = tonumber(trigger.duration or "1")
-            else
-              WeakAuras.prettyPrint("Invalid Prototype found: " .. prototype.name)
-            end
-
-            if prototype.countEvents then
-              if trigger.use_count and type(trigger.count) == "string" and trigger.count ~= "" then
-                counter = Private.ExecEnv.CreateTriggerCounter(trigger.count)
-              else
-                counter = Private.ExecEnv.CreateTriggerCounter()
-              end
-            end
-
-            if(prototype) then
-              local trigger_all_events = prototype.events;
-              internal_events = prototype.internal_events;
-              force_events = prototype.force_events;
-              if prototype.subevents then
-                trigger_subevents = prototype.subevents
-                if trigger_subevents and type(trigger_subevents) == "function" then
-                  trigger_subevents = trigger_subevents(trigger, untrigger)
-                end
-              end
-
-              if trigger.event == "Combat Log" and trigger.subeventPrefix and trigger.subeventSuffix then
-                tinsert(trigger_subevents, trigger.subeventPrefix .. trigger.subeventSuffix)
-              end
-
-              if (type(trigger_all_events) == "function") then
-                trigger_all_events = trigger_all_events(trigger, untrigger);
-              end
-              trigger_events = trigger_all_events.events
-              trigger_unit_events = trigger_all_events.unit_events
-              if (type(internal_events) == "function") then
-                internal_events = internal_events(trigger, untrigger);
-              end
-              if (type(force_events) == "function") then
-                force_events = force_events(trigger, untrigger)
-              end
-
-              if prototype.includePets then
-                includePets = trigger.use_includePets == true and trigger.includePets or nil
-              end
-            end
-          end
-        else -- CUSTOM
-          triggerFunc = WeakAuras.LoadFunction("return "..(trigger.custom or ""), data.id);
-          if (trigger.custom_type == "stateupdate") then
-            tsuConditionVariables = WeakAuras.LoadFunction("return function() return \n" .. (trigger.customVariables or "") .. "\n end", data.id);
-            if not tsuConditionVariables then
-              tsuConditionVariables = function() end
-            end
-            fixUpShowNil = data.information.showNilIsFalse
-          end
-
-          if(trigger.custom_type == "status" or trigger.custom_type == "event" and trigger.custom_hide == "custom") then
-            untriggerFunc = WeakAuras.LoadFunction("return "..(untrigger.custom or ""), data.id);
-            if (not untriggerFunc) then
-              untriggerFunc = trueFunction;
-            end
-          end
-
-          if(trigger.custom_type ~= "stateupdate" and trigger.customDuration and trigger.customDuration ~= "") then
-            durationFunc = WeakAuras.LoadFunction("return "..trigger.customDuration, data.id);
-          end
-          if(trigger.custom_type ~= "stateupdate") then
-            overlayFuncs = {};
-            for i = 1, 7 do
-              local property = "customOverlay" .. i;
-              if (trigger[property] and trigger[property] ~= "") then
-                overlayFuncs[i] = WeakAuras.LoadFunction("return ".. trigger[property], data.id);
-              end
-            end
-          end
-          if(trigger.custom_type ~= "stateupdate" and trigger.customName and trigger.customName ~= "") then
-            nameFunc = WeakAuras.LoadFunction("return "..trigger.customName, data.id);
-          end
-          if(trigger.custom_type ~= "stateupdate" and trigger.customIcon and trigger.customIcon ~= "") then
-            iconFunc = WeakAuras.LoadFunction("return "..trigger.customIcon, data.id);
-          end
-          if(trigger.custom_type ~= "stateupdate" and trigger.customTexture and trigger.customTexture ~= "") then
-            textureFunc = WeakAuras.LoadFunction("return "..trigger.customTexture, data.id);
-          end
-          if(trigger.custom_type ~= "stateupdate" and trigger.customStacks and trigger.customStacks ~= "") then
-            stacksFunc = WeakAuras.LoadFunction("return "..trigger.customStacks, data.id);
-          end
-
-          -- Custom code run on each frame without a throttle
-          local onFrameUpdate = type(trigger.events) == "string" and trigger.events:find("FRAME_UPDATE", 1, true)
-          -- An event trigger has no Check On choice, its check field is unused
-          if trigger.custom_type == "event" and onFrameUpdate then
-            warnAboutEveryFrame = L["A custom trigger runs its code on each frame. Use a less frequent event to lower its CPU cost."]
-          elseif (trigger.custom_type == "status" or trigger.custom_type == "stateupdate")
-            and (trigger.check == "update" or trigger.check == "event" and onFrameUpdate)
-            and (tonumber(trigger.onUpdateThrottle) or 0) <= 0 then
-            warnAboutEveryFrame = L["A custom trigger runs its code on each frame. Set an update throttle to lower its CPU cost."]
-          end
-          if((trigger.custom_type == "status" or trigger.custom_type == "stateupdate") and trigger.check == "update") then
-            trigger_events = {"FRAME_UPDATE"};
-          else
-            local rawEvents = WeakAuras.split(trigger.events);
-            for index, event in pairs(rawEvents) do
-              -- custom events in the form of event:unit1:unit2:unitX are registered with RegisterUnitEvent
-              local trueEvent
-              local hasParam = false
-              local isCLEU = false
-              local isTrigger = false
-              local isUnitEvent = false
-              if event == "CLEU" or event == "COMBAT_LOG_EVENT_UNFILTERED" then
-                warnAboutCLEUEvents = true
-              end
-              for i in event:gmatch("[^:]+") do
-                if not trueEvent then
-                  trueEvent = string.upper(i)
-                  isCLEU = trueEvent == "CLEU" or trueEvent == "COMBAT_LOG_EVENT_UNFILTERED"
-                  isTrigger = trueEvent == "TRIGGER"
-                elseif isCLEU then
-                  local subevent = string.upper(i)
-                  if Private.IsCLEUSubevent(subevent) then
-                    tinsert(trigger_subevents, subevent)
-                    hasParam = true
-                  end
-                elseif Private.InternalEventByIDList[trueEvent] then
-                  tinsert(trigger_events, trueEvent..":"..i)
-                elseif trueEvent:match("^UNIT_") or Private.UnitEventList[trueEvent] then
-                  isUnitEvent = true
-
-                  if string.lower(strsub(i, #i - 3)) == "pets" then
-                    i = strsub(i, 1, #i-4)
-                    includePets = "PlayersAndPets"
-                  elseif string.lower(strsub(i, #i - 7)) == "petsonly" then
-                    includePets = "PetsOnly"
-                    i = strsub(i, 1, #i - 8)
-                  elseif string.lower(i, #i - 5) == "group" then
-                    ignorePartyUnitsInRaid = ignorePartyUnitsInRaid or {}
-                    ignorePartyUnitsInRaid[trueEvent] = true
-                  end
-
-                  trigger_unit_events[i] = trigger_unit_events[i] or {}
-                  tinsert(trigger_unit_events[i], trueEvent)
-                elseif isTrigger then
-                  local requestedTriggernum = tonumber(i)
-                  if requestedTriggernum then
-                    if watched_trigger_events[id] and watched_trigger_events[id][triggernum] and watched_trigger_events[id][triggernum][requestedTriggernum] then
-                      -- if the request is reciprocal (2 custom triggers request each other which would cause a stack overflow) then prevent the reciprocal one being added.
-                    elseif requestedTriggernum and requestedTriggernum ~= triggernum then
-                      watched_trigger_events[id] = watched_trigger_events[id] or {}
-                      watched_trigger_events[id][requestedTriggernum] = watched_trigger_events[id][requestedTriggernum] or {}
-                      watched_trigger_events[id][requestedTriggernum][triggernum] = true
-                    end
-                  end
-                end
-              end
-              if isCLEU then
-                if hasParam then
-                  tinsert(trigger_events, "COMBAT_LOG_EVENT_UNFILTERED")
-                  -- We don't register CLEU events without parameters anymore
-                end
-              elseif isUnitEvent then
-                -- not added to trigger_events
-              elseif isTrigger then
-                -- not added to trigger_events
-              else
-                tinsert(trigger_events, event)
-              end
-            end
-          end
-          if trigger.custom_type == "status" or trigger.custom_type == "stateupdate" then
-            force_events = data.information.forceEvents or "STATUS"
-          end
-          if (trigger.custom_type == "stateupdate") then
-            statesParameter = "full";
-          end
-
-          if(trigger.custom_type == "event" and trigger.custom_hide == "timed") then
-            automaticAutoHide = true;
-            if (not trigger.dynamicDuration) then
-              duration = tonumber(trigger.duration);
-            end
-          end
+        if string.lower(strsub(i, #i - 3)) == "pets" then
+          i = strsub(i, 1, #i-4)
+          entry.includePets = "PlayersAndPets"
+        elseif string.lower(strsub(i, #i - 7)) == "petsonly" then
+          entry.includePets = "PetsOnly"
+          i = strsub(i, 1, #i - 8)
+        elseif string.lower(i, #i - 5) == "group" then
+          entry.ignorePartyUnitsInRaid = entry.ignorePartyUnitsInRaid or {}
+          entry.ignorePartyUnitsInRaid[trueEvent] = true
         end
 
-        events[id] = events[id] or {};
-        events[id][triggernum] = {
-          trigger = trigger,
-          triggerFunc = triggerFunc,
-          untriggerFunc = untriggerFunc,
-          statesParameter = statesParameter,
-          event = trigger.event,
-          events = trigger_events,
-          onUpdateThrottle = trigger.onUpdateThrottle,
-          ignorePartyUnitsInRaid = ignorePartyUnitsInRaid,
-          internal_events = internal_events,
-          loadInternalEventFunc = loadInternalEventFunc,
-          force_events = force_events,
-          unit_events = trigger_unit_events,
-          includePets = includePets,
-          inverse = trigger.use_inverse,
-          subevents = trigger_subevents,
-          durationFunc = durationFunc,
-          overlayFuncs = overlayFuncs,
-          nameFunc = nameFunc,
-          iconFunc = iconFunc,
-          textureFunc = textureFunc,
-          stacksFunc = stacksFunc,
-          loadFunc = loadFunc,
-          duration = duration,
-          automaticAutoHide = automaticAutoHide,
-          tsuConditionVariables = tsuConditionVariables,
-          prototype = prototype,
-          ignoreOptionsEventErrors = data.information.ignoreOptionsEventErrors,
-          counter = counter,
-          fixUpShowNil = fixUpShowNil
-        };
+        trigger_unit_events[i] = trigger_unit_events[i] or {}
+        tinsert(trigger_unit_events[i], trueEvent)
+      elseif isTrigger then
+        local requestedTriggernum = tonumber(i)
+        if requestedTriggernum then
+          if watched_trigger_events[id] and watched_trigger_events[id][triggernum] and watched_trigger_events[id][triggernum][requestedTriggernum] then
+            -- if the request is reciprocal (2 custom triggers request each other which would cause a stack overflow) then prevent the reciprocal one being added.
+          elseif requestedTriggernum and requestedTriggernum ~= triggernum then
+            watched_trigger_events[id] = watched_trigger_events[id] or {}
+            watched_trigger_events[id][requestedTriggernum] = watched_trigger_events[id][requestedTriggernum] or {}
+            watched_trigger_events[id][requestedTriggernum][triggernum] = true
+          end
+        end
       end
+    end
+    if isCLEU then
+      if hasParam then
+        tinsert(trigger_events, "COMBAT_LOG_EVENT_UNFILTERED")
+        -- We don't register CLEU events without parameters anymore
+      end
+    elseif isUnitEvent then
+      -- not added to trigger_events
+    elseif isTrigger then
+      -- not added to trigger_events
+    else
+      tinsert(trigger_events, event)
+    end
+  end
+  return warnAboutCLEUEvents
+end
+
+--- Fills a trigger entry from the custom code of a trigger of type custom.
+---@param data auraData
+---@param triggernum number
+---@param trigger table
+---@param untrigger table
+---@param entry table the trigger entry being built, with its empty event lists
+---@return boolean warnAboutCLEUEvents
+---@return string? everyFrameWarning message when the trigger runs its code on each frame
+local function loadCustomTrigger(data, triggernum, trigger, untrigger, entry)
+  local warnAboutCLEUEvents = false
+  local everyFrameWarning
+  entry.triggerFunc = WeakAuras.LoadFunction("return "..(trigger.custom or ""), data.id);
+  if (trigger.custom_type == "stateupdate") then
+    entry.tsuConditionVariables = WeakAuras.LoadFunction("return function() return \n" .. (trigger.customVariables or "") .. "\n end", data.id);
+    if not entry.tsuConditionVariables then
+      entry.tsuConditionVariables = function() end
+    end
+    entry.fixUpShowNil = data.information.showNilIsFalse
+  end
+
+  if(trigger.custom_type == "status" or trigger.custom_type == "event" and trigger.custom_hide == "custom") then
+    entry.untriggerFunc = WeakAuras.LoadFunction("return "..(untrigger.custom or ""), data.id);
+    if (not entry.untriggerFunc) then
+      entry.untriggerFunc = trueFunction;
     end
   end
 
-  if warnAboutCLEUEvents then
-    Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning", "error",
-                L["|cFFFF0000Support for unfiltered COMBAT_LOG_EVENT_UNFILTERED is deprecated|r\nCOMBAT_LOG_EVENT_UNFILTERED without a filter are disabled as it’s very performance costly.\nFind more information:\nhttps://github.com/WeakAuras/WeakAuras2/wiki/Custom-Triggers#events"])
-  else
-    Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning")
+  if(trigger.custom_type ~= "stateupdate" and trigger.customDuration and trigger.customDuration ~= "") then
+    entry.durationFunc = WeakAuras.LoadFunction("return "..trigger.customDuration, data.id);
+  end
+  if(trigger.custom_type ~= "stateupdate") then
+    entry.overlayFuncs = {};
+    for i = 1, 7 do
+      local property = "customOverlay" .. i;
+      if (trigger[property] and trigger[property] ~= "") then
+        entry.overlayFuncs[i] = WeakAuras.LoadFunction("return ".. trigger[property], data.id);
+      end
+    end
+  end
+  if(trigger.custom_type ~= "stateupdate" and trigger.customName and trigger.customName ~= "") then
+    entry.nameFunc = WeakAuras.LoadFunction("return "..trigger.customName, data.id);
+  end
+  if(trigger.custom_type ~= "stateupdate" and trigger.customIcon and trigger.customIcon ~= "") then
+    entry.iconFunc = WeakAuras.LoadFunction("return "..trigger.customIcon, data.id);
+  end
+  if(trigger.custom_type ~= "stateupdate" and trigger.customTexture and trigger.customTexture ~= "") then
+    entry.textureFunc = WeakAuras.LoadFunction("return "..trigger.customTexture, data.id);
+  end
+  if(trigger.custom_type ~= "stateupdate" and trigger.customStacks and trigger.customStacks ~= "") then
+    entry.stacksFunc = WeakAuras.LoadFunction("return "..trigger.customStacks, data.id);
   end
 
-  if warnAboutEveryFrame then
-    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning", "warning", warnAboutEveryFrame)
+  -- Custom code run on each frame without a throttle
+  local onFrameUpdate = type(trigger.events) == "string" and trigger.events:find("FRAME_UPDATE", 1, true)
+  -- An event trigger has no Check On choice, its check field is unused
+  if trigger.custom_type == "event" and onFrameUpdate then
+    everyFrameWarning = L["A custom trigger runs its code on each frame. Use a less frequent event to lower its CPU cost."]
+  elseif (trigger.custom_type == "status" or trigger.custom_type == "stateupdate")
+    and (trigger.check == "update" or trigger.check == "event" and onFrameUpdate)
+    and (tonumber(trigger.onUpdateThrottle) or 0) <= 0 then
+    everyFrameWarning = L["A custom trigger runs its code on each frame. Set an update throttle to lower its CPU cost."]
+  end
+  if((trigger.custom_type == "status" or trigger.custom_type == "stateupdate") and trigger.check == "update") then
+    entry.events = {"FRAME_UPDATE"};
   else
-    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning")
+    warnAboutCLEUEvents = loadCustomTriggerEvents(data.id, triggernum, trigger, entry)
+  end
+  if trigger.custom_type == "status" or trigger.custom_type == "stateupdate" then
+    entry.force_events = data.information.forceEvents or "STATUS"
+  end
+  if (trigger.custom_type == "stateupdate") then
+    entry.statesParameter = "full";
   end
 
-  -- Custom text (%c) run on each frame without a throttle
+  if(trigger.custom_type == "event" and trigger.custom_hide == "timed") then
+    entry.automaticAutoHide = true;
+    if (not trigger.dynamicDuration) then
+      entry.duration = tonumber(trigger.duration);
+    end
+  end
+  return warnAboutCLEUEvents, everyFrameWarning
+end
+
+--- Shows or clears the warning about a custom text (%c) run on each frame without a throttle.
+---@param data auraData
+local function updateCustomTextWarning(data)
   local customTextEveryFrame = false
   if type(data.customText) == "string" and data.customText ~= "" and data.customTextUpdate == "update"
     and (tonumber(data.customTextUpdateThrottle) or 0) <= 0 then
@@ -2074,6 +2032,70 @@ function GenericTrigger.Add(data, region)
   else
     Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_text_warning")
   end
+end
+
+--- Adds a display, creating all internal data structures for all triggers.
+---@param data auraData
+---@param region table
+function GenericTrigger.Add(data, region)
+  local id = data.id;
+  events[id] = nil;
+  watched_trigger_events[id] = nil
+
+  local warnAboutCLEUEvents = false
+  local warnAboutEveryFrame = false
+
+  for triggernum, triggerData in ipairs(data.triggers) do
+    local trigger, untrigger = triggerData.trigger, triggerData.untrigger
+    local triggerType;
+    if(trigger and type(trigger) == "table") then
+      triggerType = trigger.type;
+      if(Private.category_event_prototype[triggerType] or triggerType == "custom") then
+        local entry = {
+          trigger = trigger,
+          events = {},
+          onUpdateThrottle = trigger.onUpdateThrottle,
+          internal_events = {},
+          force_events = false,
+          unit_events = {},
+          inverse = trigger.use_inverse,
+          subevents = {},
+          ignoreOptionsEventErrors = data.information.ignoreOptionsEventErrors,
+        }
+        if(Private.category_event_prototype[triggerType]) then
+          loadPrototypeTrigger(id, trigger, untrigger, entry)
+        else -- CUSTOM
+          local customWarnsAboutCLEUEvents, everyFrameWarning = loadCustomTrigger(data, triggernum, trigger, untrigger, entry)
+          if customWarnsAboutCLEUEvents then
+            warnAboutCLEUEvents = true
+          end
+          if everyFrameWarning then
+            warnAboutEveryFrame = everyFrameWarning
+          end
+        end
+        -- Read after loading: an unknown event is reset to the default prototype event
+        entry.event = trigger.event
+
+        events[id] = events[id] or {};
+        events[id][triggernum] = entry;
+      end
+    end
+  end
+
+  if warnAboutCLEUEvents then
+    Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning", "error",
+                L["|cFFFF0000Support for unfiltered COMBAT_LOG_EVENT_UNFILTERED is deprecated|r\nCOMBAT_LOG_EVENT_UNFILTERED without a filter are disabled as it’s very performance costly.\nFind more information:\nhttps://github.com/WeakAuras/WeakAuras2/wiki/Custom-Triggers#events"])
+  else
+    Private.AuraWarnings.UpdateWarning(data.uid, "spammy_event_warning")
+  end
+
+  if warnAboutEveryFrame then
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning", "warning", warnAboutEveryFrame)
+  else
+    Private.AuraWarnings.UpdateWarning(data.uid, "every_frame_warning")
+  end
+
+  updateCustomTextWarning(data)
 
   Private.UpdateRestrictedTriggerWarnings(data)
 end
@@ -2173,7 +2195,7 @@ do
 
   ---@param hand string
   ---@return boolean?
-  function WeakAuras.IsTargetInSwingRange(hand)
+  function Private.ExecEnv.IsTargetInSwingRange(hand)
     local swingType = swingTypeByHand[hand]
     if not swingType then
       return nil
@@ -3366,7 +3388,7 @@ do
   ---@param ignoreSpellKnown boolean?
   ---@param track string? "auto", "charges" or "cooldown"
   ---@param showLossOfControl boolean?
-  function WeakAuras.GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track, showLossOfControl)
+  function Private.ExecEnv.GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track, showLossOfControl)
     return SpellDetails:GetSpellCooldownDurationObject(id, showgcd, ignoreSpellKnown, track, showLossOfControl)
   end
 
@@ -3381,7 +3403,7 @@ do
     return SpellDetails:GetSpellCharges(id, ignoreSpellKnown)
   end
 
-  function WeakAuras.IsSpellCooldownSecret(id)
+  function Private.ExecEnv.IsSpellCooldownSecret(id)
     local spellDetail = SpellDetails.data[id]
     return spellDetail and spellDetail.secret or false
   end
