@@ -10,15 +10,30 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.13.0',
-  dateString = '2026-10-21',
+  versionString = '1.14.0',
+  dateString = '2026-10-22',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- The combo point pips of the Rogue and Druid HUDs now follow the target
-- Show Absorb and Show Heal Absorb options in the Health trigger
-- The options toolbar fits in the window, in French too
-- Clearer texts, and a tutorial section for ForeverAuras users
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.13.0 (2026-10-21):
+- /wa demo: sample timers start and end at random, like in a fight
+- Start Collapsed of author options goes through Undo and Redo
+- Sample timers keep looping when the options open again
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.14.0 (2026-10-22):
+
+Changed:
+
+- /wa demo: sample timers now start and end at random, like cooldowns and buffs in a fight. Each one runs for 4 to 20 seconds with 1 to 5 stacks, hides for 1 to 6 seconds, then starts again. Aura (Modern) samples show the same timer and stacks. The demo ends when the options close
+- Author options: Start Collapsed on an option group now goes through Undo and Redo
+- Custom code: WeakAuras.IsTargetInSwingRange, WeakAuras.GetSpellCooldownDurationObject, WeakAuras.IsSpellCooldownSecret and WeakAuras.IsSecretStateActive are removed from the WeakAuras table. Triggers and conditions that use them still work
+
+Fixed:
+
+- Options: sample timers stopped looping from the second opening of the options in a session (bug also in WeakAuras 5.22)
+
+After the update:
+
+Nothing to convert, and the class HUDs do not need an update. Going back to 1.13 is possible. Custom code that calls one of the four removed WeakAuras functions above stops working: remove the call.
+
+1.13.0 (2026-10-21):
 
 New:
 
