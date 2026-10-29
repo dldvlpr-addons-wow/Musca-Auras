@@ -9,37 +9,21 @@ local InPreview = Shared.InPreview
 local Join = Shared.Join
 local Listed = Shared.Listed
 
-local function ResolveFojjiRecordedSound(phrase)
-  if not (FojjiCore and FojjiCoreDB) then return nil, "The FojjiCore addon is not available." end
-  if FojjiCoreDB.disableTTS then return nil, "FojjiCore has speech turned off." end
-  if FojjiCoreDB.ttsVoiceType ~= "custom" or FojjiCoreDB.ttsRandomFavorites then
-    return nil, "Pick a single recorded voice pack in FojjiCore. Recorded sounds work with neither synthesized speech nor random favorites."
-  end
-  local pack = FojjiCore.voicePacks and FojjiCore.voicePacks[FojjiCoreDB.ttsVoicePack]
-  local file = pack and pack[phrase]
-  if not file then
-    return nil, "The selected FojjiCore voice pack has no recording named '" .. phrase .. "'."
-  end
-  return file
-end
-
 local function SoundFileOf(action)
-  local kind, file, problem = action.sound, nil, nil
-  if kind == " Fojji" then
-    file, problem = ResolveFojjiRecordedSound(action.sound_fojji or "")
-  elseif kind == " custom" then
+  local kind, file = action.sound, nil
+  if kind == " custom" then
     file = action.sound_path
     if tonumber(file) then file = tonumber(file) end
   elseif kind ~= " KitID" then
     file = kind
   end
   if file == nil or file == "" or file == 1 then
-    return nil, problem or "Pick a sound file in the Actions tab."
+    return nil, "Pick a sound file in the Actions tab."
   end
   return file
 end
 
-local SOUND_FIELDS = { "do_sound", "sound", "sound_path", "sound_fojji", "sound_channel" }
+local SOUND_FIELDS = { "do_sound", "sound", "sound_path", "sound_channel" }
 local SOUND_SLOTS = { { "start", "Added", "added" }, { "finish", "Removed", "removed" } }
 
 local function ActionFingerprint(action)

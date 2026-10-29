@@ -2,7 +2,7 @@
 
 <h3 style="text-align: center;"><strong>The WeakAuras you know, with a ready-made HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></h3>
 
-<h3 style="text-align: center;"><a href="https://discord.gg/EyYpyMq2km"><strong>💬 Discord</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/GUIDE.md"><strong>📖 Guide</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/issues"><strong>🐞 Report a bug</strong></a></h3>
+<h3 style="text-align: center;"><a href="https://muscalab.com/addons/musca-auras"><strong>🌐 Website</strong></a> · <a href="https://discord.gg/EyYpyMq2km"><strong>💬 Discord</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/GUIDE.md"><strong>📖 Guide</strong></a> · <a href="https://github.com/dldvlpr-addons-wow/Musca-Auras/issues"><strong>🐞 Report a bug</strong></a></h3>
 
 ***
 
@@ -14,19 +14,32 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 ***
 
-## <span style="color: #3c3;">🆕 New in 1.13 and 1.14</span>
+## <span style="color: #0cf;">🧩 24 utility packs, for every class</span>
+
+On the Packs page (<span style="color: #ffd100;"><strong>/wa</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>), each pack installs in one click.
+
+- <span style="color: #ffd100;"><strong>Combat:</strong></span> Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
+- <span style="color: #ffd100;"><strong>Group and Buffs:</strong></span> Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements (battle rez, soulstone and summon told to your group).
+- <span style="color: #ffd100;"><strong>Target and Enemies:</strong></span> Target Debuffs, Nameplate Aggro, Crowd Control, Armor Shred, Enemy Targets.
+- <span style="color: #ffd100;"><strong>Character:</strong></span> Level Progress, Character Stats, Group Experience, Equipment Sets (click an icon to equip the set).
+- <span style="color: #ffd100;"><strong>World:</strong></span> World Reminders, Campfire (click to sit), Guild Campfires, Object Highlight.
+
+Group Experience and Guild Campfires only show the players who also run the pack.
+
+***
+
+## <span style="color: #3c3;">🆕 New in 1.14 and 1.15</span>
+
+### <span style="color: #0cf;">1.15</span>
+
+- <span style="color: #ffd100;"><strong>Packs page:</strong></span> install the whole class HUD or one block at a time, and 24 utility packs.
+- <span style="color: #ffd100;"><strong>Richer class HUDs:</strong></span> proc sounds, "Fading" reminders, enemy cast bar, ranged swing timer, a Defensives icon, and missing buffs, procs and debuffs added for every class.
+- <span style="color: #ffd100;"><strong>Stock reminders:</strong></span> Rogue poisons and Hunter ammo running low.
 
 ### <span style="color: #0cf;">1.14</span>
 
 - <span style="color: #ffd100;"><strong>Livelier demo mode:</strong></span> in `/wa demo`, sample timers start and end at random, like cooldowns and buffs in a fight.
 - <span style="color: #ffd100;"><strong>Sample timers that keep running</strong></span> when you open the options a second time.
-
-### <span style="color: #0cf;">1.13</span>
-
-- <span style="color: #ffd100;"><strong>Combo points follow your target:</strong></span> the combo point pips of the Rogue and Druid HUDs, and the `%power` text of your own combo point auras, no longer keep the points of the previous target.
-- <span style="color: #ffd100;"><strong>Shields on health:</strong></span> Show Absorb and Show Heal Absorb options in the Health trigger, with the `%absorb` and `%healabsorb` texts.
-- <span style="color: #ffd100;"><strong>Options window that fits,</strong></span> in French too, and clearer texts without technical words.
-- <span style="color: #ffd100;"><strong>Coming from ForeverAuras?</strong></span> A new section of the in-game tutorial explains what each aura becomes.
 
 Full list in the **Files** tab.
 
@@ -35,7 +48,7 @@ Full list in the **Files** tab.
 ## <span style="color: #0cf;">🚀 Quick start</span>
 
 1. **Install** Musca Auras and start the game.
-2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span> and click <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel.
+2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span> and click <span style="color: #ffd100;"><strong>Packs</strong></span> in the toolbar, then <span style="color: #ffd100;"><strong>Whole HUD</strong></span>. The same page installs one HUD block at a time, and the utility packs.
 3. **Make it yours:** type <span style="color: #ffd100;"><strong>/wa</strong></span> to move, resize or change any aura. New to auras? Click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window.
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
@@ -88,7 +101,7 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ## <span style="color: #ff6b35;">🔄 Updating from an older version</span>
 
-Install the latest version, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Class Pack</strong></span> at the top of the New Aura panel. Your positions and options are kept.
+Install the latest version, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Whole HUD</strong></span> on the Packs page. Your positions and options are kept.
 
 - <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> 1.12 converts stance and form auras: an older version no longer reads them correctly.
 - <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.

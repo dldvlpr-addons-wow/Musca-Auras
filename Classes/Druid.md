@@ -228,7 +228,7 @@ Les IDs de talent viennent du DB2 client (Talent.csv, IDs de rang dans l'ordre).
 | Nom | Rangs | Effet court |
 |---|---|---|
 | Improved Wrath | 5 : 16814, 16815, 16816, 16817, 16818 | incantation -0,1 à -0,5 s ; coût -10 à -50 % |
-| Genesis | 5 : absent de Talent.csv ; candidats SpellName seul : 1213163, 1223081 | dégâts/soins périodiques +1 à +5 % |
+| Genesis | 5 : absent de Talent.csv ; candidats SpellName seul : 1213163, 1223081 ; tranché : 1223081 (seule aura réelle : effet 6 aura 108, 1213163 est un soin direct, DB2 70245 relu le 2026-10-26) | dégâts/soins périodiques +1 à +5 % |
 | Moonglow | 3 : 16845, 16846, 16847 | coût sorts offensifs -8 à -25 % |
 | Improved Moonfire | 5 (DB2) : 16821, 16822, 16823, 16824, 16825 | dégâts et critique Moonfire +5 à +10 % |
 | Nature's Majesty | 2 : absent de Talent.csv ; SpellName seul : 1223082 (un seul ID pour 2 rangs) | critique sorts et mêlée +2 à +4 % |
@@ -240,7 +240,7 @@ Les IDs de talent viennent du DB2 client (Talent.csv, IDs de rang dans l'ordre).
 | Improved Starfire | 5 : 16850, 16923, 16924, 16925, 16926 | incantation -0,1 à -0,5 s ; étourdissement 3 à 15 %, 3 s (étourdissement : 16922) |
 | Overgrowth | 4 (DB2) : 17245, 17247, 17248, 17249 | Entangling Roots +1 à +2 cibles |
 | Nature's Grace | 1 : 16880 (aura déclenchée : 16886) | après critique non périodique : incantation et GCD plus rapides de 10 % pendant 3 s |
-| Eclipse | 3 : absent de Talent.csv ; candidats SpellName seul : 408248, 408255, 409813, 441260, 1286115 (non départagés) | 2 prochains Starfire raccourcis de 0,17 à 0,5 s ; jusqu'à 4 charges ; 15 s |
+| Eclipse | 3 : absent de Talent.csv ; candidats SpellName seul : 408248, 408255, 409813, 441260, 1286115 ; tranché : 408255 (seule aura réelle : CumulativeAura 4 = 4 charges décrites, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) | 2 prochains Starfire raccourcis de 0,17 à 0,5 s ; jusqu'à 4 charges ; 15 s |
 | Moonfury | 5 : 16896, 16897, 16899, 16900, 16901 | dégâts Arcane et Nature +2 à +10 % |
 | Moonkin Form | 1 : 24858 (Talent.csv ; sort de forme) | armure objets +360 % ; critique groupe +3 % à 45 m ; 35 % mana de base |
 
@@ -264,9 +264,9 @@ Les IDs de talent viennent du DB2 client (Talent.csv, IDs de rang dans l'ordre).
 | Improved Shifting Power | 2 : absent de Talent.csv ; SpellName seul : 1322670 (un seul ID pour 2 rangs) | recharge Shifting Power -4 à -8 s |
 | Leader of the Pack | 1 : 17007 (Talent.csv) ; autre « Leader of the Pack » dans SpellName : 24932 (voir auras) | critique groupe +3 % à 45 m |
 | Predatory Instincts | 2 : absent de Talent.csv ; SpellName seul : 1223242 (un seul ID pour 2 rangs) | dégâts critiques mêlée +10 à +20 % |
-| Natural Reaction | 5 : absent de Talent.csv ; candidats SpellName seul : 417051, 417053 (non départagés) | esquive +1 à +5 % ; proc 5 rage sur esquive 20 à 100 % |
+| Natural Reaction | 5 : absent de Talent.csv ; candidats SpellName seul : 417051, 417053 ; tranché : 417051 (seule aura réelle : aura 49 esquive, 417053 est un gain de rage direct, DB2 70245 relu le 2026-10-26) | esquive +1 à +5 % ; proc 5 rage sur esquive 20 à 100 % |
 | Rend and Tear | 5 : absent de Talent.csv ; SpellName seul : 1223246 (un seul ID pour 5 rangs) | dégâts mêlée sur cibles saignantes +2 à +10 % |
-| Berserk | 1 : absent de Talent.csv ; candidats : 417141 (SkillLineAbility Feral Combat, seul lié à la classe) ; autres « Berserk » SpellName seul : 23397, 26068, 26615, 26662, 27680, 28498, 365122, 368388, 424759, 442211, 1215885, 1231375, 1237939, 1289125 (non départagés) | recharge 3 min ; 15 s ; critique points de combo +100 % |
+| Berserk | 1 : absent de Talent.csv ; candidats : 417141 (SkillLineAbility Feral Combat, seul lié à la classe) ; autres « Berserk » SpellName seul : 23397, 26068, 26615, 26662, 27680, 28498, 365122, 368388, 424759, 442211, 1215885, 1231375, 1237939, 1289125 ; tranché : 417141 (départage Fojji, seul présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) | recharge 3 min ; 15 s ; critique points de combo +100 % |
 
 ### Restauration (16)
 | Nom | Rangs | Effet court |
@@ -298,7 +298,7 @@ Règle : l'ID d'aura vient de la section « Sorts déclenchés » du DB2 (SpellE
 |---|---|---|---|
 | Clearcasting (proc Omen of Clarity) | 16870 (DB2 : déclenché par Omen of Clarity 16864, talent Équilibre) | proc | DB2 tranche : 16870. 467735 (fichier précédent, wow-forever.gg) ne correspond à aucun déclenchement druide dans le DB2 (voir écarts) ; autres homonymes SpellName : 12536, 16246, 457342. Omen of Clarity : passif listé niveau 20 sur endgametools, mais talent absent de Forever selon wowforevertalents.com (présent dans le DB2) |
 | Nature's Grace (proc) | 16886 (DB2 : déclenché par le talent 16880) | proc | talent, 10 % incantation/GCD, 3 s |
-| Leader of the Pack | 17007 (talent, effet aura Dummy dans le DB2) ; autre candidat « Leader of the Pack » : 24932 (effet aura de groupe, SpellName) | buff joueur / groupe | talent Farouche, +3 % critique à 45 m, exclusif avec Moonkin ; les deux IDs listés, non départagés |
+| Leader of the Pack | 17007 (talent, effet aura Dummy dans le DB2) ; autre candidat « Leader of the Pack » : 24932 (effet aura de groupe, SpellName) | buff joueur / groupe | talent Farouche, +3 % critique à 45 m, exclusif avec Moonkin ; les deux IDs listés ; tranché : 24932 (seule aura réelle pour le buff de groupe : aura 290 critique, 17007 est un dummy, DB2 70245 relu le 2026-10-26) |
 | Moonkin Form / Moonkin Aura | 24858 (forme) ; 24907 (Moonkin Aura, DB2 : déclenché par 24858) ; 24905 (Moonkin Form (Passive)) | buff joueur | Moonkin Form double aussi le taux de proc d'Omen of Clarity (Wowhead Forever, Blizzard) |
 | Mark of the Wild | 1126 / 5232 / 6756 / 5234 / 8907 / 9884 / 9885 | buff joueur | ID de sort, aura non vérifiée |
 | Gift of the Wild | 21849 / 21850 | buff joueur | ID de sort, aura non vérifiée |
@@ -328,8 +328,8 @@ Règle : l'ID d'aura vient de la section « Sorts déclenchés » du DB2 (SpellE
 | Nature's Swiftness | 17116 | buff joueur | ID de sort |
 | Tranquility | 740 / 8918 / 9862 / 9863 | buff joueur (canalisé) | ID de sort |
 | Formes (Bear 5487, Dire Bear 9634, Cat 768, Travel 783, Aquatic 1066, Moonkin 24858) | voir tableau | buff joueur | ID de sort ; Tree Form, candidats SpellName (non départagés) : 775 et 22688 (« Tree Form »), 3122 et 5420 (« Tree Form (Passive) » / « (Passive) 2 »), 439733, 439745, 439766 (« Tree of Life »), 439734 (« Tree of Life (Passive) ») |
-| Eclipse (effet) | candidats SpellName seul : 408248, 408255, 409813, 441260, 1286115 | proc / buff joueur | non départagés ; aucun lien de déclenchement dans le DB2 |
-| Berserk (effet) | candidats : 417141 (SkillLineAbility Feral Combat) ; autres « Berserk » SpellName seul : 23397, 26068, 26615, 26662, 27680, 28498, 365122, 368388, 424759, 442211, 1215885, 1231375, 1237939, 1289125 | buff joueur | non départagés |
+| Eclipse (effet) | candidats SpellName seul : 408248, 408255, 409813, 441260, 1286115 | proc / buff joueur | tranché : 408255 (seule aura réelle : CumulativeAura 4 = 4 charges décrites, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) ; aucun lien de déclenchement dans le DB2 |
+| Berserk (effet) | candidats : 417141 (SkillLineAbility Feral Combat) ; autres « Berserk » SpellName seul : 23397, 26068, 26615, 26662, 27680, 28498, 365122, 368388, 424759, 442211, 1215885, 1231375, 1237939, 1289125 | buff joueur | tranché : 417141 (départage Fojji, seul présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) |
 | Furor (effet) | talent 17056 (+ rangs 17058-17061) ; candidats SpellName « Furor » : 17057, 17099, 1238181 | proc | non départagés ; aucun lien de déclenchement dans le DB2 |
 | Shifting Power (effets) | 1322605 (sort, SkillLineAbility Feral) ; candidats SpellName : 1291059 (« Shifting Power Cooldown Reduction »), 1322670 (« Improved Shifting Power ») | proc / buff joueur | aucun lien de déclenchement dans le DB2 |
 | Autres auras déclenchées (DB2) | Starfire Stun 16922 (Improved Starfire 16850) ; Blood Frenzy 16959 (16958) ; Improved Enrage 17080 (17079) et 17081 (17082) ; Feral Charge 19675 (16979 et 1238122) | proc / debuff cible | |
@@ -359,3 +359,11 @@ Valeur du DB2 gardée dans les tableaux.
 - Les formes requises par sort ne sont données par aucune source ; déduites seulement quand la source l'indique (Rejuvenation) ou par le coût en ressource.
 - Swipe : rangs 1-5 = 779, 780, 769, 9754, 9908 (liste wow-forever.gg).
 - Mana de base (%) et coûts à rang élevé : relevés tels que publiés, non testés en jeu.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Tree Form : 775 (Tree Form) et 439733 (Tree of Life), les deux formes visibles ; 3122, 5420, 439734 et 439766 sont passifs. Formes suivies par la barre de forme, pas par aura.
+- Furor : gain de ressource instantané (effet 30), rien à afficher.
+- Shifting Power (effets) : 1291059 et 1322670 passifs cachés, seul le sort 1322605 compte.

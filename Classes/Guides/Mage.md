@@ -35,7 +35,7 @@ AoE : pré-cast Flamestrike (2120, 2121, 8422, 8423, 10215, 10216) puis spam Arc
 
 ### Procs et buffs à suivre
 - Stacks d'Arcane Blast : ID de l'aura non tranché dans Mage.md (candidats 400573, 400586, 401729, 1300176, 1300177). Chaque stack booste le sort suivant (+10 %) et le coût (+175 % par stack, 4 max). Un autre sort efface les stacks. Le buff améliore aussi le prochain sort de zone (Icy Veins).
-- Missile Barrage : Arcane Missiles gratuit, canalisation deux fois plus rapide. ID non tranché (candidats 400588, 400589, 401736, 467409). Pas de Talent ID. Wowhead niveau 30 : 12 % de chance de ne pas proc même après 4 Blasts.
+- Missile Barrage : Arcane Missiles gratuit, canalisation deux fois plus rapide. tranché : 400589 (lien de déclenchement : 400588 effet 6 aura 42 déclenche 400589, DB2 70245 relu le 2026-10-26) ; autres candidats 400588, 401736, 467409. Pas de Talent ID. Wowhead niveau 30 : 12 % de chance de ne pas proc même après 4 Blasts.
 - Clearcasting (12536, 15 s), via Arcane Concentration (11213, 12574, 12575, 12576, 12577). Wowhead : bugué, proc par cible touchée.
 - Arcane Power (12042) : +30 % dégâts et +30 % coût pendant 15 s.
 - Arcane Intellect (1459, 1460, 1461, 10156, 10157) / Arcane Brilliance (23028) à garder actif.
@@ -90,7 +90,7 @@ Niveau 20 : pré-cast Pyroblast, Fireball.
 AoE : pré-cast Flamestrike puis Arcane Explosion ; Blast Wave (11113, 13018, 13019, 13020, 13021) en groupe tanké.
 
 ### Procs et buffs à suivre
-- Heating Up (Icy Veins : Hot Streak) : empile jusqu'à 3, -25 % temps d'incantation de Pyroblast par stack. Pas de Talent ID ; candidats 400624, 400625, 460878 non tranchés. « Hot Streak » : ID absent de Classes/Mage.md.
+- Heating Up (Icy Veins : Hot Streak) : empile jusqu'à 3, -25 % temps d'incantation de Pyroblast par stack. Pas de Talent ID ; candidats 400624, 400625, 460878 ; tranché : 400625 (seule aura réelle : CumulativeAura 3 = 3 cumuls décrits, DB2 70245 relu le 2026-10-26). « Hot Streak » : ID absent de Classes/Mage.md.
 - Wake of Fire (11078, 11080, 12342) : après un kill, prochain Fire Blast à +50 % crit et -2 s de recharge.
 - Combustion (11129, aura 28682) : +10 % crit par coup, jusqu'à 3 crits (Wowhead overview) ou 4 (page abilities).
 - Impact (11103, aura 12355).
@@ -144,7 +144,7 @@ AoE 3+ (Icy Veins) : Cone of Cold pour les procs, Ice Lance sur non-gelées pour
 Wowhead niveau 30 propose Flamestrike en pré-cast puis Arcane Explosion.
 
 ### Procs et buffs à suivre
-- Fingers of Frost : 15 % de chance sur Chill, le prochain sort traite la cible comme gelée, 15 s. Pas de Talent ID ; candidats 400647, 400669, 400670, 401741 non tranchés.
+- Fingers of Frost : 15 % de chance sur Chill, le prochain sort traite la cible comme gelée, 15 s. Pas de Talent ID ; candidats 400647, 400669, 400670, 401741 ; tranché : 400670 (départage Fojji, seul candidat présent dans un pack Fojji, DB2 70245 relu le 2026-10-26).
 - Frostbite : proc à l'impact (talent 11071, 12496, 12497 ; aura de gel 12494).
 - Clearcasting 12536 si Arcane Concentration (rare en Frost).
 - Armures : Ice Armor (7302, 7320, 10219, 10220) ou Frost Armor.
@@ -214,4 +214,4 @@ Wowhead niveau 30 propose Flamestrike en pré-cast puis Arcane Explosion.
 
 ## Sorts cités sans ID dans Classes/Mage.md
 
-Hot Streak, Read Ley Line, Cannibalize, Wand (Shoot), état Freeze (gel), Missile Barrage / Heating Up / Fingers of Frost / Ignite debuff / stacks Arcane Blast (candidats seulement, non tranchés). Arcane Barrage, Living Bomb, Icy Veins, Arcane Surge et Frozen Orb existent en DB2 mais ne sont pas cités par les guides.
+Hot Streak, Read Ley Line, Cannibalize, Wand (Shoot), état Freeze (gel), Ignite debuff / stacks Arcane Blast (candidats seulement, non tranchés) ; Missile Barrage 400589, Heating Up 400625, Fingers of Frost 400670 (tranchés dans Mage.md). Arcane Barrage, Living Bomb, Icy Veins, Arcane Surge et Frozen Orb existent en DB2 mais ne sont pas cités par les guides.

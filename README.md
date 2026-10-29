@@ -31,6 +31,18 @@ step-by-step recipes for auras that keep working in combat.
 Coming from ForeverAuras? Paste your exported strings in the import window:
 they are converted (tutorial, section 10).
 
+## Utility packs
+
+`/wa`, then Packs: 24 packs for every class, each installed in one click.
+
+- Combat: Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
+- Group and Buffs: Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements.
+- Target and Enemies: Target Debuffs, Nameplate Aggro, Crowd Control, Armor Shred, Enemy Targets.
+- Character: Level Progress, Character Stats, Group Experience, Equipment Sets.
+- World: World Reminders, Campfire, Guild Campfires, Object Highlight.
+
+Group Experience and Guild Campfires only show the players who also run the pack.
+
 ## Installation
 
 Copy the five folders `WeakAuras`, `WeakAurasArchive`, `WeakAurasModelPaths`,
@@ -44,6 +56,8 @@ Wago imports and existing auras load without conversion.
 Do not install it next to another WeakAuras build.
 
 ## Support
+
+Website: https://muscalab.com/addons/musca-auras
 
 Found a bug? https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 

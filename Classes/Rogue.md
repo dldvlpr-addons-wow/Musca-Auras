@@ -124,15 +124,15 @@ Rôles établis avec SpellEffect (DB2 70245) : fabrication = effet CREATE_ITEM (
 | Instant Poison | 4 | 11341 / 11338 / 11335 | 44 | |
 | Instant Poison | 5 | 11342 / 11339 / 11336 | 52 | |
 | Instant Poison | 6 | 11343 / 11340 / 11337 | 60 | DB2 : 11345 et 11346 (« Instant Poison », effet LEARN_SPELL vers 11342 et 11343) ; 28429 « Instant Poison Proc » déclenche 28428, rang non établi |
-| Deadly Poison | 1 | 2835 / 2823 / 2818 ou 434312 | 30 | effet cible, 2 candidats : 2818 (base 6, période 3 s) et 434312 (base 9, période 3 s). 2818 : aura 12 s, 7 dégâts / 3 s (Wowhead Forever) |
-| Deadly Poison | 2 | 2837 / 2824 / 2819 ou 434313 | 38 | effet cible, 2 candidats (2819 base 9, 434313 base 13) |
-| Deadly Poison | 3 | 11357 / 11355 / 11353 ou 434314 | 46 | effet cible, 2 candidats (11353 base 14, 434314 base 20) |
-| Deadly Poison | 4 | 11358 / 11356 / 11354 ou 434315 | 54 | effet cible, 2 candidats (11354 base 18, 434315 base 27) ; 25348 : voir « Écarts avec le DB2 client » |
-| Deadly Poison | 5 | 25347 / 25351 / 25349 ou 434316 | 60 | effet cible, 2 candidats (25349 base 23, 434316 base 34) ; 434312 : aura 12 s, 10 dégâts / 3 s ; 2818 et 434312 sont deux versions distinctes (classic / Forever probable) |
+| Deadly Poison | 1 | 2835 / 2823 / 2818 ou 434312 | 30 | effet cible, 2 candidats : 2818 (base 6, période 3 s) et 434312 (base 9, période 3 s) ; tranché : 2818 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26). 2818 : aura 12 s, 7 dégâts / 3 s (Wowhead Forever) |
+| Deadly Poison | 2 | 2837 / 2824 / 2819 ou 434313 | 38 | effet cible, 2 candidats (2819 base 9, 434313 base 13) ; tranché : 2819 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) |
+| Deadly Poison | 3 | 11357 / 11355 / 11353 ou 434314 | 46 | effet cible, 2 candidats (11353 base 14, 434314 base 20) ; tranché : 11353 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) |
+| Deadly Poison | 4 | 11358 / 11356 / 11354 ou 434315 | 54 | effet cible, 2 candidats (11354 base 18, 434315 base 27) ; tranché : 11354 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) ; 25348 : voir « Écarts avec le DB2 client » |
+| Deadly Poison | 5 | 25347 / 25351 / 25349 ou 434316 | 60 | effet cible, 2 candidats (25349 base 23, 434316 base 34) ; tranché : 25349 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) ; 434312 : aura 12 s, 10 dégâts / 3 s ; 2818 et 434312 sont deux versions distinctes (classic / Forever probable) |
 | Deadly Poison (autres) | - | 3583, 13582, 21787 | - | auras poison de période 10 s (base 2, 2, 3), déclenchées par 10022 (vers 3583) et 21788 (vers 21787) ; 25974 : LEARN_SPELL vers 25347 ; rang non établi |
-| Crippling Poison | 1 | 3420 / 3408 / 3409 ou 25809 | 20 | effet cible, 2 candidats identiques (aura 33, -50) : 3409 et 25809 (wow-forever.gg : tous deux « Rank 1 ») |
+| Crippling Poison | 1 | 3420 / 3408 / 3409 ou 25809 | 20 | effet cible, 2 candidats identiques (aura 33, -50) : 3409 et 25809 (wow-forever.gg : tous deux « Rank 1 ») ; tranché : 3409 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) |
 | Crippling Poison | 2 | 3421 / 11202 / 11201 | 50 | |
-| Mind-numbing Poison | 1 à 3 | R1 5763 / 5761 / 5760 ou 25810 ; R2 8694 / 8693 / 8692 ; R3 11400 / 11399 / 11398 | 24 / 38 / 52 | R1 effet cible, 2 candidats : 5760 (aura 65, -40) et 25810 (aura 65, -50, même valeur que 8692) |
+| Mind-numbing Poison | 1 à 3 | R1 5763 / 5761 / 5760 ou 25810 ; R2 8694 / 8693 / 8692 ; R3 11400 / 11399 / 11398 | 24 / 38 / 52 | R1 effet cible, 2 candidats : 5760 (aura 65, -40) et 25810 (aura 65, -50, même valeur que 8692) ; tranché : 5760 (règle 3, départage Fojji : Rogue UI, DB2 70245 relu le 2026-10-26) |
 | Wound Poison | 1 à 4 | R1 13220 / 13219 / 13218 ; R2 13228 / 13225 / 13222 ; R3 13229 / 13226 / 13223 ; R4 13230 / 13227 / 13224 | 32 / 40 / 48 / 56 | rang de l'effet cible déduit de la valeur (-67, -92, -128, -165) ; 13221 : LEARN_SPELL vers 13220 |
 | Occult Poison | 1 | 458822 / 458821 / 458820 | 54 | 462286 (« Occult Poison I », aura 87, base 4) : autre effet possible, rôle non établi |
 | Occult Poison | 2 | 1214168 / 1214171 / 1214170 | 60 | 1214169 : LEARN_SPELL vers 1214168 |
@@ -213,8 +213,8 @@ IDs hors talents : Blade Flurry 13877 ; Premeditation 14183 ; Hemorrhage 16511 ;
 | Preparation | 1 | 14185 | réinitialise recharges, 10 min |
 | Hemorrhage | 1 | 16511 | 100 % arme, 1 PC |
 | Quietus | 5 | 2 candidats, hors Talent et SkillLineAbility (pas de TabID) : 1231651, 1310728 | +2 à 10 % si cible < 35 % |
-| Cutthroat | 5 | 4 candidats, hors Talent et SkillLineAbility (pas de TabID) : 424980, 462707, 462708, 1241810 | chance Ambush sans furtivité |
-| Thousand Cuts | 1 | 2 candidats, hors Talent et SkillLineAbility (pas de TabID) : 1310721, 1310723 | -3 énergie par tick, 5 cumuls |
+| Cutthroat | 5 | 4 candidats, hors Talent et SkillLineAbility (pas de TabID) : 424980, 462707, 462708, 1241810 ; tranché : 462707 (règle 2, seule aura réelle : 275 contre dummy 4 et liaison 332 ; aussi dans Rogue UI, DB2 70245 relu le 2026-10-26) | chance Ambush sans furtivité |
+| Thousand Cuts | 1 | 2 candidats, hors Talent et SkillLineAbility (pas de TabID) : 1310721, 1310723 ; tranché : 1310723 (règle 2, CumulativeAura 5 = 5 cumuls, aura 107 base -3 ; 1310721 est le proc 42 qui le déclenche, DB2 70245 relu le 2026-10-26) | -3 énergie par tick, 5 cumuls |
 
 Talents classiques absents des arbres Forever (IDs Classic lus sur wowforevertalents.com) : Dagger Specialization 13706, Fist Weapon Specialization 13707, Improved Backstab 13733, Mace Specialization 13709, Deadliness 30902, Improved Sap 14076, Sleight of Hand 30892. Remarque : 13706 est aussi listé « Hack and Slash » sur wow-forever.gg (divergence de nom).
 
@@ -242,7 +242,7 @@ Présents dans la table Talent du DB2 70245 (présence ≠ actif en jeu), IDs de
 | Adrenaline Rush | 13750 (SkillLineAbility aura oui) ; 2 autres sorts de même nom hors SkillLineAbility : 28752, 28753 | buff joueur | DB2 70245 |
 | Hemorrhage (debuff) | 16511 (aura distincte non vérifiée) | debuff cible | wow-forever.gg |
 | Kidney Shot / Cheap Shot / Gouge / Sap / Blind / Kick (silence) | IDs des sorts lancés ci-dessus ; auras distinctes non vérifiées | debuff cible | wow-forever.gg |
-| Thousand Cuts (cumuls) | 2 candidats : 1310721, 1310723 (hors Talent et SkillLineAbility) | buff joueur | DB2 70245 |
+| Thousand Cuts (cumuls) | 2 candidats : 1310721, 1310723 (hors Talent et SkillLineAbility) ; tranché : 1310723 (règle 2, CumulativeAura 5, DB2 70245 relu le 2026-10-26) | buff joueur | DB2 70245 |
 | Vanish (aura) | 11327 (R1), 11329 (R2), déclenchés par 1856 / 1857 ; 18461 « Vanish Purge » déclenché par les deux | buff joueur | DB2 70245 (sorts déclenchés) |
 | Improved Sprint / Improved Kick (silence) | 30918 (déclenché par 13743) ; 18425 « Silenced - Kick » (déclenché par 13754) | buff / debuff | DB2 70245 (sorts déclenchés) |
 | Procs de talents | Ruthlessness 14157 (par 14156) ; Relentless Strikes 14181 (par 14179) ; Initiative 13977 (par 13976) ; Setup 15250 (par 13983) ; Improved Expose Armor 1310697 (par 14168) ; Improved Backstab 1310710 (par Puncturing Wounds 1224716) ; Vanished 14093 (par Improved Sap 14076 / 14094 / 14095) | proc | DB2 70245 (sorts déclenchés) |
@@ -252,8 +252,8 @@ Présents dans la table Talent du DB2 70245 (présence ≠ actif en jeu), IDs de
 - Wowhead Forever : les pages de liste (abilities, talents) ne rendent que le formulaire de filtre ; seules des pages `spell=ID` isolées ont pu être lues. Elles n'affichent ni rang ni niveau.
 - endgametools.com : aucun spell ID. wowforevertalents.com : aucun ID Forever de talent ni de sort.
 - IDs d'aura distincts du sort lancé : non vérifiés (la page spell=5171 ne montre aucun lien lié). À confirmer en jeu avec `C_UnitAuras` / `/dump`.
-- Poisons : rôles établis par SpellEffect (voir tableau). Candidats multiples non départagés : effet cible Deadly Poison (2818 / 434312, etc.), Crippling R1 (3409 / 25809), Mind-numbing R1 (5760 / 25810), Pick Lock (1804 / 6461 / 6463).
-- Talents : Quietus, Cutthroat, Thousand Cuts (candidats multiples) et Hack and Slash (3 positions) non départagés ; Remorseless Attacks : ID de l'aura de proc non établi.
+- Poisons : rôles établis par SpellEffect (voir tableau). Candidats multiples : effet cible Deadly Poison (2818 / 434312, etc.), Crippling R1 (3409 / 25809), Mind-numbing R1 (5760 / 25810) tranchés par départage Fojji (2818, 2819, 11353, 11354, 25349 ; 3409 ; 5760 ; DB2 70245 relu le 2026-10-26) ; Pick Lock (1804 / 6461 / 6463) non départagé.
+- Talents : Cutthroat (462707) et Thousand Cuts (1310723) tranchés (règle 2, DB2 70245 relu le 2026-10-26) ; Quietus et Hack and Slash (3 positions) non départagés ; Remorseless Attacks : ID de l'aura de proc non établi.
 
 ### Écarts avec le DB2 client
 
@@ -269,3 +269,10 @@ Présents dans la table Talent du DB2 70245 (présence ≠ actif en jeu), IDs de
 - Durées Slice and Dice, Rupture, Venom : 6 s sur les pages Wowhead spell=ID (base), 9 à 21 s / 8 à 16 s sur endgametools / wowforevertalents (selon PC).
 - Coûts et recharges de Hemorrhage, Coup de Grace, Premeditation, Blade Flurry : non lus (hors Premeditation et Blade Flurry recharges via wowforevertalents).
 - Backstab R8/R9 et Eviscerate R9 : deux rangs niveau 60 (IDs 11281 / 25300, 31016) ; différence R8/R9 non explicitée.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Quietus : 1231651 seul sort non passif, bonus de dégâts sous 35 %, pas affiché.
+- Hack and Slash, Pick Lock : passif ou utilitaire, rien à afficher.

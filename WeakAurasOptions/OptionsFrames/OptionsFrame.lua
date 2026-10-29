@@ -723,6 +723,16 @@ function OptionsPrivate.CreateFrame()
   importButton.frame:Show()
   importButton:SetPoint("LEFT", newButton.frame, "RIGHT", 10, 0)
 
+  local packsButton = AceGUI:Create("WeakAurasToolbarButton")
+  packsButton:SetText(L["Packs"])
+  packsButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\template")
+  packsButton:SetCallback("OnClick", function()
+    frame:OpenPacks()
+  end)
+  packsButton.frame:SetParent(toolbarContainer)
+  packsButton.frame:Show()
+  packsButton:SetPoint("LEFT", importButton.frame, "RIGHT", 10, 0)
+
   local lockButton = AceGUI:Create("WeakAurasToolbarButton")
   lockButton:SetText(L["Lock Positions"])
   lockButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\lockPosition")
@@ -742,7 +752,7 @@ function OptionsPrivate.CreateFrame()
   end
   lockButton.frame:SetParent(toolbarContainer)
   lockButton.frame:Show()
-  lockButton:SetPoint("LEFT", importButton.frame, "RIGHT", 10, 0)
+  lockButton:SetPoint("LEFT", packsButton.frame, "RIGHT", 10, 0)
 
   local magnetButton = AceGUI:Create("WeakAurasToolbarButton")
   magnetButton:SetText(L["Magnetically Align"])
@@ -1419,6 +1429,78 @@ function OptionsPrivate.CreateFrame()
     return nil
   end
 
+  frame.OpenPacks = function(self)
+    self:ClearPicks()
+    self.dynamicTextCodesFrame:Hide()
+    self.pickedOption = "Packs"
+
+    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
+    container:SetLayout("fill")
+    local border = AceGUI:Create("InlineGroup")
+    border:SetLayout("Fill")
+    container:AddChild(border)
+
+    local containerScroll = AceGUI:Create("ScrollFrame")
+    containerScroll:SetLayout("flow")
+    border:AddChild(containerScroll)
+
+    local function AddTitle(text, size)
+      local label = AceGUI:Create("Label")
+      label:SetFont(STANDARD_TEXT_FONT, size, "OUTLINE")
+      label:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+      label:SetText(text)
+      label:SetFullWidth(true)
+      containerScroll:AddChild(label)
+    end
+
+    local function AddPackButton(title, description, icon, onClick)
+      local button = AceGUI:Create("WeakAurasNewButton")
+      button:SetTitle(title)
+      button:SetDescription(description)
+      button:SetIcon(icon)
+      button:SetClick(onClick)
+      containerScroll:AddChild(button)
+    end
+
+    local playerClass = select(2, UnitClass("player"))
+    local classPack = OptionsPrivate.classPacks[playerClass]
+    if classPack then
+      local classIcon = "Interface\\Icons\\ClassIcon_" .. playerClass
+      AddTitle(L["Class HUD"], 24)
+      local intro = AceGUI:Create("Label")
+      intro:SetText(L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."])
+      intro:SetFullWidth(true)
+      containerScroll:AddChild(intro)
+      AddPackButton(L["Whole HUD"], L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"],
+        classIcon, function()
+          OptionsPrivate.PreferClassPackUpdate(classPack)
+          WeakAuras.Import(classPack)
+        end)
+      for _, block in ipairs(OptionsPrivate.GetClassPackBlocks(classPack)) do
+        local texts = OptionsPrivate.classPackBlockTexts[block.label]
+        AddPackButton(texts and L[texts[1]] or block.label, texts and L[texts[2]] or "", classIcon, function()
+          local importData = OptionsPrivate.BuildClassPackBlockImport(classPack, block.label)
+          if importData then
+            OptionsPrivate.PreferClassPackUpdate(classPack)
+            WeakAuras.Import(importData)
+          end
+        end)
+      end
+    end
+
+    AddTitle(L["Utility Packs"], 24)
+    local category
+    for _, utilityPack in ipairs(OptionsPrivate.utilityPacks) do
+      if utilityPack.category ~= category then
+        category = utilityPack.category
+        AddTitle(L[category], 18)
+      end
+      AddPackButton(L[utilityPack.name], L[utilityPack.description], utilityPack.icon, function()
+        WeakAuras.Import(utilityPack.data)
+      end)
+    end
+  end
+
   frame.NewAura = function(self)
     local targetId
     local targetIsDynamicGroup
@@ -1458,19 +1540,6 @@ function OptionsPrivate.CreateFrame()
     local containerScroll = AceGUI:Create("ScrollFrame")
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
-
-    local playerClass = select(2, UnitClass("player"))
-    local classPack = OptionsPrivate.classPacks[playerClass]
-    if classPack then
-      local classPackButton = AceGUI:Create("WeakAurasNewButton")
-      classPackButton:SetTitle(L["Class Pack"])
-      classPackButton:SetDescription(L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"])
-      classPackButton:SetIcon("Interface\\Icons\\ClassIcon_" .. playerClass)
-      classPackButton:SetClick(function()
-        WeakAuras.Import(classPack)
-      end)
-      containerScroll:AddChild(classPackButton)
-    end
 
     if C_AddOns.GetAddOnEnableState("WeakAurasTemplates") ~= Enum.AddOnEnableState.None then
       local simpleLabel = AceGUI:Create("Label")

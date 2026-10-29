@@ -76,7 +76,7 @@ Palier 20 (Wowhead) : Strength of Earth Totem ; Lightning Bolt si on veut rester
 ### Debuffs à maintenir sur la cible
 - Flame Shock (8050, 8052, 8053, 10447, 10448, 29228) : DoT 12 s ; rafraîchir à la fin ; sa présence augmente de 20 % Lava Burst.
 - Frost Shock (8056, 8058, 10472, 10473) : ralentissement 8 s, pour kiter (situationnel).
-- Earthbound (talent, racine d'Earthbind Totem 2484) : candidats non départagés dans Classes/Shaman.md (1222988, 1238289).
+- Earthbound (talent, racine d'Earthbind Totem 2484) : tranché : 1238289 (seule aura réelle : aura 26 racine, 1222988 est un dummy, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) dans Classes/Shaman.md (autre candidat 1222988).
 
 ### Totems à garder actifs
 Strength of Earth Totem (8075...), Searing Totem (3599...) ou Magma Totem (8190...) selon le nombre de cibles, Flametongue Totem (8227...) en groupe, Mana Spring Totem (5675...), Tremor Totem (8143) si peur / charme / sommeil, Grounding Totem (8177, 15 s de recharge), résistances (Frost Resistance Totem 8181, 10478, 10479 ; Fire Resistance Totem 8184, 10537, 10538 ; Nature Resistance Totem 10595, 10600, 10601) selon les dégâts du combat. Searing Totem a une durée courte (30 à 55 s selon le rang) : aura de durée utile.
@@ -126,10 +126,10 @@ Palier 30 (Wowhead) : essentiellement auto-attaques ; chocs ou Lightning Bolt po
 Palier 20 : Rockbiter Weapon (2 mains lente) ou Flametongue Weapon (1 main rapide) ; Lightning Shield entre pulls ; chocs ou Lightning Bolt pour pull ; Searing Totem et Fire Nova en multi-cible.
 
 ### Procs et buffs à suivre
-- Stormstrike : débuff de 12 s sur la cible, +20 % au prochain Lightning Bolt / Chain Lightning / Earth Shock (Classes/Shaman.md : 17364, candidat 410156) ; recharge 8 s.
-- Improved Stormstrike (candidats 1223031, 1238931, non départagés) : rang 2, 100 % de régénération de mana continue après un sort et 100 % de reset de Stormstrike sur esquive ou parade.
-- Maelstrom Weapon : charges (candidats 408498, 408505, 409946 ; 408501 « Maelstrom Ready! », non départagés). Dépenser immédiatement à 5 charges pour éviter de gaspiller. Icy Veins : 5 rangs nécessaires pour être utile, un seul point possible au niveau 30, à éviter.
-- Flurry (16256, 16281, 16282, 16283, 16284) : vitesse d'attaque +10/15/20/25/30 % pendant 3 coups après un critique ; aura candidate 16257, 12966, 17687.
+- Stormstrike : débuff de 12 s sur la cible, +20 % au prochain Lightning Bolt / Chain Lightning / Earth Shock (Classes/Shaman.md : tranché : 17364 (seule aura réelle : aura 271, 410156 sans aura, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26), autre candidat 410156) ; recharge 8 s.
+- Improved Stormstrike (tranché : 1238931 (seule aura réelle : aura 134 régénération de mana, 1223031 est un dummy, DB2 70245 relu le 2026-10-26) ; autre candidat 1223031) : rang 2, 100 % de régénération de mana continue après un sort et 100 % de reset de Stormstrike sur esquive ou parade.
+- Maelstrom Weapon : charges (tranché : 408505 (seule aura réelle : CumulativeAura 5 = 5 charges, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) ; autres candidats 408498, 409946 ; 408501 « Maelstrom Ready! »). Dépenser immédiatement à 5 charges pour éviter de gaspiller. Icy Veins : 5 rangs nécessaires pour être utile, un seul point possible au niveau 30, à éviter.
+- Flurry (16256, 16281, 16282, 16283, 16284) : vitesse d'attaque +10/15/20/25/30 % pendant 3 coups après un critique ; aura tranché : 16257 (départage Fojji, seul dans le pack Fojji Chaman ; 12966 figure dans le pack Guerrier, DB2 70245 relu le 2026-10-26) ; autres candidats 12966, 17687.
 - Weapon imbue (Windfury Weapon) : à lire via GetWeaponEnchantInfo (pas d'aura dans le DB2).
 - Windfury Attack (proc) : ID absent de Classes/Shaman.md (non trouvé dans le DB2) ; sorts d'attaque supplémentaire sous d'autres noms, non confirmés : 8516, 10608, 10610 (Windfury Totem), 8233, 8236 (Windfury Weapon).
 - Lightning Shield (324...10432, déclenché 26545), Rage of the Farseer (425336), Elemental Weapons (16266, 29079, 29080) renforce les imbues.

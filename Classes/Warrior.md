@@ -226,8 +226,8 @@ Les IDs d'aura viennent du DB2 : section « Sorts déclenchés » (source → d�
 
 | Nom | Spell ID de l'aura | Type | Source |
 |---|---|---|---|
-| Enrage (buff après coup reçu) | aucun sort déclenché par 12317 dans SpellEffect (talent : 12317, 13045, 13046, 13047, 13048 ; 12317 = effet aura factice). Candidats par nom exact « Enrage » (SpellName, non liés, non tranché) : 1640, 3019, 5229, 8269, 8599, 12317, 12686, 12795, 12880, 15061, 15097, 15716, 18501, 19516, 19953, 23537, 24318, 25503, 26527, 27897, 28131, 28468, 28747, 28798, 425415, 427066, 440483, 446327, 460862, 461347, 461348, 461349, 462885, 1223458, 1284435, 1288972, 1303979, 1323289 ; parmi eux 12880 porte l'aura 79 (SpellEffect) | proc | wow-forever.gg ; Wowhead : passif caché, proc 30 % |
-| Flurry (buff de vitesse) | aucun sort déclenché par 12319 dans SpellEffect (talent : 12319 ; effet aura factice). Candidats par nom exact « Flurry » (non liés, non tranché) : 12319 (talent), 12966 (SkillLineAbility Fury, aura oui, aura 319 en SpellEffect), 15088, 16256, 16257, 17687 (17687 déclenché par 15088, hors Guerrier) | proc | wow-forever.gg ; Wowhead : passif caché |
+| Enrage (buff après coup reçu) | aucun sort déclenché par 12317 dans SpellEffect (talent : 12317, 13045, 13046, 13047, 13048 ; 12317 = effet aura factice). Candidats par nom exact « Enrage » (SpellName, non liés ; tranché : 12880 (règle 3, départage Fojji : Warrior UI ; 12686 n'apparaît que dans une liste générique, DB2 70245 relu le 2026-10-26)) : 1640, 3019, 5229, 8269, 8599, 12317, 12686, 12795, 12880, 15061, 15097, 15716, 18501, 19516, 19953, 23537, 24318, 25503, 26527, 27897, 28131, 28468, 28747, 28798, 425415, 427066, 440483, 446327, 460862, 461347, 461348, 461349, 462885, 1223458, 1284435, 1288972, 1303979, 1323289 ; parmi eux 12880 porte l'aura 79 (SpellEffect) | proc | wow-forever.gg ; Wowhead : passif caché, proc 30 % |
+| Flurry (buff de vitesse) | aucun sort déclenché par 12319 dans SpellEffect (talent : 12319 ; effet aura factice). Candidats par nom exact « Flurry » (non liés ; tranché : 12966 (règle 3, départage Fojji : Warrior UI ; 16257 n'apparaît que dans Shaman UI, DB2 70245 relu le 2026-10-26)) : 12319 (talent), 12966 (SkillLineAbility Fury, aura oui, aura 319 en SpellEffect), 15088, 16256, 16257, 17687 (17687 déclenché par 15088, hors Guerrier) | proc | wow-forever.gg ; Wowhead : passif caché |
 | Overpower disponible | pas d'aura attendue : utiliser l'utilisabilité du sort 7384 / 7887 / 11584 / 11585 | proc | wow-forever.gg |
 | Revenge disponible | idem : 6572 / 6574 / 7379 / 11600 / 11601 / 25288 | proc | wow-forever.gg |
 | Execute disponible | idem (cible <= 20 % PV) : 5308 / 20658 / 20660 / 20661 / 20662 | proc | wow-forever.gg |
@@ -248,7 +248,7 @@ Les IDs d'aura viennent du DB2 : section « Sorts déclenchés » (source → d�
 | Demoralizing Shout | 1160 à 11556 ; aura = sort lancé (colonne aura oui) | debuff cible | wow-forever.gg |
 | Hamstring | 1715, 7372, 7373 ; aura = sort lancé (colonne aura oui) ; Improved Hamstring 12289 déclenche 23694 (aura) | debuff cible | wow-forever.gg |
 | Mortal Strike (malus soins) | 12294, 21551, 21552, 21553 ; aura = sort lancé (colonne aura oui) | debuff cible | wow-forever.gg, endgametools |
-| Deep Wounds | 12162 (déclenché par 12834) | debuff cible | wow-forever.gg |
+| Deep Wounds | 12162 (déclenché par 12834) : effet Dummy sans aura dans le DB2 70532, saignement 12721 absent ; non suivi | aucun | wow-forever.gg, DB2 70532 |
 | Disarm, Mocking Blow, Concussion Blow | IDs de sort du tableau ; aura = sort lancé (colonne aura oui) | debuff cible | wow-forever.gg |
 | Intimidating Shout | 20511 (déclenché par 5246, aura oui) | debuff cible | wow-forever.gg |
 | Shield Bash (silence), Pummel (silence) | aucun effet d'aura ni sort déclenché pour 72, 1671, 1672, 6552, 6554 (SpellEffect). Homonymes exacts, liens non établis : « Silenced » 1852, 18498 ; « Shield Bash » 11972 ; « Pummel » 12555, 13491, 15615, 19639, 19640. Talents : Improved Shield Bash 12311 déclenche 18498 « Silenced » ; Improved Pummel 12288, 12707, 12708 déclenchent 12705 « Long Daze » | debuff cible | wow-forever.gg |
@@ -282,3 +282,9 @@ Les IDs d'aura viennent du DB2 : section « Sorts déclenchés » (source → d�
 - Coûts non listés (—) pour stances, Bloodrage (20 % PV de base selon wowforevertalents), Victory Rush, Retaliation, Recklessness, Shield Wall, Berserker Rage, Taunt.
 - Piercing Howl, Death Wish, Last Stand, Concussion Blow, Sweeping Strikes : coût/recharge non listés par endgametools ou wowforevertalents.
 - Passifs « Stance Passive » : rôle non vérifié.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Weaponmaster : talents passifs, rien à afficher.

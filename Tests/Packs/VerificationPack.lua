@@ -12,7 +12,7 @@ return function(test)
     assert(ids[child.parent], child.id .. ": unknown parent " .. tostring(child.parent))
     for _, name in ipairs(child.controlledChildren or {}) do assert(ids[name], child.id .. ": unknown child " .. name) end
   end
-  test.Units.DefineUnit("player", { name = "Tester", class = transmit.d.load.class.single, level = 60 })
+  test.Units.DefineUnit("player", { name = "Tester", class = transmit.d.load.class.single or "WARRIOR", level = 60 })
   test.Loader.LoadAddon(test.tocPath, "WeakAuras", { displays = displays })
   test.Environment.Advance(1)
   AuraUtil.IsValidFilterString = function(filter) return filter == "HELPFUL" or filter == "HARMFUL" or filter == "HELPFUL|PLAYER" or filter == "HARMFUL|PLAYER" end

@@ -1000,7 +1000,7 @@ finish_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) aura
 finish_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=31 type="toggle"
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
-finish_sound | name="Sound" order=33 sorting={1=" custom",2=" Fojji",3=554003,4=1} type="select" values={" Fojji"="FojjiCore recorded voice"," custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
@@ -1020,7 +1020,7 @@ start_glow_padding | control="WeakAurasSpinBox" desc="Extra space around the uni
 start_glow_type | desc="Style the glow on the anchored unit frame." disabled=fn:true get=<fn> hidden=fn:true name="Type" order=15 set=<fn> type="select" values={"Proc"="Proc Glow","buttonOverlay"="Pulse Glow"}
 start_header | name="On Show" order=1 type="header"
 start_message_type | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Message Type" order=3 type="select"
-start_sound | name="Sound" order=5 sorting={1=" custom",2=" Fojji",3=554003,4=1} type="select" values={" Fojji"="FojjiCore recorded voice"," custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+start_sound | name="Sound" order=5 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 start_sound_channel | name="Channel" order=5.500000000 type="select"
 start_stop_sound | hidden=true name="Stop sound" order=6 type="execute"
 start_stop_sound_fade | hidden=true name="Fade time" order=8 type="range"
@@ -1050,7 +1050,7 @@ finish_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) aura
 finish_do_message | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Chat Message" order=31 type="toggle"
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
-finish_sound | name="Sound" order=33 sorting={1=" custom",2=" Fojji",3=554003,4=1} type="select" values={" Fojji"="FojjiCore recorded voice"," custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
@@ -1070,7 +1070,7 @@ start_glow_padding | control="WeakAurasSpinBox" desc="Extra space around the uni
 start_glow_type | desc="Style the glow on the anchored unit frame." disabled=fn:false get=<fn> hidden=fn:false name="Type" order=15 set=<fn> type="select" values={"Proc"="Proc Glow","buttonOverlay"="Pulse Glow"}
 start_header | name="On Show" order=1 type="header"
 start_message_type | desc="Blizzard controls aura visibility. Use a condition from another trigger to send chat messages." disabled=true name="Message Type" order=3 type="select"
-start_sound | name="Sound" order=5 sorting={1=" custom",2=" Fojji",3=554003,4=1} type="select" values={" Fojji"="FojjiCore recorded voice"," custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+start_sound | name="Sound" order=5 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 start_sound_channel | name="Channel" order=5.500000000 type="select"
 start_stop_sound | hidden=true name="Stop sound" order=6 type="execute"
 start_stop_sound_fade | hidden=true name="Fade time" order=8 type="range"

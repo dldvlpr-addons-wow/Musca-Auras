@@ -244,12 +244,12 @@ IDs de rang : DB2 Talent.csv (tous les rangs, dans l'ordre). Talents absents de 
 | Suppression | 5 | 18174, 18175, 18176, 18177, 18178 | +1-5% toucher, -4-20% menace |
 | Improved Corruption | 5 | 17810, 17811, 17812, 17813, 17814 | -0,4 à -2 s d'incantation, +2-10% dégâts |
 | Malediction | 5 | 1225177 (SpellName seul ; absent de Talent) | +1-5% dégâts périodiques |
-| Soul Harvest | 2 | candidats SpellName, absents de Talent : 437032, 1242853 | +50/100% régén. mana après kill drainé |
+| Soul Harvest | 2 | candidats SpellName, absents de Talent : 437032, 1242853 ; tranché : 1242853 (règle 2, seule aura réelle : 110 et 134 contre 437032 dummy 4, DB2 70245 relu le 2026-10-26) | +50/100% régén. mana après kill drainé |
 | Improved Drains | 3 | 403511 (SpellName seul ; absent de Talent) | +7/13/20% dégâts Drain et Wrack |
 | Improved Bane of Agony | 2 | 18827, 18829, 18830 | +5/10% dégâts |
 | Fel Concentration | 3 | 17783, 17784, 17785, 17786, 17787 | 23/47/70% anti-interruption |
 | Amplify Curse | 1 | 18288 | +50% prochain Weakness/Agony |
-| Pandemic | 3 | candidats SpellName, absents de Talent : 427712, 429283 | +33/67/100% bonus crit DoTs |
+| Pandemic | 3 | candidats SpellName, absents de Talent : 427712, 429283 ; tranché : 427712 (règle 2, seule aura réelle : 108 base 100 contre 429283 aura 332 de liaison, DB2 70245 relu le 2026-10-26) | +33/67/100% bonus crit DoTs |
 | Malevolence | 5 | candidats SpellName, absents de Talent : 449919, 449920, 1310949 | +1-5% crit Ombre |
 | Nightfall | 2 | 18094, 18095 | 2/4% Shadow Trance (Corruption, Drain Life) |
 | Curse of Exhaustion | 1 | 18223 | -30% vitesse 12 s |
@@ -265,7 +265,7 @@ IDs de rang : DB2 Talent.csv (tous les rangs, dans l'ordre). Talents absents de 
 | Improved Imp | 3 | 18694, 18695, 18696 | +10/20/30% Firebolt, Fire Shield |
 | Demonic Embrace | 5 | 18697, 18698, 18699, 18700, 18701 | +3-15% Endurance |
 | Unholy Power | 5 | 18769, 18770, 18771, 18772, 18773 | +2-10% dégâts démons |
-| Demonic Aegis | 2 | candidats SpellName, absents de Talent : 470279, 1235316 | +15/30% Demon Skin/Armor |
+| Demonic Aegis | 2 | candidats SpellName, absents de Talent : 470279, 1235316 ; tranché : 1235316 (règle 2, seule aura cohérente : 108 base 30 = rang 2, contre 470279 aura 69 base 20, DB2 70245 relu le 2026-10-26) | +15/30% Demon Skin/Armor |
 | Improved Voidwalker | 3 | 18705, 18706, 18707 | +10-30% |
 | Fel Vitality | 3 | 18731, 18743, 18744, 18745, 18746 | +5-15% PV/mana démon |
 | Demonic Energies | 2 | candidats SpellName, absents de Talent : 1225214, 1243028 | soin familier 8/15% des dégâts |
@@ -316,7 +316,7 @@ Seuls les IDs lus sur une page sont listés. Pour tous les DoTs/malédictions, l
 | Curse of the Elements r1-4, Weakness, Recklessness, Tongues, Exhaustion (18223) | identiques aux IDs de sort | debuff cible (malédiction) | DB2 : effet APPLY_AURA porté par le sort lui-même |
 | Backlash | non trouvé (absent du DB2 70245) | proc | aucun sort de ce nom exact ; seuls « Magic Backlash » 4947 et « Void Backlash » 427144 (noms différents, non retenus) ; absent de Talent et SkillLineAbility |
 | Aftermath (daze) | 18118 | debuff déclenché par 18119 (SpellEffect) | DB2 |
-| Pyroclasm (buff) | candidats : 18093, 1293803 ; 18073 déclenche 18350 « Dummy Trigger » (pas une aura) | proc / buff | DB2 SpellName ; 18093 porte APPLY_AURA (SkillLineAbility) |
+| Pyroclasm (buff) | candidats : 18093, 1293803 ; tranché : 1293803 (seule aura sur le lanceur : aura 79 base 10, ImplicitTarget 1 ; 18093 est l'étourdissement aura 12 sur la cible, ImplicitTarget 6, DB2 70245 relu le 2026-10-26) ; 18073 déclenche 18350 « Dummy Trigger » (pas une aura) | proc / buff | DB2 SpellName ; 18093 porte APPLY_AURA (SkillLineAbility) |
 | Shadow and Flame | candidats : 426316, 426449 | proc / buff | DB2 SpellName |
 | Decimation | candidats : 440870, 440873, 440923 | proc / buff | DB2 SpellName |
 | Demonic Sacrifice | 18788 (sans effet APPLY_AURA dans le DB2) | buff | DB2 ; ID d'aura distinct : non trouvé (absent du DB2 70245) |
@@ -341,3 +341,14 @@ Valeur du DB2 gardée dans les tableaux.
 - **Absents de Talent.csv** (IDs du fichier présents dans SkillLineAbility) : Wrack 1316697, Incinerate 412758, Bane of Havoc 1225228, Portal of Summoning 437169.
 - **Talents DB2 absents du fichier** : Improved Firebolt, Improved Lash of Pain, Devastation, Apocalypse/Pyroclasm, Improved Immolate, Emberstorm, Improved Curse of Weakness, Grim Reach, Improved Curse of Exhaustion, Improved Healthstone, Improved Subjugate Demon, Improved Firestone, Improved Spellstone ; plus 6 emplacements sans nom (Affliction 1/1 : 18213, 18372 ; 3/3 : 17864, 18393 ; 1/6 : 18220 ; Démonologie 2/2 : 18748-18752). Probablement retirés par correctif serveur : actif en jeu non vérifié.
 - Aucun ID de la section « Sorts de base » absent du DB2 ou différent.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Malevolence : 449920 (débuff déclenché par 449919) ; bonus passif de critique, pas affiché.
+- Decimation : 440873, seule aura visible, déjà dans le pack.
+- Demonic Brand : 1293696, effet de menace sur la cible, pas affiché.
+- Demonic Knowledge : 412735 (15 s) et 1243120 (sans fin), buff passif de démon, pas affiché.
+- Demonic Pact : 425467, buff de groupe ; pas affiché.
+- Demonic Energies, Shadow and Flame : soin instantané ou passif, rien à afficher.

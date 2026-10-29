@@ -33,7 +33,7 @@ Niveau 20 : Wrath à portée max, Moonfire, Entangling Roots, Wrath.
 Icy Veins (bêta) : Moonfire puis Wrath, Insect Swarm dès le niveau 25 ; Hurricane niveau 40 (hors bêta).
 
 ### Procs et buffs à suivre
-- Eclipse : IDs d'effet non départagés (408248, 408255, 409813, 441260, 1286115 selon Druid.md). Talent lié à la rotation Wrath/Starfire.
+- Eclipse : ID d'effet tranché : 408255 (seule aura réelle : CumulativeAura 4 = 4 charges décrites, présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) ; autres candidats 408248, 409813, 441260, 1286115 selon Druid.md. Talent lié à la rotation Wrath/Starfire.
 - Nature's Grace (16886), proc après critique non périodique.
 - Clearcasting (16870), proc d'Omen of Clarity (talent 16864 ; Omen de base niveau 20 selon Wowhead). Le Moonkin double le taux de proc.
 - Moonkin Form (24858) / Moonkin Aura (24907) : +5 % crit groupe (3 % sur la page Resto).
@@ -86,11 +86,11 @@ Niveaux 10-20 : pré-cast Wrath, Bear Form, Demoralizing Roar, Swipe, Maul.
 
 ### Procs et buffs à suivre
 - Clearcasting (16870).
-- Berserk (effet : ID non départagé, candidat 417141) : 15 s, +100 % crit des générateurs de points, immunité Fear ; en Bear Primal Bite touche 3 cibles sans recharge.
+- Berserk (effet : tranché : 417141 (départage Fojji, seul présent dans un pack Fojji, DB2 70245 relu le 2026-10-26)) : 15 s, +100 % crit des générateurs de points, immunité Fear ; en Bear Primal Bite touche 3 cibles sans recharge.
 - Enrage (5229) : 30 rage sur 10 s, réduit l'armure.
 - Frenzied Regeneration (22842), Barkskin (22812), Dash (1850/9821, +60 % vitesse selon la plupart des pages), Prowl (5215/6783/9913).
-- Leader of the Pack (17007 ou 24932, non départagés) : +3 % crit groupe.
-- Natural Reaction (ID non départagé : 417051, 417053) : esquive et 5 rage.
+- Leader of the Pack (17007 ou 24932 ; tranché : 24932 (seule aura réelle pour le buff de groupe : aura 290 critique, 17007 est un dummy, DB2 70245 relu le 2026-10-26)) : +3 % crit groupe.
+- Natural Reaction (tranché : 417051 (seule aura réelle : aura 49 esquive, 417053 est un gain de rage direct, DB2 70245 relu le 2026-10-26) ; autre candidat 417053) : esquive et 5 rage.
 - Blood Frenzy : proc de point de combo ou de rage (aura 16959).
 - Elune's Light (Night Elf) : +10 % crit 15 s ; ID absent de Classes/Druid.md.
 
@@ -176,4 +176,4 @@ Swiftmend, Nature's Swiftness, Improved Tranquility (CD 2 min), Gift of the Eart
 - Omen of Clarity : de base niveau 20 (Wowhead) ; Druid.md le signale absent de la liste de sorts wow-forever.gg ; le proc Clearcasting 16870 reste l'ID à suivre.
 
 ## Sorts cités sans ID trouvé
-Tiger's Fury, King of the Jungle, Elune's Light, Nature's Splendor (SpellName seul 1223083 non confirmé comme sort), Eclipse (candidats non départagés), Berserk (candidat 417141 non confirmé), Natural Reaction (candidats non départagés), Genesis (candidats non départagés), Furor effet (non départagé), Omen of Clarity sort (seul le proc 16870 est tranché), Improved Tranquility, Nature's Majesty, Gift of Nature, Improved Rejuvenation, Subtlety, Heart of the Wild, Living Spirit, Vengeance, Natural Instinct, Naturalist, Feral Swiftness.
+Tiger's Fury, King of the Jungle, Elune's Light, Nature's Splendor (SpellName seul 1223083 non confirmé comme sort), Eclipse (tranché : 408255 (seule aura réelle, DB2 70245 relu le 2026-10-26)), Berserk (tranché : 417141 (départage Fojji, DB2 70245 relu le 2026-10-26)), Natural Reaction (tranché : 417051 (seule aura réelle, DB2 70245 relu le 2026-10-26)), Genesis (tranché : 1223081 (seule aura réelle, DB2 70245 relu le 2026-10-26)), Furor effet (non départagé), Omen of Clarity sort (seul le proc 16870 est tranché), Improved Tranquility, Nature's Majesty, Gift of Nature, Improved Rejuvenation, Subtlety, Heart of the Wild, Living Spirit, Vengeance, Natural Instinct, Naturalist, Feral Swiftness.

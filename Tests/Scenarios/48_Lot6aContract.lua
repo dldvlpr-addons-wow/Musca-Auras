@@ -1026,23 +1026,18 @@ return function(test)
 
     -- MigrateSounds and Migrate.
     do
-      local savedFojjiCore, savedFojjiDB = FojjiCore, FojjiCoreDB
-      FojjiCore, FojjiCoreDB = nil, nil
       local function Migrated(options, actions)
         local data = { blizzardAuraDisplay = options, actions = actions }
         Display.MigrateSounds(data)
         return data
       end
 
-      local data = Migrated({ soundMode = "fojji", soundAdded = "clap", soundRemoved = "boom" })
+      local data = Migrated({ soundMode = "voice", soundAdded = "clap", soundRemoved = "boom" })
       local start, finish = data.actions.start, data.actions.finish
-      Same(start.do_sound, true, "fojji start sound")
-      Same(start.sound, " Fojji", "fojji start kind")
-      Same(start.sound_fojji, "clap", "fojji start word")
-      Same(start.sound_channel, "Master", "default channel")
-      Same(start.sound_path, nil, "no path for fojji")
-      Same(finish.do_sound, true, "fojji finish sound")
-      Same(finish.sound_fojji, "boom", "fojji finish word")
+      Same(start.do_sound, nil, "voice start sound dropped")
+      Same(start.sound, nil, "voice start kind dropped")
+      Same(start.sound_path, nil, "no path for voice")
+      Same(finish.do_sound, nil, "voice finish sound dropped")
       local options = data.blizzardAuraDisplay
       Same(options.actionSounds, true, "migration flag")
       for _, key in ipairs({ "soundMode", "soundAdded", "soundRemoved", "soundAddedFile", "soundRemovedFile" }) do
@@ -1053,13 +1048,13 @@ return function(test)
       Same(data.actions.start.sound, " custom", "file start kind")
       Same(data.actions.start.sound_path, "added.ogg", "file start prefers the file field")
       Same(data.actions.finish.sound_path, "removed.ogg", "file finish falls back to the plain field")
-      Same(data.actions.start.sound_fojji, nil, "no fojji word for files")
       data = Migrated({ soundMode = "custom", soundAdded = 567, soundAddedFile = "ignored.ogg" })
       Same(data.actions.start.sound, " custom", "other mode kind")
       Same(data.actions.start.sound_path, "567", "path is a string")
+      Same(data.actions.start.sound_channel, "Master", "migrated sounds play on Master")
       Same(data.actions.finish.do_sound, nil, "no sound for a missing value")
-      data = Migrated({ soundMode = "fojji", soundAdded = "x", soundAddedFile = "ignored.ogg" })
-      Same(data.actions.start.sound_fojji, "x", "file field only used in file mode")
+      data = Migrated({ soundMode = "custom", soundAdded = "x", soundAddedFile = "ignored.ogg" })
+      Same(data.actions.start.sound_path, "x", "file field only used in file mode")
 
       for _, mode in ipairs({ "none" }) do
         data = Migrated({ soundMode = mode, soundAdded = "x", soundRemoved = "y" })
@@ -1072,37 +1067,20 @@ return function(test)
       Same(type(data.actions.finish), "table", "finish action created anyway")
       Same(data.blizzardAuraDisplay.actionSounds, true, "flag set without mode")
       for _, value in ipairs({ "", 1 }) do
-        data = Migrated({ soundMode = "fojji", soundAdded = value, soundRemoved = "y" })
+        data = Migrated({ soundMode = "custom", soundAdded = value, soundRemoved = "y" })
         Same(data.actions.start.do_sound, nil, "value " .. tostring(value) .. " skipped")
         Same(data.actions.finish.do_sound, true, "other event still migrated")
       end
-      data = Migrated({ soundMode = "fojji", soundAdded = "x", soundRemoved = "y" },
+      data = Migrated({ soundMode = "custom", soundAdded = "x", soundRemoved = "y" },
         { start = { do_sound = true, sound = "mine.ogg" }, finish = { do_glow = true } })
       Same(data.actions.start.sound, "mine.ogg", "existing sound kept")
-      Same(data.actions.start.sound_fojji, nil, "existing sound untouched")
+      Same(data.actions.start.sound_path, nil, "existing sound untouched")
       Same(data.actions.finish.do_glow, true, "existing finish action kept")
       Same(data.actions.finish.do_sound, true, "finish sound added beside it")
-      data = Migrated({ actionSounds = true, soundMode = "fojji", soundAdded = "x", soundRemoved = "y" })
+      data = Migrated({ actionSounds = true, soundMode = "voice", soundAdded = "x", soundRemoved = "y" })
       Same(data.actions, nil, "already migrated: no actions")
-      Same(data.blizzardAuraDisplay.soundMode, "fojji", "already migrated: fields kept")
+      Same(data.blizzardAuraDisplay.soundMode, "voice", "already migrated: fields kept")
       Same(data.blizzardAuraDisplay.soundAdded, "x", "already migrated: values kept")
-
-      -- Channel.
-      FojjiCore, FojjiCoreDB = {}, {}
-      local function Channel(value)
-        FojjiCoreDB.ttsSoundChannel = value
-        return Migrated({ soundMode = "fojji", soundAdded = "x" }).actions.start.sound_channel
-      end
-      Same(Channel("Sound Effects"), "SFX", "Sound Effects channel")
-      for _, name in ipairs({ "Master", "SFX", "Music", "Ambience", "Dialog" }) do Same(Channel(name), name, name .. " channel") end
-      Same(Channel("Bogus"), "Master", "unknown channel")
-      Same(Channel(nil), "Master", "no channel")
-      Same(Channel("sfx"), "Master", "channel names are case-sensitive")
-      FojjiCore, FojjiCoreDB = nil, { ttsSoundChannel = "Music" }
-      Same(Migrated({ soundMode = "fojji", soundAdded = "x" }).actions.start.sound_channel, "Master", "channel needs FojjiCore")
-      FojjiCore, FojjiCoreDB = {}, nil
-      Same(Migrated({ soundMode = "fojji", soundAdded = "x" }).actions.start.sound_channel, "Master", "channel needs FojjiCoreDB")
-      FojjiCore, FojjiCoreDB = nil, nil
 
       -- Migrate.
       local migrateCalls = {}
@@ -1183,14 +1161,40 @@ return function(test)
       Same(subs[4].text_alpha, nil, "other sub regions untouched")
 
       local sounds = { id = "SS", regionType = "icon", triggers = { { trigger = { type = "secretAura" } } },
-        blizzardAuraDisplay = { soundMode = "fojji", soundAdded = "x" } }
+        blizzardAuraDisplay = { soundMode = "custom", soundAdded = "x" } }
       Display.Migrate(sounds)
-      Same(sounds.actions.start.sound_fojji, "x", "Migrate migrates the sounds")
-      local snapshot = sounds.actions.start.sound_fojji .. tostring(sounds.blizzardAuraDisplay.actionSounds)
+      Same(sounds.actions.start.sound_path, "x", "Migrate migrates the sounds")
+      local snapshot = sounds.actions.start.sound_path .. tostring(sounds.blizzardAuraDisplay.actionSounds)
       Display.Migrate(sounds)
-      Same(sounds.actions.start.sound_fojji .. tostring(sounds.blizzardAuraDisplay.actionSounds), snapshot, "second pass changes nothing")
+      Same(sounds.actions.start.sound_path .. tostring(sounds.blizzardAuraDisplay.actionSounds), snapshot, "second pass changes nothing")
+      local older = { id = "OV", regionType = "icon", triggers = { { trigger = { type = "secretAura" } } },
+        blizzardAuraDisplay = { actionSounds = true }, actions = {
+          start = { do_sound = true, sound = " Older", sound_older = "clap", sound_channel = "Music" },
+          finish = { do_sound = true, sound = " custom", sound_path = "a.ogg" } } }
+      Display.Migrate(older)
+      Same(older.actions.start.do_sound, nil, "older voice sound dropped")
+      Same(older.actions.start.sound, nil, "older voice kind dropped")
+      Same(older.actions.start.sound_older, nil, "older phrase field cleared")
+      Same(older.actions.start.sound_channel, "Music", "channel kept")
+      Same(older.actions.finish.sound, " custom", "custom sound untouched")
+      Same(older.actions.finish.sound_path, "a.ogg", "custom path untouched")
+      local noActions = { id = "NA", regionType = "icon", triggers = { { trigger = { type = "secretAura" } } },
+        blizzardAuraDisplay = { actionSounds = true } }
+      Display.Migrate(noActions)
+      Same(noActions.actions, nil, "no actions: nothing renamed")
+      local switched = { id = "SW", regionType = "icon", triggers = { { trigger = { type = "secretAura" } } },
+        blizzardAuraDisplay = { actionSounds = true }, actions = {
+          start = { do_sound = true, sound = " custom", sound_path = "b.ogg", sound_older = "p1" } } }
+      Display.Migrate(switched)
+      Same(switched.actions.start.sound_older, nil, "older phrase field dropped after a kind switch")
+      Same(switched.actions.start.sound_path, "b.ogg", "switched custom path kept")
+      local plain = { id = "PL", regionType = "icon", triggers = { { trigger = { type = "aura2" } } },
+        actions = { finish = { do_sound = true, sound = " Older", sound_older = "p2" } } }
+      Display.Migrate(plain)
+      Same(plain.actions.finish.sound_older, nil, "older phrase field dropped without a secret trigger")
+      Same(plain.actions.finish.sound, nil, "voice kind dropped without a secret trigger")
+      Same(plain.actions.finish.do_sound, nil, "voice sound dropped without a secret trigger")
       for name, fn in pairs(originals) do Display[name] = fn end
-      FojjiCore, FojjiCoreDB = savedFojjiCore, savedFojjiDB
     end
 
     -- Sounds and preview notice, driven through Apply with stand-in native containers.
@@ -1430,43 +1434,6 @@ return function(test)
       region, data = Mounted("SoundNoEnum", { unit = "player", auraspellids = { 1234 } }, { start = { do_sound = true, sound = "a.ogg" } })
       assert(SoundWarning("SoundNoEnum"), "missing trigger enum: warning")
       Enum.UnitAuraSoundTrigger = savedTrigger
-
-      -- Recorded Fojji sounds.
-      local savedFojjiCore, savedFojjiDB = FojjiCore, FojjiCoreDB
-      local function Fojji(id)
-        Reset()
-        region, data = Mounted(id, { unit = "player", auraspellids = { 1234 } },
-          { start = { do_sound = true, sound = " Fojji", sound_fojji = "clap", sound_channel = "Music" } })
-        return SoundWarning(id)
-      end
-      FojjiCore, FojjiCoreDB = nil, nil
-      assert(Fojji("FojjiMissing"), "FojjiCore not loaded: warning")
-      Same(#added, 0, "FojjiCore not loaded: nothing registered")
-      FojjiCore, FojjiCoreDB = { voicePacks = { Pack = { clap = "Sound\\Clap.ogg", number = 4242 } } }, { ttsVoiceType = "custom", ttsVoicePack = "Pack" }
-      Same(Fojji("FojjiOk"), nil, "recording found: no warning")
-      Same(#added, 1, "recording found: registered")
-      Same(added[1].info.soundFileName, "Sound\\Clap.ogg", "recording file")
-      Same(added[1].info.outputChannel, "Music", "recording channel")
-      FojjiCoreDB.ttsRandomFavorites = true
-      assert(Fojji("FojjiRandom"), "random favorites: warning")
-      Same(#added, 0, "random favorites: nothing registered")
-      FojjiCoreDB.ttsRandomFavorites = nil
-      FojjiCoreDB.ttsVoiceType = "synth"
-      assert(Fojji("FojjiSynth"), "synthesized voice: warning")
-      FojjiCoreDB.ttsVoiceType = "custom"
-      FojjiCoreDB.disableTTS = true
-      assert(Fojji("FojjiDisabled"), "speech disabled: warning")
-      FojjiCoreDB.disableTTS = nil
-      FojjiCoreDB.ttsVoicePack = "Absent"
-      assert(Fojji("FojjiNoPack"), "missing pack: warning")
-      FojjiCoreDB.ttsVoicePack = "Pack"
-      FojjiCore.voicePacks.Pack.clap = nil
-      assert(Fojji("FojjiNoRecording"), "missing recording: warning")
-      FojjiCore.voicePacks.Pack.clap = 4242
-      Same(Fojji("FojjiNumber"), nil, "numeric recording: no warning")
-      Same(added[1].info.soundFileID, 4242, "numeric recording becomes a file ID")
-      Same(added[1].info.soundFileName, nil, "numeric recording has no name")
-      FojjiCore, FojjiCoreDB = savedFojjiCore, savedFojjiDB
 
       -- Preview notice.
       local function NoticeAura(id, trigger)

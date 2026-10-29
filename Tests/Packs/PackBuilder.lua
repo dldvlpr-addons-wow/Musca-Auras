@@ -31,6 +31,14 @@ local SIZES = {
   reminder = {34, 28}, proc = {30, 22}, aura = {30, 22}, main = {40, 30}, utility = {34, 26}, totem = {30, 22},
 }
 
+-- Played when a proc or a cooldown aura shows.
+local READY_SOUND = "Interface\\AddOns\\WeakAuras\\Media\\Sounds\\RobotBlip.ogg"
+-- Blessings of Protection, Freedom and Sacrifice, Power Word: Shield ranks, Pain Suppression, then defensive potion
+-- buffs, from any caster. A class adds its own shields with spec.defensives.
+local DEFENSIVES = { 1022, 5599, 10278, 1044, 6940, 20729,
+  17, 592, 600, 3747, 6065, 6066, 10898, 10899, 10900, 10901, 402004,
+  6615, 3169, 2379, 7840, 3680, 11392, 24364, 17540, 24360 }
+
 local TOTEM_ICONS = {
   "Interface\\Icons\\Spell_Fire_SearingTotem", "Interface\\Icons\\Spell_Nature_StoneSkinTotem",
   "Interface\\Icons\\INV_Spear_04", "Interface\\Icons\\Spell_Nature_Windfury",
@@ -82,6 +90,37 @@ local function AuraTrigger(ids, showOn, unit, kind)
   return { type = "secretAura", unit = unit or "player", debuffType = kind or "HELPFUL",
     useExactSpellId = true, auraspellids = Ids(ids), secretUseSpellIDs = true,
     nativeFilters = { PLAYER = true }, secretShowOn = showOn }
+end
+
+local function IdSet(ids)
+  local keys = {}
+  for index, spellId in ipairs(ids) do keys[index] = "[" .. spellId .. "] = true" end
+  return "{ " .. table.concat(keys, ", ") .. " }"
+end
+
+-- Stacks counted from the player's casts, for a stacking debuff on the player that spell ID filters miss in combat:
+-- each cast of add adds one stack up to max and restarts the duration, a cast of reset (optional) drops them.
+local function CastCountTrigger(casts, max, threshold)
+  local code = [[function(allstates, event, unit, castGUID, spellID)
+  if event ~= "UNIT_SPELLCAST_SUCCEEDED" or not spellID or issecretvalue and issecretvalue(spellID) then
+    return false
+  end
+  local env, now = aura_env, GetTime()
+  env.add, env.reset = env.add or %s, env.reset or %s
+  if env.add[spellID] then
+    env.stacks = (env.expires or 0) > now and math.min((env.stacks or 0) + 1, %d) or 1
+    env.expires = now + %d
+  elseif env.reset[spellID] then
+    env.stacks = 0
+  else
+    return false
+  end
+  allstates[""] = { show = env.stacks >= %d, changed = true, progressType = "timed", duration = %d,
+    expirationTime = env.expires, autoHide = true, stacks = env.stacks, icon = C_Spell.GetSpellTexture(spellID) }
+  return true
+end]]
+  return { type = "custom", custom_type = "stateupdate", check = "event", events = "UNIT_SPELLCAST_SUCCEEDED:player",
+    custom = code:format(IdSet(casts.add), IdSet(casts.reset or {}), max, casts.duration, threshold, casts.duration) }
 end
 
 local function PowerTrigger(powerType, threshold, above, unit)
@@ -244,7 +283,7 @@ function Pack.Build(spec)
     options.known = options.known or entry.known or entry.spell
     options.unknown, options.form, options.level, options.warn = entry.unknown, entry.form, entry.level, entry.warn
     options.gate, options.offhand, options.flash = options.gate or entry.gate, entry.offhand, entry.flash
-    options.needsPet = entry.needsPet
+    options.needsPet, options.sound = entry.needsPet, entry.sound
     options.texture, options.spec = entry.texture, entry.spec
     return options
   end
@@ -297,6 +336,8 @@ function Pack.Build(spec)
     data.iconSource, data.displayIcon = -1, options.texture
     data.cooldown, data.cooldownTextDisabled = true, true
     data.desaturate, data.color, data.zoom = false, {1, 1, 1, 1}, 0.3
+    -- A sound on a ForeverAuras secret aura is not verified.
+    if options.sound and not (FOREVER_AURAS and trigger.type == "secretAura") then data.actions.start = { do_sound = true, sound = READY_SOUND, sound_channel = "Master" } end
     return Add(holder, data)
   end
 
@@ -338,7 +379,10 @@ function Pack.Build(spec)
       return data
     end
     local trigger = AuraTrigger(entry.aura, entry.missing and "showAlways" or "showOnActive", unit, kind)
-    if kind == "HARMFUL" and (unit or "player") == "player" then trigger.nativeFilters = nil end
+    -- A buff from another player counts on the player too; a debuff on the target from anyone with anyCaster.
+    if entry.anyCaster or (unit or "player") == "player" then trigger.nativeFilters = nil end
+    -- In combat Blizzard keeps debuffs on the player out of spell ID filters: match by learned duration instead.
+    if kind == "HARMFUL" and (unit or "player") == "player" then trigger.secretApproximate = true end
     return Icon(holder, label, trigger, options)
   end
 
@@ -374,7 +418,12 @@ function Pack.Build(spec)
   end
 
   local reminders = Group("Reminders", "dynamicgroup", 120, "UP")
+  local reminderEntries = {}
   for _, entry in ipairs(spec.reminders or {}) do
+    -- The ForeverAuras ammo trigger reads other fields: no ammo reminder in that variant.
+    if not (FOREVER_AURAS and entry.ammo) then reminderEntries[#reminderEntries + 1] = entry end
+  end
+  for _, entry in ipairs(reminderEntries) do
     -- combat = "in" loads a reminder in combat only, "always" in and out of combat.
     local options = Requirements(entry, { size = SIZES.reminder,
       outOfCombat = not entry.lowPower and not entry.pet and not entry.combat, notResting = not entry.lowPower })
@@ -392,6 +441,11 @@ function Pack.Build(spec)
       trigger = Generic({ type = "item", event = "Item Count", itemName = entry.item, use_itemName = true,
         use_count = true, count = tostring(entry.below), count_operator = "<" })
       if entry.icon then options.subRegions = { Text("%s", "INNER_BOTTOMRIGHT", 12) } end
+    elseif entry.ammo then
+      -- Count of the equipped ammo, whatever its rank.
+      label, text = "Low " .. entry.name, entry.name .. ": %s"
+      trigger = Generic({ type = "item", event = "Ammo", use_count = true, count = tostring(entry.below),
+        count_operator = "<" })
     elseif entry.pet then
       trigger = Generic({ type = "unit", event = "Conditions", use_HasPet = false, use_vehicle = false })
     elseif entry.lowPower then
@@ -404,16 +458,29 @@ function Pack.Build(spec)
     if not entry.aura and not entry.lowPower then
       data.animation.main = { type = "preset", preset = entry.icon and "pulse" or "alphaPulse", duration_type = "seconds" }
     end
+    -- fading = seconds: the buff is up but runs out before the pull. The native remaining time filter needs a
+    -- single icon on an active aura; ForeverAuras support is not verified.
+    if entry.aura and entry.fading and not FOREVER_AURAS then
+      local fading = AuraTrigger(entry.aura, "showOnActive")
+      fading.nativeFilters = nil
+      fading.secretUseRem, fading.secretRemOperator, fading.secretRem = true, "<", entry.fading
+      local fadingOptions = Requirements(entry, { size = SIZES.reminder, outOfCombat = true, notResting = true,
+        glow = false, subRegions = { Text("Fading", "BOTTOM", 10) } })
+      fadingOptions.warn = nil
+      Icon(reminders, "Fading " .. entry.name, fading, fadingOptions)
+    end
   end
 
-  -- In range reads secret in combat: the text stays shown without alpha, and the condition lights it out of range.
+  -- In range reads secret in combat: the text starts at alpha 0, and the range condition sets alpha 1.
   -- ForeverAuras has no secret range test, its condition never fires: no range text for it.
   local range = Group("Range", "group", 160, "FIXED")
   for _, entry in ipairs(not FOREVER_AURAS and spec.meleeRange or {}) do
     local trigger = Generic({ type = "spell", event = "Cooldown Progress (Spell)", spellName = entry.spell,
       use_exact_spellName = false, genericShowOn = "showAlways", use_genericShowOn = true })
-    local data = Label(range, "Not in melee range (" .. entry.name .. ")", trigger, "Not in melee range", RED,
-      Requirements(entry, { inCombat = true, conditions = { Condition("spellInRange", 0, "alpha", 1) } }))
+    -- inside = true lights the text in melee range instead, for a ranged class.
+    local text = entry.inside and "In melee range" or "Not in melee range"
+    local data = Label(range, text .. " (" .. entry.name .. ")", trigger, text, RED, Requirements(entry,
+      { inCombat = true, conditions = { Condition("spellInRange", entry.inside and 1 or 0, "alpha", 1) } }))
     data.alpha, data.fontSize = 0, 20
   end
 
@@ -435,6 +502,10 @@ function Pack.Build(spec)
   for _, entry in ipairs(spec.buffs or {}) do
     if FOREVER_AURAS or not entry.foreverAurasOnly then AuraIcon(effects, entry.name, entry, entry.unit, entry.kind) end
   end
+  -- Protections any class can receive or drink, plus the class shields: one icon on the player.
+  local defensives = { unpack(DEFENSIVES) }
+  for _, id in ipairs(spec.defensives or {}) do defensives[#defensives + 1] = id end
+  AuraIcon(effects, "Defensives", { aura = defensives }, "player")
   if spec.stance then
     local stance = Icon(effects, "Stance", Generic({ type = "unit", event = "Stance/Form/Aura" }),
       { size = SIZES.aura, known = spec.stance })
@@ -450,8 +521,13 @@ function Pack.Build(spec)
   if spec.segments then
     local width = Pip(spec.segments.count)
     for count = 1, spec.segments.count do
-      local trigger = AuraTrigger(spec.segments.aura, "showOnActive")
-      trigger.secretUseStacks, trigger.secretStacksOperator, trigger.secretStacks = true, ">=", count
+      local trigger
+      if spec.segments.casts then
+        trigger = CastCountTrigger(spec.segments.casts, spec.segments.count, count)
+      else
+        trigger = AuraTrigger(spec.segments.aura, "showOnActive")
+        trigger.secretUseStacks, trigger.secretStacksOperator, trigger.secretStacks = true, ">=", count
+      end
       local segment = Icon(segments, spec.segments.name .. " " .. count, trigger,
         Requirements(spec.segments, { size = { width, 6 }, glow = false }))
       -- Native stack conditions only colour text: the last segment carries the "full" colour.
@@ -521,6 +597,10 @@ function Pack.Build(spec)
     Bar(bars, "Cast", Generic({ type = "unit", event = "Cast", unit = "player", use_unit = true }),
       { title = "%n", conditions = { Condition("interruptible", 0, "barColor", {0.5, 0.5, 0.5, 1}) } },
       RED, "%p", 20)
+    -- Name, time and interruptible flag of an enemy cast read secret: the bar only shows them.
+    Bar(bars, "Enemy Cast", Generic({ type = "unit", event = "Cast", unit = "target", use_unit = true }),
+      { title = "%n", conditions = { Condition("interruptible", 0, "barColor", {0.5, 0.5, 0.5, 1}) } },
+      {1, 0.6, 0.1, 1}, "%p", 16)
   end
   if spec.pet then
     Bar(bars, "Pet", Generic({ type = "unit", event = "Health", unit = "pet", use_unit = true }), {},
@@ -595,5 +675,11 @@ function Pack.Build(spec)
 
   return { m = "d", s = "5.22.0", v = 2000, d = rootData, c = children }
 end
+
+-- Shared with the utility packs builder.
+Pack.Parts = {
+  FOREVER_AURAS = FOREVER_AURAS, RED = RED, BORDER = BORDER, GLOW = GLOW, BLINK = BLINK, READY_SOUND = READY_SOUND,
+  Text = Text, Animation = Animation, Ids = Ids, Condition = Condition, Generic = Generic, AuraTrigger = AuraTrigger,
+}
 
 return Pack

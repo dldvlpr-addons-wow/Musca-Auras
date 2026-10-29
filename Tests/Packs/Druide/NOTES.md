@@ -13,9 +13,9 @@ Source des IDs : `Classes/Druid.md` (DB2 1.60.1.70245). Préfixe d'uid `mcDruiV1
 
 ## IDs à confirmer en jeu
 - Auras de HoT, DoT et buffs : seul l'ID du sort lancé est connu, pas l'aura (Rejuvenation, Regrowth, Moonfire, Insect Swarm, Rake, Rip, Faerie Fire, Demoralizing Roar, Entangling Roots, Hibernate, Mark of the Wild, Thorns, Enrage, Frenzied Regeneration, Barkskin, Innervate, Nature's Swiftness, Dash).
-- Lacerate, Prowl, Nature's Grasp : IDs de sort, aura non vérifiée ; stacks de Lacerate peut être secret en combat.
+- Lacerate, Prowl, Nature's Grasp : auras confirmées dans le DB2 70532 (Lacerate 414644, 1235826, 1235827 ; Prowl 5215, 6783, 9913 ; Nature's Grasp, Entangling Roots déclenché 19970 et suivants) ; stacks de Lacerate peut être secret en combat.
 - Wild Growth 408120 : talent SoD du DB2 (rang 1), à confirmer appris sur Forever.
-- Pounce : 9007, 9824, 9826 (Pounce Bleed, déclenchés dans le DB2, aura non vérifiée en jeu).
+- Pounce : 9007, 9824, 9826 (Pounce Bleed, auras confirmées dans le DB2 70532 ; étourdissement 9005, 9823, 9827).
 - Clearcasting 16870 et Nature's Grace 16886 : déclenchés par les talents 16864 et 16880 dans le DB2.
 - Omen of Clarity (16864) : talent donné absent de Forever par wowforevertalents.com, présent dans le DB2. Si absent en jeu, Clearcasting et le rappel ne s'afficheront jamais (chargement conditionné au sort connu).
 - Feral Charge : sort 1238122 (talent Farouche), aura d'immobilisation 19675 non utilisée.
@@ -47,3 +47,14 @@ Source des IDs : `Classes/Druid.md` (DB2 1.60.1.70245). Préfixe d'uid `mcDruiV1
 
 ## Pack 1.12.0 (2026-10-18), à tester en jeu
 - Dash (félin), Enrage et Frenzied Regeneration (ours) : une seule icône, le buff puis la recharge, limitée à la forme (expression `(1 or 2) and 3` : le trigger 1 du joueur est toujours vrai, la forme décide seule ; repli sur le trigger 2). Les icônes « (active) » de ces trois sorts sont retirées ; la variante ForeverAuras les garde. À la mise à jour du pack, la case « Remove Obsolete Auras » (cochée par défaut) les supprime.
+
+## Comparaison avec les packs Fojji (2026-10-26), à tester en jeu
+- Buffs sur le joueur : plus de filtre « lancé par le joueur », un buff reçu d'un autre joueur s'affiche.
+- Nouvelle icône Defensives (toutes classes, reprise des packs Fojji, GPL-2) : Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression et potions défensives, de tout lanceur.
+- Gift of the Wild (21849, 21850) compte pour le rappel Mark of the Wild. Rappel Thorns : alerte d'expiration à 60 s.
+- Feral Charge (Cat) 414924 et Berserk 417141 (actif ou recharge) ajoutés ; Eclipse 408255 (cumuls), IDs Fojji ; Feral Charge (Cat) 414924 présent dans le DB2 70245.
+- Rejuvenation et Regrowth aussi sur la cible.
+- Debuffs cible ajoutés : Bash, étourdissement de Pounce, immobilisation de Feral Charge 19675, Entangling Roots de Nature's Grasp (19970 à 19975).
+
+## Pack 1.15.0 (2026-10-29), à tester en jeu
+- Barkskin 22812 actif dans l'icône Defensives ; icône « Barkskin (active) » retirée, la recharge reste.

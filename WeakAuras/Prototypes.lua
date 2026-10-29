@@ -7642,10 +7642,17 @@ Private.event_prototypes = {
         local aggro, status, threatpct, rawthreatpct, threatvalue, threattotal
         if unit and unit ~= "none" then
           aggro, status, threatpct, rawthreatpct, threatvalue = WeakAuras.UnitDetailedThreatSituation('player', unit)
-          threattotal = (threatvalue or 0) * 100 / (threatpct ~= 0 and threatpct or 1)
+          -- Threat values can be secret: the total cannot be computed, the last readable one is kept
+          if not Private.ExecEnv.IsSecret(threatvalue, threatpct) then
+            threattotal = (threatvalue or 0) * 100 / (threatpct ~= 0 and threatpct or 1)
+          else
+            threattotal = state.total
+          end
         else
           status = UnitThreatSituation('player')
-          aggro = status == 2 or status == 3
+          if not Private.ExecEnv.IsSecret(status) then
+            aggro = status == 2 or status == 3
+          end
           threatpct, rawthreatpct, threatvalue, threattotal = 100, 100, 0, 100
         end
       ]];

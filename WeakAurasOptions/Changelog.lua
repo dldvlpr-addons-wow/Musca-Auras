@@ -3,21 +3,46 @@ if not WeakAuras.IsLibsOK() then return end
 local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
-
-if not WeakAuras.IsLibsOK() then return end
----@type string
-local AddonName = ...
----@class OptionsPrivate
-local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.14.0',
-  dateString = '2026-10-22',
+  versionString = '1.15.0',
+  dateString = '2026-10-29',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- /wa demo: sample timers start and end at random, like in a fight
-- Start Collapsed of author options goes through Undo and Redo
-- Sample timers keep looping when the options open again
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.14.0 (2026-10-22):
+- Packs page: whole class HUD or one block at a time, and 24 utility packs
+- Class HUDs: proc sounds, Fading reminders, Enemy Cast bar, ranged swing timer, Defensives icon
+- Rogue poison and Hunter ammo stock reminders
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.15.0 (2026-10-29):
+
+New:
+
+- Packs page: a Packs button in the toolbar opens the class HUD of your class, then the utility packs. Whole HUD imports the class pack as before; one button per HUD block imports that block alone and keeps the rest of the installed HUD as it is
+- 24 utility packs, sorted by category: Combat, Group and Buffs, Target and Enemies, Character, World
+- Class HUDs: a sound on procs and reactive abilities, Fading reminders before a buff ends, an Enemy Cast bar and the ranged swing timer
+- Class HUDs: a Defensives icon with Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression, defensive potions and the class shields and defensive cooldowns up
+- Class HUDs: buffs on the player show whoever cast them; missing buffs, procs and debuffs added for every class; Infusion of Light proc for the Paladin; Arcane Blast stacks for the Mage
+- Rogue HUD: reminder when Instant Poison or Deadly Poison runs low in the bags. Hunter HUD: reminder below 200 ammo and an In melee range text
+- Paladin HUD: Fading reminder on Righteous Fury
+- Custom code: WeakAuras.IsSpellReady, WeakAuras.GetSpellCooldownDurationNoGCD, WeakAuras.SetSpellCooldownState and WeakAuras.SetLoadFlag
+
+Changed:
+
+- Class HUDs: debuffs on the player (Forbearance, Weakened Soul) show once seen out of combat, as the game hides them from spell ID filters in combat
+- Class HUDs: every spell ID checked again for build 70532. Deep Wounds is removed from the Warrior HUD
+
+Removed:
+
+- The recorded voice sound. An aura that used it loses that sound: pick a sound file instead
+
+Fixed:
+
+- Threat Situation trigger: secret threat values no longer raise a Lua error
+- Number format at precision 0: a secret number no longer raises a Lua error
+
+After the update:
+
+Update your class HUD from the Packs page: the notice shows once. Remove Obsolete Auras deletes the buff icons now shown in the Defensives icon.
+
+1.14.0 (2026-10-22):
 
 Changed:
 

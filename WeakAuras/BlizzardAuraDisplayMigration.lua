@@ -7,15 +7,6 @@ local Shared = Private.AuraDisplayShared
 local IsSecretAuraTrigger = Shared.IsSecretAuraTrigger
 local TriggerEntries = Shared.TriggerEntries
 
-local SOUND_CHANNELS = { Master = true, SFX = true, Music = true, Ambience = true, Dialog = true }
-
-local function PreferredSoundChannel()
-  local settings = FojjiCore and FojjiCoreDB
-  local channel = settings and settings.ttsSoundChannel
-  channel = channel == "Sound Effects" and "SFX" or channel
-  return SOUND_CHANNELS[channel] and channel or "Master"
-end
-
 local LEGACY_SOUND_FIELDS = { "soundMode", "soundAdded", "soundRemoved", "soundAddedFile", "soundRemovedFile" }
 local LEGACY_SOUND_SLOTS = { { "Added", "start" }, { "Removed", "finish" } }
 
@@ -33,18 +24,38 @@ Display.MigrateSounds = function(data)
     end
     local value = previous["sound" .. suffix]
     if mode == "file" then value = previous["sound" .. suffix .. "File"] or value end
-    if not action.do_sound and mode and mode ~= "none" and value ~= nil and value ~= "" and value ~= 1 then
+    -- The legacy recorded voice mode has no file of its own to play: its sounds are dropped.
+    if not action.do_sound and (mode == "file" or mode == "custom") and value ~= nil and value ~= "" and value ~= 1 then
       action.do_sound = true
-      action.sound_channel = PreferredSoundChannel()
-      if mode == "fojji" then
-        action.sound, action.sound_fojji = " Fojji", value
-      else
-        action.sound, action.sound_path = " custom", tostring(value)
-      end
+      action.sound_channel = "Master"
+      action.sound, action.sound_path = " custom", tostring(value)
     end
   end
   for _, field in ipairs(LEGACY_SOUND_FIELDS) do previous[field] = nil end
   previous.actionSounds = true
+end
+
+local ACTION_SOUND_FIELDS = {
+  sound_channel = true, sound_fade = true, sound_kit_id = true, sound_path = true, sound_repeat = true,
+  sound_type = true,
+}
+
+-- Release 1.14.0 stored the recorded voice under a leading-space kind and its own phrase field. The recorded voice
+-- is gone: that kind loses its sound, and any other sound_ field is dropped even when another kind was picked since.
+local function DropLegacySoundFields(action)
+  local legacy = {}
+  for key in pairs(action) do
+    if type(key) == "string" and key:find("^sound_") and not ACTION_SOUND_FIELDS[key] then legacy[#legacy + 1] = key end
+  end
+  for _, key in ipairs(legacy) do action[key] = nil end
+end
+
+local function DropVoiceSound(action)
+  local kind = action.sound
+  if type(kind) == "string" and kind:sub(1, 1) == " " and not Private.sound_types[kind] then
+    action.do_sound, action.sound = nil, nil
+  end
+  DropLegacySoundFields(action)
 end
 
 Display.Migrate = function(data)
@@ -75,7 +86,13 @@ Display.Migrate = function(data)
       display.enabled = nil
     end
   end
-  if not Display.HasTrigger(data) then return end
+  local actions = data.actions or {}
+  if not Display.HasTrigger(data) then
+    -- An aura whose secret trigger was removed can still hold a recorded voice sound.
+    if actions.start then DropVoiceSound(actions.start) end
+    if actions.finish then DropVoiceSound(actions.finish) end
+    return
+  end
   Display.MigrateAppearance(data, previous)
   for _, subRegion in ipairs(data.subRegions or {}) do
     if subRegion.type == "subtext" then
@@ -86,6 +103,9 @@ Display.Migrate = function(data)
   end
   local migrateSounds = Display.MigrateSounds
   migrateSounds(data)
+  actions = data.actions or {}
+  if actions.start then DropVoiceSound(actions.start) end
+  if actions.finish then DropVoiceSound(actions.finish) end
   for _, field in ipairs({ "soundSpellIDs", "soundIgnoreDisplayFilters" }) do
     data.blizzardAuraDisplay[field] = nil
   end

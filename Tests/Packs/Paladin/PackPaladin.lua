@@ -4,12 +4,16 @@ local blessings = {
   19740, 19834, 19835, 19836, 19837, 19838, 25291,
   19742, 19850, 19852, 19853, 19854, 25290,
   20217,
-  25782, 25916, 25894, 25918, 25898,
+  19977, 19978, 19979,
+  1038,
+  25782, 25916, 25894, 25918, 25898, 25890, 25895,
 }
 local paladinAuras = {
   465, 10290, 643, 10291, 1032, 10292, 10293,
   7294, 10298, 10299, 10300, 10301,
   19746,
+  19876, 19895, 19896, 19888, 19897, 19898, 19891, 19899, 19900,
+  20218,
 }
 
 local seals = {
@@ -36,6 +40,8 @@ for _, buff in ipairs({
   { name = "Divine Protection (active)", aura = { 498, 5573 }, known = 498 },
   { name = "Vengeance", aura = { 20050 }, stacks = true, known = 20049 },
   { name = "Redoubt", aura = { 20128 }, known = 20127 },
+  -- Both visible 15 s one-charge auras of the name in the DB2, one per talent rank or variant.
+  { name = "Infusion of Light", aura = { 53672, 437063 }, flash = 2, sound = true },
 }) do buffs[#buffs + 1] = buff end
 
 return Pack.Build({
@@ -50,6 +56,7 @@ return Pack.Build({
     { name = "Consecration", spell = 26573 },
     { name = "Exorcism", spell = 879 },
     { name = "Holy Shock", spell = 1311606 },
+    { name = "Light's Vigil", spell = 1310911 },
     { name = "Holy Shield", spell = 20925 },
   },
   cooldowns = {
@@ -64,7 +71,12 @@ return Pack.Build({
     { name = "Holy Wrath", spell = 2812 },
     { name = "Turn Undead", spell = 2878 },
     { name = "Divine Intervention", spell = 19752 },
+    { name = "Templar's Bulwark", spell = 1311015 },
+    { name = "Voice of Truth", spell = 1310897, aura = { 1310897 } },
+    { name = "Swift Judgement", spell = 1310994 },
   },
+  -- Templar's Bulwark up is in the Defensives icon, its cooldown above.
+  defensives = { 1311015 },
   buffs = buffs,
 
   debuffs = {
@@ -73,6 +85,9 @@ return Pack.Build({
     { name = "Judgement of Wisdom", aura = { 20186, 20354, 20355 } },
     { name = "Judgement of Justice", aura = { 20184 } },
     { name = "Hammer of Justice", aura = { 853, 5588, 5589, 10308 } },
+    { name = "Seal of Justice", aura = { 20170 }, known = 20164 },
+    { name = "Repentance", aura = { 20066 }, known = 20066 },
+    { name = "Turn Undead", aura = { 2878, 5627, 10326 }, known = 2878 },
   },
   power = { { label = "Mana", type = 0 } },
   swing = { "main" },
@@ -80,9 +95,9 @@ return Pack.Build({
   castBar = true,
   meleeRange = { { name = "Holy Strike", spell = 679 } },
   reminders = {
-    { name = "Blessing", aura = blessings, known = 19740 },
+    { name = "Blessing", aura = blessings, known = 19740, fading = 60 },
     { name = "Paladin aura", aura = paladinAuras, known = 465 },
-    { name = "Righteous Fury", aura = { 25780 }, known = 20925 },
+    { name = "Righteous Fury", aura = { 25780 }, known = 20925, fading = 60 },
     { name = "Seal", aura = anySeal, level = 1, combat = "in" },
     { name = "LOW MANA", lowPower = 0, below = 20 },
   },

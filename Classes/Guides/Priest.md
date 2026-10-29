@@ -42,7 +42,7 @@ Niveau 20 : même ordre, Holy Fire dès qu'il est appris sinon Smite ; Renew si 
 - Power Infusion (10060) : +20 % dégâts et soins, 15 s.
 - Fear Ward (6346), de base à 3 min.
 - Spirit Tap (aura 15271).
-- Divine Aegis : absorbe sur critique de soin ; candidats 431622, 431624, 431649 (non tranché dans Classes/Priest.md).
+- Divine Aegis : absorbe sur critique de soin ; candidats 431622, 431624, 431649 (tranché : 431624 (règle 2, seule aura d'absorption, DB2 70245 relu le 2026-10-26)).
 
 ### Debuffs à maintenir sur la cible
 - Shadow Word: Pain (10894), Holy Fire (15267, DoT ; durée non indiquée).

@@ -1360,19 +1360,6 @@ function OptionsPrivate.GetActionOptions(data)
   OptionsPrivate.commonOptions.AddCodeOptionTimeMachine(action.args, data, L["Custom Code"], "finish", "https://github.com/WeakAuras/WeakAuras2/wiki/Custom-Code-Blocks#on-hide",
                           32, function() return not data.actions.finish.do_custom end, {"actions", "finish", "custom"}, true);
 
-  local function AddRecordedPhraseInput(phase)
-    action.args[phase .. "_sound_fojji"] = {
-      type = "input",
-      width = "full",
-      name = L["Recorded phrase"],
-      desc = L["Type the phrase exactly as it is named in the FojjiCore recorded voice pack you selected. Live text to speech is not supported here."],
-      order = action.args[phase .. "_sound"].order + 0.01,
-      hidden = function() return data.actions[phase].sound ~= " Fojji" end,
-      disabled = function() return not data.actions[phase].do_sound end,
-    }
-  end
-  AddRecordedPhraseInput("start")
-  AddRecordedPhraseInput("finish")
   OptionsPrivate.PrepareSecretActionOptions(data, action)
 
   if data.controlledChildren then

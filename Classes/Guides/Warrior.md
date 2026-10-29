@@ -68,7 +68,7 @@ Niveau 20 (Wowhead) : Battle Shout, Rend, Slam après un swing, Thunder Clap, Vi
 - Execute (aura 26651) sous 20 % PV.
 
 ### Debuffs à maintenir sur la cible
-- Rend (11574), Deep Wounds (12162 debuff ; talent 12834, 12849, 12867), Sunder Armor (11597, 5 stacks, 30 s), Thunder Clap (11581), Demoralizing Shout (11556), Hamstring (7373, -50 % 15 s).
+- Rend (11574), Deep Wounds (12162 sans aura dans le DB2 70532 ; talent 12834, 12849, 12867), Sunder Armor (11597, 5 stacks, 30 s), Thunder Clap (11581), Demoralizing Shout (11556), Hamstring (7373, -50 % 15 s).
 
 ### Recharges importantes
 - Overpower (11585) partage sa recharge avec Revenge.
@@ -110,7 +110,7 @@ Niveau 20 : Rend si la cible vit, Overpower, Sunder au-dessus de 70 %, Heroic St
 
 ### Procs et buffs à suivre
 - Enrage (talent 12317, 13045 à 13048) : déclenché sur tout dégât direct reçu en Forever (au lieu des seuls crits). Aucun aura-ID tranché dans Classes/Warrior.md.
-- Flurry (talent 12319, 12971 à 12974) : aura candidate 12966 non tranchée. Conseillé en point Legacy.
+- Flurry (talent 12319, 12971 à 12974) : aura candidate 12966, tranché : 12966 (règle 3, départage Fojji, DB2 70245 relu le 2026-10-26). Conseillé en point Legacy.
 - Death Wish (12328) : +20 % dégâts physiques, +5 % dégâts subis, 30 s, 3 min.
 - Recklessness (1719), recharge 30 min en Forever.
 - Raging Blows (1310315, Legacy) : Whirlwind à la main gauche.
@@ -192,7 +192,7 @@ Icy Veins : ordre voisin, Rend avant Shield Block, Shield Block en recharge (+75
 - Rend / Sunder Armor / Thunder Clap sur la cible, avec le compteur de stacks Sunder.
 - Execute utilisable (sous 20 %).
 - Rage : seuil pour Heroic Strike / Cleave et jauge pour Sweeping Strikes.
-- Enrage et Flurry (auras non tranchées dans Classes/Warrior.md).
+- Enrage et Flurry (auras tranchées dans Classes/Warrior.md : Enrage 12880, Flurry 12966, départage Fojji).
 - Death Wish, Recklessness, Sweeping Strikes (12292), Shield Block (2565) avec 2 charges.
 - Cooldowns défensifs : Shield Wall (871), Last Stand (12975), Retaliation (20230).
 - Stance courante (2457, 71, 2458), surtout pour le switch Intercept.

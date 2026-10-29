@@ -422,7 +422,7 @@ end
 --------------------------------------------------------------------------------
 
 local supportedActionFields = BuildSet({
-  "header", "do_sound", "sound", "sound_channel", "sound_path", "sound_fojji", "hide_all_glows",
+  "header", "do_sound", "sound", "sound_channel", "sound_path", "hide_all_glows",
 })
 
 local unitGlowTypeValues = { Proc = L["Proc Glow"], buttonOverlay = L["Pulse Glow"] }
@@ -438,7 +438,6 @@ local function SoundValues()
   for key, label in pairs(OptionsPrivate.Private.sound_types) do
     if key ~= " KitID" then values[key] = label end
   end
-  values[" Fojji"] = L["FojjiCore recorded voice"]
   return values, OptionsPrivate.Private.SortOrderForValues(values)
 end
 

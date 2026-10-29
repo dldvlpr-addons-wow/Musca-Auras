@@ -16,7 +16,7 @@ globals = {
   "ColorPickerFrame", "CooldownViewerDataProvider", "CooldownViewerDataStoreSerializationMixin", "WeakAurasFrame",
   "CooldownViewerLayoutManagerMixin",
   "CooldownViewerSettings", "CooldownViewerSettingsDataProviderMixin", "CustomAuraContainerAuraProcessingPolicy",
-  "EditModeManagerFrame", "EditModePresetLayoutManager", "EventRegistry", "FojjiCore", "FojjiCoreDB", "ForeverAuras", "GetTotemInfo",
+  "EditModeManagerFrame", "EditModePresetLayoutManager", "EventRegistry", "ForeverAuras", "GetTotemInfo",
   "LATER", "LOCALIZED_CLASS_NAMES_MALE", "PixelUtil", "RELOADUI", "ReloadUI", "UnitIsFriend", "UnitPowerType",
   "UnitStat",
   "AbbreviateLargeNumbers", "AbbreviateNumbers", "abs", "ACCEPT", "CANCEL", "AceGUIWeakAurasInputWithIndentationInsertLink",

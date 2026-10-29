@@ -64,7 +64,7 @@ Les identifiants de sorts suivent `Classes/Shaman.md` (DB2 client 1.60.1.70245),
 1. Ce que le jeu cache en combat pour le chaman : mana, un buff sur soi (Bouclier de foudre), un DoT sur la cible (Horion de flammes), une recharge (Horion de terre). Vérifier aussi qu'un buff posé pendant le combat apparaît tout de suite (bug signalé par le banc).
 2. Identifiants : relevés hors jeu dans `Classes/Shaman.md`. Reste à confirmer en jeu l'ID des buffs et débuffs réellement posés (Bouclier de foudre, Horion de flammes, Rafale, Idées claires).
 3. Style de jeu : spé et talents visés, tranche de niveau, solo, donjon ou raid. Pour chaque spé : les 5 à 8 sorts lancés, les procs qui changent une décision, les buffs à maintenir.
-4. Référence visuelle : une ou deux captures d'un pack aimé (Fojji, Luxthos Classic, pack chaman Wago), avec ce qu'il faut garder (disposition, taille, ce qui disparaît hors combat).
+4. Référence visuelle : une ou deux captures d'un pack aimé (Luxthos Classic, pack chaman Wago), avec ce qu'il faut garder (disposition, taille, ce qui disparaît hors combat).
 5. Retour sur le premier jet : une ligne par aura (marche, jamais affichée, affichée à tort, inutile) et le texte exact des erreurs BugSack.
 
 Le point 1 bloque le reste. Proposition en attente : préparer des commandes `/run` qui affichent en combat ce qui est secret ou lisible (API à faire vérifier par l'agent `wow-api` avant).
@@ -76,3 +76,13 @@ Le point 1 bloque le reste. Proposition en attente : préparer des commandes `/r
 
 ## Pack 1.12.0 (2026-10-18), à tester en jeu
 - Chargement par spécialisation (`forever_spec`) : Healing Wave, Lesser Healing Wave, Chain Heal et Healing Rain en Restauration, Lava Lash et Molten Blast en Amélioration. Sans point de talent, la spé se lit sur un sort signature : Riptide (Restauration), Rage of the Farseer (Amélioration) ; sans l'un ni l'autre, ces sorts ne se chargent pas. La variante ForeverAuras les charge dans toutes les spés.
+
+## Comparaison avec les packs Fojji (2026-10-26), à tester en jeu
+- Buffs sur le joueur : plus de filtre « lancé par le joueur », un buff reçu d'un autre joueur s'affiche.
+- Nouvelle icône Defensives (toutes classes, reprise des packs Fojji, GPL-2) : Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression et potions défensives, de tout lanceur.
+- Lightning Bolt 403 en rotation. Elemental Mastery 16166 de Fojji non repris : absent du DB2 70245 (SpellName relu le 2026-10-26).
+- Ancestral Fortitude suivi sur le joueur, de tout chaman (modèle Fojji), et plus sur la cible.
+- Buff Grounding Totem Effect 8178.
+
+## Pack 1.15.0 (2026-10-29), à tester en jeu
+- Règle des 5 s : 408476, 408480 et 408483 retirés, absents du DB2 70532.

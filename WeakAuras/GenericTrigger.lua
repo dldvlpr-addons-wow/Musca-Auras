@@ -3408,6 +3408,68 @@ do
     return spellDetail and spellDetail.secret or false
   end
 
+  -- The three helpers below answer for spells watched with WeakAuras.WatchSpellCooldown, and return nil
+  -- for a spell the player does not know.
+  -- shortcut: they read the cooldown, not the charges, so a spell with charges left reads as not ready
+  -- while it recharges; follow SpellDetails:GetSpellCooldownDurationObject if such spells need them.
+  -- WatchSpellCooldown stores a spell under the id of the rank the player knows, found by name.
+  local function GetWatchedSpell(id)
+    if not SpellDetails.data[id] then
+      id = Private.ExecEnv.GetEffectiveSpellId(id, false, false)
+    end
+    local spellDetail = SpellDetails.data[id]
+    if spellDetail and spellDetail.known then
+      return id, spellDetail
+    end
+  end
+
+  ---@param id number
+  ---@return boolean? ready true when the spell is off cooldown, the GCD left aside, nil when the game hides it
+  function WeakAuras.IsSpellReady(id)
+    local spellDetail
+    id, spellDetail = GetWatchedSpell(id)
+    if not id or spellDetail.secret and spellDetail.secretReady == nil then
+      return nil
+    end
+    local startTime, duration, _, _, _, paused = SpellDetails:GetSpellCooldown(id, nil, false)
+    if not startTime then
+      return nil
+    end
+    if paused then
+      return false
+    end
+    return duration == 0 or startTime + duration <= GetTime()
+  end
+
+  ---@param id number
+  ---@return table? durationObject the cooldown without the GCD, readable or secret
+  function WeakAuras.GetSpellCooldownDurationNoGCD(id)
+    id = GetWatchedSpell(id)
+    if id then
+      return Private.SpellCooldownState.GetCooldownDurationWithoutGCD(id)
+    end
+  end
+
+  -- Fills a custom trigger state with the spell cooldown and a plain onCooldown flag for conditions.
+  ---@param state table
+  ---@param id number
+  ---@param ignoreGCD boolean?
+  function WeakAuras.SetSpellCooldownState(state, id, ignoreGCD)
+    local durationObject
+    local watchedId = GetWatchedSpell(id)
+    if watchedId then
+      durationObject = Private.SpellCooldownState.GetDisplayDurations(watchedId, false, not ignoreGCD, false)
+    end
+    local onCooldown = WeakAuras.IsSpellReady(id) == false
+    if state.progressType ~= "durationObject" or state.durationObject ~= durationObject
+      or state.onCooldown ~= onCooldown then
+      state.progressType = "durationObject"
+      state.durationObject = durationObject
+      state.onCooldown = onCooldown
+      state.changed = true
+    end
+  end
+
   ---@param id string
   ---@param showgcd boolean
   ---@return number startTime

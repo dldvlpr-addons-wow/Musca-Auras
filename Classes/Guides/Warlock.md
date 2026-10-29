@@ -62,7 +62,7 @@ Niveau 20 (Wowhead) : Succubus, Bane of Agony, Corruption, Immolate en dernier (
 ### Procs et buffs à suivre
 
 - Shadow Trance (17941) : prochain Shadow Bolt instantané (Nightfall 18094). Wowhead : DoTs et Drain Life peuvent le proc.
-- Soul Harvest : mana regen boosté après kill d'une cible sous Drain Soul. IDs candidats 437032, 1242853, aucun retenu.
+- Soul Harvest : mana regen boosté après kill d'une cible sous Drain Soul. IDs candidats 437032, 1242853, tranché : 1242853 (règle 2, seule aura réelle, DB2 70245 relu le 2026-10-26).
 - Demon Armor (11735 pour le rang 5) à maintenir ; pas de Fel Armor.
 - Raciaux : Blood Fury, Berserking, Eureka! (IDs absents de Classes/Warlock.md).
 
@@ -94,7 +94,7 @@ Niveau 20 (Wowhead) : Succubus, Bane of Agony, Corruption, Immolate en dernier (
 
 - Improved Corruption (17810) : Corruption instantanée et +10 % dégâts.
 - Suppression (18174), Malediction (1225177), Amplify Curse (18288), Improved Bane of Agony (18827).
-- Pandemic : crit des DoTs et drains +100 %. IDs candidats 427712, 429283, aucun retenu.
+- Pandemic : crit des DoTs et drains +100 %. IDs candidats 427712, 429283, tranché : 427712 (règle 2, seule aura réelle, DB2 70245 relu le 2026-10-26).
 - Malevolence : +5 % crit Ombre. IDs candidats 449919, 449920, 1310949, aucun retenu.
 - Improved Drains (403511) : +20 % sur Drain Life, Drain Soul, Wrack.
 - Soul Siphon (17804), Siphon Life (18265), Nightfall (18094), Shadow Mastery (18271).
@@ -160,7 +160,7 @@ Wowhead overview : garder les DoTs, Searing Pain pour la marque, Shadow Bolt en 
 - Decimation, Fel Domination (18708), Soul Link (19028).
 - Demonic Knowledge (candidats 412732, 412735, 415749, 1243120, aucun retenu).
 - Demonic Pact (candidats 425464, 425466, 425467, 425473) : capstone au niveau 31, hors cap beta.
-- Improved Felhunter (1225217), Demonic Aegis (candidats 470279, 1235316).
+- Improved Felhunter (1225217), Demonic Aegis (candidats 470279, 1235316, tranché : 1235316 (règle 2, seule aura cohérente, DB2 70245 relu le 2026-10-26)).
 
 ### Mécaniques propres à Forever
 
@@ -188,7 +188,7 @@ Niveau 20 : Succubus, Bane of Agony, Corruption, Immolate, puis Shadow Bolt ou b
 ### Procs et buffs à suivre
 
 - Shadow and Flame : candidats 426316, 426449, aucun retenu. Conflagrate donne +10 % Ombre 20 s, Shadowburn +10 % Feu 20 s.
-- Pyroclasm : talent 18096 ou 18073, aura candidate 18093 ou 1293803, aucune retenue.
+- Pyroclasm : talent 18096 ou 18073, aura candidate 18093 ou 1293803, tranché : 1293803 pour le buff sur soi (aura 79), 18093 étant l'étourdissement sur la cible (DB2 70245 relu le 2026-10-26).
 - Aftermath daze (18118) après Conflagrate.
 - Improved Shadow Bolt (17793) : debuff Ombre sur la cible après crit.
 

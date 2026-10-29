@@ -450,6 +450,42 @@ Exports à importer avec `/wa` > Import. Relance le jeu avant (nouveaux fichiers
 16. [ok 2026-10-09 : IsClassicEra() = true ; Thrown présent dans la liste du Load] Thrown : `/dump WeakAuras.IsClassicEra()`. Puis la liste Item Type du Load : Thrown présent ?
 17. [écarté 2026-10-09 par l'utilisateur : débuff de cible = trigger Aura (Modern)] Flame Shock aura2 (11.1 tests 2 et 3), sur un mob, hors combat, Flame Shock posé : `/dump issecretvalue(C_UnitAuras.GetAuraDataByIndex("target",1,"HARMFUL|PLAYER").spellId)`. true = le trigger Aura (Legacy) ne peut pas voir ce débuff, utiliser Aura (Modern).
 
+## Étape 13 : tests de la 1.15 (2026-10-29, 45 min)
+
+Entrées du 2026-10-25, 2026-10-26 et 2026-10-29 de `CHANGES.md`. Rien n'est testé en jeu.
+
+### 13.1 Code custom
+1. [ ] Une aura custom qui appelle `WeakAuras.WatchSpellCooldown(id)` puis `WeakAuras.IsSpellReady(id)` : `true` sort prêt, `false` en recharge, `nil` pendant un cooldown secret en combat.
+2. [ ] `WeakAuras.GetSpellCooldownDurationNoGCD(id)` : la recharge s'affiche sans le GCD.
+3. [ ] Trigger custom qui appelle `WeakAuras.SetSpellCooldownState(state, id, true)` : barre de recharge, condition `onCooldown` utilisable.
+4. [ ] `/run WeakAuras.SetLoadFlag("<id d'aura>", false)` : l'aura se décharge ; `true` la rend à ses options de chargement.
+
+### 13.2 Page Packs
+5. [ ] `/wa`, bouton Packs : HUD de ta classe en tête, puis les packs utilitaires par catégorie.
+6. [ ] Whole HUD sur un HUD installé : la boîte propose « Update », le HUD se met à jour.
+7. [ ] Un bloc seul (Procs par exemple) sur un HUD installé et déplacé : seul ce bloc change, positions du reste gardées.
+8. [ ] Les 24 packs utilitaires : chacun s'importe sans erreur Lua et s'affiche dans sa situation (combat, groupe, hors combat).
+
+### 13.3 Son de voix retiré
+9. [ ] Une aura 1.14.0 avec voix enregistrée : après chargement, plus de son de voix, pas d'erreur Lua.
+
+### 13.4 Valeurs secrètes
+10. [ ] Trigger Threat Situation en combat : pas d'erreur Lua.
+11. [ ] Texte custom avec un nombre secret, format précision 0 : nombre arrondi affiché, pas d'erreur Lua.
+
+### 13.5 Packs de classe
+12. [ ] Son sur un proc (Overpower, Clearcasting...) ; rappel « Fading » avant la fin d'un buff ; barre Enemy Cast sur un mob qui incante ; swing timer à distance (chasseur, arme de jet).
+13. [ ] Icône Defensives : Power Word: Shield reçu, potion défensive, et les défensifs de classe actifs (Shield Wall et Last Stand du guerrier, Barkskin du druide, Evasion du voleur, Deterrence du chasseur). Leur ancienne icône de buff a disparu, la recharge reste.
+14. [ ] Prêtre : Power Word: Shield sur la cible en une seule icône (bouclier ou recharge). Paladin : proc Infusion of Light. Mage : 4 segments d'Arcane Blast, remis à 15 s à chaque lancer.
+15. [ ] Paladin : rappel « Fading » sur Righteous Fury à 60 s de la fin.
+16. [ ] Chasseur : texte « In melee range » en combat quand la cible est au contact, caché à distance. Texte « Ammo: N » (aura Low Ammo) sous 200 munitions équipées, hors zone de repos.
+17. [ ] Voleur : rappel de stock de poison sous 5 Instant Poison ou Deadly Poison du plus haut rang connu ; un seul rappel par poison.
+18. [ ] Guerrier : plus d'icône Deep Wounds.
+19. [ ] Debuff sur soi (Forbearance, Weakened Soul) : visible en combat après un premier passage hors combat.
+
+### 13.6 Notice des packs de classe
+20. [ ] Premier `/reload` en 1.15.0 : la notice des packs de classe s'affiche. Second `/reload` : elle ne revient pas.
+
 ---
 
 # 4. Résultats reçus et prompt de fin

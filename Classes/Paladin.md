@@ -224,12 +224,12 @@ Noms, rangs max et effets : wowforevertalents.com/paladin. Les sources web ne pu
 | Unyielding Faith | 2 : 9453, 25836 | Durée peur/désorientation -15% / -30% |
 | Voice of Truth | 1 : 1310897 (SkillLineAbility ; absent de Talent.csv) | Immunité silence/interruption 6 s, 3 min |
 | Reverence | 3 : 1310899 (seul ID de ce nom, SpellName ; ni Talent ni SkillLineAbility ; IDs des autres rangs non trouvés) | Regen mana en cast +10% à +30% |
-| Purifying Power | 2 : candidats 429144, 429254 (SpellName seul, non départagés) | Coût Cleanse/Purify -10/-20% ; recharge Exorcism/Holy Wrath -17/-33% |
+| Purifying Power | 2 : candidats 429144, 429254 (SpellName seul) ; tranché : 429144 (règle 2, seule aura réelle : deux effets APPLY_AURA 108 pour coût et recharge, 429254 = aura 332 seule, DB2 70245 relu le 2026-10-26) | Coût Cleanse/Purify -10/-20% ; recharge Exorcism/Holy Wrath -17/-33% |
 | Infusion of Light | 2 : candidats 53672, 426065, 426179, 437063, 437877 (SpellName seul, non départagés) | Cast Holy Light -0,5 / -1 s, fenêtre 15 s |
 | Illumination | 5 : 20210, 20212, 20213, 20214, 20215 (20210 = fiche « Illumination », buff, pas de durée) | Proc 20% à 100%, rend 50% du coût de base |
 | Divine Favor | 1 : 20216 (page « Divine Favor », buff) | Prochain soin 100% critique, 2 min |
 | Divine Precision | 3 : 1310904 (seul ID de ce nom, SpellName ; ni Talent ni SkillLineAbility ; IDs des autres rangs non trouvés) | Toucher Sacré +6% à +18% |
-| Holy Shock | 1 : candidats 20473 (Talent.csv) et 1311606 (SkillLineAbility, Holy Shock rang 1 du tableau) | 129-139 dégâts / 110-118 soins, 160 mana, 10 s |
+| Holy Shock | 1 : candidats 20473 (Talent.csv) et 1311606 (SkillLineAbility, Holy Shock rang 1 du tableau) ; tranché : 1311606 (règle 3, départage Fojji : Paladin UI, 20473 absent des packs, DB2 70245 relu le 2026-10-26) | 129-139 dégâts / 110-118 soins, 160 mana, 10 s |
 | Consecrated Ground | 2 : 1310905 (seul ID de ce nom, SpellName ; ni Talent ni SkillLineAbility ; ID du rang 2 non trouvé) | Dégâts sacrés sur 4 premiers ennemis +5/+10% |
 | Holy Power | 5 : 5923, 5924, 5925, 5926, 25829 | Crit Holy Shock/Holy Strike +3% à +15% ; autres +1% à +5% |
 | Light's Vigil | 1 : 1310911 (SkillLineAbility ; absent de Talent.csv ; rangs 2-3 = 1311590, 1311595) | 730 mana, 30 s, 6 s recharge |
@@ -251,7 +251,7 @@ Noms, rangs max et effets : wowforevertalents.com/paladin. Les sources web ne pu
 | Improved Hammer of Justice | 3 : 20487, 20488, 20489 | Recharge -5 à -15 s |
 | Templar's Bulwark | 1 : 1311015 | 110 mana, 5 min, absorbe 100% PV max 8 s |
 | Reckoning | 5 : 20177, 20179, 20181, 20180, 20182 (ordre du DB2 ; bloc 8/16/24/32/40) | Attaque supplémentaire après blocage / crit |
-| Iron Creed | 5 : candidats 1311033, 1311034 (SpellName seul, non départagés) | Menace Holy Strike +5% à +25% |
+| Iron Creed | 5 : candidats 1311033, 1311034 (SpellName seul) ; tranché : 1311033 (règle 1, déclenchement : 1311034 effet 6 aura 231 → 1311033, aura 87 dégâts subis, DB2 70245 relu le 2026-10-26) | Menace Holy Strike +5% à +25% |
 | Holy Shield | 1 : 20925 (Talent.csv ; rangs 2-3 = 20927, 20928) | 150 mana, bloc +30%, 10 s, 4 charges |
 
 ### Retribution (17)
@@ -310,7 +310,7 @@ Lus sur https://www.wowhead.com/forever/spell=ID. « Type » = type annoncé par
 
 ### Écarts avec le DB2 client
 Valeur du DB2 gardée dans les tableaux ; ancienne valeur du fichier citée ici.
-1. Holy Shock rang 1 : le fichier donnait 1311606 ; Talent.csv donne 20473 pour le talent, SkillLineAbility contient 1311606 (Holy Shock). Les deux sont listés dans le tableau des talents, non départagés ; le tableau des sorts garde 1311606 (rang 1) et 20473 (rang 2).
+1. Holy Shock rang 1 : le fichier donnait 1311606 ; Talent.csv donne 20473 pour le talent, SkillLineAbility contient 1311606 (Holy Shock). Les deux sont listés dans le tableau des talents ; tranché : 1311606 (règle 3, départage Fojji : Paladin UI, DB2 70245 relu le 2026-10-26) ; le tableau des sorts garde 1311606 (rang 1) et 20473 (rang 2).
 2. Judgement of the Crusader : le fichier donnait 21183 (existe dans SpellName, absent de SkillLineAbility) ; SkillLineAbility donne 20188, 20300-20303 ; SpellName porte aussi ce nom sur 25942, 25943, 456496. Non départagés. Vindication : SpellName porte aussi 440667, 440668 (non reliés). Blessing / Greater Blessing of Sanctuary : nom absent de SpellName (revérifié en CSV exact).
 3. Vengeance : le fichier donnait 3 rangs ; Talent.csv en liste 5 (20049, 20056-20059).
 4. Spiritual Focus : 2 rangs dans le fichier ; 5 dans Talent.csv.
@@ -320,3 +320,11 @@ Valeur du DB2 gardée dans les tableaux ; ancienne valeur du fichier citée ici.
 8. Sorts du DB2 portant le nom d'un sort du fichier mais absents du fichier : Seal of Righteousness 21084 (remplace 20154) ; Holy Light 19968, 19980-19982, 1313348-1313352 ; Flash of Light 19993, 412020, 1313342-1313346 ; Holy Shock 25902, 25903, 25911-25914 ; Righteous Fury 407627 ; Exorcism 415068-415073. Non reliés à un rang (aucune source ne les cite).
 - Talents du fichier absents de Talent.csv (IDs pris dans SkillLineAbility) : Voice of Truth, Light's Vigil, Swift Judgement, Templar's Bulwark, Twist of Light, Improved Seal of Fury ; Reverence, Divine Precision, Consecrated Ground, Sacred Duty, Holy Conduit, Sacred Arbiter, Champion of the Light, Instrument of Law, Sanctified Judgement : SpellName seul sauf Sanctified Judgement (1311074 en SkillLineAbility).
 - Aucun ID du fichier (166 lignes de sorts) n'est absent de SkillLineAbility, et aucun nom ne diffère du DB2 pour ces IDs.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Infusion of Light : 53672 et 437063, les deux auras visibles de 15 s à 1 charge. Ajoutées au pack ; 426065 et 426179 sont passifs, 437877 est un autre effet.
+- Judgement of the Crusader : les 6 IDs sont le même débuff, déjà tous dans le pack ; 456496 (même nom, 10 s, base 140) est un autre débuff, non repris.
+- Improved Seal of Fury, Sanctified Judgement : mana rendu instantané (effet 30), rien à afficher.

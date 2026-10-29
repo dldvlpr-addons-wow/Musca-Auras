@@ -62,6 +62,138 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-10-29
+
+Not yet tested in game: the class pack changes below. Headless test bench: 85 scenarios, 0 failed.
+
+### Changed
+- Class packs: every spell and aura ID checked again in the DB2 of build 70532 (durations, stacks, proc charges).
+  Shaman pack: 408476, 408480 and 408483 removed from the five-second rule, absent from that build. Warrior pack:
+  Deep Wounds removed, its debuff 12162 has no aura in that build. The other auras left unchecked in the
+  `NOTES.md` files and listed for checking (traps, Shadow Ward, pet spells, Lacerate, Prowl, Pounce, Frostbolt,
+  Pyroblast, Polymorph, Vampiric Embrace, Spirit Tap) are confirmed there.
+- Class packs: Shield Wall and Last Stand (Warrior), Barkskin (Druid), Evasion (Rogue) and Deterrence (Hunter) show
+  up in the Defensives icon. Their separate buff icons are removed, the cooldown icons stay.
+- Paladin pack: "Fading" reminder on Righteous Fury, 60 seconds before it ends.
+- Hunter pack: "In melee range" text while the target is in melee range of Raptor Strike, in combat (new `inside`
+  option of the `meleeRange` pack field). Not in the ForeverAuras variant.
+- Rogue pack: reminder when fewer than 5 Instant Poison or Deadly Poison of the highest known rank are left in the
+  bags. Hunter pack: reminder below 200 equipped ammo (new `ammo` reminder of the packs), not in the ForeverAuras
+  variant.
+  Files: `Tests/Packs/PackBuilder.lua`, `Tests/Packs/*/Pack*.lua`, `Tests/Packs/*/Pack*.txt`,
+  `Tests/Packs/*/NOTES.md`, `WeakAurasOptions/ClassPacks.lua`, `Classes/Warrior.md`, `Classes/Guides/Warrior.md`.
+
+## 2026-10-26
+
+Not yet tested in game: the class pack changes below. Headless test bench: 85 scenarios, 0 failed.
+
+### Changed
+- Class packs: the spell ID lists and the defensive icons of the class packs by Fojji (GPL-2.0) served as reference.
+  No code of these packs is copied: the auras are built by `Tests/Packs/PackBuilder.lua`. Thanks to Fojji.
+- Class packs: buffs on the player show whoever cast them, and a new Defensives icon shows Blessing of Protection,
+  Freedom and Sacrifice, Power Word: Shield, Pain Suppression and defensive potions on the player, plus the class shields listed by a
+  new `defensives` pack field (Ice Barrier, Fire Ward, Frost Ward and Mana Shield, Shadow Ward, Templar's Bulwark).
+  Those shields keep a plain cooldown icon. An `anyCaster` entry option shows an aura from any caster (Weakened Soul,
+  Sunder Armor, Expose Armor, Seduction, the hunter pet's Frenzy).
+- Class packs: Power Word: Shield on the target is one icon, the shield up or its cooldown, as are Voice of Truth,
+  Berserk with their buff. Missing buffs, procs and debuffs added for every class; the list is
+  in each `Tests/Packs/<class>/NOTES.md`.
+  Files: `Tests/Packs/PackBuilder.lua`, `Tests/Packs/*/Pack*.lua`, `Tests/Packs/*/Pack*.txt`,
+  `Tests/Packs/*/NOTES.md`, `WeakAurasOptions/ClassPacks.lua`.
+- Paladin pack: Infusion of Light proc.
+- Class packs: a debuff on the player (Forbearance, Weakened Soul) uses Approximate Match: in combat the game keeps
+  debuffs on the player out of spell ID filters. Each debuff shows once its duration is learned: it must be seen
+  once out of combat first. File: `Tests/Packs/PackBuilder.lua`.
+- Mage pack: four Arcane Blast stack segments, counted from the casts by a custom trigger (new `segments.casts`
+  pack field): each Arcane Blast adds a stack up to 4 and restarts the 15 s of the debuff in build 70532. The
+  stacks only expire: the debuff has no proc charge in that build. Files: `Tests/Packs/PackBuilder.lua`, `Tests/Packs/Mage/PackMage.lua`,
+  `Tests/Scenarios/89_ArcaneBlastStacks.lua`.
+
+## 2026-10-25
+
+Not yet tested in game: the four custom code functions, the utility packs, the Packs page, the removal of the recorded voice
+sound and the two fixes below. Headless test bench: 84 scenarios, 0 failed.
+
+### Added
+- Custom code: `WeakAuras.IsSpellReady(spellID)`, `WeakAuras.GetSpellCooldownDurationNoGCD(spellID)` and
+  `WeakAuras.SetSpellCooldownState(state, spellID, ignoreGCD)` read the cooldown of a spell watched with
+  `WeakAuras.WatchSpellCooldown`, readable or secret, and find another rank of the watched spell by name. They
+  return nil for a spell the player does not know, and `IsSpellReady` returns nil while the game hides whether a
+  secret cooldown is over. `SetSpellCooldownState` fills a custom trigger state with
+  `progressType = "durationObject"`, the duration and a plain `onCooldown` flag for conditions, and marks the state
+  changed when the flag or the duration object changes. Spells with charges read as not ready while they recharge. Files: `WeakAuras/GenericTrigger.lua`,
+  `Tests/Scenarios/85_CustomCodeCooldownAndLoadFlag.lua`.
+- Custom code: `WeakAuras.SetLoadFlag(id, loaded)` keeps an aura unloaded (`false`) or gives it back to its load
+  options (`true`), until the next `/reload`. The load scan runs on the next frame after login. Group ids are
+  ignored. Files:
+  `WeakAuras/WeakAuras.lua`, `Tests/Scenarios/85_CustomCodeCooldownAndLoadFlag.lua`.
+- Options, Packs page: a toolbar button "Packs", after Import, opens a page with the class HUD of the player's class
+  first, then the utility packs. "Whole HUD" imports the class pack as before. Below it, one button per HUD block
+  (Reminders, Melee Range, Procs, Buffs and Debuffs, Stack Segments, Combo Points, Resource Bars, Rotation,
+  Cooldowns, Timer Bars, Upkeep, Totems, the ones the class has) imports that block alone. The import also carries
+  the installed HUD as it is installed, positions, changes and added auras included, since the update import
+  removes the auras it does not carry and changes the ones that differ. Only the picked block comes from the
+  pack, and only it goes through the ForeverAuras conversion. The update dialog preselects "Update" for an
+  installed HUD. A block outside the HUD group does not count as installed. A block anchored below an installed
+  block follows its installed name. A block anchored below a block that is neither imported nor installed moves to
+  its own place on screen. "Whole HUD" updates every block to the pack settings. The utility packs are sorted by
+  category: Combat, Group and Buffs, Target and Enemies, Character. The New Aura panel keeps only the
+  aura creation. Files: `WeakAurasOptions/PackLibrary.lua` (new), `WeakAurasOptions/WeakAurasOptions.toc`,
+  `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `Tests/Packs/EmbedUtilityPacks.lua`,
+  `WeakAurasOptions/UtilityPacks.lua`, `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`,
+  `DESCRIPTION.md`, `Tests/Scenarios/86_UtilityPacks.lua`, `Tests/Scenarios/88_PackLibrary.lua` (new).
+- Options, Packs page: a "Utility Packs" list under the class HUD, one import button per pack. Ready Flash
+  flashes the utility cooldowns of the class pack, the racials and trinkets 13 and 14 when they come back, with a
+  sound. Buff Check shows the group buffs on the player out of combat, in a group. Target Debuffs shows the raid
+  debuffs on the target in combat, with stacks for Sunder Armor, Fire Vulnerability and Winter's Chill. Missing
+  buffs and debuffs stay grey. Pre-Pull Check shows a missing or fading flask and food out of combat, in a group,
+  outside rest areas. Nameplate Aggro writes the threat percent above each enemy nameplate, colored by threat
+  status; it needs the default Blizzard nameplates. Shield Meter shows the damage shields on the player with their
+  remaining time; the absorb amount reads secret and is not shown. Crowd Control shows the stuns, incapacitates,
+  fears, roots and silences on each enemy nameplate, three at most, with their countdown. Armor Shred shows Sunder
+  Armor with its stacks and Expose Armor under each enemy nameplate. Enemy Targets writes the target of each hostile
+  enemy above its nameplate in combat; the name can read secret and is only shown. Center Mark draws a dot at the
+  center of the screen in combat. Level Progress shows the experience bar below level 60, with the rested experience.
+  Raid Coverage counts the group members carrying each raid buff, out of combat, in a group. Combat Items shows the
+  potions, healthstones, runes, mana gems, Thistle Tea and explosives you carry, in combat, with their cooldown and
+  count. Engineering Items shows the Gnomish Cloaking Device and the rocket boots while equipped, grey on cooldown.
+  Conjured Supplies shows a mage's conjured water and food with their count, out of combat. Character Stats writes
+  the main stats in one panel, out of combat, as the game keeps them secret in combat. World Reminders, under a new
+  World category, shows the Leyline zone buffs missing or fading and herb or mineral tracking off, out of combat.
+  Campfire tells you to sit by a campfire while its buff is missing or fading, shows it warming up, and plays a sound
+  when the buff comes in; a click on the Sit Down icon sits you down. Combat Text stacks the hits and heals you take
+  and turns on the game's damage numbers for the damage you deal. Announcements tells the group about a druid's
+  battle rez, a warlock's soulstone and summon, and whispers the rezzed player. Group Experience lists the level and
+  experience of the group members who run it, through addon messages. Equipment Sets shows one icon per set, grey
+  when not worn, and equips it on a click out of combat. Guild Campfires shows for 15 seconds where a guild member
+  who runs it placed a campfire on your map, and sends yours. Object Highlight turns on the game's interaction icons
+  over objects, out of combat; the settings stay after the pack is removed. The nameplate packs need the default Blizzard nameplates. Musca Auras target only, no ForeverAuras
+  export. The packs are built from new code by `Tests/Packs/Utility/UtilityPackBuilder.lua`. Files: `WeakAurasOptions/UtilityPacks.lua`,
+  `WeakAurasOptions/WeakAurasOptions.toc`, `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Packs/Utility/`,
+  `Tests/Packs/EmbedUtilityPacks.lua`, `Tests/Scenarios/86_UtilityPacks.lua`, `Tests/Harness/Units.lua`.
+- Class packs: a sound on the procs and reactive abilities (Musca Auras target), "Fading" reminders before a buff
+  (Musca Auras target), an Enemy Cast bar and the ranged swing timer. The class pack notice shows again for
+  version 1.15.0. Files: `Tests/Packs/PackBuilder.lua`, `Tests/Packs/<Class>/`, `Tests/Packs/VerificationPack.lua`,
+  `WeakAurasOptions/ClassPacks.lua`, `WeakAuras/WeakAuras.lua`.
+
+### Removed
+
+- Aura sounds: the recorded voice sound is removed, with its phrase input. An aura that used it, saved by release
+  1.14.0 or imported with the legacy recorded voice mode, loses that sound on load: pick a sound file instead.
+  Files: `WeakAuras/BlizzardAuraDisplaySounds.lua`, `WeakAuras/BlizzardAuraDisplayMigration.lua`,
+  `WeakAurasOptions/ActionOptions.lua`, `WeakAurasOptions/AuraDisplayOptions.lua`,
+  `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`, `Tests/Scenarios/31_OptionsContract.lua`,
+  `Tests/Scenarios/36_OptionsBlocksContract.lua`, `Tests/Scenarios/48_Lot6aContract.lua`.
+
+### Fixed
+- Threat Situation trigger: secret threat values no longer raise a Lua error. While the values are secret, the threat
+  total and the other fields keep their last readable values, and with no unit the aggro flag stays unset. Files: `WeakAuras/Prototypes.lua`,
+  `Tests/Scenarios/87_SecretThreatSituation.lua`.
+- Number format at precision 0 (floor, ceil, round): a secret number, from custom text for example, no longer
+  raises a Lua error. It shows rounded to the nearest integer, whatever the round type. Files: `WeakAuras/Types.lua`,
+  `Tests/Scenarios/87_SecretThreatSituation.lua`.
+
 ## 2026-10-22
 
 Not yet tested in game: undo and redo of Start Collapsed, `/wa tutorial` in French, the random timers of
@@ -733,9 +865,9 @@ Released as 1.10.0. Headless test bench: 46 scenarios, 0 failed.
     error);
   - the classification messages of the native aura display are reworded, except "Choose a supported unit and Buff or
     Debuff." and the two messages checked by `Tests/Scenarios/31_OptionsContract.lua`; three
-    unreachable messages and `HasAdditionalFilters` are removed, and `ResolveFojjiRecordedSound` is no longer
+    unreachable messages and `HasAdditionalFilters` are removed, and the recorded sound resolver is no longer
     exported;
-  - reworded messages of the native aura display: the FojjiCore recorded sound warnings, "Pick a sound file in the
+  - reworded messages of the native aura display: the recorded voice warnings, "Pick a sound file in the
     Actions tab.", the warning when the client refuses an aura sound, and the preview notice; the tooltips of the
     "Marked for all nameplates" and "Marked for personal debuff display" filters take the longer text already shown
     by the options;

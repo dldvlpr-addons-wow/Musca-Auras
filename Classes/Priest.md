@@ -287,10 +287,10 @@ IDs par rang issus du DB2 client (table Talent, ordre rang 1 à N). Noms et rang
 | Power in Light | absent de Talent | — | 1309969 (SpellName seul, nom unique ; IDs de rang non connus) |
 | Twin Disciplines | absent de Talent | — | 1225132 (SpellName seul, nom unique ; IDs de rang non connus) |
 | Holy Precision | absent de Talent | — | 1309957 (SpellName seul, nom unique ; IDs de rang non connus) |
-| Soul Warding | absent de Talent | — | candidats SpellName : 402000, 402834 (non départagés) |
+| Soul Warding | absent de Talent | — | candidats SpellName : 402000, 402834 ; tranché : 402000 (règle 2, seule aura réelle : APPLY_AURA 107 + 108 pour recharge et coût, 402834 = aura 332 seule, DB2 70245 relu le 2026-10-26) |
 | Penance | absent de Talent | — | rang 1 : 402174 ; rangs 2 à 4 : 1240720, 1240721, 1316995 (sorts du tableau principal). Autres « Penance » en SkillLineAbility, rang non établi : 402284, 402289, 1240723, 1240724, 1240727, 1240730, 1316991, 1316993 |
 | Renewed Hope | absent de Talent | — | candidats SpellName : 425280, 425303 (non départagés) |
-| Divine Aegis | absent de Talent | — | candidats SpellName, rang non établi : 431622, 431624, 431649 |
+| Divine Aegis | absent de Talent | — | candidats SpellName, rang non établi : 431622, 431624, 431649 ; tranché : 431624 (règle 2, seule aura d'absorption : APPLY_AURA 69, 431622 = dummy 4, 431649 = aura 332, DB2 70245 relu le 2026-10-26) |
 
 Talents Discipline du DB2 absents des listes web : Unbreakable Will (1/0 ; 14522, 14788, 14789, 14790, 14791), Improved Power Word: Fortitude (1/1 ; 14749, 14767), Divine Spirit (2/4 ; 14752), Force of Will (2/5 ; 18544, 18547, 18548, 18549, 18550).
 
@@ -366,19 +366,19 @@ IDs issus du DB2 client : sorts déclenchés (SpellEffect, source → déclench�
 | Power Word: Shield | rangs 17, 592, 600, 3747, 6065, 6066, 10898, 10899, 10900, 10901 (aura = oui, aucun sort déclenché) | buff joueur (30 s) | DB2 |
 | Weakened Soul | 6788 | debuff joueur | DB2 SpellName (nom unique) ; aucun sort source lié en SpellEffect |
 | Inner Focus | 14751 | proc / buff joueur | DB2 : talent 14751, aura = oui, aucun sort déclenché |
-| Inspiration | candidats : 14892 (talent rang 1, aura = oui ; rangs 2 et 3 : 15362, 15363) et 14893 (SpellName seul) | proc (buff joueur) | DB2 ; aucun sort déclenché lié, non départagés |
+| Inspiration | candidats : 14892 (talent rang 1, aura = oui ; rangs 2 et 3 : 15362, 15363) et 14893 (SpellName seul) | proc (buff joueur) | DB2 ; aucun sort déclenché lié ; tranché : 14893 (règle 2, seule aura réelle : APPLY_AURA 101 contre dummy 4 pour 14892 ; présent aussi dans Numen - Essentials, DB2 70245 relu le 2026-10-26) |
 | Shadow Weaving | 15258 | debuff cible / buff lanceur | DB2 : déclenché par 15257, 15331, 15332, 15333, 15334 (15258 = aura) |
 | Power Infusion | 10060 (aura = oui, aucun sort déclenché) | buff cible, 15 s | DB2 |
 | Vampiric Embrace | 15286 (SkillLineAbility, aura = oui) ; autres « Vampiric Embrace » en SpellName sans lien établi : 15290, 461966, 1237618 | buff | DB2 |
 | Shadowform | 15473 (talent, aura = oui) ; autres « Shadowform » en SpellName sans lien établi : 16592, 22917, 401980, 412527, 412569, 426223, 1213334 | buff | DB2 |
-| Divine Aegis | candidats SpellName, non reliés à un sort source : 431622, 431624, 431649 | buff | DB2 |
+| Divine Aegis | candidats SpellName, non reliés à un sort source : 431622, 431624, 431649 ; tranché : 431624 (règle 2, seule aura d'absorption : APPLY_AURA 69, DB2 70245 relu le 2026-10-26) | buff | DB2 |
 | Fear Ward | 6346 (aura = oui) ; autre entrée SpellName sans lien établi : 459699 | buff | DB2 |
 | Renew | rangs 139, 6074 à 6078, 10927 à 10929, 25315 (aura = oui) ; la SkillLineAbility Sacré liste aussi 425268 à 425277 (aura = oui), non reliés aux rangs | buff / HoT | DB2 |
 | Power Word: Fortitude | 1243, 1244, 1245, 2791, 10937, 10938 (aura = oui) ; Prayer of Fortitude 21562, 21564 | buff | DB2 |
 | Inner Fire | 588, 602, 1006, 7128, 10951, 10952 (aura = oui) | buff | DB2 |
 | Martyrdom | 14531 déclenche 27828 Focused Casting (aura) | proc (buff joueur) | DB2 |
 | Searing Light | 14909 déclenche 1284536 Holy Purpose (aura) | proc (buff joueur) | DB2 |
-| Blessed Recovery | talent 27811 (aura = oui) ; 27813 (SkillLineAbility, aura = oui) ; 1240755 (SpellName seul) ; aucun sort déclenché | proc | DB2, non départagés |
+| Blessed Recovery | talent 27811 (aura = oui) ; 27813 (SkillLineAbility, aura = oui) ; 1240755 (SpellName seul) ; aucun sort déclenché | proc | DB2 ; tranché : 27813 (règle 2, seule aura périodique réelle : APPLY_AURA 226 ; 27811 = dummy 4, 1240755 = effet 10 soin sans aura, DB2 70245 relu le 2026-10-26) |
 | Spirit of Redemption | 20711 (talent, aura = oui) ; autres « Spirit of Redemption » en SpellName sans lien établi : 27792, 27795, 27827 | buff | DB2 |
 
 ## Points non vérifiés
@@ -386,7 +386,7 @@ IDs issus du DB2 client : sorts déclenchés (SpellEffect, source → déclench�
 - Wowhead Forever : listes par classe, talents et recherche non exploitables via lecture web (filtres seuls). Une seule page de sort lue (15270). Aucun recoupement Wowhead des IDs de sorts de classe.
 - endgametools et wowforevertalents ne publient aucun spell ID : l'ensemble des IDs du tableau repose sur une seule source (wow-forever.gg). Niveaux, coûts, recharges et durées sont concordants entre endgametools et wowforevertalents sur les points comparés.
 - IDs de rang des talents : tranchés par le DB2 (voir Talents). Reste non établi : IDs de rang des talents absents de la table Talent (Power in Light, Twin Disciplines, Holy Precision, Improved Mind Flay, Devouring Contagion, Early Demise : un seul ID SpellName chacun ; ordre des rangs de Divine Aegis, Litany of Light, Soul Warding, Renewed Hope et des Penance / Prayer of Mending hors tableau principal).
-- Auras sans sort déclenché lié dans le DB2 (Inspiration, Divine Aegis, Blessed Recovery, Weakened Soul) : candidats listés, non départagés. Le DB2 ne dit pas quelles entrées sont actives en jeu.
+- Auras sans sort déclenché lié dans le DB2 (Inspiration, Divine Aegis, Blessed Recovery, Weakened Soul) : candidats listés ; tranchés ci-dessus pour Inspiration, Divine Aegis et Blessed Recovery. Le DB2 ne dit pas quelles entrées sont actives en jeu.
 - Divergences relevées sur wow-forever.gg, tranchées par le DB2 :
   - Blackout rang 1 : DB2 = 15268 (talent rang 1, Talent et SkillLineAbility) ; 15269 est l'aura déclenchée par 15268 et 15323 à 15326. Rangs 2 à 5 : 15323 à 15326 (confirmé).
   - Devouring Plague : DB2 = 2944 et 19276 à 19280 (SkillLineAbility Ombre, aura = oui). 459713 et 1219275 existent dans SpellName mais sont absents de SkillLineAbility et de SpellEffect Prêtre.
@@ -404,3 +404,9 @@ IDs issus du DB2 client : sorts déclenchés (SpellEffect, source → déclench�
 - Sorts-talents (rang 1 de Holy Nova, Mind Flay, Binding Heal, Penance, Prayer of Mending), Vampiric Embrace, Power Infusion, Lightwell Renew : niveau, coût, recharge non lus dans les sources de recoupement. Les rangs suivants de ces sorts ont les valeurs d'endgametools.
 - Prayer of Mending : effet dépendant des stats, aucun chiffre publié. Fear Ward : wowforevertalents note durée 3 min (Classic : 30 s de recharge, 10 min).
 - Build beta : les IDs peuvent changer avant la sortie.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Renewed Hope : 425280 et 425303 passifs, rien à afficher.

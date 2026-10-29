@@ -96,7 +96,8 @@ function Environment.Setup()
         return ({ Version = "5.22.0", ["X-Flavor"] = "Vanilla", Title = "Musca Auras" })[field]
       end
     end,
-    IsAddOnLoaded = function(addon) return addon == "WeakAuras" or addon == "WeakAurasArchive" and rawget(_G, "WeakAurasArchive") ~= nil end,
+    IsAddOnLoaded = function(addon)
+      return addon == "WeakAuras" or addon == "WeakAurasArchive" and rawget(_G, "WeakAurasArchive") ~= nil end,
     LoadAddOn = function(addon)
       if addon == "WeakAurasArchive" then
         rawset(_G, "WeakAurasArchive", rawget(_G, "WeakAurasArchive") or {})
@@ -104,7 +105,6 @@ function Environment.Setup()
       end
       return false, "MISSING"
     end,
-    GetNumAddOns = function() return 1 end,
     DoesAddOnExist = function(addon) return addon == "WeakAuras" end,
   }
 

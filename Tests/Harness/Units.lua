@@ -423,6 +423,8 @@ function Units.Install(target, fire, wowApi)
   C_Secrets.ShouldAurasBeSecret = function() return Units.restricted end
   C_Secrets.ShouldCooldownsBeSecret = function() return Units.restricted end
   C_Secrets.ShouldUnitStatsBeSecret = function() return Units.restricted end
+  -- The documented stub returns nothing; the game returns the bonus of the school, and the stats trigger takes a max.
+  target.GetSpellBonusDamage = function() return 0 end
   C_Secrets.ShouldSpellCooldownBeSecret = function() return Units.restricted end
   C_Secrets.ShouldUnitIdentityBeSecret = function() return false end
   C_Secrets.ShouldUnitAuraInstanceBeSecret = function(token, auraInstanceID)

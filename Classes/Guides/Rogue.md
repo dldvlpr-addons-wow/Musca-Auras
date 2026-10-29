@@ -232,7 +232,7 @@ Niveau 30 (Wowhead) :
 ### Procs et buffs à suivre
 
 - Slice and Dice (5171, 6774).
-- Thousand Cuts : cumuls de réduction de coût (candidats 1310721 ou 1310723).
+- Thousand Cuts : cumuls de réduction de coût (candidats 1310721 ou 1310723 ; tranché : 1310723 (règle 2, CumulativeAura 5, DB2 70245 relu le 2026-10-26)).
 - Setup (13983, 14070, 14071 ; proc 15250) : point de combo à 100 % sur esquive ou résistance totale.
 - Initiative (13976, 13979, 13980 ; proc 13977) : point de combo en plus sur capacité de Camouflage, 100 %. Vanish puis Garrote = 2 points pour environ 15 énergie chacun.
 - Cutthroat (424980, 462707, 462708 ou 1241810) : Backstab rend le prochain Ambush utilisable sans Camouflage (3 % par point).
@@ -309,4 +309,4 @@ Niveau 30 (Wowhead) :
 
 ## Sorts cités sans ID dans Classes/Rogue.md
 
-Pierres d'affûtage (Sharpening Stone), Elune's Light, Eureka!, Blood Fury, Berserking, Touch of the Grave, Wind Blessed, Shadowmeld, Hardiness, talent Legacy « Talented », Thistle Tea ; en plus : auras distinctes de Slice and Dice, Rupture, Expose Armor et Garrote (non vérifiées), Remorseless Attacks (proc), Thousand Cuts (candidats seulement).
+Pierres d'affûtage (Sharpening Stone), Elune's Light, Eureka!, Blood Fury, Berserking, Touch of the Grave, Wind Blessed, Shadowmeld, Hardiness, talent Legacy « Talented », Thistle Tea ; en plus : auras distinctes de Slice and Dice, Rupture, Expose Armor et Garrote (non vérifiées), Remorseless Attacks (proc), Thousand Cuts (1310723 tranché, règle 2, DB2 70245 relu le 2026-10-26).

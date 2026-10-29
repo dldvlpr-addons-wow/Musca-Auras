@@ -6,6 +6,7 @@ local waterShield = { 408510, 408511, 409941 }
 return Pack.Build({
   class = "SHAMAN", name = "Shaman", prefix = "mcShamV2",
   rotation = {
+    { name = "Lightning Bolt", spell = 403 },
     { name = "Lava Burst", spell = 408490 },
     { name = "Stormstrike", spell = 17364 },
     { name = "Lava Lash", spell = 408507, spec = "SHAMAN_ENHANCEMENT" },
@@ -37,11 +38,13 @@ return Pack.Build({
   buffs = {
     { name = "Mana Tide active", totem = 16190, slot = 3, known = 16190,
       texture = "Interface\\Icons\\Spell_Frost_SummonWaterElemental" },
-    { name = "Clearcasting", aura = { 16246 }, known = 16164, flash = 2 },
+    { name = "Clearcasting", aura = { 16246 }, known = 16164, flash = 2, sound = true },
     { name = "Flurry", aura = { 16257, 12966, 17687 }, known = 16256, stacks = true },
     { name = "Earth Shield (target)", aura = { 408514, 408519 }, known = 408514, unit = "target", stacks = true,
       warn = 10 },
-    { name = "Ancestral Fortitude (target)", aura = { 16177 }, known = 16176, unit = "target", glow = false },
+    -- On the player from any shaman's heal.
+    { name = "Ancestral Fortitude", aura = { 16177 }, glow = false },
+    { name = "Grounding Totem Effect", aura = { 8178 }, known = 8177 },
     { name = "Water Walking", aura = { 546 }, known = 546, glow = false },
   },
   debuffs = {
@@ -74,8 +77,8 @@ return Pack.Build({
     8004, 8008, 8010, 10466, 10467, 10468,
     1064, 10622, 10623,
     403, 529, 548, 915, 943, 6041, 10391, 10392, 15207, 15208,
-    408439, 408440, 408441, 408442, 408443, 408472, 408473, 408474, 408475, 408476, 408477,
-    421, 930, 2860, 10605, 408479, 408480, 408481, 408482, 408483, 408484,
+    408439, 408440, 408441, 408442, 408443, 408472, 408473, 408474, 408475, 408477,
+    421, 930, 2860, 10605, 408479, 408481, 408482, 408484,
     8042, 8044, 8045, 8046, 10412, 10413, 10414,
     8050, 8052, 8053, 10447, 10448, 29228,
     8056, 8058, 10472, 10473,

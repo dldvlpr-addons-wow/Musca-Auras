@@ -67,35 +67,15 @@ return function(test)
   optionsPrivate.SaveAuraTrigger = function(_, triggernum) calls[#calls + 1] = "save:" .. triggernum end
 
   ---------------------------------------------------------------------------------------------------------------
-  -- ActionOptions: the " Fojji" recorded-voice phrase input exists before PrepareSecretActionOptions runs.
+  -- ActionOptions: no recorded voice choice and no phrase input.
   ---------------------------------------------------------------------------------------------------------------
-  local keysSeenByPrepare
-  local realPrepare = optionsPrivate.PrepareSecretActionOptions
-  assert(type(realPrepare) == "function", "PrepareSecretActionOptions export")
-  optionsPrivate.PrepareSecretActionOptions = function(data, action)
-    keysSeenByPrepare = {}
-    for key in pairs(action.args) do keysSeenByPrepare[key] = true end
-    return realPrepare(data, action)
-  end
   local actionData = { id = "S", uid = "S", regionType = "icon", cooldown = true, anchorFrameType = "SCREEN",
     actions = { start = {}, finish = {}, init = {} }, conditions = {},
     triggers = { { trigger = { type = "secretAura", unit = "player", debuffType = "HELPFUL", auraspellids = { "1" } } } } }
   local actionOptions = optionsPrivate.GetActionOptions(actionData)
-  assert(keysSeenByPrepare and keysSeenByPrepare.start_sound_fojji and keysSeenByPrepare.finish_sound_fojji,
-    "sound_fojji inputs must exist before PrepareSecretActionOptions")
   for _, when in ipairs({ "start", "finish" }) do
-    local phrase, sound = actionOptions.args[when .. "_sound_fojji"], actionOptions.args[when .. "_sound"]
-    Same(phrase.type, "input", when .. " fojji type")
-    Same(phrase.name, "Recorded phrase", when .. " fojji name")
-    Same(phrase.width, "full", when .. " fojji width")
-    Near(phrase.order - sound.order, 0.01, when .. " fojji order")
-    Same(phrase.hidden(), true, when .. " fojji hidden without Fojji sound")
-    Same(phrase.disabled(), true, when .. " fojji disabled without do_sound")
-    actionData.actions[when].sound = " Fojji"
-    Same(phrase.hidden(), false, when .. " fojji hidden with Fojji sound")
-    actionData.actions[when].do_sound = true
-    Same(phrase.disabled(), false, when .. " fojji disabled with do_sound")
-    Same(sound.values[" Fojji"], "FojjiCore recorded voice", when .. " Fojji sound choice")
+    Same(actionOptions.args[when .. "_sound_voice"], nil, when .. " no phrase input")
+    Same(actionOptions.args[when .. "_sound"].values[" Voice"], nil, when .. " no recorded voice choice")
   end
 
   ---------------------------------------------------------------------------------------------------------------

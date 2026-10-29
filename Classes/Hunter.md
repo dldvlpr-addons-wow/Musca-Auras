@@ -478,7 +478,7 @@ IDs issus du DB2 70245. « Aura sur le sort lancé » = le sort lancé porte lui
 | Wing Clip | 2974, 14267, 14268 (aura sur le sort lancé) ; autres sorts nommés : 14340, 27633, 1310180 | debuff cible, 10 s | idem |
 | Lacerate | 24118, 24119, 24120, 1299332 (aura sur le sort lancé) ; autres sorts nommés : 5422, 414644, 414647, 415760, 468843, 1235826, 1235827 | debuff cible, 21 s | idem |
 | Concussive Shot | 5116 (aura sur le sort lancé) ; autres sorts nommés : 17174, 22914, 27634, 1236191 | debuff cible, 4 s | idem |
-| Freezing / Frost Trap | sorts lancés 1499, 14310, 14311 et 13809 sans aura (piège). Candidats de nom proche, lien piège vers effet non vérifié : « Freezing Trap Effect » 3355, 14308, 14309 ; « Frost Trap Aura » 13810 ; autres sorts nommés Freezing Trap : 27753, 1285994, 1288849, 1288851, 1288852, 1294351, 1294353, 1294444 | debuff cible | idem |
+| Freezing / Frost Trap | sorts lancés 1499, 14310, 14311 et 13809 sans aura (piège). Candidats de nom proche, lien piège vers effet non vérifié : « Freezing Trap Effect » 3355, 14308, 14309 ; « Frost Trap Aura » 13810 ; autres sorts nommés Freezing Trap : 27753, 1285994, 1288849, 1288851, 1288852, 1294351, 1294353, 1294444 ; tranché : Frost Trap 13810 (règle 3, départage Fojji : Hunter UI, DB2 70245 relu le 2026-10-26) ; Freezing Trap reste non tranché : aucun EffectTriggerSpell depuis 1499/14310/14311, piège = Effect 104 invocation d'objet | debuff cible | idem |
 | Aspects (Hawk, Monkey, Cheetah, Pack, Beast, Wild, Viper, Falcon) | aura sur le sort lancé : Hawk 13165, 14318, 14319, 14320, 14321, 14322, 25296 ; Monkey 13163 ; Cheetah 5118 ; Pack 13159 ; Beast 13161, 1299445, 1299446, 1299447 ; Wild 20043, 20190 ; Viper 415423 (autres sorts nommés : 34074, 415424, 415718) ; Falcon 469145. Auras déclenchées : Hawk vers Quick Shots 6150 ; Beast vers Quick Strikes 1299448 ; Falcon vers Quick Strikes 469144 ; Cheetah et Pack vers Dazed 15571 | buff joueur | idem |
 | Trueshot Aura | 1299346, 1299348, 19506, 20905, 20906 (aura sur le sort lancé) | buff groupe 30 min | idem |
 | Quick Shots (Improved Aspect of the Hawk, Forever : Deadly Aspects selon Blizzard) | 6150 « Quick Shots » (déclenchée par chaque rang d'Aspect of the Hawk) ; talent : voir Improved Aspect of the Hawk (19552 à 19556, 23559) | proc : +30 % vitesse distance 12 s | guildorder.com |
@@ -504,3 +504,11 @@ IDs issus du DB2 70245. « Aura sur le sort lancé » = le sort lancé porte lui
 - Noms de talent différents du DB2 (IDs absents du fichier, pas de contradiction d'ID) : Improved Aspect of the Hawk (DB2 : Deadly Aspects), Lethal Shots (DB2 : Lethal Attacks), Monster Slaying (DB2 : Improved Tracking en 0/0), Trap Mastery (DB2 : Survival Tactics en 0/3).
 - Wyvern Sting : le fichier le dit absent de Forever ; le DB2 contient une ligne de talent sans nom en Survival 1/6 (19386). Présence DB2 ≠ actif en jeu.
 - Les 159 IDs du tableau des sorts de base ont tous été recoupés avec SpellName et SkillLineAbility Hunter : aucun écart de nom ni d'ID.
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Freezing Trap : 3355, 14308, 14309 (débuff sur la cible) déjà dans le pack ; 1294353 (étourdissement de zone) et 1294444 (DoT et ralentissement) sont aussi visibles mais sans lien de déclenchement depuis 1499, 14310, 14311 : non repris ; 1288849 et 1288851 sont sur soi.
+- Improved Aspect of the Hawk : talent passif, le proc visible est Quick Shots 6150, déjà dans le pack.
+- Lethal Shots, Monster Slaying, Wyvern Sting : talents passifs ou absents de Forever, rien à afficher.

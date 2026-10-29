@@ -30,7 +30,7 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 - Absents de Forever (fichier) : Crusader Strike, Divine Storm, Avenging Wrath, Blessing of Sanctuary. Aucun n'est dans le pack.
 - Écartés : Lay on Hands (armure).
 - Écarts Quazii écartés : runes SoD absentes du fichier (Crusader Strike, Divine Storm, Avenger's Shield, Rebuke, Hand of Reckoning, Divine Sacrifice, Horn of Lordaeron, procs SoD) ; Forbearance qui grise les bulles ; Exorcism / Holy Wrath selon le type de créature et Art of War (custom, overlay) ; texte unique de l'aura active (custom, API secrète).
-- Absents du pack : Templar's Bulwark, Swift Judgement, Blessing of Salvation/Light/Sacrifice.
+- Absents du pack : Blessing of Salvation/Light/Sacrifice en recharge (Templar's Bulwark et Swift Judgement ajoutés le 2026-10-26).
 
 ## À tester en jeu
 
@@ -48,3 +48,16 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 - Texte « Not in melee range » (Holy Strike 679, ID à confirmer sur Forever) : chargé en combat, caché à portée, affiché hors de portée (condition `spellInRange` sur l'alpha). Absent de la variante ForeverAuras.
 - Rappel « Missing: Seal » : chargé en combat seulement, affiché quand aucun sceau n'est actif.
 - Limite : en combat, sans sceau et sous 20 % de mana, le 2e rappel empilé peut recouvrir le texte de portée.
+
+## Comparaison avec les packs Fojji (2026-10-26), à tester en jeu
+- Buffs sur le joueur : plus de filtre « lancé par le joueur », un buff reçu d'un autre joueur s'affiche.
+- Nouvelle icône Defensives (toutes classes, reprise des packs Fojji, GPL-2) : Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression et potions défensives, de tout lanceur.
+- Templar's Bulwark 1311015 : simple recharge, comme Fojji ; bouclier actif dans l'icône Defensives. Voice of Truth 1310897 : buff actif ou recharge ; Swift Judgement 1310994 en recharge.
+- Bénédictions : Light (19977 à 19979), Salvation 1038, Greater Light 25890, Greater Salvation 25895 comptent pour le rappel.
+- Auras : résistances Ombre, Givre, Feu (3 rangs chacune) et Sanctity 20218 comptent pour le rappel.
+- Debuffs cible ajoutés : Seal of Justice (étourdissement 20170), Repentance 20066, Turn Undead (2878, 5627, 10326).
+- Proc Infusion of Light : 53672 et 437063, les deux auras visibles de 15 s à 1 charge du DB2 (pas dans les packs Fojji).
+- Forbearance (débuff sur soi) : Approximate Match (`secretApproximate`), posé par PackBuilder sur tout débuff HARMFUL du joueur. En combat le client exclut ces débuffs des filtres par ID de sort ; le trigger reconnaît l'aura par la durée apprise hors combat. Non vérifié en jeu.
+
+## Pack 1.15.0 (2026-10-29), à tester en jeu
+- Righteous Fury : rappel « Fading » à 60 s de la fin (durée 1800 s dans le DB2 70532).

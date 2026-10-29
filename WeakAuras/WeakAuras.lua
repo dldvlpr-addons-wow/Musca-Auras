@@ -387,7 +387,7 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.12.0"
+local CLASS_PACK_VERSION = "1.15.0"
 
 local function HasClassPack()
   local _, playerClass = UnitClass("player")
@@ -416,6 +416,8 @@ local loadFuncs = {};
 local loadFuncsForOptions = {};
 -- Mapping of events to ids, contains true if a aura should be checked for a certain event
 local loadEvents = {}
+-- Ids of auras that custom code switched off with WeakAuras.SetLoadFlag, contains true
+local loadFlagsOff = {}
 
 -- All regions keyed on id, has properties: region, regionType, also see clones
 Private.regions = {};
@@ -1876,6 +1878,9 @@ local function scanForLoadsImpl(toCheck, event, arg1, ...)
       if not Private.IsInAuraSet(data, auraSet) then
         shouldBeLoaded, couldBeLoaded = false, false
       end
+      if loadFlagsOff[id] then
+        shouldBeLoaded = false
+      end
 
       if(shouldBeLoaded and not loaded[id]) then
         changed = changed + 1;
@@ -1949,6 +1954,38 @@ function Private.ScanForLoads(toCheck, event, arg1, ...)
     return
   end
   scanForLoadsImpl(toCheck, event, arg1, ...)
+end
+
+local loadFlagsToScan = {}
+local function ScanLoadFlags()
+  -- ScanForLoads does nothing before the login scan ends, so keep the ids for a later frame.
+  if not WeakAuras.IsLoginFinished() then
+    C_Timer.After(0, ScanLoadFlags)
+    return
+  end
+  local toCheck = loadFlagsToScan
+  loadFlagsToScan = {}
+  Private.ScanForLoads(toCheck)
+end
+
+-- Lets custom code keep an aura unloaded (loaded false) or give it back to its load options (loaded true).
+-- The flag lives until the next /reload. The scan waits for the next frame, as the caller can run inside a scan.
+---@param id string
+---@param loaded boolean
+function WeakAuras.SetLoadFlag(id, loaded)
+  local data = type(id) == "string" and WeakAuras.GetData(id)
+  if not data or data.controlledChildren then
+    return
+  end
+  local off = not loaded or nil
+  if loadFlagsOff[id] == off then
+    return
+  end
+  loadFlagsOff[id] = off
+  if not next(loadFlagsToScan) then
+    C_Timer.After(0, ScanLoadFlags)
+  end
+  loadFlagsToScan[id] = true
 end
 
 local loadFrame = CreateFrame("Frame");
@@ -2293,6 +2330,7 @@ function WeakAuras.Delete(data)
   loaded[id] = nil;
   loadFuncs[id] = nil;
   loadFuncsForOptions[id] = nil;
+  loadFlagsOff[id] = nil;
   for event, eventData in pairs(loadEvents) do
     eventData[id] = nil
   end
@@ -2371,6 +2409,8 @@ function WeakAuras.Rename(data, newid)
   loaded[oldid] = nil;
   loadFuncs[newid] = loadFuncs[oldid];
   loadFuncs[oldid] = nil;
+  loadFlagsOff[newid] = loadFlagsOff[oldid];
+  loadFlagsOff[oldid] = nil;
 
   loadFuncsForOptions[newid] = loadFuncsForOptions[oldid]
   loadFuncsForOptions[oldid] = nil;
@@ -4762,6 +4802,9 @@ function Private.ApplyFrameLevel(region, frameLevel)
 end
 
 function WeakAuras.EnsureString(input)
+  if Private.IsSecret(input) then
+    return tostring(input)
+  end
   if (input == nil) then
     return "";
   end
@@ -5685,7 +5728,8 @@ local function ReplaceValuePlaceHolders(textStr, region, customCache, state, for
       value = custom[index]
     end
 
-    if value == nil then value = "" end
+    -- A secret cannot be compared, not even to nil
+    if not Private.IsSecret(value) and value == nil then value = "" end
 
     if formatter then
       value = formatter(value, state)

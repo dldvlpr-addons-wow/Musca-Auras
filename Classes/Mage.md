@@ -16,10 +16,10 @@ Tableau trié par nom puis rang. Les rangs 1 d'Arcane Blast, Ice Lance, Pyroblas
 | Amplify Magic | 3 | 10169 | 42 | 350 | — | 10 min |  |
 | Amplify Magic | 4 | 10170 | 54 | 450 | — | 10 min |  |
 | Arcane Blast | 1 | 400574 | talent | voir note | — | — | rang 1 donné par le talent ; niveau/coût : non trouvé (rang 1 absent de la liste entraîneur endgametools) |
-| Arcane Blast | 2 | 1239696 | 30 | 15% base | — | 8 s buff |  |
-| Arcane Blast | 3 | 1239697 | 40 | 15% base | — | 8 s buff |  |
-| Arcane Blast | 4 | 1239699 | 50 | 15% base | — | 8 s buff |  |
-| Arcane Blast | 5 | 1239700 | 60 | 15% base | — | 8 s buff |  |
+| Arcane Blast | 2 | 1239696 | 30 | 15% base | — | 8 s buff | DB2 70532 : 15 s (débuff 400573) |
+| Arcane Blast | 3 | 1239697 | 40 | 15% base | — | 8 s buff | DB2 70532 : 15 s (débuff 400573) |
+| Arcane Blast | 4 | 1239699 | 50 | 15% base | — | 8 s buff | DB2 70532 : 15 s (débuff 400573) |
+| Arcane Blast | 5 | 1239700 | 60 | 15% base | — | 8 s buff | DB2 70532 : 15 s (débuff 400573) |
 | Arcane Brilliance | — | 23028 | 56 | 3400 | — | 1 h |  |
 | Arcane Explosion | 1 | 1449 | 14 | 75 | — | — |  |
 | Arcane Explosion | 2 | 8437 | 22 | 120 | — | — |  |
@@ -201,7 +201,7 @@ Tableau trié par nom puis rang. Les rangs 1 d'Arcane Blast, Ice Lance, Pyroblas
 | Teleport: Thunder Bluff | — | 3566 | 30 | 120 | — | — |  |
 | Teleport: Undercity | — | 3563 | 20 | 120 | — | — |  |
 
-Remarque : Detect Magic n'existe pas dans Forever (wowforevertalents) : non trouvé (absent du DB2 70245). Comprehend Scroll et Study (onglet « Comprehension », niveau 6) : candidats DB2 (SkillLineAbility, ligne 3012), non tranché. Comprehend Scroll : 1296017 (classe Mage), 1309965, 1309973, 1310029, 1310030 (sans masque de classe). Study : 1302508 (classe Mage) ; 1302696 existe dans SpellName sans ligne SkillLineAbility.
+Remarque : Detect Magic n'existe pas dans Forever (wowforevertalents) : non trouvé (absent du DB2 70245). Comprehend Scroll et Study (onglet « Comprehension », niveau 6) : candidats DB2 (SkillLineAbility, ligne 3012), non tranché pour Comprehend Scroll (5 candidats sans lien de déclenchement, sans aura, tous dans le même pack Fojji) ; Study tranché : 1302508 (départage Fojji, seul présent dans un pack Fojji, DB2 70245 relu le 2026-10-26). Comprehend Scroll : 1296017 (classe Mage), 1309965, 1309973, 1310029, 1310030 (sans masque de classe). Study : 1302508 (classe Mage) ; 1302696 existe dans SpellName sans ligne SkillLineAbility.
 
 ## Talents
 Sources : wowforevertalents.com/mage (effets) et wow-forever.gg/talents/mage (structure). IDs par rang : table Talent du DB2 client 1.60.1.70245 (SpellRank_0 à SpellRank_n, dans l'ordre des rangs). Les rangs et effets viennent des sources web, les IDs du DB2. Un talent absent de la table Talent est marqué « absent de Talent (DB2) » ; écarts de nombre de rangs ou d'ID : voir « Écarts avec le DB2 client ».
@@ -296,16 +296,16 @@ IDs lus sur wow-forever.gg ou Wowhead Forever. Les valeurs d'ID de sort lancé s
 | Ice Barrier | 11426, 13031, 13032, 13033 | buff joueur | wow-forever.gg |
 | Fire Ward / Frost Ward | voir tableau des sorts | buff joueur | wow-forever.gg |
 | Dampen Magic / Amplify Magic | voir tableau des sorts | buff joueur / cible | wow-forever.gg |
-| Arcane Blast (cumuls) | Aucun lien de déclenchement depuis 400574 / 1239696 à 1239700 dans le DB2. Sorts nommés « Arcane Blast » avec effet aura : 400573 (aura 108), 400586 (aura 108), 401729 (aura 332), 1300176 (aura 108), 1300177 (aura 4). Autres sorts de même nom sans aura : 10833, 16067, 18091, 20883, 22893, 22920, 22940, 24857, 42896, 1214029 (hors Mage probable). Non tranché | buff joueur | DB2 |
-| Missile Barrage | Candidats nommés « Missile Barrage » dans SpellName (absents de Talent et de SkillLineAbility) : 400588 (aura 42, déclenche 400589), 400589 (aura 108/107), 401736 (aura 332), 467409 (aura 108/107). Non tranché | proc joueur | DB2 |
-| Fingers of Frost | Candidats : 400647 (aura 4), 400669 (aura 262), 400670 (aura 4), 401741 (aura 332). Absents de Talent et de SkillLineAbility. Non tranché | proc joueur | DB2 |
-| Heating Up | Candidats : 400624 (aura 4), 400625 (aura 108/4), 460878 (aura 23, déclenche 462337). Absents de Talent et de SkillLineAbility. Non tranché | proc joueur | DB2 |
+| Arcane Blast (cumuls) | Aucun lien de déclenchement depuis 400574 / 1239696 à 1239700 dans le DB2. Sorts nommés « Arcane Blast » avec effet aura : 400573 (aura 108), 400586 (aura 108), 401729 (aura 332), 1300176 (aura 108), 1300177 (aura 4). Autres sorts de même nom sans aura : 10833, 16067, 18091, 20883, 22893, 22920, 22940, 24857, 42896, 1214029 (hors Mage probable). Tranché : 400573, voir « Choix pour le joueur » | débuff joueur | DB2 |
+| Missile Barrage | Candidats nommés « Missile Barrage » dans SpellName (absents de Talent et de SkillLineAbility) : 400588 (aura 42, déclenche 400589), 400589 (aura 108/107), 401736 (aura 332), 467409 (aura 108/107) ; tranché : 400589 (lien de déclenchement : 400588 effet 6 aura 42 déclenche 400589, DB2 70245 relu le 2026-10-26) | proc joueur | DB2 |
+| Fingers of Frost | Candidats : 400647 (aura 4), 400669 (aura 262), 400670 (aura 4), 401741 (aura 332). Absents de Talent et de SkillLineAbility ; tranché : 400670 (départage Fojji, seul candidat présent dans un pack Fojji, DB2 70245 relu le 2026-10-26) | proc joueur | DB2 |
+| Heating Up | Candidats : 400624 (aura 4), 400625 (aura 108/4), 460878 (aura 23, déclenche 462337). Absents de Talent et de SkillLineAbility ; tranché : 400625 (seule aura réelle : CumulativeAura 3 = 3 cumuls décrits, DB2 70245 relu le 2026-10-26) | proc joueur | DB2 |
 | Improved Scorch (vulnérabilité Feu) | 22959 (Fire Vulnerability), déclenché par Improved Scorch 11095 | debuff cible | DB2 |
 
 ## Points non vérifiés
 - IDs par rang des talents : issus du DB2 client (table Talent). Le DB2 contient aussi des talents retirés par correctif serveur : présence dans le DB2 ≠ actif en jeu. Aucune vérification en jeu.
 - Ignite : talent 11119 à 12848 (DB2) ; ID du debuff sur la cible non tranché (4 candidats, voir tableau des auras).
-- Auras d'Arcane Blast, Missile Barrage, Fingers of Frost, Heating Up : sorts de même nom dans SpellName, non rattachés à un talent ni à SkillLineAbility ; candidats listés, non tranchés.
+- Auras d'Arcane Blast, Missile Barrage, Fingers of Frost, Heating Up : sorts de même nom dans SpellName, non rattachés à un talent ni à SkillLineAbility ; candidats listés ; Arcane Blast : 400573, seule aura ni passive ni cachée, débuff sur soi (voir « Choix pour le joueur ») ; tranchés : Missile Barrage 400589, Fingers of Frost 400670, Heating Up 400625 (voir tableau, DB2 70245 relu le 2026-10-26).
 - Sorts Mage du DB2 absents du fichier (non ajoutés, actif en jeu non vérifié) : Arcane Barrage 400610, Living Bomb 400613 / 400614, Fire Blast 400616 à 400623, Rewind Time 401462, Living Flame 401556 / 401558, Regeneration 401417, Mass Regeneration 412510, Spellfrost Bolt 412532, Icy Veins 425121, Arcane Surge 425124, Balefire Bolt 428878, Expanded Intellect 436949, Frozen Orb 440802 / 440809.
 
 ### Écarts avec le DB2 client
@@ -318,5 +318,13 @@ IDs lus sur wow-forever.gg ou Wowhead Forever. Les valeurs d'ID de sort lancé s
 - Conjure Water rang 8 (468766) : wowforevertalents le signale comme donnée Season of Discovery non vue en bêta Forever.
 - Niveaux, coûts, recharges et durées viennent d'endgametools ; recoupement partiel avec wowforevertalents (plages cohérentes). Les en-têtes de niveau d'endgametools affichent « niveau + nombre de sorts » (ex. « 13 » = niveau 1, 3 sorts).
 - Fire Vulnerability : 4 % lu sur Wowhead Forever pour l'ID 22959 ; nombre de cumuls non affiché.
-- Études / Comprehend Scroll : IDs candidats DB2 non tranchés (voir remarque sous le tableau des sorts). Teleport/Portal : durées et coûts non vérifiés sur page de sort.
+- Études / Comprehend Scroll : IDs candidats DB2 : Comprehend Scroll non tranché, Study tranché 1302508 (voir remarque sous le tableau des sorts). Teleport/Portal : durées et coûts non vérifiés sur page de sort.
 - Wowhead Forever Frostbolt 10181 : page cohérente avec 260 mana (rang 10).
+
+## Choix pour le joueur (DB2 70245, 2026-10-26)
+
+Candidats restés ouverts, tranchés sur ce que le joueur voit : une aura PASSIVE ou HIDDEN (SpellMisc Attributes_0 0x40 / 0x80) n'apparaît pas, un sort sans effet 6 n'a pas d'aura.
+
+- Arcane Blast (cumuls) : 400573, seule aura ni passive ni cachée (4 cumuls). C'est un débuff sur soi (Attributes_0 0x04000000) : en combat le client l'exclut des filtres par ID de sort, donc pas d'icône d'aura. Le pack compte les lancers (UNIT_SPELLCAST_SUCCEEDED) : 4 segments, +1 par Arcane Blast, 15 s relancées à chaque lancer (DB2 70532 : DurationIndex 8, aucune charge de proc), sans remise à zéro par un autre sort.
+- Ignite : 3261, 412538 et 1234540 gardés ensemble sur la cible ; 412545 n'a pas d'aura.
+- Comprehend Scroll : utilitaire hors combat, rien à afficher.

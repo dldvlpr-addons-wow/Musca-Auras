@@ -5,7 +5,7 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 ## Contenu
 - Rotation : Shadowburn, Conflagrate, Soul Fire, Death Coil.
 - Cooldowns : Howl of Terror, Fel Domination, Amplify Curse, Bane of Doom, Shadow Ward, Inferno, et sorts de familier (Spell Lock, Seduction, Suffering : chargés seulement si le familier correspondant est invoqué).
-- Buffs : Shadow Trance, Demon Skin / Demon Armor (tous rangs), Shadow Ward (actif), Soul Link (aura 25228 ou 19028), Amplify Curse (actif), Sacrifice (Voidwalker, 6 rangs), Fel Domination (actif), Pyroclasm.
+- Buffs : Shadow Trance, Demon Skin / Demon Armor (tous rangs), Soul Link (aura 25228 ou 19028), Amplify Curse (actif), Sacrifice (Voidwalker, 6 rangs), Fel Domination (actif), Pyroclasm.
 - Debuffs cible : Corruption, Immolate, Bane of Agony, Bane of Doom, Curse of the Elements, Curse of Recklessness, Curse of Weakness, Curse of Tongues, Siphon Life, Shadow Vulnerability, Fear et Banish (les deux avec glow, contrôle).
 - Barres : mana, familier, règle des 5 s (Shadow Bolt, Immolate, Corruption, Bane of Agony, Searing Pain, Incinerate, Drain Life, Drain Soul, Fear, Soul Fire, Rain of Fire, Hellfire ; Life Tap exclu).
 - Rappels : armure manquante (Demon Skin / Demon Armor), Soul Link manquant, Soul Shard à 0 (objet 6265), familier absent, MANA BAS.
@@ -15,14 +15,14 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 - Demon Skin 687 / 696 et Demon Armor r1-r4 : IDs de sort, seul r5 (11735) lu sur Wowhead.
 - Soul Link : 19028 (sort/talent) ; aura posée 25228 (Wowhead Forever).
 - Amplify Curse (actif) : 18288, l'aura porte l'ID du talent (Wowhead Forever).
-- Shadow Ward (actif) : 6229 / 11739 / 11740 / 28610 (IDs de sort, non vérifiés).
+- Shadow Ward (actif, icône Defensives) : 6229 / 11739 / 11740 / 28610 (absorption 30 s, auras confirmées dans le DB2 70532).
 - Bane of Doom (debuff cible) : 603 ; 18662 est l'effet d'invocation, pas un debuff.
 - Conflagrate : rang 1 = 1293817 (fichier) ; Talent.csv donne 17962. Le chargement par sort connu dépend de ce choix.
-- Shadowburn r1 17877 et Siphon Life r1 18265 : sorts de talent, chargement par sort connu à vérifier.
+- Shadowburn r1 17877 et Siphon Life r1 18265 : sorts de talent (Talent 963 et 1041 dans le DB2 70532), rangs de Siphon Life 18879 à 18881 ; chargement par sort connu à vérifier en jeu.
 
 - Sacrifice : 7812, 19438, 19440-19443 (sorts du Marcheur du Vide) lus comme IDs d'aura ; chargé si Summon Voidwalker 697 est connu. Buffs des autres familiers sacrifiés (18789-18792) non suivis.
 - Pyroclasm : aura 1293803 (18093 = étourdissement de la cible), chargement sur le talent 18096 (Talent.csv) ; talent peut-être retiré côté serveur.
-- Spell Lock 19244, Seduction 6358, Suffering 17735 : sorts de familier, suivis en Cooldown Progress ; le « sort connu » du familier est à vérifier en jeu.
+- Spell Lock 19244, Seduction 6358, Suffering 17735 : sorts de familier, suivis en Cooldown Progress (DB2 70532 : Spell Lock et Suffering sans aura, Seduction avec aura) ; le « sort connu » du familier est à vérifier en jeu.
 - Banish : 710 / 18647 (sorts), aura supposée identique.
 
 ## Sorts écartés
@@ -46,3 +46,13 @@ Données : `PackDemoniste.lua` (builder `Tests/Packs/PackBuilder.lua`), chaîne 
 ## Pack 1.11.0 (2026-10-18), à tester en jeu
 - Barre de mana rouge sous 30 % par une condition sur le pourcentage secret, en combat aussi ; plus de copie rouge superposée (la variante ForeverAuras la garde).
 - Rappels sans aura suivie (Soul Shard à 0, familier absent) : l'icône pulse, le texte clignote.
+
+## Comparaison avec les packs Fojji (2026-10-26), à tester en jeu
+- Buffs sur le joueur : plus de filtre « lancé par le joueur », un buff reçu d'un autre joueur s'affiche.
+- Nouvelle icône Defensives (toutes classes, reprise des packs Fojji, GPL-2) : Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression et potions défensives, de tout lanceur.
+- Shadow Ward : simple recharge, comme Fojji ; bouclier actif dans l'icône Defensives, le buff « (active) » est retiré.
+- Buffs ajoutés : Demonic Sacrifice (18789 Burning Shadow, 18790 Fel Stamina, 18791 Touch of Fire, 18792 Fel Energy : noms du DB2 70245), Decimation 440873 (candidat DB2 retenu par Fojji).
+- Debuffs cible ajoutés : Bane of Havoc 1225228, Death Coil (6789, 17925, 17926), Howl of Terror (5484, 17928), Seduction 6358 (lancée par la succube, de tout lanceur).
+
+## Pack 1.15.0 (2026-10-29), à tester en jeu
+- Aucun changement de pack. Auras « à vérifier » tranchées dans le DB2 70532, voir plus haut.

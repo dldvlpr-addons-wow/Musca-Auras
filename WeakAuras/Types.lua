@@ -172,15 +172,19 @@ local simpleFormatters = {
     if type(value) == "string" then value = tonumber(value) end
     return (type(value) == "number") and BreakUpLargeNumbers(value) or value
   end,
+  -- A secret number cannot go through floor, ceil or Round: string.format rounds it to the nearest integer instead
   floor = function(value)
+    if Private.IsSecret(value) then return string.format("%.0f", value) end
     if type(value) == "string" then value = tonumber(value) end
     return (type(value) == "number") and floor(value) or value
   end,
   ceil = function(value)
+    if Private.IsSecret(value) then return string.format("%.0f", value) end
     if type(value) == "string" then value = tonumber(value) end
     return (type(value) == "number") and ceil(value) or value
   end,
   round = function(value)
+    if Private.IsSecret(value) then return string.format("%.0f", value) end
     if type(value) == "string" then value = tonumber(value) end
     return (type(value) == "number") and Round(value) or value
   end,
