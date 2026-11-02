@@ -1,3 +1,47 @@
+# Musca Auras 1.15.0-beta1 (2026-11-02)
+
+Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Options: a new "Packs" button, after Import, opens the Packs page. The class HUD of your class comes first:
+  "Whole HUD" imports it as before, and one button per block (Reminders, Procs, Cooldowns, Resource Bars...)
+  imports that block alone, keeping your installed HUD as it is.
+- Utility packs, on the Packs page: Ready Flash, Buff Check, Target Debuffs, Pre-Pull Check, Nameplate Aggro,
+  Shield Meter, Crowd Control, Armor Shred, Enemy Targets, Center Mark, Level Progress, Raid Coverage, Combat Items,
+  Engineering Items, Conjured Supplies, Character Stats, World Reminders, Campfire, Combat Text, Announcements,
+  Group Experience, Equipment Sets, Guild Campfires and Object Highlight. The nameplate packs need the default
+  Blizzard nameplates.
+- Custom code: `WeakAuras.IsSpellReady`, `WeakAuras.GetSpellCooldownDurationNoGCD` and
+  `WeakAuras.SetSpellCooldownState` read the cooldown of a spell watched with `WeakAuras.WatchSpellCooldown`, even
+  when the game hides it. `WeakAuras.SetLoadFlag(id, loaded)` keeps an aura unloaded until the next `/reload`.
+
+## Changed
+
+- Class packs: a sound on procs and reactive abilities, "Fading" reminders before a buff ends, an Enemy Cast bar
+  and the ranged swing timer.
+- Class packs: a Defensives icon shows the defensive buffs and shields on you (Blessing of Protection, Power Word:
+  Shield, Pain Suppression, Shield Wall, Barkskin, Evasion, Deterrence, defensive potions...). Buffs on you show
+  whoever cast them.
+- Class packs: missing buffs, procs and debuffs added for every class, and every spell ID checked again against the
+  current game build. Mage: four Arcane Blast stack segments. Paladin: Infusion of Light proc and a Righteous Fury
+  reminder. Hunter: "In melee range" text and a low ammo reminder. Rogue: low poison reminder.
+- Class packs: debuffs on you (Forbearance, Weakened Soul) show once they have been seen out of combat.
+
+## Removed
+
+- Aura sounds: the recorded voice sound is removed.
+
+## Fixed
+
+- Threat Situation trigger: no more Lua error when the game hides threat values.
+- Number format at precision 0: no more Lua error on a hidden number, from custom text for example.
+
+## After the update
+
+- Class HUDs: re-import your class pack to get the new auras. The class pack notice shows again.
+- An aura that used the recorded voice sound loses that sound: pick a sound file instead.
+
 # Musca Auras 1.14.0 (2026-10-22)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
