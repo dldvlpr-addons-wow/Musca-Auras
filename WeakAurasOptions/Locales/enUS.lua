@@ -880,6 +880,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Premade Auras"] = "Premade Auras"
 	L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"] = "Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"
 	L["Packs"] = "Packs"
+	L["Ready-made auras for your class, and utility packs"] = "Ready-made auras for your class, and utility packs"
 	L["Class HUD"] = "Class HUD"
 	L["Whole HUD"] = "Whole HUD"
 	L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."] = "Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."

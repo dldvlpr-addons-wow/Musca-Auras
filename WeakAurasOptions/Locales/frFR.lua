@@ -713,6 +713,7 @@ Can use \ to escape -.]=]
 	L["Full Circle"] = "Cercle Complet"
 	L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"] = "Pack d'interface complet pour ta classe : rotation, temps de recharge, améliorations et ressources, prêt à jouer"
 	L["Packs"] = "Packs"
+	L["Ready-made auras for your class, and utility packs"] = "Auras prêtes à l'emploi pour ta classe, et packs utilitaires"
 	L["Class HUD"] = "HUD de classe"
 	L["Whole HUD"] = "Tout le HUD"
 	L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."] = "Tout le HUD remet chaque bloc aux réglages du pack. Un seul bloc laisse les autres blocs installés tels quels."

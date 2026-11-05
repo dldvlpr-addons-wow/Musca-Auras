@@ -7,7 +7,14 @@ The changes of 1.15.0-beta1 are listed below.
 
 - The addon list, the minimap button tooltip and the debug messages show "Musca Auras" with its own version,
   instead of "WeakAuras 5.22.0". Exported auras are not affected.
-- Options: the "Packs" entry moves from the toolbar to the first line of the aura list.
+- Options: the "Packs" entry moves from the toolbar to the New Aura page, above Premade Auras.
+
+## Fixed
+
+- Options preview: Ready Flash auras, and any aura whose trigger has a fixed duration, show the spell or item
+  icon instead of a question mark.
+- Ready Flash: the troll racial Berserking now flashes, and the class utility cooldowns added in 1.15 flash too.
+- Class HUDs: the troll racial Berserking icon shows again. Click Update <your class> HUD to get it.
 
 # Musca Auras 1.15.0-beta1 (2026-11-02)
 

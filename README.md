@@ -33,7 +33,7 @@ they are converted (tutorial, section 10).
 
 ## Utility packs
 
-`/wa`, then Packs: 24 packs for every class, each installed in one click.
+`/wa`, New Aura, then Packs: 24 packs for every class, each installed in one click.
 
 - Combat: Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
 - Group and Buffs: Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements.

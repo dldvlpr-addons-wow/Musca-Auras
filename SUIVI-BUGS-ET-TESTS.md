@@ -461,7 +461,7 @@ Entrées du 2026-10-25, 2026-10-26 et 2026-10-29 de `CHANGES.md`. Rien n'est tes
 4. [ ] `/run WeakAuras.SetLoadFlag("<id d'aura>", false)` : l'aura se décharge ; `true` la rend à ses options de chargement.
 
 ### 13.2 Page Packs
-5. [ ] `/wa`, ligne Packs en tête de la liste des auras : HUD de ta classe en tête, puis les packs utilitaires par catégorie.
+5. [ ] `/wa`, New Aura, bouton Packs au-dessus de Premade Auras : HUD de ta classe en tête, puis les packs utilitaires par catégorie.
 6. [ ] Whole HUD sur un HUD installé : la boîte propose « Update », le HUD se met à jour.
 7. [ ] Un bloc seul (Procs par exemple) sur un HUD installé et déplacé : seul ce bloc change, positions du reste gardées.
 8. [ ] Les 24 packs utilitaires : chacun s'importe sans erreur Lua et s'affiche dans sa situation (combat, groupe, hors combat).

@@ -64,7 +64,19 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 
 ## 2026-11-05
 
-Headless test bench: 85 scenarios, 0 failed.
+Headless test bench: 86 scenarios, 0 failed.
+
+### Fixed
+- `WeakAuras/GenericTrigger.lua`: in the options preview, a trigger that already runs a timer (a fixed duration,
+  such as the Ready Flash pack's "Cooldown Ready" triggers) gets the name and icon of its spell or item again,
+  instead of the question mark icon. Test `Tests/Scenarios/90_PreviewIconFixedDuration.lua`.
+- `Tests/Packs/PackBuilder.lua`, `Tests/Packs/Utility/ReadyFlash/PackReadyFlash.lua`: the troll racial Berserking
+  uses its Forever ID 20554 instead of 26297, which does not exist on Forever: the Berserking icon of the class
+  HUDs never loaded. The nine class packs are built again (`Tests/Packs/<Class>/Pack<Class>.txt`,
+  `Tests/Packs/<Class>/Pack<Class>ForeverAuras.txt`, `WeakAurasOptions/ClassPacks.lua`). The Ready Flash pack is
+  built again from the current class packs
+  (`PackReadyFlash.txt`, `WeakAurasOptions/UtilityPacks.lua`), so it also flashes the utility cooldowns added to
+  them since.
 
 ### Changed
 - The five TOC files (`WeakAuras`, `WeakAurasArchive`, `WeakAurasModelPaths`, `WeakAurasOptions`,
@@ -78,8 +90,10 @@ Headless test bench: 85 scenarios, 0 failed.
   "Musca Auras %s on WoW %s"). The old keys are removed from every locale file of `WeakAuras/Locales` and
   `WeakAurasOptions/Locales`; the new keys are translated in enUS and frFR only.
 - `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAurasOptions/WeakAurasOptions.lua`: the "Packs" toolbar
-  button becomes the first line of the aura list (a `WeakAurasLoadedHeaderButton` without expand or view button,
-  added before "Ready for Install"). It is highlighted while the Packs page is open.
+  button moves to the "New Aura" page, as the first button of the "Simple" section, above "Premade Auras" (a
+  `WeakAurasNewButton` with a bag icon and the description "Ready-made auras for your class, and utility packs",
+  translated in enUS and frFR). The "Simple" and "Advanced" titles now show even when WeakAurasTemplates is
+  disabled, so the Packs button stays reachable.
 
 ## 2026-10-29
 

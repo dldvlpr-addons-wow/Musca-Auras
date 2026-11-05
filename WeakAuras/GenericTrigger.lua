@@ -1197,12 +1197,12 @@ local function AddFakeInformation(data, triggernum, state, eventData)
   end
   if state.progressType == "timed" then
     local expirationTime = state.expirationTime
-    if expirationTime and type(expirationTime) == "number" and expirationTime ~= math.huge and expirationTime > GetTime() then
-      return
+    -- A running timer is kept, but the name and icon below are still filled: a trigger with a fixed duration has one.
+    if not (expirationTime and type(expirationTime) == "number" and expirationTime ~= math.huge and expirationTime > GetTime()) then
+      state.progressType = "timed"
+      state.expirationTime = GetTime() + 7
+      state.duration = 7
     end
-    state.progressType = "timed"
-    state.expirationTime = GetTime() + 7
-    state.duration = 7
   end
   if eventData.prototype and eventData.prototype.GetNameAndIcon then
     local name, icon = eventData.prototype.GetNameAndIcon(eventData.trigger)

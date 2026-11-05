@@ -883,16 +883,6 @@ function OptionsPrivate.CreateFrame()
     status.scrollvalue = status.offset / ((height - viewheight) / 1000.0)
   end
 
-  -- Packs entry, first line of the aura list
-  local packsButton = AceGUI:Create("WeakAurasLoadedHeaderButton")
-  packsButton:SetText(L["Packs"])
-  packsButton:SetClick(function()
-    frame:OpenPacks()
-  end)
-  packsButton.frame.expand:Hide()
-  packsButton.frame.view:Hide()
-  frame.packsButton = packsButton
-
   -- Ready to Install section
   local pendingInstallButton = AceGUI:Create("WeakAurasLoadedHeaderButton")
   pendingInstallButton:SetText(L["Ready for Install"])
@@ -1390,7 +1380,6 @@ function OptionsPrivate.CreateFrame()
 
   frame.ClearPicks = function(self, noHide)
     local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
-    self.packsButton:ClearPick()
     for id, button in pairs(displayButtons) do
       button:ClearPick(true)
       if not noHide then
@@ -1434,7 +1423,6 @@ function OptionsPrivate.CreateFrame()
     self:ClearPicks()
     self.dynamicTextCodesFrame:Hide()
     self.pickedOption = "Packs"
-    self.packsButton:Pick()
 
     container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
     container:SetLayout("fill")
@@ -1530,7 +1518,6 @@ function OptionsPrivate.CreateFrame()
     end
     self.dynamicTextCodesFrame:Hide()
     self.moversizer:Hide()
-    self.packsButton:ClearPick()
     self.pickedOption = "New"
 
     container:ReleaseChildren()
@@ -1544,14 +1531,23 @@ function OptionsPrivate.CreateFrame()
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
 
-    if C_AddOns.GetAddOnEnableState("WeakAurasTemplates") ~= Enum.AddOnEnableState.None then
-      local simpleLabel = AceGUI:Create("Label")
-      simpleLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
-      simpleLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-      simpleLabel:SetText(L["Simple"])
-      simpleLabel:SetFullWidth(true)
-      containerScroll:AddChild(simpleLabel)
+    local simpleLabel = AceGUI:Create("Label")
+    simpleLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
+    simpleLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+    simpleLabel:SetText(L["Simple"])
+    simpleLabel:SetFullWidth(true)
+    containerScroll:AddChild(simpleLabel)
 
+    local packsButton = AceGUI:Create("WeakAurasNewButton")
+    packsButton:SetTitle(L["Packs"])
+    packsButton:SetDescription(L["Ready-made auras for your class, and utility packs"])
+    packsButton:SetIcon("Interface\\Icons\\INV_Misc_Bag_08")
+    packsButton:SetClick(function()
+      self:OpenPacks()
+    end)
+    containerScroll:AddChild(packsButton)
+
+    if C_AddOns.GetAddOnEnableState("WeakAurasTemplates") ~= Enum.AddOnEnableState.None then
       local button = AceGUI:Create("WeakAurasNewButton")
       button:SetTitle(L["Premade Auras"])
       button:SetDescription(L["Offer a guided way to create auras for your character"])
@@ -1560,18 +1556,18 @@ function OptionsPrivate.CreateFrame()
         OptionsPrivate.OpenTriggerTemplate(nil, self:GetTargetAura())
       end)
       containerScroll:AddChild(button)
-
-      local spacer1Label = AceGUI:Create("Label")
-      spacer1Label:SetText("")
-      containerScroll:AddChild(spacer1Label)
-
-      local advancedLabel = AceGUI:Create("Label")
-      advancedLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
-      advancedLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-      advancedLabel:SetText(L["Advanced"])
-      advancedLabel:SetFullWidth(true)
-      containerScroll:AddChild(advancedLabel)
     end
+
+    local spacer1Label = AceGUI:Create("Label")
+    spacer1Label:SetText("")
+    containerScroll:AddChild(spacer1Label)
+
+    local advancedLabel = AceGUI:Create("Label")
+    advancedLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
+    advancedLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+    advancedLabel:SetText(L["Advanced"])
+    advancedLabel:SetFullWidth(true)
+    containerScroll:AddChild(advancedLabel)
 
     local regionTypesSorted = {}
     for regionType, regionData in pairs(OptionsPrivate.Private.regionOptions) do

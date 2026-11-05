@@ -4,7 +4,7 @@ local Parts = Utility.Parts
 -- Flashes a cooldown the moment it comes back. The spells are the utility row of each class pack, so the two stay in
 -- step; the racials of every pack share one icon.
 local FOLDERS = { "Guerrier", "Paladin", "Chasseur", "Voleur", "Pretre", "Chaman", "Mage", "Demoniste", "Druide" }
-local RACIALS = { 20600, 20594, 20580, 20589, 20572, 7744, 20577, 20549, 26297 }
+local RACIALS = { 20600, 20594, 20580, 20589, 20572, 7744, 20577, 20549, 20554 }
 local SOUND = "Interface\\AddOns\\WeakAuras\\Media\\Sounds\\WaterDrop.ogg"
 
 local pack = Utility.New("Ready Flash", "muUtilReadyFlashV1", { yOffset = 120 })

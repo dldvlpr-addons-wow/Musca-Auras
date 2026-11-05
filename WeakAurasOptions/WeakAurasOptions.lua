@@ -943,7 +943,6 @@ local function LayoutDisplayButtons(msg)
   local loadedSorted, unloadedSorted = GetSortedOptionsLists();
 
   frame:SetLoadProgressVisible(true)
-  frame.buttonsScroll:AddChild(frame.packsButton);
   if OptionsPrivate.Private.CompanionData.slugs then
     frame.buttonsScroll:AddChild(frame.pendingInstallButton);
     frame.buttonsScroll:AddChild(frame.pendingUpdateButton);
@@ -1399,7 +1398,6 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
   filter = filter:lower();
 
   wipe(frame.buttonsScroll.children);
-  tinsert(frame.buttonsScroll.children, frame.packsButton);
 
   local pendingInstallButtonShown = false
   if OptionsPrivate.Private.CompanionData.stash then

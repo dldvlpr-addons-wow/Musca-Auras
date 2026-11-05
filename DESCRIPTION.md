@@ -16,7 +16,7 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 ## <span style="color: #0cf;">🧩 24 utility packs, for every class</span>
 
-On the Packs page (<span style="color: #ffd100;"><strong>/wa</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>), each pack installs in one click.
+On the Packs page (<span style="color: #ffd100;"><strong>/wa</strong></span>, <span style="color: #ffd100;"><strong>New Aura</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>), each pack installs in one click.
 
 - <span style="color: #ffd100;"><strong>Combat:</strong></span> Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
 - <span style="color: #ffd100;"><strong>Group and Buffs:</strong></span> Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements (battle rez, soulstone and summon told to your group).
@@ -48,7 +48,7 @@ Full list in the **Files** tab.
 ## <span style="color: #0cf;">🚀 Quick start</span>
 
 1. **Install** Musca Auras and start the game.
-2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span> and click <span style="color: #ffd100;"><strong>Packs</strong></span> in the toolbar, then <span style="color: #ffd100;"><strong>Whole HUD</strong></span>. The same page installs one HUD block at a time, and the utility packs.
+2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span>, click <span style="color: #ffd100;"><strong>New Aura</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>, then <span style="color: #ffd100;"><strong>Whole HUD</strong></span>. The same page installs one HUD block at a time, and the utility packs.
 3. **Make it yours:** type <span style="color: #ffd100;"><strong>/wa</strong></span> to move, resize or change any aura. New to auras? Click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window.
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.

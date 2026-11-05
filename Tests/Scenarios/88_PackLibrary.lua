@@ -63,7 +63,7 @@ return function(test)
   local frFR = ReadFile("WeakAurasOptions/Locales/frFR.lua")
   local problems = {}
   local function Problem(text) problems[#problems + 1] = text end
-  for _, key in ipairs({ "Packs", "Class HUD", "Whole HUD",
+  for _, key in ipairs({ "Packs", "Ready-made auras for your class, and utility packs", "Class HUD", "Whole HUD",
     "Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are." }) do
     if not enUS:find('L["' .. key .. '"] = ', 1, true) then Problem("enUS: missing " .. key) end
     if not frFR:find('L["' .. key .. '"] = ', 1, true) then Problem("frFR: missing " .. key) end

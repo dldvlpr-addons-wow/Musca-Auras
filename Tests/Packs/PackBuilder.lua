@@ -583,11 +583,11 @@ function Pack.Build(spec)
       { size = SIZES.utility, idle = true })
   end
   -- Racials load on the spell being known: each race sees its own, no race filter needed.
-  -- "Known" falls back on the spell name: one Berserking entry covers its three resource variants.
+  -- "Known" falls back on the spell name. Forever has a single Berserking racial, 20554.
   for _, racial in ipairs({
     { "Perception", 20600 }, { "Stoneform", 20594 }, { "Shadowmeld", 20580 }, { "Escape Artist", 20589 },
     { "Blood Fury", 20572 }, { "Will of the Forsaken", 7744 }, { "Cannibalize", 20577 }, { "War Stomp", 20549 },
-    { "Berserking", 26297 },
+    { "Berserking", 20554 },
   }) do
     SpellIcon(utility, { name = racial[1], spell = racial[2], known = racial[2] }, SIZES.utility)
   end
