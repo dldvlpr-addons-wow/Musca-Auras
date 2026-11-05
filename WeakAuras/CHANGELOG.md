@@ -1,30 +1,12 @@
-# Musca Auras 1.15.0-beta2 (2026-11-05)
+# Musca Auras 1.15.0 (2026-11-05)
 
-Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
-The changes of 1.15.0-beta1 are listed below.
-
-## Changed
-
-- The addon list, the minimap button tooltip and the debug messages show "Musca Auras" with its own version,
-  instead of "WeakAuras 5.22.0". Exported auras are not affected.
-- Options: the "Packs" entry moves from the toolbar to the New Aura page, above Premade Auras.
-
-## Fixed
-
-- Options preview: Ready Flash auras, and any aura whose trigger has a fixed duration, show the spell or item
-  icon instead of a question mark.
-- Ready Flash: the troll racial Berserking now flashes, and the class utility cooldowns added in 1.15 flash too.
-- Class HUDs: the troll racial Berserking icon shows again. Click Update <your class> HUD to get it.
-
-# Musca Auras 1.15.0-beta1 (2026-11-02)
-
-Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
 
 ## New
 
-- Options: a new "Packs" button, after Import, opens the Packs page. The class HUD of your class comes first:
-  "Whole HUD" imports it as before, and one button per block (Reminders, Procs, Cooldowns, Resource Bars...)
-  imports that block alone, keeping your installed HUD as it is.
+- Options: a "Packs" entry on the New Aura page, above Premade Auras, opens the Packs page. The class HUD of your
+  class comes first: "Whole HUD" imports it as before, and one button per block (Reminders, Procs, Cooldowns,
+  Resource Bars...) imports that block alone, keeping your installed HUD as it is.
 - Utility packs, on the Packs page: Ready Flash, Buff Check, Target Debuffs, Pre-Pull Check, Nameplate Aggro,
   Shield Meter, Crowd Control, Armor Shred, Enemy Targets, Center Mark, Level Progress, Raid Coverage, Combat Items,
   Engineering Items, Conjured Supplies, Character Stats, World Reminders, Campfire, Combat Text, Announcements,
@@ -36,6 +18,8 @@ Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGE
 
 ## Changed
 
+- The addon list, the minimap button tooltip and the debug messages show "Musca Auras" with its own version,
+  instead of "WeakAuras 5.22.0". Exported auras are not affected.
 - Class packs: a sound on procs and reactive abilities, "Fading" reminders before a buff ends, an Enemy Cast bar
   and the ranged swing timer.
 - Class packs: a Defensives icon shows the defensive buffs and shields on you (Blessing of Protection, Power Word:
@@ -54,6 +38,9 @@ Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGE
 
 - Threat Situation trigger: no more Lua error when the game hides threat values.
 - Number format at precision 0: no more Lua error on a hidden number, from custom text for example.
+- Options preview: auras whose trigger has a fixed duration (Ready Flash for example) show the spell or item icon
+  instead of a question mark.
+- Class HUDs: the troll racial Berserking icon shows again.
 
 ## After the update
 
