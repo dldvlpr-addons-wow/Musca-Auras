@@ -1,3 +1,14 @@
+# Musca Auras 1.15.0-beta2 (2026-11-05)
+
+Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+The changes of 1.15.0-beta1 are listed below.
+
+## Changed
+
+- The addon list, the minimap button tooltip and the debug messages show "Musca Auras" with its own version,
+  instead of "WeakAuras 5.22.0". Exported auras are not affected.
+- Options: the "Packs" entry moves from the toolbar to the first line of the aura list.
+
 # Musca Auras 1.15.0-beta1 (2026-11-02)
 
 Beta release. Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

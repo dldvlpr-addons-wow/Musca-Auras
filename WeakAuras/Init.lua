@@ -380,7 +380,8 @@ Private.frames = {}
 WeakAuras.normalWidth = 1.3
 WeakAuras.halfWidth = WeakAuras.normalWidth / 2
 WeakAuras.doubleWidth = WeakAuras.normalWidth * 2
-local versionStringFromToc = C_AddOns.GetAddOnMetadata("WeakAuras", "Version")
+-- Base WeakAuras version, not the Musca version (that one is in the TOC). It is also the export marker: an import
+-- whose "s" differs goes through ConvertForeverAurasImport (Transmission.lua), so it must not follow Musca releases.
 local versionString = "5.22.0"
 local buildTime = "20260905194100"
 
@@ -401,7 +402,7 @@ else
   WeakAuras.buildType = "beta"
 end
 
-WeakAuras.versionString = versionStringFromToc
+WeakAuras.versionString = versionString
 WeakAuras.buildTime = buildTime
 WeakAuras.newFeatureString = "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0|t"
 WeakAuras.BuildInfo = select(4, GetBuildInfo())

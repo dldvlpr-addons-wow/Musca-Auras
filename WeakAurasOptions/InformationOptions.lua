@@ -535,7 +535,7 @@ function OptionsPrivate.GetInformationOptions(data)
       order = order,
       func = function()
         --- @type string
-        local fullMessage = L["WeakAuras %s on WoW %s"]:format(WeakAuras.versionString, WeakAuras.BuildInfo) .. "\n\n"
+        local fullMessage = L["Musca Auras %s on WoW %s"]:format(C_AddOns.GetAddOnMetadata("WeakAuras", "Version"), WeakAuras.BuildInfo) .. "\n\n"
         --- @type boolean
         local haveLogs = false
         if isGroup and not isTmpGroup then

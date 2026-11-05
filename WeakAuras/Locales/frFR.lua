@@ -2036,8 +2036,7 @@ L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will a
 L["WeakAuras Profiling"] = "WeakAuras Profiling"
 --[[Translation missing --]]
 L["WeakAuras Profiling Report"] = "WeakAuras Profiling Report"
---[[Translation missing --]]
-L["WeakAuras Version: %s"] = "WeakAuras Version: %s"
+L["Musca Auras Version: %s"] = "Version de Musca Auras : %s"
 L["Weapon"] = "Arme"
 L["Weapon Enchant"] = "Enchantement d'arme"
 L["Whisper"] = "Chuchoter"

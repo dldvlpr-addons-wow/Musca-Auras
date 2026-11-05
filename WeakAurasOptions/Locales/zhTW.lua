@@ -916,7 +916,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "檢視自訂程式碼"
 	L["Voice Settings"] = "聲音設定"
 	L["We thank"] = "我們感謝"
-	L["WeakAuras %s on WoW %s"] = "WeakAuras %s 在 WoW %s"
 	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras 建議使用法術ID而不是名稱。法術ID會自動本地化。"
 	L["What do you want to do?"] = "你想要怎麼做?"
 	L["Whole Area"] = "整個區域"

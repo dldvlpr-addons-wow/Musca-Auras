@@ -924,7 +924,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "사용자 정의 코드 보기"
 	L["Voice Settings"] = "음성 환경 설정"
 	L["We thank"] = "감사합니다"
-	L["WeakAuras %s on WoW %s"] = "WeakAuras %s (WoW %s)"
 	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras는 주문 이름 대신 주문 ID 사용을 권장합니다. 주문 ID는 언어에 맞게 자동 번역됩니다."
 	L["What do you want to do?"] = "무엇을 할까요?"
 	L["Whole Area"] = "전체 구역"

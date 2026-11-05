@@ -1369,7 +1369,6 @@ Last upgrade: %s
 L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."] = "WeakAuras가 보유한 위크오라의 롤백 스냅샷을 생성중입니다. 위크오라에 문제가 발생할 경우 이 스냅샷을 통해 현재 상태의 위크오라로 복원할 수 있습니다. 작업이 완료될 때까지 프레임드랍이 발생할 수 있습니다."
 L["WeakAuras Profiling"] = "WeakAuras 성능 분석"
 L["WeakAuras Profiling Report"] = "WeakAuras 성능 분석 보고서"
-L["WeakAuras Version: %s"] = "WeakAuras 버전: %s"
 L["Weapon"] = "무기"
 L["Weapon Enchant"] = "무기 임시 마법부여"
 L["Whisper"] = "귓속말"

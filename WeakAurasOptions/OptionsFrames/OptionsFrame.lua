@@ -723,16 +723,6 @@ function OptionsPrivate.CreateFrame()
   importButton.frame:Show()
   importButton:SetPoint("LEFT", newButton.frame, "RIGHT", 10, 0)
 
-  local packsButton = AceGUI:Create("WeakAurasToolbarButton")
-  packsButton:SetText(L["Packs"])
-  packsButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\template")
-  packsButton:SetCallback("OnClick", function()
-    frame:OpenPacks()
-  end)
-  packsButton.frame:SetParent(toolbarContainer)
-  packsButton.frame:Show()
-  packsButton:SetPoint("LEFT", importButton.frame, "RIGHT", 10, 0)
-
   local lockButton = AceGUI:Create("WeakAurasToolbarButton")
   lockButton:SetText(L["Lock Positions"])
   lockButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\lockPosition")
@@ -752,7 +742,7 @@ function OptionsPrivate.CreateFrame()
   end
   lockButton.frame:SetParent(toolbarContainer)
   lockButton.frame:Show()
-  lockButton:SetPoint("LEFT", packsButton.frame, "RIGHT", 10, 0)
+  lockButton:SetPoint("LEFT", importButton.frame, "RIGHT", 10, 0)
 
   local magnetButton = AceGUI:Create("WeakAurasToolbarButton")
   magnetButton:SetText(L["Magnetically Align"])
@@ -892,6 +882,16 @@ function OptionsPrivate.CreateFrame()
 
     status.scrollvalue = status.offset / ((height - viewheight) / 1000.0)
   end
+
+  -- Packs entry, first line of the aura list
+  local packsButton = AceGUI:Create("WeakAurasLoadedHeaderButton")
+  packsButton:SetText(L["Packs"])
+  packsButton:SetClick(function()
+    frame:OpenPacks()
+  end)
+  packsButton.frame.expand:Hide()
+  packsButton.frame.view:Hide()
+  frame.packsButton = packsButton
 
   -- Ready to Install section
   local pendingInstallButton = AceGUI:Create("WeakAurasLoadedHeaderButton")
@@ -1390,6 +1390,7 @@ function OptionsPrivate.CreateFrame()
 
   frame.ClearPicks = function(self, noHide)
     local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
+    self.packsButton:ClearPick()
     for id, button in pairs(displayButtons) do
       button:ClearPick(true)
       if not noHide then
@@ -1433,6 +1434,7 @@ function OptionsPrivate.CreateFrame()
     self:ClearPicks()
     self.dynamicTextCodesFrame:Hide()
     self.pickedOption = "Packs"
+    self.packsButton:Pick()
 
     container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
     container:SetLayout("fill")
@@ -1528,6 +1530,7 @@ function OptionsPrivate.CreateFrame()
     end
     self.dynamicTextCodesFrame:Hide()
     self.moversizer:Hide()
+    self.packsButton:ClearPick()
     self.pickedOption = "New"
 
     container:ReleaseChildren()

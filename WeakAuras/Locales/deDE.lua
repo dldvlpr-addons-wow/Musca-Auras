@@ -2121,7 +2121,6 @@ L["WeakAuras Profiling"] = "WeakAuras Profiling"
 --[[Translation missing --]]
 L["WeakAuras Profiling Report"] = "WeakAuras Profiling Report"
 --[[Translation missing --]]
-L["WeakAuras Version: %s"] = "WeakAuras Version: %s"
 L["Weapon"] = "Waffen"
 L["Weapon Enchant"] = "Waffenverzauberung"
 L["Whisper"] = "Flüstern"

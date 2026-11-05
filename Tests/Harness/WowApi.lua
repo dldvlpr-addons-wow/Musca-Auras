@@ -65,7 +65,8 @@ end
 function WowApi.Install(target)
   local format = SecretAwareFormat(string.format)
   string.format = format
-  string.split = function(text, delimiter, pieces) return Split(delimiter, text, pieces) end
+  -- Client order: string.split(delimiter, text, pieces), same as strsplit.
+  string.split = Split
   string.trim = Trim
   string.join = Join
   table.wipe = function(t)
@@ -73,6 +74,15 @@ function WowApi.Install(target)
       t[key] = nil
     end
     return t
+  end
+  -- Client extension (LuaTableExtensions): any value, not only the array part. TableUtil.lua aliases it as tContains.
+  table.contains = function(t, value)
+    for _, entry in pairs(t) do
+      if entry == value then
+        return true
+      end
+    end
+    return false
   end
   table.indexof = function(list, value)
     for index, entry in ipairs(list) do

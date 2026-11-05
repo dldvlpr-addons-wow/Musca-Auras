@@ -1428,7 +1428,6 @@ Last upgrade: %s
 L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."] = "WeakAuras создает снимок отката ваших аур. Этот снимок позволит вам вернуться к текущему состоянию ваших аур, если что-то пойдет не так. Этот процесс может вызвать временное снижение частоты кадров до его завершения."
 L["WeakAuras Profiling"] = "Профилирование WeakAuras"
 L["WeakAuras Profiling Report"] = "Отчёт профилирования"
-L["WeakAuras Version: %s"] = "Версия WeakAuras: %s"
 L["Weapon"] = "Оружие"
 L["Weapon Enchant"] = "Чары на оружии"
 L["Whisper"] = "Шепот"

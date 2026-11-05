@@ -1402,7 +1402,6 @@ Last upgrade: %s
 L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."] = "WeakAuras 正在建立提醒效果的還原快照。如果出現問題，此快照將允許您恢復到提醒效果目前的狀態。此過程可能會導致幀速下降，直到完成為止。"
 L["WeakAuras Profiling"] = "WeakAuras 效能分析"
 L["WeakAuras Profiling Report"] = "WeakAuras 分析報告"
-L["WeakAuras Version: %s"] = "WeakAuras 版本: %s"
 L["Weapon"] = "武器"
 L["Weapon Enchant"] = "武器附魔"
 L["Whisper"] = "悄悄話"

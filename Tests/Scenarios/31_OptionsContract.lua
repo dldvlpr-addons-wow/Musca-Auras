@@ -816,7 +816,7 @@ singleNotice | fontSize="small" hidden=fn:true name=fn:"The trigger's Show On or
 sortMethod | desc="Sort each unit's auras. Remaining time puts the soonest-expiring aura first, with permanent auras last. Blizzard priority applies caster and priority rules before time or name. Unit-frame debuffs also enables debuff classification, which can hide auras." disabled=fn:false get=<fn> name="Sort by" order=6 set=<fn> sorting={1="Default",2="ExpirationOnly",3="Expiration",4="NameOnly",5="Name",6="ImportantOnly",7="BigDefensive",8="UnitFrameDebuff",9="AuraInstanceIDOnly"} type="select" values={"AuraInstanceIDOnly"="Aura instance ID","BigDefensive"="Big defensives","Default"="Blizzard default","Expiration"="Remaining time (Blizzard priority)","ExpirationOnly"="Remaining time","ImportantOnly"="Importance only","Name"="Name (Blizzard priority)","NameOnly"="Name","UnitFrameDebuff"="Unit-frame debuffs"} width=1.300000000
 sortReverse | desc="Reverse the selected order. For Remaining time, later expirations and permanent auras come first." disabled=fn:false get=<fn> name="Reverse Sort" order=7 set=<fn> type="toggle" width=1.300000000
 spacing | disabled=fn:false get=<fn> max=40 min=0 name="Aura spacing" order=4 set=<fn> step=1 type="range" width=1.300000000
-status | hidden=fn:false name=fn:"This client does not support the selected Blizzard aura filters." order=1 type="description" width="full"
+status | hidden=fn:true name=fn:"" order=1 type="description" width="full"
 textHeight | desc="Space reserved for each aura's text. Set its width in Font Flags." get=<fn> hidden=fn:true min=4 name="Text Area Height" order=8 set=<fn> softMax=300 step=1 type="range" width=1.300000000
 growth.get -> "RIGHT" | calls: none
 spacing.get -> 6 | calls: none
@@ -848,7 +848,7 @@ singleNotice | fontSize="small" hidden=fn:true name=fn:"The trigger's Show On or
 sortMethod | desc="Sort each unit's auras. Remaining time puts the soonest-expiring aura first, with permanent auras last. Blizzard priority applies caster and priority rules before time or name. Unit-frame debuffs also enables debuff classification, which can hide auras." disabled=fn:false get=<fn> name="Sort by" order=6 set=<fn> sorting={1="Default",2="ExpirationOnly",3="Expiration",4="NameOnly",5="Name",6="ImportantOnly",7="BigDefensive",8="UnitFrameDebuff",9="AuraInstanceIDOnly"} type="select" values={"AuraInstanceIDOnly"="Aura instance ID","BigDefensive"="Big defensives","Default"="Blizzard default","Expiration"="Remaining time (Blizzard priority)","ExpirationOnly"="Remaining time","ImportantOnly"="Importance only","Name"="Name (Blizzard priority)","NameOnly"="Name","UnitFrameDebuff"="Unit-frame debuffs"} width=1.300000000
 sortReverse | desc="Reverse the selected order. For Remaining time, later expirations and permanent auras come first." disabled=fn:false get=<fn> name="Reverse Sort" order=7 set=<fn> type="toggle" width=1.300000000
 spacing | disabled=fn:false get=<fn> max=40 min=0 name="Aura spacing" order=4 set=<fn> step=1 type="range" width=1.300000000
-status | hidden=fn:false name=fn:"This client does not support the selected Blizzard aura filters." order=1 type="description" width="full"
+status | hidden=fn:true name=fn:"" order=1 type="description" width="full"
 textHeight | desc="Space reserved for each aura's text. Set its width in Font Flags." get=<fn> hidden=fn:false min=4 name="Text Area Height" order=8 set=<fn> softMax=300 step=1 type="range" width=1.300000000
 growth.get -> "CENTER_HORIZONTAL" | calls: none
 spacing.get -> 3 | calls: none
@@ -888,7 +888,7 @@ singleNotice | fontSize="small" hidden=fn:true name=fn:"The trigger's Show On or
 sortMethod | desc="Sort each unit's auras. Remaining time puts the soonest-expiring aura first, with permanent auras last. Blizzard priority applies caster and priority rules before time or name. Unit-frame debuffs also enables debuff classification, which can hide auras." disabled=fn:false get=<fn> name="Sort by" order=6 set=<fn> sorting={1="Default",2="ExpirationOnly",3="Expiration",4="NameOnly",5="Name",6="ImportantOnly",7="BigDefensive",8="UnitFrameDebuff",9="AuraInstanceIDOnly"} type="select" values={"AuraInstanceIDOnly"="Aura instance ID","BigDefensive"="Big defensives","Default"="Blizzard default","Expiration"="Remaining time (Blizzard priority)","ExpirationOnly"="Remaining time","ImportantOnly"="Importance only","Name"="Name (Blizzard priority)","NameOnly"="Name","UnitFrameDebuff"="Unit-frame debuffs"} width=1.300000000
 sortReverse | desc="Reverse the selected order. For Remaining time, later expirations and permanent auras come first." disabled=fn:false get=<fn> name="Reverse Sort" order=7 set=<fn> type="toggle" width=1.300000000
 spacing | disabled=fn:false get=<fn> max=40 min=0 name="Aura spacing" order=4 set=<fn> step=1 type="range" width=1.300000000
-status | hidden=fn:false name=fn:"This client does not support the selected Blizzard aura filters." order=1 type="description" width="full"
+status | hidden=fn:true name=fn:"" order=1 type="description" width="full"
 textHeight | desc="Space reserved for each aura's text. Set its width in Font Flags." get=<fn> hidden=fn:true min=4 name="Text Area Height" order=8 set=<fn> softMax=300 step=1 type="range" width=1.300000000
 [sub.1.subtext]
 __order = 2

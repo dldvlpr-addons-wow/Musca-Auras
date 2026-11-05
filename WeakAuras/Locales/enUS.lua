@@ -1530,7 +1530,7 @@ Last upgrade: %s
 L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."] = "WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."
 L["WeakAuras Profiling"] = "WeakAuras Profiling"
 L["WeakAuras Profiling Report"] = "WeakAuras Profiling Report"
-L["WeakAuras Version: %s"] = "WeakAuras Version: %s"
+L["Musca Auras Version: %s"] = "Musca Auras Version: %s"
 L["Weapon"] = "Weapon"
 L["Weapon Enchant"] = "Weapon Enchant"
 L["Whisper"] = "Whisper"

@@ -950,7 +950,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	--[[Translation missing --]]
 	L["Voice Settings"] = "Voice Settings"
 	L["We thank"] = "Мы благодарим"
-	L["WeakAuras %s on WoW %s"] = "WeakAuras: %s. Интерфейс: %s"
 	--[[Translation missing --]]
 	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."
 	L["What do you want to do?"] = "Что вы хотите сделать?"

@@ -62,6 +62,25 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-05
+
+Headless test bench: 85 scenarios, 0 failed.
+
+### Changed
+- The five TOC files (`WeakAuras`, `WeakAurasArchive`, `WeakAurasModelPaths`, `WeakAurasOptions`,
+  `WeakAurasTemplates`) carry the Musca Auras version (`## Version: 1.15.0`) instead of 5.22.0, so the in-game
+  addon list shows it. `WeakAuras/Init.lua`: `WeakAuras.versionString` no longer reads the TOC and stays "5.22.0",
+  because it is the export marker that `Transmission.lua` compares to decide on the ForeverAuras conversion.
+- `WeakAuras/WeakAuras.lua`: the minimap and addon compartment tooltip shows "Musca Auras" with the TOC version
+  instead of "WeakAuras 5.22.0".
+- Debug messages show "Musca Auras" with the TOC version: the Lua error report (`WeakAuras/WeakAuras.lua`, key
+  "Musca Auras Version: %s") and the debug log copy (`WeakAurasOptions/InformationOptions.lua`, key
+  "Musca Auras %s on WoW %s"). The old keys are removed from every locale file of `WeakAuras/Locales` and
+  `WeakAurasOptions/Locales`; the new keys are translated in enUS and frFR only.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAurasOptions/WeakAurasOptions.lua`: the "Packs" toolbar
+  button becomes the first line of the aura list (a `WeakAurasLoadedHeaderButton` without expand or view button,
+  added before "Ready for Install"). It is highlighted while the Packs page is open.
+
 ## 2026-10-29
 
 Not yet tested in game: the class pack changes below. Headless test bench: 85 scenarios, 0 failed.

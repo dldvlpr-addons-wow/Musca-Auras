@@ -15,7 +15,7 @@ OptionsPrivate.changelog = {
 
 New:
 
-- Packs page: a Packs button in the toolbar opens the class HUD of your class, then the utility packs. Whole HUD imports the class pack as before; one button per HUD block imports that block alone and keeps the rest of the installed HUD as it is
+- Packs page: the Packs entry, first line of the aura list, opens the class HUD of your class, then the utility packs. Whole HUD imports the class pack as before; one button per HUD block imports that block alone and keeps the rest of the installed HUD as it is
 - 24 utility packs, sorted by category: Combat, Group and Buffs, Target and Enemies, Character, World
 - Class HUDs: a sound on procs and reactive abilities, Fading reminders before a buff ends, an Enemy Cast bar and the ranged swing timer
 - Class HUDs: a Defensives icon with Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression, defensive potions and the class shields and defensive cooldowns up

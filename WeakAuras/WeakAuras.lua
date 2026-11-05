@@ -28,7 +28,6 @@ local ADDON_NAME = "WeakAuras"
 ---@class WeakAuras
 local WeakAuras = WeakAuras
 local L = WeakAuras.L
-local versionString = WeakAuras.versionString
 local prettyPrint = WeakAuras.prettyPrint
 
 WeakAurasTimers = setmetatable({}, {__tostring=function() return "WeakAuras" end})
@@ -122,7 +121,7 @@ do
     else
       table.insert(juicedMessage, L["Lua error"])
     end
-    table.insert(juicedMessage, L["WeakAuras Version: %s"]:format(WeakAuras.versionString))
+    table.insert(juicedMessage, L["Musca Auras Version: %s"]:format(C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")))
     local version = data and (data.semver or data.version)
     if version then
       table.insert(juicedMessage, L["Aura Version: %s"]:format(version))
@@ -1236,7 +1235,7 @@ local function tooltip_draw(isAddonCompartment, blizzardTooltip)
     tooltip = GameTooltip
   end
   tooltip:ClearLines()
-  tooltip:AddDoubleLine("WeakAuras", versionString)
+  tooltip:AddDoubleLine("Musca Auras", C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
   if Private.CompanionData.slugs then
     local count = Private.CountWagoUpdates()
     if count > 0 then

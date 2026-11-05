@@ -879,7 +879,6 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "Ver código personalizado"
 	L["Voice Settings"] = "Configuración de voz"
 	L["We thank"] = "Agradecemos a"
-	L["WeakAuras %s on WoW %s"] = "WeakAuras %s en WoW %s"
 	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras recomienda usar IDs de hechizos en lugar de nombres. Los IDs de hechizos se localizan automáticamente."
 	L["What do you want to do?"] = "¿Qué es lo que quieres hacer?"
 	L["Whole Area"] = "Área completa"

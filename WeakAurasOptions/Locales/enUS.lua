@@ -1233,7 +1233,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "View custom code"
 	L["Voice Settings"] = "Voice Settings"
 	L["We thank"] = "We thank"
-	L["WeakAuras %s on WoW %s"] = "WeakAuras %s on WoW %s"
+	L["Musca Auras %s on WoW %s"] = "Musca Auras %s on WoW %s"
 	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."
 	L["What do you want to do?"] = "What do you want to do?"
 	L["Whole Area"] = "Whole Area"
