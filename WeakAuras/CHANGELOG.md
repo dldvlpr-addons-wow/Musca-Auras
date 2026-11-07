@@ -1,3 +1,47 @@
+# Musca Auras 1.16.0 (2026-11-07)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Changed
+
+- Warrior HUD: Sunder Armor on the target shows 5 segments next to the stacks icon, whoever cast it.
+- Priest HUD: Divine Aegis shows as a buff on you.
+- Packs page: the Stack Segments block reads "One segment per stack of a key buff or debuff".
+- "Modern Blizzard" time format: "3m" instead of "3 m".
+- The release zip is named `Musca-Auras-<version>.zip`. The addon folders inside keep their names.
+
+## Fixed
+
+- Combat Text pack: hits and heals taken show again in combat, where the game hides the amount. A hit fully
+  absorbed, blocked or resisted shows the word instead of an amount.
+- Aura (Modern) groups by unit with centered growth: a unit without the aura leaves no hole, and the row centers
+  again when a group member leaves or comes back.
+- Aura (Modern) groups in Grid mode: hidden units leave no hole in the grid.
+- Enemy nameplates with a raid mark: no more Lua error "BuffTrigger2.lua:2130: attempt to compare field '?' (a secret
+  string value...)".
+- Custom trigger whose duration function returns hidden values: the aura shows without a timer instead of raising an
+  error that stopped the other auras.
+- Name filter on a unit whose name the game hides: no match and no Lua error.
+- Triggers: DBM Timer "Bar enabled" option, Location instance name, `%raidMark` text without a matching aura, overlay
+  counter and `modRate` of custom triggers. The `boss` unit is removed from the Threat trigger.
+- Displays: Main animations of group siblings stay in step after several loops; a linear texture in compress mode no
+  longer shrinks at each tick and follows the scale; extra circular spinners hide; "Show model of unit" with "Use
+  Display Info Id" shows the model again.
+- Custom code: a `C_Timer` callback keeps its `aura_env` after the aura is renamed; the saved data warning shows at
+  16 KB instead of 16 MB; `WeakAuras.GetData` outside an aura no longer raises an error.
+- Options: a new group from a mixed selection is created at the top level; the right-click menu keeps the
+  multi-selection; "Add to new Modern Aura Group" is greyed out inside a dynamic group; the secret fallback follows
+  its trigger when triggers move; Glow On Hide options sit in the On Hide block; the Main animation color is saved.
+- Options: Custom Options tab, Max field description and multiselect entry deletion; deleting a sub element used as
+  an anchor or a tick placement; frame chooser, texture picker Cancel, percent fields, talent icons, item links
+  dragged into the code editor, profiling totals, Duration templates, StopMotion Scale Factor and atlas textures.
+
+## After the update
+
+- Class HUDs: the class pack notice shows again. Re-import the Warrior and Priest packs to get Sunder Armor and Divine
+  Aegis.
+- Combat Text: delete the Combat Text aura, then import it again from the Packs page.
+
 # Musca Auras 1.15.0 (2026-11-05)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

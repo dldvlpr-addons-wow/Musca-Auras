@@ -4,14 +4,41 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.15.0',
-  dateString = '2026-11-05',
+  versionString = '1.16.0',
+  dateString = '2026-11-07',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Packs page: whole class HUD or one block at a time, and 24 utility packs
-- Class HUDs: proc sounds, Fading reminders, Enemy Cast bar, ranged swing timer, Defensives icon
-- Rogue poison and Hunter ammo stock reminders
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.15.0 (2026-11-05):
+- Combat Text pack: hits and heals show again in combat
+- Aura (Modern) groups: no more holes with centered growth by unit or in Grid mode
+- Warrior HUD: Sunder Armor segments. Priest HUD: Divine Aegis
+- Many fixes in triggers, displays and options
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.16.0 (2026-11-07):
+
+Changed:
+
+- Warrior HUD: Sunder Armor on the target shows 5 segments next to the stacks icon, whoever cast it
+- Priest HUD: Divine Aegis shows as a buff on the player
+- Packs page: the Stack Segments block reads "One segment per stack of a key buff or debuff"
+- Modern Blizzard time format: "3m" instead of "3 m"
+
+Fixed:
+
+- Combat Text pack: hits and heals taken show again in combat, where the game hides the amount. A hit fully absorbed, blocked or resisted shows the word
+- Aura (Modern) groups by unit with centered growth: a unit without the aura leaves no hole, and the row centers again when a member leaves or comes back
+- Aura (Modern) groups in Grid mode: hidden units leave no hole
+- Enemy nameplates with a raid mark: no more Lua error in BuffTrigger2.lua:2130
+- Custom trigger whose duration is hidden by the game: the aura shows without a timer instead of raising an error
+- Name filter on a hidden unit name: no match and no Lua error
+- Triggers: DBM Timer Bar enabled option, Location instance name, %raidMark without a matching aura, overlays and modRate of custom triggers. The boss unit is removed from the Threat trigger
+- Displays: group animations stay in step, linear texture compress mode, extra circular spinners, Show model of unit with Use Display Info Id
+- Custom code: C_Timer callbacks keep aura_env after a rename; the saved data warning shows at 16 KB; WeakAuras.GetData outside an aura no longer raises an error
+- Options: new group from a mixed selection, right-click menu and multi-selection, Add to new Modern Aura Group greyed out in a dynamic group, secret fallback when triggers move, Glow On Hide, Main animation color, Custom Options, sub element and tick deletion, frame chooser, texture picker, percent fields, talent icons, dragged item links, profiling, Duration templates, StopMotion and atlas textures
+
+After the update:
+
+The class pack notice shows once: re-import the Warrior and Priest packs. Delete the Combat Text aura, then import it again from the Packs page.
+
+1.15.0 (2026-11-05):
 
 New:
 
