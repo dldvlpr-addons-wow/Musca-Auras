@@ -29,6 +29,10 @@ end
 local function ReplacePrefix(hay, replacements)
   for old, new in pairs(replacements) do
     if hay:sub(1, #old) == old then
+      -- Anchor on a deleted sub element: fall back to the region itself (unknown points become CENTER).
+      if new == deleteCondition then
+        return hay:sub(#old + 1)
+      end
       return new .. hay:sub(#old + 1)
     end
   end

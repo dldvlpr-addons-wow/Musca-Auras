@@ -1034,7 +1034,7 @@ function OptionsPrivate.GetActionOptions(data)
         type = "toggle",
         width = WeakAuras.normalWidth,
         name = L["Start Animation"],
-        order = 10.801,
+        order = 30.801,
         get = function()
           return data.actions.finish.glow_startAnim and true or false
         end,
@@ -1050,7 +1050,7 @@ function OptionsPrivate.GetActionOptions(data)
         control = "WeakAurasSpinBox",
         width = WeakAuras.normalWidth,
         name = L["Duration"],
-        order = 10.802,
+        order = 30.802,
         softMin = 0.01,
         softMax = 3,
         step = 0.05,
@@ -1081,7 +1081,7 @@ function OptionsPrivate.GetActionOptions(data)
           or data.actions.finish.glow_action ~= "show"
           or not data.actions.finish.glow_type
           or data.actions.finish.glow_type == "buttonOverlay"
-          or data.actions.start.glow_type == "Proc"
+          or data.actions.finish.glow_type == "Proc"
           or data.actions.finish.glow_frame_type == nil
         end,
       },
@@ -1102,7 +1102,7 @@ function OptionsPrivate.GetActionOptions(data)
           or data.actions.finish.glow_action ~= "show"
           or not data.actions.finish.glow_type
           or data.actions.finish.glow_type == "buttonOverlay"
-          or data.actions.start.glow_type == "Proc"
+          or data.actions.finish.glow_type == "Proc"
           or data.actions.finish.glow_frame_type == nil
         end,
       },

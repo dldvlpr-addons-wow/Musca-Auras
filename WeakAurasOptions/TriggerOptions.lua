@@ -376,6 +376,13 @@ local function moveTriggerDownImpl(data, i)
     fixUpProgressSource(subRegionData)
   end
 
+  local fallback = data.triggers.secretFallback
+  if fallback == i then
+    data.triggers.secretFallback = i + 1
+  elseif fallback == i + 1 then
+    data.triggers.secretFallback = i
+  end
+
   return true;
 end
 
@@ -501,6 +508,13 @@ function OptionsPrivate.AddTriggerMetaFunctions(options, data, triggernum)
                 tremove(child.triggers, triggernum)
                 DeleteConditionsForTrigger(child, triggernum)
                 FixUpProgressSourceAfterDelete(child, triggernum)
+                -- A fallback on the deleted trigger returns to the default, Next Active Trigger.
+                local fallback = child.triggers.secretFallback
+                if fallback == triggernum then
+                  child.triggers.secretFallback = nil
+                elseif type(fallback) == "number" and fallback > triggernum then
+                  child.triggers.secretFallback = fallback - 1
+                end
                 -- The deleted trigger becomes 0, an error the expression field shows
                 child.triggers.triggerExpression = OptionsPrivate.Private.RenumberTriggerExpression(child.triggers.triggerExpression, function(number)
                   return number == triggernum and 0 or number > triggernum and number - 1 or number

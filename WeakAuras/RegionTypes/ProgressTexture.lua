@@ -423,7 +423,7 @@ local function ApplyAdditionalProgressCircular(self, additionalProgress, min, ma
         extraSpinner:SetProgress(pAngleStart, pAngleEnd)
       end
     end
-
+    hideExtraTextures(self.extraSpinners, #additionalProgress + 1);
   else
     hideExtraTextures(self.extraSpinners, 1);
   end

@@ -407,8 +407,10 @@ local function SetAdjustedMax(self, adjustedMax)
   if index then
     local percent = adjustedMax:sub(1, index-1)
     self.adjustedMaxRelPercent = tonumber(percent) / 100
+    self.adjustedMax = nil
   else
     self.adjustedMax = tonumber(adjustedMax)
+    self.adjustedMaxRelPercent = nil
   end
   self:UpdateProgress()
 end

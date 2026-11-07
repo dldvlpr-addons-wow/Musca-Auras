@@ -1575,8 +1575,9 @@ end
 local function markForTriggerInfo(triggerInfo, unit)
   if triggerInfo.fetchRaidMark then
     local rt = GetRaidTargetIndex(unit)
-    if rt then
-      return "{rt" .. GetRaidTargetIndex(unit) .. "}"
+    -- A secret mark cannot be compared to the state's mark: show none.
+    if rt and not Private.IsSecret(rt) then
+      return "{rt" .. rt .. "}"
     end
   end
 end
@@ -1791,7 +1792,7 @@ local function UpdateTriggerState(time, id, triggernum)
             else
               updated = UpdateStateWithNoMatch(time, triggerStates, triggerInfo, unit, unit, matchCount,
                                                unitCount, maxUnitCount, matchCountPerUnit[unit], totalStacks,
-                                              affected, affectedUnits, unaffected, unaffectedUnits, role)
+                                              affected, affectedUnits, unaffected, unaffectedUnits, role, mark)
                                               or updated
               cloneIds[unit] = true
             end
@@ -2333,7 +2334,13 @@ local function EventHandler(frame, event, arg1, arg2, ...)
       end
     end
   elseif event == "NAME_PLATE_UNIT_ADDED" then
-    nameplateExists[arg1] = UnitGUID(arg1)
+    local guid = UnitGUID(arg1)
+    -- A secret GUID cannot be compared later in ScanGroupUnit: store true.
+    if Private.IsSecret(guid) then
+      nameplateExists[arg1] = true
+    else
+      nameplateExists[arg1] = guid
+    end
     RecheckActiveForUnitType("nameplate", arg1, deactivatedTriggerInfos)
   elseif event == "NAME_PLATE_UNIT_REMOVED" then
     nameplateExists[arg1] = false

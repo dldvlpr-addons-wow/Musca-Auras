@@ -24,7 +24,7 @@ end
 
 --- @type fun(_: any, uid: uid, oldId: auraId, newId: auraId)
 local function OnRename(_, uid, oldId, newId)
-  wrappers[newId] = wrappers[oldId]
+  -- The wrapped callbacks capture oldId: drop them, Get rebuilds them with newId.
   wrappers[oldId] = nil
 end
 
@@ -42,6 +42,8 @@ local WrapData = {
 --- @type fun(id: auraId, cloneId: string, system: any, funcs: {name: string, arg: number}[])
 --- @return table wrappedSystem
 local function Wrap(id, cloneId, system, funcs)
+  local auraData = WeakAuras.GetData(id)
+  local uid = auraData and auraData.uid
   local wrappedSystem = {}
   for _, data in ipairs(funcs) do
     wrappedSystem[data.name] = function(...)
@@ -49,10 +51,12 @@ local function Wrap(id, cloneId, system, funcs)
       local oldArg = select(data.arg, ...)
       if type(oldArg) == "function" then
         packed[data.arg] = function(...)
-          local region = WeakAuras.GetRegion(id, cloneId)
+          -- A timer started before a rename still runs: look the id up from the uid at call time.
+          local currentId = uid and Private.UIDtoID(uid) or id
+          local region = WeakAuras.GetRegion(currentId, cloneId)
           if region then
             Private.ActivateAuraEnvironmentForRegion(region)
-            xpcall(oldArg, Private.GetErrorHandlerId(id, L["Callback function"]), ...)
+            xpcall(oldArg, Private.GetErrorHandlerId(currentId, L["Callback function"]), ...)
             Private.ActivateAuraEnvironment()
           else
             oldArg(...)

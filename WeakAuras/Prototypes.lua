@@ -9671,6 +9671,7 @@ Private.event_prototypes = {
       {
         name = "instance",
         display = L["Instance Name"],
+        init = "instanceName",
         test = "true",
         hidden = "true",
         store = true,

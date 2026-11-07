@@ -39,6 +39,7 @@ end
 
 function OptionsPrivate.StartFrameChooser(data, path)
   local frame = OptionsPrivate.Private.OptionsFrame();
+  oldFocus, oldFocusName = nil, nil
   if not(frameChooserFrame) then
     frameChooserFrame = CreateFrame("Frame");
     frameChooserBox = CreateFrame("Frame", nil, frameChooserFrame, "BackdropTemplate");
@@ -83,7 +84,7 @@ function OptionsPrivate.StartFrameChooser(data, path)
               if (not focusName or (not isGroup and focusIsGroup)) then
                 focus = regionData.region;
                 focusName = "WeakAuras:"..id;
-                focusIsGroup = focusIsGroup;
+                focusIsGroup = isGroup;
               end
             end
           end

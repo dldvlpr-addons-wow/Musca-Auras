@@ -575,7 +575,7 @@ Private.event_prototypes["DBM Timer"] = {
             or event == "DBM_TimerPause"
             or event == "DBM_TimerResume"
             then
-              if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, isBarEnabled) then
+              if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, nil, isBarEnabled) then
                 local bar = Private.ExecEnv.BossMods.DBM:GetTimerById(timerId)
                 if bar then
                   return copyOrSchedule(bar, cloneId)
@@ -590,7 +590,7 @@ Private.event_prototypes["DBM Timer"] = {
             elseif event == "DBM_TimerUpdate" or event == "DBM_TimerUpdateIcon" then
               local changed
               for timerId, bar in pairs(Private.ExecEnv.BossMods.DBM:GetAllTimers()) do
-                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, isBarEnabled) then
+                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, nil, isBarEnabled) then
                   changed = copyOrSchedule(bar, timerId) or changed
                 else
                   local state = states[timerId]
@@ -611,7 +611,7 @@ Private.event_prototypes["DBM Timer"] = {
                 changed = true
               end
               for timerId, bar in pairs(Private.ExecEnv.BossMods.DBM:GetAllTimers()) do
-                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, isBarEnabled) then
+                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, nil, isBarEnabled) then
                   changed = copyOrSchedule(bar, timerId) or changed
                 end
               end
@@ -620,13 +620,13 @@ Private.event_prototypes["DBM Timer"] = {
           else
             if event == "DBM_TimerStart" or event == "DBM_TimerUpdate" then
               if extendTimer ~= 0 then
-                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, isBarEnabled) then
+                if Private.ExecEnv.BossMods.DBM:TimerMatches(timerId, triggerText, triggerTextOperator, triggerSpellId, counter, triggerId, triggerDbmType, nil, isBarEnabled) then
                   local bar = Private.ExecEnv.BossMods.DBM:GetTimerById(timerId)
                   Private.ExecEnv.BossMods.DBM:ScheduleCheck(bar.expirationTime + extendTimer)
                 end
               end
             end
-            local bar = Private.ExecEnv.BossMods.DBM:GetTimer(triggerText, triggerTextOperator, triggerSpellId, extendTimer, counter, triggerId, triggerDbmType, isBarEnabled)
+            local bar = Private.ExecEnv.BossMods.DBM:GetTimer(triggerText, triggerTextOperator, triggerSpellId, extendTimer, counter, triggerId, triggerDbmType, nil, isBarEnabled)
             if bar then
               if extendTimer == 0
                 or not state

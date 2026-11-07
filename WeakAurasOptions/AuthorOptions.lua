@@ -378,7 +378,7 @@ local function descColor(option, key)
           desc,
           ("%s #%i: %.2f %.2f %.2f %.2f"):format(
             id,
-            childOption.path[#childOption.path],
+            optionData.path[#optionData.path],
             unpack(childOption[key])
           )
         )
@@ -532,14 +532,16 @@ local function getUserColor(option)
     local firstValue
     for id, optionData in pairs(option.references) do
       local childConfig = optionData.config
-      if firstValue == nil then
+      if not childConfig then
+        return
+      elseif firstValue == nil then
         firstValue = childConfig[option.key]
       elseif neq(firstValue, childConfig[option.key]) then
         return
       end
-      if firstValue then
-        return unpack(firstValue)
-      end
+    end
+    if firstValue then
+      return unpack(firstValue)
     end
   end
 end
@@ -1883,7 +1885,7 @@ typeControlAdders = {
       type = "input",
       width = WeakAuras.normalWidth * 2 / 3,
       name = name(option, "max", L["Max"]),
-      desc = desc(option, "min"),
+      desc = desc(option, "max"),
       order = order(),
       get = getNumAsString(option, "max"),
       set = setNum(data, option, "max")
@@ -2382,7 +2384,6 @@ typeControlAdders = {
                 path = expandPath(optionData.path, "default"),
                 payload = insertPoint
               })
-              tremove(childOption.default, insertPoint)
             else
               OptionsPrivate.Private.TimeMachine:Append({
                 uid = childData.uid,

@@ -1,5 +1,7 @@
 -- usage: lua aura_tool.lua <repo> decode <file> | encode <luafile returning transmit table>
-local repo, mode, path = arg[1], arg[2], arg[3]
+-- dofile("Tests/Packs/AuraTool.lua") from the repository root returns { Encode, Decode, Dump } instead.
+local repo, mode, path = ...
+repo = repo or "."
 strmatch = string.match
 dofile(repo .. "/WeakAuras/Libs/LibStub/LibStub.lua")
 dofile(repo .. "/WeakAuras/Libs/LibDeflate/LibDeflate.lua")
@@ -37,18 +39,25 @@ local function dump(v, indent)
   return table.concat(lines, "\n")
 end
 
-if mode == "decode" then
-  local s = io.open(path):read("*a"):gsub("%s", "")
-  local decoded = LibDeflate:DecodeForPrint(s:match("^!WA:2!(.+)$"))
+local function Decode(text)
+  local decoded = LibDeflate:DecodeForPrint(text:gsub("%s", ""):match("^!WA:2!(.+)$"))
   local raw = LibDeflate:DecompressDeflate(decrypt(decoded)) or LibDeflate:DecompressDeflate(decoded)
   local ok, t = LibSerialize:Deserialize(raw)
   assert(ok, t)
-  print("return " .. dump(t))
-else
-  local t = dofile(path)
+  return t
+end
+
+local function Encode(t)
   local s = LibSerialize:SerializeEx({errorOnUnserializableType = false}, t)
   local encoded = "!WA:2!" .. LibDeflate:EncodeForPrint(LibDeflate:CompressDeflate(s, {level = 9}))
-  local ok, back = LibSerialize:Deserialize(LibDeflate:DecompressDeflate(LibDeflate:DecodeForPrint(encoded:sub(7))))
-  assert(ok and back.d.id == t.d.id, "round trip failed")
-  print(encoded)
+  assert(Decode(encoded).d.id == t.d.id, "round trip failed")
+  return encoded
+end
+
+if mode == "decode" then
+  print("return " .. dump(Decode(io.open(path):read("*a"))))
+elseif mode == "encode" then
+  print(Encode(dofile(path)))
+else
+  return { Encode = Encode, Decode = Decode, Dump = dump }
 end

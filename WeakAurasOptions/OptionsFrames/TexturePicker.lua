@@ -277,10 +277,12 @@ local function ConstructTexturePicker(frame)
     self.textures = textures;
     self.SetTextureFunc = SetTextureFunc
     self.givenPath = {};
+    self.givenSize = {}
     self.selectedTextures = {}
     self.adjustSize = adjustSize
 
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(baseObject) do
+      self.givenSize[child.id] = { child.width, child.height }
       local object = valueFromPath(child, paths[child.id])
       if object and object[properties.texture] then
         local texture = object[properties.texture]
@@ -340,6 +342,11 @@ local function ConstructTexturePicker(frame)
       local childObject = valueFromPath(child, group.paths[child.id])
       if childObject then
         childObject[group.properties.texture] = group.givenPath[child.id]
+        -- SetAll with adjustSize may have resized the aura to the picked atlas.
+        local size = group.adjustSize and group.givenSize[child.id]
+        if size then
+          child.width, child.height = size[1], size[2]
+        end
         WeakAuras.Add(child);
         WeakAuras.UpdateThumbnail(child);
       end

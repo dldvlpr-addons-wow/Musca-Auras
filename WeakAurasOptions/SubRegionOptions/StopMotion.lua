@@ -289,7 +289,7 @@ local function createOptions(parentData, data, index, subIndex)
       step = 0.1,
       hidden = function()
         if parentData.regionType == "aurabar"
-          and data.anchorMode == "area"
+          and data.anchor_mode == "area"
           and data.anchor_area == "fg"
           and data.barModelClip
         then

@@ -1,8 +1,5 @@
 -- usage: lua Tests/Packs/EmbedClassPacks.lua > WeakAurasOptions/ClassPacks.lua
-local folders = {
-  WARRIOR = "Guerrier", PALADIN = "Paladin", HUNTER = "Chasseur", ROGUE = "Voleur", PRIEST = "Pretre",
-  SHAMAN = "Chaman", MAGE = "Mage", WARLOCK = "Demoniste", DRUID = "Druide",
-}
+local folders = dofile("Tests/Packs/PackFolders.lua").class
 local classes = {}
 for class in pairs(folders) do classes[#classes + 1] = class end
 table.sort(classes)

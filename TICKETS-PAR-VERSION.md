@@ -226,6 +226,37 @@ Entrées du 2026-10-25 et du 2026-10-26 de `CHANGES.md`. Banc headless vert (85 
 
 Première version après les packs de la 1.15. Corriger les bugs connus avant d'ajouter des fonctionnalités évite de les mêler aux régressions de ce contenu. Packs 5 et 7 demandent une vérification en jeu ou des ID à trancher : ils passent ici, avant Dette 6 (régénération et synchronisation des packs).
 
+### Déjà fait
+
+Entrée du 2026-11-06 de `CHANGES.md`. Banc headless vert (124 scénarios, 0 échec). Rien n'est testé en jeu.
+
+- Dette 2 : scénario 91 (version et date de `Changelog.lua`, premier titre de `CHANGELOG.md`, `## Version:` des cinq TOC).
+- Dette 9 : durée custom secrète sans timer (scénario 92). Dette 10 : arguments du trigger DBM Timer.
+- Dette 11 : signature déjà juste (`RunTriggerFunc` passe l'unité deux fois), scénario 93 sans changement de code.
+- Dette 12 : Location, overlays TSU, `modRate`, `%raidMark`, Threat `boss`, format « Modern Blizzard » (« 3m »).
+- Dette 13 : `SetAdjustedMax`, synchro des animations de groupe au premier départ seulement (scénario 95),
+  mode compress de la texture linéaire (largeur fixe, échelle, progression bornée à 1), spinners circulaires.
+- Dette 14 : seuil de 16 Ko, `GetData` hors environnement, callback `C_Timer` retrouvé par uid après renommage.
+- Dette 15 : groupe dynamique, renumérotation de `secretFallback`. Dette 16 : menus et multi-sélection.
+- Dette 17 : Actions On Hide et couleur Main. Dette 18 : Custom Options, dont la garde de `getUserColor`.
+- Dette 19 : sous-régions et placements de tick. Dette 20 : sélecteur de frame, TexturePicker, lignes de milieu.
+- Dette 21 : SpinBox, MiniTalent, glisser d'un objet, insertion de lien par `ChatFrameUtil.InsertLink`.
+- Dette 22 : profiling, renommage après import, modèles Duration masqués sans Combat Log.
+- Dette 23 : StopMotion `anchor_mode`, test atlas (`TextureBase:IsAtlas`).
+- Hors tickets : `WeakAuras.SetModel` (unité avant Display Info), filtre de nom avec nom secret, repère de raid et
+  GUID de barre de vie secrets (`BuffTrigger2.lua`), « Add to new Modern Aura Group » grisé dans un groupe dynamique.
+- Packs 5 : segments de Sunder Armor sur la cible, pack Guerrier. À vérifier en jeu : cumuls secrets en combat.
+- Packs 7 : Divine Aegis 431624 ajouté en buff au pack Prêtre. Binding Heal, Setup, Initiative, Reckoning et
+  Lightning Overload n'ont pas d'aura (notes des guides), donc hors des packs.
+- Dette 6 : `lua5.1 Tests/Packs/Regenerate.lua`, scénario 94, `VerificationPack.lua` lancé par `Tests/run.lua`
+  pour chaque pack ; un seul `ForeverAurasExport1.txt` (`Tests/Fixtures/`).
+- Dette 8 : `luac.out`, tests de build toujours faux (`WoW80`, `BuildInfo > 80100` de `Model.lua`),
+  `flavorFromTocToNumber` retirés.
+- `CLASS_PACK_VERSION` passe à `"1.16.0"` : la notice des packs se réaffiche.
+- Non fait : les deux `oldDataStub` de `WeakAuras.lua` ne pointent pas vers `Private.data_stub` (ancien format de
+  trigger, différents du stub de `Types.lua`). `Types.lua:2373` garde `BuildInfo <= 80100`, hors ticket.
+- À vérifier : les TOC portent encore `## Version: 1.15.0`, comme `Changelog.lua` et `CHANGELOG.md`.
+
 ### Ordre
 
 1. Dette 2 : Une seule source pour la version du fork
@@ -669,7 +700,7 @@ La régénération se fait à la main, en plusieurs étapes décrites dans les e
 
 **Pourquoi.**
 - `WeakAuras/luac.out` (644 lignes) : artefact de compilation commité, absent du toc.
-- Tests de build toujours vrais sur Forever (Interface 16001, build 1.60.1) : `WoW80` dans `WeakAurasOptions/AceGUI-Widgets/AceGUIContainer-WeakAurasTreeGroup.lua:12`, `WeakAuras.BuildInfo > 80100` dans `WeakAurasOptions/RegionOptions/Model.lua:18` et `:41`.
+- Tests de build toujours faux sur Forever (Interface 16001, build 1.60.1) : `WoW80` dans `WeakAurasOptions/AceGUI-Widgets/AceGUIContainer-WeakAurasTreeGroup.lua:12`, `WeakAuras.BuildInfo > 80100` dans `WeakAurasOptions/RegionOptions/Model.lua:18` et `:41`.
 - `flavorFromTocToNumber` (`WeakAuras/Init.lua:395-402`) liste 6 saveurs, dont 5 impossibles avec `X-Flavor: Vanilla`.
 - Le stub de données « minimal data stub which prevents false positives in diff » est copié 3 fois : `WeakAuras.lua:3144` (`oldDataStub`), `WeakAuras.lua:3192` (`oldDataStub2`), `Types.lua:3636` (`Private.data_stub`).
 

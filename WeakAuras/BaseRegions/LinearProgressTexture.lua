@@ -218,18 +218,12 @@ local funcs = {
 
     if (self.compress) then
       -- Somewhat questionable usage of parentFrame.progress
-      local progress = self.parentFrame.progress or 1
+      local progress = math.min(self.parentFrame.progress or 1, 1)
       local horScale = self.horizontal and progress or 1
       local verScale = self.horizontal and 1 or progress
-      self:SetWidth(self.width * horScale)
-      self:SetHeight(self.height * verScale)
-
-      if (progress > 0.1) then
-        startProgress = startProgress / progress
-        endProgress = endProgress / progress
-      else
-        startProgress, endProgress = 0, 0
-      end
+      -- Size the texture, not self.width: self.width stays the full region size the scale applies to.
+      self.texture:SetWidth(self.width * (self.parentFrame.scalex or 1) * horScale)
+      self.texture:SetHeight(self.height * (self.parentFrame.scaley or 1) * verScale)
     end
     self:UpdateTextures()
   end,
@@ -268,7 +262,20 @@ local funcs = {
       return
     end
     self.coord:SetFull()
-    self:ApplyProgressToCoord(self.startProgress, self.endProgress)
+    local startProgress, endProgress = self.startProgress, self.endProgress
+    local width, height = self.width, self.height
+    if self.compress then
+      -- The texture shrinks with the progress: express start and end within the shrunk texture,
+      -- and place the corners with the shrunk size, not the full one.
+      local progress = math.min(self.parentFrame.progress or 1, 1)
+      if progress > 0 then
+        startProgress, endProgress = startProgress / progress, endProgress / progress
+      end
+      self.width = width * (self.parentFrame.scalex or 1) * (self.horizontal and progress or 1)
+      self.height = height * (self.parentFrame.scaley or 1) * (self.horizontal and 1 or progress)
+    end
+    self:ApplyProgressToCoord(startProgress, endProgress)
+    self.width, self.height = width, height
     local crop_x = self.crop_x or 1
     local crop_y = self.crop_y or 1
     local texRotation = self.texRotation or 0

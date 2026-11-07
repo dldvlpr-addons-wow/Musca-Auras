@@ -5,13 +5,13 @@ local AddonName = ...
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
   versionString = '1.15.0',
-  dateString = '2026-10-29',
+  dateString = '2026-11-05',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
 - Packs page: whole class HUD or one block at a time, and 24 utility packs
 - Class HUDs: proc sounds, Fading reminders, Enemy Cast bar, ranged swing timer, Defensives icon
 - Rogue poison and Hunter ammo stock reminders
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.15.0 (2026-10-29):
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.15.0 (2026-11-05):
 
 New:
 

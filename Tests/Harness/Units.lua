@@ -480,6 +480,7 @@ function Units.Install(target, fire, wowApi)
   target.UnitReaction = function(_, token) return Read(token, "canAttack") and 2 or 5 end
   target.UnitIsDeadOrGhost = function(token) return Read(token, "dead") == true end
   target.UnitIsDead = target.UnitIsDeadOrGhost
+  target.UnitHasIncomingResurrection = function(token) return Read(token, "incomingResurrection") == true end
   target.UnitIsConnected = function(token) return Units.Get(token) ~= nil end
   target.UnitIsVisible = target.UnitIsConnected
   target.UnitAffectingCombat = function() return Units.restricted end

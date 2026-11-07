@@ -344,15 +344,18 @@ function Private.Animate(namespace, uid, type, anim, region, inverse, onFinished
 
     duration = Private.ParseNumber(anim.duration) or 0;
     progress = 0;
-    if(namespace == "display" and type == "main" and not onFinished and not anim.duration_type == "relative") then
+    -- Sync with a sibling only on a fresh start: a loop restart keeps its own phase.
+    if(namespace == "display" and type == "main" and not onFinished and anim.duration_type ~= "relative"
+       and not (animations[key] and animations[key].type == type)) then
       local data = Private.GetDataByUID(uid);
       if(data and data.parent) then
-        local parentRegion = WeakAuras.GetRegion(data.parent)
-        if(parentRegion and parentRegion.controlledRegions) then
-          for index, regionData in pairs(parentRegion.controlledRegions) do
-            local childRegion = regionData.region;
-            local childKey = regionData.key;
-            if(childKey and childKey ~= tostring(region) and animations[childKey] and animations[childKey].type == "main" and duration == animations[childKey].duration) then
+        local parentData = WeakAuras.GetData(data.parent)
+        if(parentData and parentData.controlledChildren) then
+          -- shortcut: only the sibling's base region is compared, not its clones; walk clones if split-unit siblings must sync.
+          for _, childId in ipairs(parentData.controlledChildren) do
+            local childRegion = WeakAuras.GetRegion(childId)
+            local childKey = childRegion and tostring(childRegion);
+            if(childKey and childKey ~= key and animations[childKey] and animations[childKey].type == "main" and duration == animations[childKey].duration) then
               progress = animations[childKey].progress;
               break;
             end

@@ -62,6 +62,117 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-06
+
+Not yet tested in game. Headless test bench: 124 scenarios, 0 failed.
+
+### Fixed
+- `WeakAurasOptions/WeakAurasOptions.lua`, `commonParent`: a selection that mixes a top-level aura and an aura of
+  a group no longer creates the new group inside that group (a top-level aura counted as "any parent").
+- `WeakAuras/GenericTrigger.lua`: a custom trigger whose duration function returns secret values (such as
+  `aura.duration, aura.expirationTime` under restriction) shows the aura without a timer, instead of raising an
+  error that stopped the event pass for the other auras. Test `Tests/Scenarios/92_SecretCustomDuration.lua`.
+- `WeakAuras/BossMods.lua`: the DBM Timer trigger passes `isBarEnabled` to its own parameter, not to `noCastBar`.
+- `Tests/Scenarios/93_SpellCastSucceededSpellId.lua`: checks that Spell Cast Succeeded reads `spellId`, not
+  `castBarID`, from the Forever payload. `WeakAuras/Prototypes.lua` was already right: no code change.
+- `WeakAuras/Prototypes.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/BuffTrigger2.lua`, `WeakAuras/Types.lua`:
+  the Location trigger stores `instanceName` in `instance`; the overlay counter of a TSU trigger is no longer
+  shadowed; the `modRate` of a TSU variable is read from `modRateProperty`; `%raidMark` is passed on when no aura
+  matches; the `boss` threat unit is removed on Forever.
+- `WeakAuras/Types.lua`: the "Modern Blizzard" time format shows "3m" instead of "3 m"
+  (`SetStripIntervalWhitespace`).
+- `WeakAuras/BuffTrigger2.lua`: a secret raid mark is ignored instead of compared; a secret GUID of a nameplate is
+  stored as `true`. This was the in-game error "BuffTrigger2.lua:2130: attempt to compare field '?' (a secret
+  string value...)".
+- `WeakAuras/RegionTypes/RegionPrototype.lua`: `SetAdjustedMax` clears `adjustedMax` and `adjustedMaxRelPercent`,
+  as `SetAdjustedMin` does.
+- `WeakAuras/Animations.lua`: the Main animation of group siblings synchronises on the first start only, not at
+  each restart of a loop. Test `Tests/Scenarios/95_GroupAnimationSync.lua`, which also checks that both siblings
+  stay in step over several loops.
+- `WeakAuras/BaseRegions/LinearProgressTexture.lua`: compress mode starts from a fixed width, so the bar no longer
+  shrinks at each tick; the size follows the region scale; a progress above 1 is bounded to 1 and the overlays
+  follow the reduced size.
+- `WeakAuras/RegionTypes/ProgressTexture.lua`: the extra circular spinners are hidden when there are fewer
+  additional progresses.
+- `WeakAuras/AuraEnvironment.lua`: the saved data warning triggers at 16 KB instead of 16 MB; `GetData` outside an
+  aura environment no longer raises an error.
+- `WeakAuras/AuraEnvironmentWrappedSystems.lua`: a `C_Timer` callback started before a rename finds its aura by
+  uid. Before, it ran without `aura_env` and raised an error at each tick.
+- `WeakAuras/WeakAuras.lua`: the dynamic group check reads `regionType`; `WeakAuras.SetModel` uses the
+  Display Info id only when the Model field is a number ("Show model of unit" with "Use Display Info Id" showed no
+  model); the name filter
+  (`ParseNameCheck` Check) treats a secret name as no match instead of raising an error.
+- `WeakAurasOptions/TriggerOptions.lua`: `data.triggers.secretFallback` is renumbered when a trigger is moved or
+  deleted.
+- `WeakAurasOptions/WeakAurasOptions.lua`, `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`:
+  the second menu entry no longer copies the text of the first; the multi-selection is kept
+  (`IsDisplayPicked(data.id)`); the "Copy settings" entries for author options and custom configuration are
+  hidden through their `.text`. "Add to new Modern Aura Group" is greyed out when the selection is in a dynamic
+  group.
+- `WeakAurasOptions/ActionOptions.lua`, `WeakAurasOptions/AnimationOptions.lua`: the Glow On Hide options follow
+  the On Hide glow type and sit in the On Hide block; the Main animation colour is saved in `main`.
+- `WeakAurasOptions/AuthorOptions.lua`: the Custom Options tab reads `optionData.path`; `getUserColor` checks all
+  children and ignores one without a config; the Max field shows its own description; deleting an entry of a
+  multiselect removes one entry, not two.
+- `WeakAurasOptions/SubRegionOptions/SubRegionCommon.lua`, `WeakAurasOptions/SubRegionOptions/Tick.lua`: deleting
+  a sub element used as an anchor no longer raises an error; deleting a tick placement shifts
+  `data.progressSources` with it.
+- `WeakAurasOptions/OptionsFrames/FrameChooser.lua`, `TexturePicker.lua`, `MoverSizer.lua`: the frame chooser
+  keeps `isGroup` and forgets the previous focus; Cancel in the texture picker restores `width` and `height`;
+  `CreateMiddleLines` receives `sizerPoint`.
+- `WeakAurasOptions/AceGUI-Widgets`: `SpinBox` ignores a non-numeric percent entry; `MiniTalent` computes its
+  height for 9 icons per row; `MultiLineEditBox` and `MultiLineEditBoxWithEnter` insert the link of a dragged
+  item; `MultiLineEditBoxWithEnter` finds its own edit box for a shift-click link. In `MultiLineEditBox` and
+  `MultiLineEditBoxWithEnter`, a dragged item link is escaped ("|" doubled) as a shift-click link is, so both
+  gestures store the same text.
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasMultiLineEditBox.lua`,
+  `AceGUIWidget-WeakAurasMultiLineEditBoxWithEnter.lua`, `AceGUIWidget-WeakAurasInputWithIndentation.lua`: the
+  shift-click link insertion hooks `ChatFrameUtil.InsertLink`, which Forever calls, with `ChatEdit_InsertLink`
+  (a deprecated alias) as fallback.
+- `WeakAuras/Profiling.lua`, `WeakAurasOptions/OptionsFrames/Update.lua`, `WeakAurasTemplates/TriggerTemplates.lua`:
+  the profiling popup shows the total in ms and sorts by spike; the rename after an import update reads
+  `targetNames`; the Duration templates are hidden when there is no Combat Log trigger.
+- `WeakAurasOptions/SubRegionOptions/StopMotion.lua`, `WeakAurasOptions/SubRegionOptions/Texture.lua`,
+  `WeakAurasOptions/RegionOptions/Texture.lua`: "Scale Factor" reads `anchor_mode`; the atlas test uses
+  `TextureBase:IsAtlas(...)`, so "Allow Full Rotation" and "Texture Wrap" are hidden on an atlas texture.
+
+### Changed
+- `WeakAurasOptions/Changelog.lua`, `WeakAuras/CHANGELOG.md`, `Tests/Scenarios/91_ForkVersionMatches.lua`: the
+  What's New version and date, the first heading of `WeakAuras/CHANGELOG.md` and the `## Version:` of the five
+  TOC files must be equal, or the test bench fails.
+- `Tests/Packs/Pretre/PackPretre.lua`: Divine Aegis (431624) is a buff of the player in the priest pack. Binding
+  Heal, Setup, Initiative, Reckoning and Lightning Overload have no aura (see the notes in `Classes/Guides`), so
+  they are not in the packs. The priest pack is built again.
+- `Tests/Packs/Guerrier/PackGuerrier.lua`, `Tests/Packs/PackBuilder.lua`: Sunder Armor (7386, 7405, 8380, 11596,
+  11597) has 5 segments on the target, from any caster, next to the stacks icon. The warrior pack is built again
+  with the `.txt` files and `WeakAurasOptions/ClassPacks.lua`.
+- `WeakAuras/WeakAuras.lua`: `CLASS_PACK_VERSION` is "1.16.0", so the class packs notice shows again.
+- `Tests/Packs/Regenerate.lua`, `Tests/Packs/PackFolders.lua`: one command, `lua5.1 Tests/Packs/Regenerate.lua`,
+  rebuilds every pack `.txt`, `WeakAurasOptions/ClassPacks.lua` and `WeakAurasOptions/UtilityPacks.lua`. The pack
+  folders are listed once, in `PackFolders.lua`. Test `Tests/Scenarios/94_PackSync.lua`: each class pack rebuilt
+  from its source equals its `.txt`, for both targets, and its string in `WeakAurasOptions/ClassPacks.lua`. The
+  embedded strings of the utility packs are checked by `Tests/Scenarios/86_UtilityPacks.lua`.
+- `Tests/run.lua`: runs `Tests/Packs/VerificationPack.lua` once for each pack.
+- `Tests/Packs/EmbedClassPacks.lua`, `Tests/Packs/EmbedUtilityPacks.lua`, `Tests/Packs/AuraTool.lua`: read the
+  folder list from `PackFolders.lua`.
+- `Tests/Harness/Units.lua`: `GetSpellBonusDamage` returns 0 in the test bench, as the game returns a number for
+  each school (the documented stub returns nothing).
+- `Tests/Harness/Environment.lua`: the Blizzard UI source is found through `WOW_UI_SOURCE`, then a
+  `wow-ui-source/forever` clone next to the repository, then the former fixed path.
+- `WeakAurasOptions/PackLibrary.lua`, `WeakAurasOptions/Locales/enUS.lua`, `WeakAurasOptions/Locales/frFR.lua`:
+  the Stack Segments block reads "One segment per stack of a key buff or debuff", since the warrior block follows
+  Sunder Armor on the target.
+- `WeakAurasOptions/Changelog.lua`: the commit text of 1.15.0 carries the release date, 2026-11-05.
+- `.github/workflows/release.yml`: the release zip is named `Musca-Auras-<version>.zip` (packager option `-n`).
+  The addon folders in the zip stay `WeakAuras*`.
+
+### Removed
+- `WeakAuras/luac.out`: compilation leftover, not in any TOC.
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIContainer-WeakAurasTreeGroup.lua`,
+  `WeakAurasOptions/RegionOptions/Model.lua`: build tests that are always false on Forever (`WoW80`,
+  `BuildInfo > 80100`). The false branch is kept: no behavior change.
+- `WeakAuras/Init.lua`: `flavorFromTocToNumber`, which listed flavors impossible with `X-Flavor: Vanilla`.
+
 ## 2026-11-05
 
 Headless test bench: 86 scenarios, 0 failed.

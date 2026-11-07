@@ -314,20 +314,33 @@ local function SetUpGroup(unitState, member, slot, position, plan)
 end
 
 -- Without a frame to hang on, the containers of the units are stacked where new lines are added.
-local function StackUnits(groupData, childRegion, plan, order)
+-- Only the visible ones are chained: a hidden container keeps no room, and one never shown has no
+-- size, so the units behind it would get no position.
+local function StackUnits(groupData, state)
+  local plan, childRegion = state.plan, state.stackRegion
   local shape = plan.shape
   local previous
-  for _, unitState in ipairs(order) do
-    local status
-    if previous then
-      local x, y = shape.row:Step(plan.betweenSpace)
-      status = Anchor.Attach(unitState.container, shape.row:Aligned(shape.corner, false), previous.container,
-        shape.row:Aligned(shape.corner, true), x, y)
-    else
-      status = Anchor.Attach(unitState.container, shape.corner, childRegion, shape.corner, 0, 0)
+  for _, unitState in ipairs(state.stack) do
+    if unitState.container:IsShown() then
+      local target = previous and previous.container or childRegion
+      if unitState.stackedOn ~= target then
+        local status
+        if previous then
+          local x, y = shape.row:Step(plan.betweenSpace)
+          status = Anchor.Attach(unitState.container, shape.row:Aligned(shape.corner, false), target,
+            shape.row:Aligned(shape.corner, true), x, y)
+        else
+          status = Anchor.Attach(unitState.container, shape.corner, target, shape.corner, 0, 0)
+        end
+        if status == "ok" then
+          unitState.stackedOn = target
+        else
+          unitState.stackedOn = nil
+          Flow.Defer(groupData)
+        end
+      end
+      previous = unitState
     end
-    if status ~= "ok" then Flow.Defer(groupData) end
-    previous = unitState
   end
 end
 
@@ -385,9 +398,12 @@ local function Build(groupData, modern, members, plan, state)
         end
       end
     end
+    unitState.stackedOn = nil
     stack[#stack + 1] = unitState
   end
-  if not modern.mode and anchorRegion then StackUnits(groupData, anchorRegion, plan, stack) end
+  -- Stacked by Refresh, once the visibility of each unit is known.
+  state.stack, state.plan = stack, plan
+  state.stackRegion = not modern.mode and anchorRegion or nil
   return state
 end
 
@@ -438,6 +454,7 @@ local function Refresh(groupData, modern, state, droppedUnit)
     auraContainer:SetEnabled(isVisible)
     if isVisible then auraContainer:UpdateAllAuras() end
   end
+  if state.stackRegion and not modern.mode then StackUnits(groupData, state) end
 end
 
 -- Builds the grid again when its signature changed and the client allows it, then refreshes it.

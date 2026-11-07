@@ -305,8 +305,8 @@ local function UpdateClipboardMenuEntry(data)
     clipboard.copyLoadEntry.text = nil;
     clipboard.copyActionsEntry.text = nil;
     clipboard.copyAnimationsEntry.text = nil;
-    clipboard.copyAuthorOptionsEntry = nil;
-    clipboard.copyUserConfigEntry = nil;
+    clipboard.copyAuthorOptionsEntry.text = nil;
+    clipboard.copyUserConfigEntry.text = nil;
     clipboard.copyGroupEntry.text = L["Group"];
   else
     clipboard.copyEverythingEntry.text = L["Everything"];
@@ -316,8 +316,8 @@ local function UpdateClipboardMenuEntry(data)
     clipboard.copyLoadEntry.text = L["Load"];
     clipboard.copyActionsEntry.text = L["Actions"];
     clipboard.copyAnimationsEntry.text = L["Animations"];
-    clipboard.copyAuthorOptionsEntry = L["Author Options"];
-    clipboard.copyUserConfigEntry = L["Custom Configuration"];
+    clipboard.copyAuthorOptionsEntry.text = L["Author Options"];
+    clipboard.copyUserConfigEntry.text = L["Custom Configuration"];
     clipboard.copyGroupEntry.text = nil;
   end
 end

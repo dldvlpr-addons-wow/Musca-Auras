@@ -39,6 +39,9 @@ jobs:
           [ -n "$CF_API_KEY" ] || { echo "::error::The CF_API_KEY secret is missing"; exit 1; }
 
       - uses: BigWigsMods/packager@v2
+        with:
+          # Zip named after the addon; the in-game folders stay WeakAuras* (saved variables).
+          args: -n "Musca-Auras-{project-version}"
         env:
           GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}

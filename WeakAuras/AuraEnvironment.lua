@@ -280,7 +280,7 @@ end
 
 
 local function UpdateSavedDataWarning(uid, size)
-  local savedDataWarning = 16 * 1024 * 1024 -- 16 KB, but it's only a warning
+  local savedDataWarning = 16 * 1024 -- 16 KB, but it's only a warning
   if size > savedDataWarning then
     Private.AuraWarnings.UpdateWarning(uid, "CustomSavedData", "warning",
                                        L["This aura is saving %s KB of data"]:format(ceil(size / 1024)))
@@ -533,9 +533,11 @@ local FakeWeakAurasMixin = {
     me = GetUnitName("player", true),
     myGUID = UnitGUID("player"),
     GetData = function(id)
-      local currentId = Private.UIDtoID(current_uid)
-      getDataCallCounts[currentId] = getDataCallCounts[currentId] + 1
-      if getDataCallCounts[currentId] > 99 then
+      local currentId = current_uid and Private.UIDtoID(current_uid)
+      if currentId then
+        getDataCallCounts[currentId] = (getDataCallCounts[currentId] or 0) + 1
+      end
+      if currentId and getDataCallCounts[currentId] > 99 then
         Private.AuraWarnings.UpdateWarning(current_uid, "FakeWeakAurasGetData", "warning",
                   L["This aura calls GetData a lot, which is a slow function."])
       end

@@ -292,7 +292,7 @@ Niveau 30 (Wowhead) :
 - Rupture, Garrote, Expose Armor sur la cible : debuffs avec timer (IDs d'aura à vérifier).
 - Thousand Cuts : compteur de cumuls (Finesse).
 - Camouflage / Premeditation (14183) / Vanish (1856, 1857) / Preparation (14185) : séquence de réapplication de Garrote.
-- Riposte (14251), Setup (proc 15250), Initiative (proc 13977), Remorseless Attacks : procs courts.
+- Riposte (14251), Remorseless Attacks : procs courts. Setup (proc 15250) et Initiative (proc 13977) donnent un point de combo sans poser d'aura (DB2 70707) : rien à suivre.
 - Interruption : Kick (1766, 1767, 1768, 1769) en recharge, verrou 5 s.
 - Racial actif selon la race du joueur (IDs absents).
 

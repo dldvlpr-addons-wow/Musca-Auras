@@ -35,6 +35,23 @@ return function(test)
     if state.show then lines[#lines + 1] = state.name end
   end
   assert(#lines == 1 and lines[1] == "|cffff3030-120|r!", "Combat Text: " .. table.concat(lines, ", "))
+  -- The game sends the amount as a secret: the line still shows, through secretName.
+  WeakAuras.ScanUnitEvents("UNIT_COMBAT", "player", "HEAL", "", secretwrap(45), 1)
+  test.Environment.Advance(0.1)
+  local secretLines = {}
+  for _, state in pairs(WeakAuras.GetTriggerStateForTrigger("Combat Text - Incoming", 1)) do
+    if state.show and state.secretName then secretLines[#secretLines + 1] = test.Secret.Reveal(state.secretName) end
+  end
+  assert(#secretLines == 1 and secretLines[1] == "|cff30ff30+45|r", "Combat Text secret: "
+    .. table.concat(secretLines, ", "))
+  -- A fully absorbed hit shows the word, not a secret "-0".
+  WeakAuras.ScanUnitEvents("UNIT_COMBAT", "player", "WOUND", "ABSORB", secretwrap(0), 1)
+  test.Environment.Advance(0.1)
+  local absorbed = false
+  for _, state in pairs(WeakAuras.GetTriggerStateForTrigger("Combat Text - Incoming", 1)) do
+    if state.show and state.name == "Absorb" and state.secretName == nil then absorbed = true end
+  end
+  assert(absorbed, "Combat Text: full absorb not shown as a word")
   local Display = private.BlizzardAuraDisplay
   -- The bench client has no filter parser: accept the filter strings the game takes, as VerificationPack.lua does.
   local savedValidFilter = AuraUtil.IsValidFilterString

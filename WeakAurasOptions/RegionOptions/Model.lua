@@ -15,7 +15,6 @@ local function createOptions(id, data)
       width = WeakAuras.normalWidth,
       name = L["Show model of unit "],
       order = 0.5,
-      hidden = function() return data.modelDisplayInfo and WeakAuras.BuildInfo > 80100 end
     },
     modelDisplayInfo = {
       type = "toggle",
@@ -38,7 +37,7 @@ local function createOptions(id, data)
       func = function()
         OptionsPrivate.OpenModelPicker(data, {});
       end,
-      disabled = function() return data.modelIsUnit or (WeakAuras.BuildInfo > 80100 and data.modelDisplayInfo) end,
+      disabled = function() return data.modelIsUnit end,
       imageWidth = 24,
       imageHeight = 24,
       control = "WeakAurasIcon",

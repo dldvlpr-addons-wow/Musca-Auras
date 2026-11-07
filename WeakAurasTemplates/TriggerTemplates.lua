@@ -591,7 +591,7 @@ local function subTypesFor(item, regionType)
         end,
         data = data,
       });
-      if (item.duration) then
+      if (item.duration and TemplatePrivate.Private.hasCombatLog) then -- Duration templates use a Combat Log trigger
         tinsert(types, {
           icon = icon.glow,
           title = L["Charge and Duration Tracking"],
@@ -735,7 +735,7 @@ local function subTypesFor(item, regionType)
           isOnCdGrey(conditions, 1, regionType);
         end,
       });
-      if (item.duration) then
+      if (item.duration and TemplatePrivate.Private.hasCombatLog) then -- Duration templates use a Combat Log trigger
         data.cooldownSwipe = false
         data.cooldownEdge = true
         dataGlow.cooldownSwipe = false

@@ -418,8 +418,8 @@ function WeakAuras.PrintProfile()
   popup:AddText("")
   popup:AddText("|cff9900ffAuras:|r")
   local total = TotalProfileTime(profileData.auras)
-  popup:AddText("Total time attributed to auras: ", floor(total) .. "ms")
-  for _, k in ipairs(SortProfileMap(profileData.auras), "spike") do
+  popup:AddText("Total time attributed to auras: " .. floor(total) .. "ms")
+  for _, k in ipairs(SortProfileMap(profileData.auras, "spike")) do
     PrintOneProfile(popup, k, profileData.auras[k], total)
   end
 

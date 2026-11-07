@@ -399,7 +399,9 @@ return function(test)
   end
 
   -- 7. Screen grid: the first container sits on the region of the first member, the next units are stacked.
+  -- Only the visible units are chained: a unit missing in the middle does not hold the next ones.
   do
+    test.Units.DefineUnit("party1", {})
     local group, region = GridFixture("ScreenGrid", { blizzardFlowGridType = "RD" }, { "player", "party1" })
     private.regions.ScreenGrid = { region = CreateFrame("Frame") }
     Rechain(group)
@@ -412,6 +414,29 @@ return function(test)
     Same(#containers, 2, "one screen grid container per unit")
     ExpectPoint(containers[1], "TOPLEFT", region, "TOPLEFT", 0, 0, "first screen grid container")
     ExpectPoint(containers[2], "TOPLEFT", containers[1], "BOTTOMLEFT", 0, -2, "second screen grid container")
+    test.Units.units.party1 = nil
+  end
+  do
+    test.Units.DefineUnit("party2", {})
+    local group, region = GridFixture("GapGrid", { blizzardFlowGridType = "RD" }, { "player", "party1", "party2" })
+    private.regions.GapGrid = { region = CreateFrame("Frame") }
+    Rechain(group)
+    local containers = {}
+    for _, entry in ipairs(containerLog) do
+      if entry.name == "AddAuraGroup" and entry[1] == "MuscaGridGapGridMember" then containers[#containers + 1] = entry.frame end
+    end
+    Same(#containers, 3, "one gap grid container per unit")
+    Same(containers[2]:IsShown(), false, "missing unit hidden")
+    ExpectPoint(containers[1], "TOPLEFT", region, "TOPLEFT", 0, 0, "first gap grid container")
+    ExpectPoint(containers[3], "TOPLEFT", containers[1], "BOTTOMLEFT", 0, -2, "unit behind a missing one chained to the last visible")
+    test.Units.DefineUnit("party1", {})
+    Rechain(group)
+    ExpectPoint(containers[2], "TOPLEFT", containers[1], "BOTTOMLEFT", 0, -2, "unit back in the chain")
+    ExpectPoint(containers[3], "TOPLEFT", containers[2], "BOTTOMLEFT", 0, -2, "next unit chained behind it again")
+    test.Units.units.party1 = nil
+    Rechain(group)
+    ExpectPoint(containers[3], "TOPLEFT", containers[1], "BOTTOMLEFT", 0, -2, "unit chained back to the last visible")
+    test.Units.units.party1, test.Units.units.party2 = nil, nil
   end
 
   -- 9. A grid disabled then enabled again keeps its buttons in the list of the instance, without duplicates.

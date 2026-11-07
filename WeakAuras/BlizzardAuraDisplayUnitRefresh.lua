@@ -120,6 +120,8 @@ function Units.RefreshInstance(auraRegion, state, position, unitEntry, units, gr
     holder:SetShown(isShown)
     holder:SetEnabled(isShown)
     if isShown then holder:UpdateAllAuras() end
+    -- A hidden container keeps its last size: give the room back, as at creation.
+    if not isShown then holder:SetSize(1, 1) end
   end
   Display.RefreshSingle(unitEntry, unitId, isShown)
   Display.RefreshFlowShadow(unitEntry, unitId, isShown)

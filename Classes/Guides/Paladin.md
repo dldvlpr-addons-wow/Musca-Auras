@@ -213,7 +213,7 @@ Icy Veins : Flash of Light pour la plupart des soins, Holy Light pour les gros s
 - Judgement actif sur la cible (une seule icône) : 20185, 20186, 20187, 20184, 20411, 20425.
 - Vengeance (20050), à empiler jusqu'à 3.
 - Righteous Fury (25780) actif/inactif pour Protection.
-- Holy Shield (20925), Redoubt (20128), Reckoning (20178).
+- Holy Shield (20925), Redoubt (20128). Reckoning (20178) donne des attaques en plus sans poser d'aura (DB2 70707) : rien à suivre.
 - Forbearance (25771) sur le joueur.
 - Light's Vigil (1310911) 30 s sur la cible.
 - Cooldowns à afficher : Judgement, Holy Strike, Holy Shock, Consecration, Templar's Bulwark (1311015), Swift Judgement (1310994), Lay on Hands.

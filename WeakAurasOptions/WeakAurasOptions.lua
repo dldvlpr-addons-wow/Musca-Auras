@@ -252,10 +252,9 @@ local function commonParent(controlledChildren)
     local childButton = OptionsPrivate.GetDisplayButton(id)
     targetIndex = min(targetIndex, childButton:GetGroupOrder() or math.huge)
 
-    if (parent == nil) then
+    -- A top-level aura (nil parent) must not act as a wildcard: mixed selections get no common parent.
+    if index == 1 then
       parent = childData.parent
-    elseif not childData.parent then
-      allSame = false
     elseif childData.parent ~= parent then
       allSame = false
     end
@@ -449,7 +448,9 @@ function OptionsPrivate.MultipleDisplayTooltipMenu()
       menu[1].notClickable = 1;
       menu[1].text = "|cFF777777"..menu[1].text;
       menu[2].notClickable = 1;
-      menu[2].text = "|cFF777777"..menu[1].text;
+      menu[2].text = "|cFF777777"..menu[2].text;
+      menu[3].notClickable = 1;
+      menu[3].text = "|cFF777777"..menu[3].text;
     end
   end
 
@@ -1759,7 +1760,7 @@ function OptionsPrivate.StartGrouping(data)
     return
   end
 
-  if not OptionsPrivate.IsDisplayPicked(data) then
+  if not OptionsPrivate.IsDisplayPicked(data.id) then
     WeakAuras.PickDisplay(data.id)
   end
 

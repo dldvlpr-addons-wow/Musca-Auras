@@ -73,6 +73,8 @@ return Pack.Build({
     { name = "Mocking Blow", aura = { 694, 7400, 7402, 20559, 20560 } },
     { name = "Mortal Strike", aura = { 12294, 21551, 21552, 21553 }, known = 12294 },
   },
+  segments = { name = "Sunder Armor", aura = { 7386, 7405, 8380, 11596, 11597 }, count = 5, unit = "target",
+    anyCaster = true, known = 7386 },
   power = { { label = "Rage", type = 1 } },
   stance = 2457,
   swing = { "main", "off" },

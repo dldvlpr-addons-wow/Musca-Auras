@@ -385,16 +385,8 @@ WeakAuras.doubleWidth = WeakAuras.normalWidth * 2
 local versionString = "5.22.0"
 local buildTime = "20260905194100"
 
-local flavorFromToc = C_AddOns.GetAddOnMetadata("WeakAuras", "X-Flavor")
-local flavorFromTocToNumber = {
-  Vanilla = 1,
-  TBC = 2,
-  Wrath = 3,
-  Cata = 4,
-  Mists = 5,
-  Mainline = 10
-}
-local flavor = flavorFromTocToNumber[flavorFromToc]
+-- The toc declares X-Flavor: Vanilla (1), the only flavor Musca Auras ships. The Is* functions stay for imported custom code.
+local flavor = 1
 
 if not versionString:find("beta", 1, true) then
   WeakAuras.buildType = "release"

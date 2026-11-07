@@ -386,7 +386,7 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.15.0"
+local CLASS_PACK_VERSION = "1.16.0"
 
 local function HasClassPack()
   local _, playerClass = UnitClass("player")
@@ -2963,7 +2963,7 @@ function Private.AddMany(tbl, takeSnapshots)
 
   for data in pairs(groups) do
     if not bads[data.id] then
-      if data.type == "dynamicgroup" then
+      if data.regionType == "dynamicgroup" then
         if Private.regions[data.id] and Private.regions[data.id].region then
           Private.regions[data.id].region:ReloadControlledChildren()
         end
@@ -2980,14 +2980,13 @@ local function customOptionIsValid(option)
     return false
   elseif Private.author_option_classes[option.type] == "simple" then
     if not option.key
-    or not option.name
-    or not option.default == nil then
+    -- No default check: media options keep their value in media, groups have none.
+    or not option.name then
       return false
     end
   elseif Private.author_option_classes[option.type] == "group" then
     if not option.key
     or not option.name
-    or not option.default == nil
     or not option.subOptions then
       return false
     end
@@ -6853,7 +6852,8 @@ function Private.FindUnusedId(prefix)
 end
 
 function WeakAuras.SetModel(frame, unused, model_fileId, isUnit, isDisplayInfo)
-  if isDisplayInfo then
+  -- The Display Info toggle is hidden, not cleared, when "Show model of unit" is on: a unit token is not a number.
+  if isDisplayInfo and tonumber(model_fileId) then
     pcall(frame.SetDisplayInfo, frame, tonumber(model_fileId))
   elseif isUnit then
     pcall(frame.SetUnit, frame, model_fileId)
@@ -7086,6 +7086,10 @@ function Private.ExecEnv.ParseNameCheck(name)
     end,
     Check = function(self, name, realm)
       if not name or not realm then
+        return false
+      end
+      -- A restricted unit identity gives a secret name: it cannot be a table key, so no match.
+      if Private.IsSecret(name) or Private.IsSecret(realm) then
         return false
       end
       return self.name[name] or self.realm[realm] or self.full[name .. "-" .. realm]

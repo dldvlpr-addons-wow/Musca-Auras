@@ -46,3 +46,8 @@ Source des IDs : `Classes/Priest.md` (DB2 1.60.1.70245).
 
 ## Pack 1.15.0 (2026-10-29), à tester en jeu
 - Aucun changement de pack. Auras « à vérifier » tranchées dans le DB2 70532, voir plus haut.
+
+## Pack 1.16.0 (2026-11-06), à tester en jeu
+- Buff ajouté : Divine Aegis 431624 (seule aura d'absorption des trois candidats du guide), sur le joueur.
+- Binding Heal 401937 reste hors du pack : soin lancé, sans aura.
+- À vérifier : l'absorption de Divine Aegis apparaît sur soi après un critique de soin.

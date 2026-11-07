@@ -48,3 +48,6 @@ Fichiers : `PackGuerrier.lua` (données), `PackGuerrier.txt` (chaîne encodée).
 ## Pack 1.15.0 (2026-10-29), à tester en jeu
 - Deep Wounds retiré des debuffs cible (12162 sans aura dans le DB2 70532).
 - Shield Wall 871 et Last Stand 12976 actifs dans l'icône Defensives ; icônes « (active) » retirées, les recharges restent.
+
+## Pack 1.16.0 (2026-11-06), à tester en jeu
+- Segments « Sunder Armor » sur la cible : 5 segments, aura 7386, 7405, 8380, 11596 ou 11597, de tout lanceur, à côté de l'icône avec cumuls. Les cumuls d'aura sont secrets en combat : vérifier que les segments se remplissent quand même, de 1 à 5, et se vident à la chute du debuff.

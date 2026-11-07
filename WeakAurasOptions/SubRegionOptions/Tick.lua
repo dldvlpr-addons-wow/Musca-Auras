@@ -300,7 +300,15 @@ local function createOptions(parentData, data, index, subIndex)
         name = L["Delete"],
         order = 4 + i / 100 + 0.002,
         func = function()
+          local count = #data.tick_placements
           tremove(data.tick_placements, i)
+          -- progressSources is read by index alongside tick_placements and may have holes: shift by hand.
+          if data.progressSources then
+            for j = i, count - 1 do
+              data.progressSources[j] = data.progressSources[j + 1]
+            end
+            data.progressSources[count] = nil
+          end
           WeakAuras.Add(parentData)
           WeakAuras.ClearAndUpdateOptions(parentData.id)
         end,

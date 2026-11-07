@@ -53,6 +53,9 @@ local function EnsureShadow(owner, childRegion, auraData, auraTrigger, layout, f
     return true
   end
   shadow = AuraDisplay.CreateAuraContainer(childRegion, auraData)
+  -- The client sizes a container only while it is shown: an unbound shadow would have no size and
+  -- the chain behind it no position. 1x1 minus the -1 overlap of the chain takes no room.
+  shadow:SetSize(1, 1)
   shadow:SetEnabled(false)
   shadow:SetAuraProcessingPolicy(CustomAuraContainerAuraProcessingPolicy.None)
   shadow:SetPoint("TOPLEFT", childRegion, "TOPLEFT")
@@ -153,5 +156,7 @@ function AuraDisplay.RefreshFlowShadow(instance, unit, isShown)
   end
   shadow:SetShown(isShown)
   shadow:SetEnabled(isShown)
+  -- A hidden shadow keeps its last size: give the room back, as at creation.
+  if not isShown and not Anchor.Locked(shadow) then shadow:SetSize(1, 1) end
   if isShown then shadow:UpdateAllAuras() end
 end

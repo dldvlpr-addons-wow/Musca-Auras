@@ -208,7 +208,7 @@ Riptide (408521), Mindfulness (1223033), Water Shield (408510), Mana Tide Totem 
 - Recharges des chocs (6 s) : Earth Shock (8042...) pour l'interruption.
 - Lightning Shield (324...) : présence et durée, jusqu'à 10 min.
 - Enhancement : débuff Stormstrike (17364, 12 s, recharge 8 s), charges de Maelstrom Weapon avec alerte à 5, Flurry (3 coups, +10 à +30 %), Rage of the Farseer (425336, 25 s / 3 min), imbue d'arme active (via GetWeaponEnchantInfo).
-- Elemental : Lava Burst (408490, 10 s), Lightning Overload (proc).
+- Elemental : Lava Burst (408490, 10 s). Lightning Overload (408438) n'a pas d'aura de proc (DB2 70707) : rien à suivre.
 - Restoration : Riptide (408521) par cible, Water Shield (408510, orbes), Nature's Swiftness (16188), Mana Tide Totem (16190, 5 min), Ancestral Healing (armure +25 %), Healing Way.
 - Mana (bêta : contrainte majeure) : barre de mana avec seuil pour Fire Nova / Stormstrike ; Totemic Recall (36936) rend 25 % du coût des totems.
 - Utilitaires : Grounding Totem (8177, 15 s), Tremor Totem (8143) si peur / sommeil / charme, Totemic Projection (437009, 1 min).

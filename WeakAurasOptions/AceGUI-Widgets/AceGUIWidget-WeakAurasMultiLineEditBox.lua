@@ -21,7 +21,12 @@ Support functions
 
 if not AceGUIWeakAurasMultiLineEditBoxInsertLink then
   -- upgradeable hook
-  hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxInsertLink(...) end)
+  -- Forever calls ChatFrameUtil.InsertLink; ChatEdit_InsertLink is only a deprecated alias.
+  if ChatFrameUtil and ChatFrameUtil.InsertLink then
+    hooksecurefunc(ChatFrameUtil, "InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxInsertLink(...) end)
+  elseif ChatEdit_InsertLink then
+    hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxInsertLink(...) end)
+  end
 end
 
 function _G.AceGUIWeakAurasMultiLineEditBoxInsertLink(text)
@@ -116,7 +121,10 @@ local function OnReceiveDrag(self)                                              
   local infoType, spellIndex, bookType, info = GetCursorInfo()
   if infoType == "spell" then
     info = OptionsPrivate.Private.ExecEnv.GetSpellName(info)
-  elseif infoType ~= "item" then
+  elseif infoType == "item" then
+    -- for an item, GetCursorInfo returns "item", itemID, itemLink; the text is stored encoded, so escape "|"
+    info = bookType and bookType:gsub("|", "||")
+  else
     return
   end
   ClearCursor()

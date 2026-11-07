@@ -159,6 +159,9 @@ function Instances.Create(auraRegion, auraData)
   local unitEntry = { container = holder, region = auraRegion, flowContainer = isFlowContainer and true or false, buttons = {}, data = auraData }
   local triggerConfig = Display.GetTrigger(auraData)
   local sortMethod, sortDirection = Display.SortOrder(auraData, triggerConfig)
+  -- The client sizes a container only while it is shown: one never shown would have no size, and
+  -- whatever is anchored behind it no position. 1x1 minus the -1 overlap of a list takes no room.
+  holder:SetSize(1, 1)
   holder:SetEnabled(false)
   holder:SetAuraProcessingPolicy(CustomAuraContainerAuraProcessingPolicy.None)
   holder:SetPoint("TOPLEFT", auraRegion, "TOPLEFT")

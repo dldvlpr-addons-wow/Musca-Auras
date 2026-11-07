@@ -73,7 +73,8 @@ local function RunSingle(path)
 
   local violations = context.Secret.violations
   local blocking = #failures + #Environment.errors + #Loader.loadErrors + #Environment.forbidden + #violations
-  print((blocking == 0 and "OK  " or "KO  ") .. path)
+  local pack = os.getenv("PACK")
+  print((blocking == 0 and "OK  " or "KO  ") .. path .. (pack and " " .. pack or ""))
   Section("scenario failures", failures)
   Section("load errors", Loader.loadErrors)
   Section("runtime errors", Environment.errors)
@@ -121,9 +122,28 @@ end
 
 local interpreter = arg[-1] or "lua"
 local scenarios = scenarioPath and { scenarioPath } or ListScenarios()
+if not scenarioPath then
+  -- Every shipped pack also loads in the addon: Tests/Packs/VerificationPack.lua, once per pack.
+  local folders = dofile(testsDirectory .. "/Packs/PackFolders.lua")
+  local packs = {}
+  for _, folder in pairs(folders.class) do
+    packs[#packs + 1] = testsDirectory .. "/Packs/" .. folder .. "/Pack" .. folder .. ".lua"
+  end
+  for _, pack in ipairs(folders.utility) do
+    packs[#packs + 1] = testsDirectory .. "/Packs/Utility/" .. pack[1] .. "/Pack" .. pack[1] .. ".lua"
+  end
+  table.sort(packs)
+  for _, pack in ipairs(packs) do
+    scenarios[#scenarios + 1] = { path = testsDirectory .. "/Packs/VerificationPack.lua", pack = pack }
+  end
+end
 local failed = 0
-for _, path in ipairs(scenarios) do
+for _, entry in ipairs(scenarios) do
+  local path = type(entry) == "table" and entry.path or entry
   local command = string.format('"%s" "%s" --scenario "%s"%s', interpreter, arg[0], path, verbose and " --verbose" or "")
+  if type(entry) == "table" then
+    command = (isWindows and 'set "PACK=%s" && %s' or 'PACK="%s" %s'):format(entry.pack, command)
+  end
   if isWindows then
     command = '"' .. command .. '"'
   end

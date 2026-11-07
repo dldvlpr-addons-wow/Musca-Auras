@@ -157,6 +157,7 @@ Private.unit_realm_name_types = {
   always = L["Always include realm"]
 }
 
+local modernTimeFormatter
 local simpleFormatters = {
   AbbreviateNumbers = function(value)
     if type(value) == "string" then value = tonumber(value) end
@@ -204,6 +205,19 @@ local simpleFormatters = {
       local fmt, time = SecondsToTimeAbbrev(value)
       -- Remove the space between the value and unit
       return fmt:gsub(" ", ""):format(time)
+    end,
+    -- Modern Blizzard: two units, one letter each (1h 3m, 3m 7s, 10s)
+    [2] = function(value)
+      if type(value) == "string" then value = tonumber(value) end
+      if type(value) == "number" then
+        if not modernTimeFormatter then
+          modernTimeFormatter = CreateFromMixins(SecondsFormatterMixin)
+          modernTimeFormatter:Init(0, SecondsFormatter.Abbreviation.OneLetter, false, true)
+          -- "%d m" -> "3m": match the native Duration text and the option label
+          modernTimeFormatter:SetStripIntervalWhitespace(true)
+        end
+        return modernTimeFormatter:Format(value)
+      end
     end,
     -- Fixed built-in formatter
     [99] = function(value)
@@ -4184,6 +4198,7 @@ do
     Private.unit_types_bufftrigger_2.multi = nil
   end
   Private.actual_unit_types_cast.boss = nil
+  Private.threat_unit_types.boss = nil
   Private.actual_unit_types_cast.arena = nil
   Private.item_slot_types[0] = AMMOSLOT
   Private.item_slot_types[18] = RANGEDSLOT

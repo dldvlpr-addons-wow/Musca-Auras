@@ -23,12 +23,17 @@ Support functions
 
 if not AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink then
   -- upgradeable hook
-  hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink(...) end)
+  -- Forever calls ChatFrameUtil.InsertLink; ChatEdit_InsertLink is only a deprecated alias.
+  if ChatFrameUtil and ChatFrameUtil.InsertLink then
+    hooksecurefunc(ChatFrameUtil, "InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink(...) end)
+  elseif ChatEdit_InsertLink then
+    hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink(...) end)
+  end
 end
 
 function _G.AceGUIWeakAurasMultiLineEditBoxWithEnterInsertLink(text)
   for i = 1, AceGUI:GetWidgetCount(Type) do
-    local editbox = _G[("MultiLineEditBox%uEdit"):format(i)]
+    local editbox = _G[("%s%dEdit"):format(Type, i)]
     if editbox and editbox:IsVisible() and editbox:HasFocus() then
       text = text:gsub("|", "||")
       editbox:Insert(text)
@@ -122,7 +127,10 @@ local function OnReceiveDrag(self)                                              
   local infoType, spellIndex, bookType, info = GetCursorInfo()
   if infoType == "spell" then
     info = OptionsPrivate.Private.ExecEnv.GetSpellName(info)
-  elseif infoType ~= "item" then
+  elseif infoType == "item" then
+    -- for an item, GetCursorInfo returns "item", itemID, itemLink; escaped as the shift-click link is
+    info = bookType and bookType:gsub("|", "||")
+  else
     return
   end
   ClearCursor()

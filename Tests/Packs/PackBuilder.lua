@@ -525,7 +525,10 @@ function Pack.Build(spec)
       if spec.segments.casts then
         trigger = CastCountTrigger(spec.segments.casts, spec.segments.count, count)
       else
-        trigger = AuraTrigger(spec.segments.aura, "showOnActive")
+        local unit = spec.segments.unit or "player"
+        trigger = AuraTrigger(spec.segments.aura, "showOnActive", unit, unit == "player" and "HELPFUL" or "HARMFUL")
+        -- A debuff on the target stacked by anyone (Sunder Armor) counts with anyCaster.
+        if spec.segments.anyCaster then trigger.nativeFilters = nil end
         trigger.secretUseStacks, trigger.secretStacksOperator, trigger.secretStacks = true, ">=", count
       end
       local segment = Icon(segments, spec.segments.name .. " " .. count, trigger,

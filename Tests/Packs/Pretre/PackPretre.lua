@@ -38,6 +38,8 @@ return Pack.Build({
     { name = "Inner Fire", aura = innerFire },
     { name = "Shadowform", aura = { 15473 }, known = 15473 },
     { name = "Inner Focus (active)", aura = { 14751 }, known = 14751 },
+    -- Divine Aegis 431624: the only absorb aura of the three DB2 candidates, on the healed target (here the player).
+    { name = "Divine Aegis", aura = { 431624 } },
     { name = "Power Infusion (active)", aura = { 10060 } },
     { name = "Fear Ward (active)", aura = { 6346 } },
     { name = "Spirit Tap", aura = { 15271 } },

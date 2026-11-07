@@ -574,8 +574,13 @@ function Private.ActivateEvent(id, triggernum, data, state, errorHandler)
     state.autoHide = autoHide;
   elseif (data.durationFunc) then
     local ok, arg1, arg2, arg3, inverse = xpcall(data.durationFunc, errorHandler or Private.GetErrorHandlerId(id, L["Duration Function"]), data.trigger);
-    arg1 = ok and type(arg1) == "number" and arg1 or 0;
-    arg2 = ok and type(arg2) == "number" and arg2 or 0;
+    if ok and Private.IsSecret(arg1, arg2, arg3, inverse) then
+      -- A secret duration cannot be compared: show the aura without a timer, as the secret fallback state does.
+      arg1, arg2, arg3, inverse = 0, math.huge, nil, nil
+    else
+      arg1 = ok and type(arg1) == "number" and arg1 or 0;
+      arg2 = ok and type(arg2) == "number" and arg2 or 0;
+    end
 
 
     if (state.inverse ~= inverse) then
@@ -4960,7 +4965,6 @@ function GenericTrigger.GetOverlayInfo(data, triggernum)
         Private.ActivateAuraEnvironment(data.id);
         RunTriggerFunc(allStates, events[data.id][triggernum], data.id, triggernum, "OPTIONS");
         Private.ActivateAuraEnvironment(nil);
-        local count = 0;
         for id, state in pairs(allStates) do
           if (type(state.additionalProgress) == "table") then
             count = max(count, #state.additionalProgress);
@@ -5159,7 +5163,7 @@ function GenericTrigger.GetProgressSources(data, triggernum, values)
             type = varData.type,
             display = varData.display,
             total = varData.total,
-            modRate = varData.modRate,
+            modRate = modRateProperty,
             inverse = varData.inverse,
             paused = varData.paused,
             remaining = varData.remaining

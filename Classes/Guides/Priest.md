@@ -198,8 +198,8 @@ Shadow Word: Death (1309636) à partir du niveau 32, exécution avec Early Demis
 - Inner Fire (10952) : charges restantes (20). Fortitude (10938) / Prayer of Fortitude (21564) et Divine Spirit (14752) manquants.
 - Inner Focus (14751) prêt, Power Infusion (10060) prêt / actif.
 - Searing Light, Holy Purpose (1284536) : proc pour Holy Nova (15237).
-- Prayer of Mending (401859) : charges sur le groupe ; Binding Heal (401937).
-- Penance (402174) prêt ; Divine Aegis (candidats 431622, 431624, 431649) sur le groupe.
+- Prayer of Mending (401859) : charges sur le groupe. Binding Heal (401937) est un soin lancé, sans aura (DB2 70707).
+- Penance (402174) prêt ; Divine Aegis (431624, absorption) sur le joueur.
 - Fear Ward (6346) : recharge 3 min et buff sur l'allié.
 - Défensifs raciaux : Desperate Prayer (13908), Divine Grace (1277370), Contingency Plan (1277462), Dark Sacrifice (1277324), Elune's Grace (2651), Shadowguard (18137), Touch of Weakness (2652).
 - Fade (10942) quand l'aggro est tirée.

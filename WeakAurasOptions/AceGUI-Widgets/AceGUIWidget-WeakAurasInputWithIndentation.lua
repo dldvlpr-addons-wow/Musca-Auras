@@ -15,7 +15,12 @@ local _G = _G
 
 if not AceGUIWeakAurasInputWithIndentationInsertLink then
   -- upgradeable hook
-  hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasInputWithIndentationInsertLink(...) end)
+  -- Forever calls ChatFrameUtil.InsertLink; ChatEdit_InsertLink is only a deprecated alias.
+  if ChatFrameUtil and ChatFrameUtil.InsertLink then
+    hooksecurefunc(ChatFrameUtil, "InsertLink", function(...) return _G.AceGUIWeakAurasInputWithIndentationInsertLink(...) end)
+  elseif ChatEdit_InsertLink then
+    hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIWeakAurasInputWithIndentationInsertLink(...) end)
+  end
 end
 
 function _G.AceGUIWeakAurasInputWithIndentationInsertLink(text)
@@ -76,7 +81,7 @@ local function EditBox_OnReceiveDrag(frame)
   local type, id, info, extra = GetCursorInfo()
   local name
   if type == "item" then
-    name = info
+    name = info -- raw: SetText encodes it and a shift-click link is stored as decode(GetText), the raw link too
   elseif type == "spell" then
     if C_Spell and C_Spell.GetSpellName then
       name = C_Spell.GetSpellName(extra)

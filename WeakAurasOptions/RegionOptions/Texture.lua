@@ -82,14 +82,14 @@ local function createOptions(id, data)
       name = L["Texture Wrap"],
       order = 7,
       values = OptionsPrivate.Private.texture_wrap_types,
-      hidden = OptionsPrivate.Private.TextureBase.IsAtlas(data.texture)
+      hidden = function() return OptionsPrivate.Private.TextureBase:IsAtlas(data.texture) end
     },
     rotate = {
       type = "toggle",
       width = WeakAuras.normalWidth,
       name = L["Allow Full Rotation"],
       order = 8,
-      hidden = OptionsPrivate.Private.TextureBase.IsAtlas(data.texture)
+      hidden = function() return OptionsPrivate.Private.TextureBase:IsAtlas(data.texture) end
     },
     rotation = {
       type = "range",

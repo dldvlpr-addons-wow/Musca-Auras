@@ -2168,7 +2168,7 @@ local methods = {
           local newId = OptionsPrivate.Private.FindUnusedId(targetName)
           local oldid = data.id
           WeakAuras.Rename(data, newId)
-          if targetName[aura.uid] then -- We can hope that the aura the squatter renames itself, so try again
+          if targetNames[aura.uid] then -- We can hope that the aura the squatter renames itself, so try again
             changed = true
           end
           self:IncProgress()

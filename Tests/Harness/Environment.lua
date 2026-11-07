@@ -11,7 +11,22 @@ local Environment = {
   missingGlobals = {},
 }
 
-local sourceRoot = os.getenv("WOW_UI_SOURCE") or "C:/Users/ludov/wow-ui-source/forever"
+-- WOW_UI_SOURCE first, then a wow-ui-source clone next to the repository (bench run from the repository root),
+-- then the former fixed path.
+local function FindSourceRoot()
+  local candidates = { os.getenv("WOW_UI_SOURCE"), "../wow-ui-source/forever", "C:/Users/ludov/wow-ui-source/forever" }
+  for index = 1, 3 do
+    local candidate = candidates[index]
+    local marker = candidate and io.open(candidate .. "/version.txt", "r")
+    if marker then
+      marker:close()
+      return candidate
+    end
+  end
+  error("wow-ui-source/forever not found: set WOW_UI_SOURCE")
+end
+
+local sourceRoot = FindSourceRoot()
 local addOnsRoot = sourceRoot .. "/Interface/AddOns"
 
 local blizzardAddOns = {

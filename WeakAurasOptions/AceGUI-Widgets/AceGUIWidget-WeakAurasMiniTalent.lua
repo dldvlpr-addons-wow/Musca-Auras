@@ -147,7 +147,7 @@ local function LayoutClosed(self)
       button:Hide()
     end
   end
-  self:SetHeight(shown > 0 and 50 * ceil(shown / 11) or 1)
+  self:SetHeight(shown > 0 and 50 * ceil(shown / 9) or 1)
 end
 
 local function LayoutOpen(self)

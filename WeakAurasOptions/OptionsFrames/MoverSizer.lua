@@ -835,7 +835,7 @@ AlignmentLines.CreateLines = function(self, data, sizerPoint)
   local align = (WeakAurasOptionsSaved.magnetAlign and not IsShiftKeyDown())
                     or (not WeakAurasOptionsSaved.magnetAlign and IsShiftKeyDown())
   if align then
-    self:CreateMiddleLines()
+    self:CreateMiddleLines(sizerPoint)
 
     local auraVerticalLinesInfo, auraHorizontalLinesInfo = self:CreateLineInformation(data, sizerPoint)
 
