@@ -64,7 +64,7 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 
 ## 2026-11-09
 
-Not yet tested in game. Headless test bench: 124 scenarios, 0 failed.
+Tested in game: Proc Glow, and the custom options panel with options and groups without a name. Headless test bench: 124 scenarios, 0 failed.
 
 ### Added
 - `WeakAuras/Types.lua`, `Private.glow_types`: "Proc Glow" is offered in the glow type lists of the Glow

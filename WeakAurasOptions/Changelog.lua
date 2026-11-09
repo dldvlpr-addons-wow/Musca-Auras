@@ -4,15 +4,23 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.16.0',
-  dateString = '2026-11-07',
+  versionString = '1.16.1',
+  dateString = '2026-11-09',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Combat Text pack: hits and heals show again in combat
-- Aura (Modern) groups: no more holes with centered growth by unit or in Grid mode
-- Warrior HUD: Sunder Armor segments. Priest HUD: Divine Aegis
-- Many fixes in triggers, displays and options
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.16.0 (2026-11-07):
+- Glow: Proc Glow in the glow type lists
+- Custom Options tab: an option or group without a name no longer breaks it
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.16.1 (2026-11-09):
+
+New:
+
+- Glow: Proc Glow is offered in the glow type lists of the Glow sub element, the glow actions and the conditions
+
+Fixed:
+
+- Options: a custom option or group without a name no longer breaks the Custom Options tab
+
+1.16.0 (2026-11-07):
 
 Changed:
 

@@ -1,3 +1,16 @@
+# Musca Auras 1.16.1 (2026-11-09)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Glow: "Proc Glow" is offered in the glow type lists of the Glow sub element, the glow actions and the conditions.
+  A Proc glow switched to classic mode now shows its type in the menu.
+
+## Fixed
+
+- Options: a custom option or group without a name no longer breaks the Custom Options tab.
+
 # Musca Auras 1.16.0 (2026-11-07)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
