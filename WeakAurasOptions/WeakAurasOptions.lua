@@ -211,6 +211,9 @@ loadedFrame:SetScript("OnEvent", function(self, event, addon)
       if odb.magnetAlign == nil then
         odb.magnetAlign = true
       end
+      if odb.gridAlign == nil then
+        odb.gridAlign = false
+      end
 
       if db.import_disabled then
         db.import_disabled = nil

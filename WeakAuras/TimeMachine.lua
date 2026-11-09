@@ -93,8 +93,14 @@ function TimeMachine:RegisterEffect(tag, func, idempotent)
   }
 end
 
+-- Groups of the auras added by the records being applied, added again once at the end of Apply.
+local groupsToAdd = {}
+
 TimeMachine:RegisterEffect("add", function(uid, data)
   Private.Add(data)
+  for parent in Private.TraverseParents(data) do
+    groupsToAdd[parent.uid] = parent
+  end
 end, true)
 
 TimeMachine:RegisterEffect("options_cu", function(uid, data)
@@ -515,6 +521,11 @@ function TimeMachine:Apply(records, delayedEffects)
         end
       end
     end
+  end
+  -- The groups get their bounding rectangle again, like after the edit (Private.AddParents), without a record.
+  for uid, parent in pairs(groupsToAdd) do
+    groupsToAdd[uid] = nil
+    Private.Add(parent)
   end
   return delayedEffects
 end

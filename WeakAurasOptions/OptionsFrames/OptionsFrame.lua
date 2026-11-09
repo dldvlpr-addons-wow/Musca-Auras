@@ -766,13 +766,62 @@ function OptionsPrivate.CreateFrame()
   magnetButton.frame:Show()
   magnetButton:SetPoint("LEFT", lockButton.frame, "RIGHT", 10, 0)
 
+  local gridButton = AceGUI:Create("WeakAurasToolbarButton")
+  gridButton:SetText(L["Grid"])
+  gridButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\square_border_1px")
+  gridButton:SetTooltip(L["Grid"] .. "\n" .. L["Shows a grid while the options are open. With Magnetically Align, the auras snap to its lines.\nRight-click: grid spacing."])
+
+  -- Pitch of the grid, opened by a right click on the Grid button.
+  local gridSpacingSlider = AceGUI:Create("Slider")
+  gridSpacingSlider:SetLabel(L["Grid Spacing"])
+  gridSpacingSlider:SetSliderValues(8, 128, 1)
+  gridSpacingSlider:SetWidth(180)
+  gridSpacingSlider:SetCallback("OnValueChanged", function(_, _, value)
+    WeakAurasOptionsSaved.gridSpacing = value
+    OptionsPrivate.UpdatePlacementGrid()
+  end)
+  local gridSpacingBackground = gridSpacingSlider.frame:CreateTexture(nil, "BACKGROUND")
+  gridSpacingBackground:SetColorTexture(0, 0, 0, 0.85)
+  gridSpacingBackground:SetPoint("TOPLEFT", -6, 6)
+  gridSpacingBackground:SetPoint("BOTTOMRIGHT", 6, -6)
+  gridSpacingSlider.frame:SetParent(toolbarContainer)
+  gridSpacingSlider.frame:SetFrameLevel(toolbarContainer:GetFrameLevel() + 100)
+  gridSpacingSlider.frame:Hide()
+  toolbarContainer:HookScript("OnHide", function()
+    gridSpacingSlider.frame:Hide()
+  end)
+
+  gridButton.frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  gridButton:SetCallback("OnClick", function(self, _, mouseButton)
+    if mouseButton == "RightButton" then
+      gridSpacingSlider:SetValue(OptionsPrivate.GridSpacing())
+      gridSpacingSlider.frame:SetShown(not gridSpacingSlider.frame:IsShown())
+      return
+    end
+    WeakAurasOptionsSaved.gridAlign = not WeakAurasOptionsSaved.gridAlign
+    gridButton:SetStrongHighlight(WeakAurasOptionsSaved.gridAlign)
+    if WeakAurasOptionsSaved.gridAlign then
+      gridButton:LockHighlight()
+    else
+      gridButton:UnlockHighlight()
+    end
+    OptionsPrivate.UpdatePlacementGrid()
+  end)
+  if WeakAurasOptionsSaved.gridAlign then
+    gridButton:LockHighlight()
+  end
+  gridButton.frame:SetParent(toolbarContainer)
+  gridButton.frame:Show()
+  gridButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 10, 0)
+  gridSpacingSlider:SetPoint("TOP", gridButton.frame, "BOTTOM", 0, -10)
+
   local unusedButton = AceGUI:Create("WeakAurasToolbarButton")
   unusedButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\delete")
   unusedButton:SetCallback("OnClick", OptionsPrivate.ConfirmDeleteUnused)
   unusedButton:SetTooltip(L["Unused Auras"] .. "\n" .. L["Deletes the auras no character of the account loaded for 30 days, and the empty groups.\nThe list is shown in the chat before the confirmation."])
   unusedButton.frame:SetParent(toolbarContainer)
   unusedButton.frame:Show()
-  unusedButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 10, 0)
+  unusedButton:SetPoint("LEFT", gridButton.frame, "RIGHT", 10, 0)
 
   local replaceButton = AceGUI:Create("WeakAurasToolbarButton")
   replaceButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\edit")

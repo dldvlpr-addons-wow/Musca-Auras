@@ -92,6 +92,12 @@ function WowApi.Install(target)
     end
   end
 
+  -- Client extension: MathUtil.lua sets Round = math.round.
+  -- shortcut: halves round up like the former Lua Round, the C rounding of halves is not checked; check if a test hits x.5.
+  math.round = function(value)
+    return math.floor(value + 0.5)
+  end
+
   target.bit = Bit
   target.format = format
   target.strsplit = Split

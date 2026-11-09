@@ -43,29 +43,30 @@ local function EnsureTexture(self, texture)
   end
 end
 
-local function moveOnePxl(direction)
-  if mover and mover.moving then
+-- Arrow buttons and keys. True when an aura moved.
+local function moveBy(deltaX, deltaY)
+  if mover and mover.moving and not mover.isMoving then
     local data = mover.moving.data
-    local physicalWidth, physicalHeight = GetPhysicalScreenSize();
-    local oneX = GetScreenWidth() / physicalWidth
-    local oneY = GetScreenHeight() / physicalHeight
-    if data then
-      if direction == "top" then
-        data.yOffset = data.yOffset + oneY
-      elseif direction == "bottom" then
-        data.yOffset = data.yOffset - oneY
-      elseif direction == "left" then
-        data.xOffset = data.xOffset - oneX
-      elseif direction == "right" then
-        data.xOffset = data.xOffset + oneX
+    local parentData = data and data.parent and WeakAuras.GetData(data.parent)
+    -- A dynamic group places its children: their offsets are not used.
+    if data and not (parentData and parentData.regionType == "dynamicgroup") then
+      -- Whole units: a physical pixel is under half a unit on large screens and would round to no move.
+      -- The axis not moved keeps its value.
+      if deltaX ~= 0 then
+        data.xOffset = Round(data.xOffset) + deltaX
+      end
+      if deltaY ~= 0 then
+        data.yOffset = Round(data.yOffset) + deltaY
       end
       WeakAuras.Add(data, true)
       WeakAuras.UpdateThumbnail(data)
       OptionsPrivate.ResetMoverSizer()
       OptionsPrivate.Private.AddParents(data)
       WeakAuras.FillOptions()
+      return true
     end
   end
+  return false
 end
 
 local function ConstructMover(frame)
@@ -98,7 +99,7 @@ local function ConstructMover(frame)
   top:SetNormalTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-up.blp")
   top:SetHighlightTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-highlight.blp")
   top:SetPushedTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-down.blp")
-  top:SetScript("OnClick", function() moveOnePxl("top") end)
+  top:SetScript("OnClick", function() moveBy(0, 1) end)
 
   bottom:SetNormalTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-up.blp")
   bottom:GetNormalTexture():SetTexCoord(0, 1, 1, 0)
@@ -106,7 +107,7 @@ local function ConstructMover(frame)
   bottom:GetHighlightTexture():SetTexCoord(0, 1, 1, 0)
   bottom:SetPushedTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-down.blp")
   bottom:GetPushedTexture():SetTexCoord(0, 1, 1, 0)
-  bottom:SetScript("OnClick", function() moveOnePxl("bottom") end)
+  bottom:SetScript("OnClick", function() moveBy(0, -1) end)
 
   left:SetNormalTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-up.blp")
   left:GetNormalTexture():SetRotation(math.pi/2)
@@ -114,7 +115,7 @@ local function ConstructMover(frame)
   left:GetHighlightTexture():SetRotation(math.pi/2)
   left:SetPushedTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-down.blp")
   left:GetPushedTexture():SetRotation(math.pi/2)
-  left:SetScript("OnClick", function() moveOnePxl("left") end)
+  left:SetScript("OnClick", function() moveBy(-1, 0) end)
 
   right:SetNormalTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-up.blp")
   right:GetNormalTexture():SetRotation(-math.pi/2)
@@ -122,7 +123,7 @@ local function ConstructMover(frame)
   right:GetHighlightTexture():SetRotation(-math.pi/2)
   right:SetPushedTexture("interface\\buttons\\ui-scrollbar-scrollupbutton-down.blp")
   right:GetPushedTexture():SetRotation(-math.pi/2)
-  right:SetScript("OnClick", function() moveOnePxl("right") end)
+  right:SetScript("OnClick", function() moveBy(1, 0) end)
 
   local arrow = CreateFrame("Frame", nil, frame)
   arrow:SetClampedToScreen(true)
@@ -437,39 +438,6 @@ HighlightFrame.texturePool = CreateObjectPool(
     texture:ClearAllPoints()
   end)
 
---- @type fun(side: "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"): "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"
-local function MirrorSide(side)
-  if side == "LEFT" then
-    return "RIGHT"
-  elseif side == "RIGHT" then
-    return "LEFT"
-  elseif side == "TOP" then
-    return "BOTTOM"
-  elseif side == "BOTTOM" then
-    return "TOP"
-  else -- "CENTERX" or "CENTERY"
-    return side
-  end
-end
-
---- @type fun(side: "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"): "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"|nil
-local function Pos1Side(side)
-  if side == "LEFT" or side == "RIGHT" or side == "CENTERX" then
-    return "BOTTOM"
-  elseif side == "TOP" or side == "BOTTOM" or side == "CENTERY" then
-    return "LEFT"
-  end
-end
-
---- @type fun(side: "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"): "LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY"|nil
-local function Pos2Side(side)
-  if side == "LEFT" or side == "RIGHT" or side == "CENTERX" then
-    return "TOP"
-  elseif side == "TOP" or side == "BOTTOM" or side == "CENTERY" then
-    return "RIGHT"
-  end
-end
-
 --- @class LineInformation
 local LineInformationFuncs = {
   SetStartPoint = function(self, relativePoint, relativeTo, offsetX, offsetY)
@@ -568,60 +536,19 @@ local LineInformationFuncs = {
     self:SetHighlighted(false)
     self:ReleaseLine()
   end,
-  AddReference = function(self, id, side, pos1, pos2)
-    tinsert(self.references, {id = id, side = side, pos1 = pos1, pos2 = pos2})
-  end,
   --- @type fun(self: LineInformation, positions: table<"LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY", number>) : number
   Score = function(self, positions)
-    if self.gridLine then
-      return 0 -- Prefer aura lines
-    else
-      local score = -1
-
-      for _, ref in ipairs(self.references) do
-        -- The line is within MAGNETIC_ALIGNMENT, otherwise we wouldn't be asked to score it
-        -- This compares whether the line is for the same "side",
-        -- by checking the distance to that side
-        local auraPos = positions[ref.side]
-        local mirrorPos = positions[MirrorSide(ref.side)]
-        if auraPos then
-          local dist = distance(auraPos, self.position)
-          if dist < MAGNETIC_ALIGNMENT then
-            -- Same side: 100 as a base, meaning these lines are heavily preferred to lines
-            -- for other sides
-            score = max(score, 100 + (MAGNETIC_ALIGNMENT - dist))
-          elseif mirrorPos then
-            dist = distance(mirrorPos, self.position)
-            score = max(score, 10 + (MAGNETIC_ALIGNMENT - dist))
-          end
-
-          -- Now check how far away the reference is on the orthogonal direction
-          -- Add up to 80 points for being near a reference
-          local auraPos1 = positions[Pos1Side(ref.side)]
-          local auraPos2 = positions[Pos2Side(ref.side)]
-          if auraPos1 and auraPos2 then
-            local minDistanceOrth = min(distance(auraPos1, ref.pos1), distance(auraPos2, ref.pos2))
-            if minDistanceOrth < 10 * MAGNETIC_ALIGNMENT then
-              score = score + 8 * (10 * MAGNETIC_ALIGNMENT - minDistanceOrth)
-            end
-          end
-        end
-      end
-      return score
-    end
+    return OptionsPrivate.Private.PlacementSnap.Score(self, positions, MAGNETIC_ALIGNMENT)
   end,
 
 }
 
 --- @type fun(position: number, gridLine: boolean): LineInformation
 local function CreateLineInformation(position, gridLine)
-  local line = {}
+  local line = OptionsPrivate.Private.PlacementSnap.NewLine(position, gridLine)
   for k, f in pairs(LineInformationFuncs) do
     line[k] = f
   end
-  line.position = position
-  line.gridLine = gridLine
-  line.references = {}
   line.highlightTextures = {}
   line.highlight = nil
   return line
@@ -684,6 +611,115 @@ AlignmentLines.CreateMiddleLines = function(self, sizerPoint)
   end
 end
 
+local function AddScreenLine(lines, position, vertical)
+  if lines[position] then
+    return
+  end
+  local line = CreateLineInformation(position, true)
+  if vertical then
+    line:SetStartPoint("TOPLEFT", UIParent, position, 0)
+    line:SetEndPoint("BOTTOMLEFT", UIParent, position, 0)
+  else
+    line:SetStartPoint("BOTTOMLEFT", UIParent, 0, position)
+    line:SetEndPoint("BOTTOMRIGHT", UIParent, 0, position)
+  end
+  line:SetThickness(2)
+  lines[position] = line
+end
+
+-- Pitch of the /wa grid in UIParent units, set by the slider of the Grid button.
+local function GridSpacing()
+  -- Bounded like the slider: a zero or tiny pitch from an edited saved file would loop without end.
+  local spacing = tonumber(WeakAurasOptionsSaved.gridSpacing)
+  if not spacing or spacing ~= spacing then
+    return 64
+  end
+  return math.min(math.max(Round(spacing), 8), 128)
+end
+OptionsPrivate.GridSpacing = GridSpacing
+
+-- The grid drawn while the options are open with the Grid option: the same lines as the snap, the middle ones stronger.
+local PlacementGrid = CreateFrame("Frame", nil, UIParent)
+PlacementGrid:SetAllPoints(UIParent)
+PlacementGrid:SetFrameStrata("BACKGROUND")
+PlacementGrid:Hide()
+PlacementGrid.lines = {}
+OptionsPrivate.PlacementGrid = PlacementGrid
+
+local function DrawGrid()
+  for _, line in ipairs(PlacementGrid.lines) do
+    line:Hide()
+  end
+  local count = 0
+  local function Add(position, middle, vertical)
+    count = count + 1
+    local line = PlacementGrid.lines[count] or PlacementGrid:CreateLine(nil, "BACKGROUND")
+    PlacementGrid.lines[count] = line
+    if vertical then
+      line:SetStartPoint("TOPLEFT", UIParent, position, 0)
+      line:SetEndPoint("BOTTOMLEFT", UIParent, position, 0)
+    else
+      line:SetStartPoint("BOTTOMLEFT", UIParent, 0, position)
+      line:SetEndPoint("BOTTOMRIGHT", UIParent, 0, position)
+    end
+    local color = middle and gridHighlightColor or gridColor
+    line:SetColorTexture(color[1], color[2], color[3], middle and 0.6 or 0.3)
+    line:SetThickness(middle and 2 or 1)
+    line:Show()
+  end
+  local spacing = GridSpacing()
+  local midX, midY = UIParent:GetCenter()
+  for _, position in ipairs(OptionsPrivate.Private.PlacementSnap.ScreenLines(UIParent:GetWidth(), midX, spacing)) do
+    Add(position, position == midX, true)
+  end
+  for _, position in ipairs(OptionsPrivate.Private.PlacementSnap.ScreenLines(UIParent:GetHeight(), midY, spacing)) do
+    Add(position, position == midY, false)
+  end
+end
+PlacementGrid:SetScript("OnShow", DrawGrid)
+PlacementGrid:SetScript("OnSizeChanged", function()
+  if PlacementGrid:IsShown() then
+    DrawGrid()
+  end
+end)
+
+-- Shown with the Grid option while the options frame is open, drawn again when the pitch changes.
+-- Hidden in Edit Mode, which snaps to the Blizzard grid.
+local optionsFrame
+function OptionsPrivate.UpdatePlacementGrid()
+  local editMode = EditModeManagerFrame and EditModeManagerFrame:IsEditModeActive()
+  if WeakAurasOptionsSaved.gridAlign and optionsFrame and optionsFrame:IsShown() and not editMode then
+    if PlacementGrid:IsShown() then
+      DrawGrid()
+    else
+      PlacementGrid:Show()
+    end
+  else
+    PlacementGrid:Hide()
+  end
+end
+
+-- The screen edges, and with the Grid option the lines of the /wa grid, centered on the screen.
+---@param self AlignmentLines
+---@param sizerPoint AnchorPoint?
+AlignmentLines.CreateScreenLines = function(self, sizerPoint)
+  local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+  local addVertical = not sizerPoint or sizerPoint:find("LEFT", 1) or sizerPoint:find("RIGHT", 1)
+  local addHorizontal = not sizerPoint or sizerPoint:find("BOTTOM", 1) or sizerPoint:find("TOP", 1)
+  local spacing = WeakAurasOptionsSaved.gridAlign and GridSpacing() or nil
+  local midX, midY = UIParent:GetCenter()
+  if addVertical then
+    for _, position in ipairs(OptionsPrivate.Private.PlacementSnap.ScreenLines(width, midX, spacing)) do
+      AddScreenLine(self.verticalLines, RoundSmallDifference(position), true)
+    end
+  end
+  if addHorizontal then
+    for _, position in ipairs(OptionsPrivate.Private.PlacementSnap.ScreenLines(height, midY, spacing)) do
+      AddScreenLine(self.horizontalLines, RoundSmallDifference(position), false)
+    end
+  end
+end
+
 --- @type fun(self: AlignmentLines, data: auraData, sizerPoint: AnchorPoint?): LineInformation, LineInformation
 AlignmentLines.CreateLineInformation = function(self, data, sizerPoint)
   local addVertical = not sizerPoint or sizerPoint:find("LEFT", 1) or sizerPoint:find("RIGHT", 1)
@@ -718,98 +754,14 @@ AlignmentLines.CreateLineInformation = function(self, data, sizerPoint)
       centerX = centerX and AlignToPixelX(centerX * scale) or nil
       centerY = centerY and AlignToPixelY(centerY * scale) or nil
 
-      if not IsControlKeyDown() then
-        if addVertical then
-          if left and bottom and top then
-            local leftLine = CreateLineInformation(left, false)
-            leftLine:AddReference(id, "LEFT", bottom, top)
-            tinsert(verticalLines, leftLine)
-          end
-
-          if right and bottom and top then
-            local rightLine = CreateLineInformation(right, false)
-            rightLine:AddReference(id, "RIGHT", bottom, top)
-            tinsert(verticalLines, rightLine)
-          end
-        end
-        if addHorizontal then
-          if top and left and right then
-            local topLine = CreateLineInformation(top, false)
-            topLine:AddReference(id, "TOP", left, right)
-            tinsert(horizontalLines, topLine)
-          end
-
-          if bottom and left and right then
-            local bottomLine = CreateLineInformation(bottom, false)
-            bottomLine:AddReference(id, "BOTTOM", left, right)
-            tinsert(horizontalLines, bottomLine)
-          end
-        end
-      else
-        if addVertical then
-          if centerX and bottom and top then
-            local xLine = CreateLineInformation(centerX, false)
-            xLine:AddReference(id, "CENTERX", bottom, top)
-            tinsert(verticalLines, xLine)
-          end
-        end
-        if addHorizontal then
-          if centerY and left and right then
-            local yLine = CreateLineInformation(centerY, false)
-            yLine:AddReference(id, "CENTERY", left, right)
-            tinsert(horizontalLines, yLine)
-          end
-        end
-      end
+      OptionsPrivate.Private.PlacementSnap.AddAuraLines(verticalLines, horizontalLines, id,
+        { left, bottom, right, top, centerX, centerY }, IsControlKeyDown(), addVertical, addHorizontal,
+        CreateLineInformation)
     end
   end
 
-  table.sort(verticalLines, function(a, b) return a.position < b.position end)
-  table.sort(horizontalLines, function(a, b) return a.position < b.position end)
-
-  return self:MergeLineInformation(verticalLines), self:MergeLineInformation(horizontalLines)
-end
-
---- @type fun(self: AlignmentLines, lines: LineInformation): LineInformation
-AlignmentLines.MergeLineInformation = function(self, lines)
-  local startIndex
-  local startPos
-  -- Add a line at infinity at the end, this makes the loop easier
-  tinsert(lines, {position = math.huge})
-
-  --- @type LineInformation
-  local result = {}
-  for index, line in ipairs(lines) do
-    if not startPos then
-      startPos = line.position
-      startIndex = index
-    else
-      if (line.position - startPos) >= 1 then
-        if startIndex then
-          -- This line is too far away from the last lines to merge,
-          -- So merge from startIndex to index - 1
-          local lineToInsert = lines[startIndex]
-          local positionSum = lineToInsert.position
-          for i = startIndex + 1, index - 1 do
-            local lineToMerge = lines[i]
-            positionSum = positionSum + lineToMerge.position
-            tinsert(lineToInsert.references, lineToMerge.references[1])
-          end
-          lineToInsert.position = positionSum / (index - startIndex)
-          tinsert(result, lineToInsert)
-          -- Now start a potential new merge from this line
-          startPos = line.position
-          startIndex = index
-        end
-      else
-        -- Will be merged later
-      end
-    end
-  end
-  -- And remove the infinity line at the end
-  lines[#lines] = nil
-
-  return result
+  local Merge = OptionsPrivate.Private.PlacementSnap.MergeLines
+  return Merge(verticalLines), Merge(horizontalLines)
 end
 
 ---@param self AlignmentLines
@@ -864,6 +816,9 @@ AlignmentLines.CreateLines = function(self, data, sizerPoint)
         self.horizontalLines[y] = lineInfo
       end
     end
+
+    -- After the aura lines: an aura line is not dropped for a grid or edge line under one unit away.
+    self:CreateScreenLines(sizerPoint)
   end
 end
 
@@ -881,18 +836,7 @@ local function SelectLines(lines, positions, auraSize)
     lines[1]:SetHighlighted(true)
     return lines[1].delta
   else
-    --- @type number
-    local bestScore = -1
-    --- @type AlignmentLine?
-    local bestLine = nil
-    for _, line in ipairs(lines) do
-      local lineScore = line:Score(positions)
-      if lineScore > bestScore then
-        bestScore = lineScore
-        bestLine = line
-      end
-    end
-
+    local bestLine = OptionsPrivate.Private.PlacementSnap.Best(lines, positions, MAGNETIC_ALIGNMENT)
     for _, line in ipairs(lines) do
       if line == bestLine then
         line:SetHighlighted(true)
@@ -944,84 +888,29 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
     CENTERY = centerY
   }
 
-  local verticalPotentials = {}
-  local horizontalPotentials = {}
+  -- The edges that snap: the dragged corner, the centers with Ctrl, or the four edges.
+  local verticalEdges, horizontalEdges, auraWidth, auraHeight
   if sizePoint then
-    local sizeX = sizePoint:find("LEFT", 1) and left or right
-    local sizeY = sizePoint:find("TOP", 1) and top or bottom
-
-    for pos, line in pairs(self.verticalLines) do
-      if distance(sizeX, pos) < MAGNETIC_ALIGNMENT then
-        line.delta = pos - sizeX
-        tinsert(verticalPotentials, line)
-      else
-        line:SetHighlighted(false)
-      end
-    end
-
-    for pos, line in pairs(self.horizontalLines) do
-      if distance(sizeY, pos) < MAGNETIC_ALIGNMENT then
-        line.delta = pos - sizeY
-        tinsert(horizontalPotentials, line)
-      else
-        line:SetHighlighted(false)
-      end
-    end
-
-    mover.verticalDelta = SelectLines(verticalPotentials, positions)
-    mover.horizontalDelta = SelectLines(horizontalPotentials, positions)
+    verticalEdges = { sizePoint:find("LEFT", 1) and left or right }
+    horizontalEdges = { sizePoint:find("TOP", 1) and top or bottom }
+  elseif ctrlKey then
+    verticalEdges, horizontalEdges = { centerX }, { centerY }
   else
-    if ctrlKey then
-      for pos, line in pairs(self.verticalLines) do
-        if distance(centerX, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - centerX
-          tinsert(verticalPotentials, line)
-        else
-          line:SetHighlighted(false)
-        end
-      end
-
-      for pos, line in pairs(self.horizontalLines) do
-        if distance(centerY, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - centerY
-          tinsert(horizontalPotentials, line)
-        else
-          line:SetHighlighted(false)
-        end
-      end
-      mover.verticalDelta = SelectLines(verticalPotentials, positions)
-      mover.horizontalDelta = SelectLines(horizontalPotentials, positions)
-    else
-      for pos, line in pairs(self.verticalLines) do
-        if distance(left, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - left
-          tinsert(verticalPotentials, line)
-        elseif distance(right, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - right
-          tinsert(verticalPotentials, line)
-        else
-          line:SetHighlighted(false)
-        end
-      end
-
-      for pos, line in pairs(self.horizontalLines) do
-        if distance(bottom, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - bottom
-          tinsert(horizontalPotentials, line)
-        elseif distance(top, pos) < MAGNETIC_ALIGNMENT then
-          line.delta = pos - top
-          tinsert(horizontalPotentials, line)
-        else
-          line:SetHighlighted(false)
-        end
-      end
-
-      local auraWidth = right - left
-      local auraHeight = top - bottom
-      mover.verticalDelta = SelectLines(verticalPotentials, positions, auraWidth)
-      mover.horizontalDelta = SelectLines(horizontalPotentials, positions, auraHeight)
-    end
+    verticalEdges, horizontalEdges = { left, right }, { bottom, top }
+    auraWidth, auraHeight = right - left, top - bottom
   end
+  local function Potentials(lines, edges)
+    local potentials, isPotential = OptionsPrivate.Private.PlacementSnap.Candidates(lines, MAGNETIC_ALIGNMENT,
+      unpack(edges))
+    for _, line in pairs(lines) do
+      if not isPotential[line] then
+        line:SetHighlighted(false)
+      end
+    end
+    return potentials
+  end
+  mover.verticalDelta = SelectLines(Potentials(self.verticalLines, verticalEdges), positions, auraWidth)
+  mover.horizontalDelta = SelectLines(Potentials(self.horizontalLines, horizontalEdges), positions, auraHeight)
 end
 
 local function ConstructMoverSizer(parent)
@@ -1037,6 +926,12 @@ local function ConstructMoverSizer(parent)
   = ConstructSizer(frame)
 
   frame.arrowTexture, frame.offscreenText = ConstructMover(frame)
+  -- Shown only with an aura selected in /wa. A focused edit box of the options gets its keys first.
+  -- Lock Positions leaves the keys to the game, like the drag and the resize.
+  -- With several auras picked, the mover stays on the first one: the keys go to the game.
+  OptionsPrivate.Private.MoveWithArrowKeys(frame, function(deltaX, deltaY)
+    return not WeakAurasOptionsSaved.lockPositions and type(parent.pickedDisplay) == "string" and moveBy(deltaX, deltaY)
+  end)
 
   frame.top.Clear()
   frame.topright.Clear()
@@ -1120,11 +1015,14 @@ local function ConstructMoverSizer(parent)
     local parent = data.parent
     if parent then
       local parentData = WeakAuras.GetData(parent)
-      if parentData == "dynamicgroup" then
+      if parentData and parentData.regionType == "dynamicgroup" then
         -- If the aura is in a dynamic group then we don't want to set xOffset/yOffset at all.
         -- These settings ensure that
-        auraSelfPoint = "TOPRIGHT"
-        moverSizePoint = "BOTTOMLEFT"
+        -- The fixed corner is the one opposite the dragged edge, so that the alignment delta keeps its sign.
+        local top = moverSizePoint:find("TOP", 1)
+        local left = moverSizePoint:find("LEFT", 1)
+        auraSelfPoint = (top and "BOTTOM" or "TOP") .. (left and "RIGHT" or "LEFT")
+        moverSizePoint = (top and "TOP" or "BOTTOM") .. (left and "LEFT" or "RIGHT")
       end
     end
 
@@ -1280,6 +1178,13 @@ local function ConstructMoverSizer(parent)
         local dY = selfY - anchorY
         data.xOffset = dX / scale + xDelta / scale
         data.yOffset = dY / scale + yDelta / scale
+        -- Whole units: readable X/Y in the options. An axis stuck to an alignment line keeps its exact value.
+        if not (align and mover.verticalDelta) then
+          data.xOffset = Round(data.xOffset)
+        end
+        if not (align and mover.horizontalDelta) then
+          data.yOffset = Round(data.yOffset)
+        end
       end
       region:ResetPosition()
       WeakAuras.Add(data)
@@ -1328,6 +1233,8 @@ local function ConstructMoverSizer(parent)
         end
         mover.isMoving = true
         OptionsPrivate.Private.CancelAnimation(region, true, true, true, true, true)
+        -- Offsets before any OnUpdate: doneSizing rounds only those the sizing changed.
+        mover.sizingStartX, mover.sizingStartY = data.xOffset, data.yOffset
         region:StartSizing(point)
         frame.text:ClearAllPoints()
         frame.text:SetPoint("CENTER", frame, "CENTER", 0, -15)
@@ -1375,7 +1282,24 @@ local function ConstructMoverSizer(parent)
           deltaY = mover.horizontalDelta or 0
         end
 
+        local xOffset, yOffset = mover.sizingStartX, mover.sizingStartY
         frame:SizingSetData(data, width, height, deltaX, deltaY, scale)
+        -- Whole units, as at the drop of a move, on the axes the dragged point moves. An axis stuck to an
+        -- alignment line keeps its exact values. Offsets left untouched by the sizing (child of a dynamic group)
+        -- stay as they are.
+        local point = mover.sizePoint
+        if (point:find("LEFT") or point:find("RIGHT")) and not (align and mover.verticalDelta) then
+          data.width = Round(data.width)
+          if data.xOffset ~= xOffset then
+            data.xOffset = Round(data.xOffset)
+          end
+        end
+        if (point:find("TOP") or point:find("BOTTOM")) and not (align and mover.horizontalDelta) then
+          data.height = Round(data.height)
+          if data.yOffset ~= yOffset then
+            data.yOffset = Round(data.yOffset)
+          end
+        end
 
         region:ResetPosition()
         WeakAuras.Add(data, true)
@@ -1589,6 +1513,11 @@ end
 function OptionsPrivate.MoverSizer(parent)
   if not moversizer or not mover then
     moversizer, mover = ConstructMoverSizer(parent)
+    optionsFrame = parent
+    parent:HookScript("OnShow", OptionsPrivate.UpdatePlacementGrid)
+    parent:HookScript("OnHide", OptionsPrivate.UpdatePlacementGrid)
+    EventRegistry:RegisterCallback("EditMode.Enter", OptionsPrivate.UpdatePlacementGrid, PlacementGrid)
+    EventRegistry:RegisterCallback("EditMode.Exit", OptionsPrivate.UpdatePlacementGrid, PlacementGrid)
   end
   return moversizer, mover
 end

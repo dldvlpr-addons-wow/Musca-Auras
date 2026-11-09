@@ -803,7 +803,9 @@ Can use \ to escape -.]=]
 	L["Glow Frame Type"] = "Type de cadre brillant"
 	L["Glow Type"] = "Type de la brillance"
 	L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."] = "Les options grisées sont indisponibles avec Aura (Modern) : le jeu dessine lui-même cet élément. Survolez une option pour voir pourquoi."
+	L["Grid"] = "Grille"
 	L["Grid direction"] = "Direction de la grille"
+	L["Grid Spacing"] = "Pas de la grille"
 	L["Group (verb)"] = "Groupe (verbe)"
 	--[[Translation missing --]]
 	L["Group Alpha"] = "Group Alpha"
@@ -1265,6 +1267,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Shows a Circular Progress Texture"] = "Shows a Circular Progress Texture"
 	L["Shows a custom texture"] = "Affiche une texture personnalisée"
 	L["Shows a glow"] = "Afficher les brillantes"
+	L["Shows a grid while the options are open. With Magnetically Align, the auras snap to its lines.\nRight-click: grid spacing."] = "Affiche une grille tant que les options sont ouvertes. Avec l'aimantation, les auras se calent sur ses lignes.\nClic droit : pas de la grille."
 	--[[Translation missing --]]
 	L["Shows a Linear Progress Texture"] = "Shows a Linear Progress Texture"
 	L["Shows a model"] = "Affiche un modèle"

@@ -59,6 +59,7 @@ TriggerExpression.lua
 UnusedAuras.lua
 ReplaceValues.lua
 AuraSets.lua
+PlacementSnap.lua
 EditModePlacement.lua
 FrozenMarker.lua
 PixelSnapping.lua

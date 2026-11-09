@@ -62,6 +62,81 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-08
+
+Not yet tested in game. Headless test bench: 126 scenarios, 0 failed.
+
+### Fixed
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`, `SizingSetData`: resizing a child of a dynamic group in `/wa`
+  changes its width and height only, without writing `xOffset`/`yOffset` (the test compared the parent data table
+  with the string `"dynamicgroup"`, so it was always false). The fixed corner is the one opposite the dragged edge,
+  so that the magnetic alignment keeps its sign on the right and top edges.
+
+### Changed
+- `WeakAuras/EditModePlacement.lua` (`OnDragStop`) and `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
+  (`doneMoving`, `doneSizing`, `moveBy`): X and Y offsets are rounded to whole units when an aura is dropped.
+  At the end of a resize, the size and the offsets the resize changed are rounded too, on the axes the dragged edge moves. An axis stuck to
+  a grid line or an alignment line keeps its exact values. The arrow buttons around the mover round the offset, then
+  move it by one unit, instead of one physical pixel, which is under half a unit on large screens. Tests in
+  `Tests/Scenarios/68_EditModePlacement.lua` (Edit Mode drop, axis stuck to a line on a half unit) and in the new
+  `Tests/Scenarios/96_MoverSizerRounding.lua` (`/wa` move, resize and arrows).
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua` (`CreateScreenLines`): with Magnetically Align, moving or resizing
+  an aura in `/wa` also snaps to the edges of the screen. A new Grid button in the toolbar
+  (`WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, saved as `gridAlign`, off by default in
+  `WeakAurasOptions/WeakAurasOptions.lua`) draws a grid over the whole screen while the options are open
+  (`PlacementGrid`, `UpdatePlacementGrid`, the middle lines stronger) and adds its lines, centered on the screen, to
+  the snap targets. Its pitch, saved as `gridSpacing` (64 by default), is set by a slider from 8 to 128 opened by a
+  right click on the Grid button; a saved pitch outside 8 to 128 is clamped. The Edit Mode grid is not used in
+  `/wa`, and the `/wa` grid is hidden while Edit Mode is open (`EditMode.Enter`, `EditMode.Exit`). Aura lines are still preferred; between
+  grid, edge and middle lines, the nearest one wins.
+  Strings in `WeakAurasOptions/Locales/enUS.lua` and `frFR.lua`. Tested in `Tests/Scenarios/96_MoverSizerRounding.lua`
+  and `Tests/Scenarios/97_PlacementSnap.lua`.
+- `WeakAuras/EditModePlacement.lua` (`PreviewSnap`, `StopPreview`): while an aura is dragged in Edit Mode, a
+  yellow ghost box shows where it will land on the grid. It follows the box every frame (`OnUpdate` set at the drag
+  start, removed at the drop or when the boxes are removed) and hides when no axis is near a grid line. Tested in
+  `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/EditModePlacement.lua` (`Private.MoveWithArrowKeys`, `MoveSelected`) and
+  `WeakAurasOptions/OptionsFrames/MoverSizer.lua` (`moveBy`): the arrow keys move an aura by one unit, ten with
+  Shift, in Edit Mode (the box clicked last, outlined) and in `/wa` (the aura in the mover, not with Lock
+  Positions). The axis not moved keeps its value. Other keys go on to the game. The keyboard is let go at
+  `PLAYER_REGEN_DISABLED` and taken back at `PLAYER_REGEN_ENABLED`. In `/wa`, the keys go to the game with several
+  auras picked, while the mover is dragged, and for a child of a dynamic group, which the group places. The Edit Mode selection follows a renamed aura,
+  is lost with a deleted one, and goes to Blizzard when a Blizzard frame is selected (`SelectSystem` hooked).
+  Revert All Changes undoes the key moves. Tested in `Tests/Scenarios/68_EditModePlacement.lua` and
+  `Tests/Scenarios/96_MoverSizerRounding.lua`.
+- New `WeakAuras/PlacementSnap.lua` (`Private.PlacementSnap`, listed in `WeakAuras/WeakAuras.toc`): one snap engine
+  for the `/wa` mover (`WeakAurasOptions/OptionsFrames/MoverSizer.lua`) and the Edit Mode
+  (`WeakAuras/EditModePlacement.lua`, `ShiftOfSnap`). Screen edges and grid lines, edges and centers of the other
+  auras, lines closer than 1 merged. An aura line wins over a nearer grid line; between lines of the same kind, the
+  nearest wins. Ctrl aligns the centers only, Shift turns the snap off. In Edit Mode, the boxes now stick to the
+  edges of the other boxes and to the screen edges, with the snap option of the Edit Mode on, even when its grid is
+  hidden; the grid adds its lines when shown. The snap distance is now strictly under 8 (it was 8 or under).
+  Without Ctrl, the center of a box sticks to the screen and grid lines only, never to the edge of an aura. Each
+  line takes the nearest edge of the moved aura, not the first one in reach (a narrow aura could jump the wrong way).
+  Tested in the new `Tests/Scenarios/97_PlacementSnap.lua` and in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/EditModePlacement.lua` (`PlacedRegion`, `PlaceBoxes`, `IsInside`, `Target`): the children of a simple
+  group, nested groups included, get an Edit Mode box, above the box of their group; with Alt, a click on the box of a
+  child selects its group, which its children may cover, one level higher on each click in nested groups, then back to
+  the first group; the drag moves the box the click selected, even with Alt let go in between. The children of a dynamic group or of a Modern Aura Group
+  still get none, since the group places them, and no region is made for them on entering Edit Mode. A box does not
+  snap to its own group or children. The drop writes offsets relative to
+  the group and adds the groups again (`Private.AddParents`), so the box of the group follows; undo in `/wa` and
+  Revert All Changes restore the child. Tested in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/TimeMachine.lua` (effect `add`, `Apply`): an undo or redo adds the groups of the auras again, once
+  each after all the records, without a record, so their bounding rectangle is computed again: in `/wa`, the mover and the border of a group no longer keep the
+  rectangle from before the undo. Tested in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `Tests/Harness/WowApi.lua`: `math.round`, the client function behind `Round` (`MathUtil.lua`).
+- `Tests/Harness/Frames.lua`: `EnableKeyboard`, `IsKeyboardEnabled`, `SetPropagateKeyboardInput` and
+  `GetPropagateKeyboardInput`, blocked in combat like in the client.
+- `Tests/Harness/Frames.lua`: `Set`/`Get` `Normal`, `Highlight`, `Pushed` and `Disabled` `Texture` on buttons, and
+  `SetResizable`/`IsResizable`, so that `MoverSizer.lua` runs in the test bench.
+- `Tests/run.lua`: a filter that matches no scenario fails.
+- `Tests/run.lua`: an argument that is not a `.lua` path filters the scenarios, by number (`lua5.1 Tests/run.lua 68`)
+  or by part of the file name (`lua5.1 Tests/run.lua EditMode`), without the packs. The scenario context gets
+  `Assertions`.
+- New `Tests/Harness/Assertions.lua`: `Same` and `Near` (tolerance 1e-9 by default), the helpers identical in several
+  scenarios. Scenarios move to it when they are changed.
+
 ## 2026-11-06
 
 Not yet tested in game. Headless test bench: 124 scenarios, 0 failed.
