@@ -3986,6 +3986,7 @@ Private.glow_types = {
   ACShine = L["Autocast Shine"],
   Pixel = L["Pixel Glow"],
   buttonOverlay = L["Action Button Glow"],
+  Proc = L["Proc Glow"],
 }
 
 

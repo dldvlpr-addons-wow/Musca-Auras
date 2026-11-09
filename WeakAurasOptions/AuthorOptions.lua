@@ -258,18 +258,20 @@ end
 
 ---@type fun(option: Option): string
 local function nameUser(option)
+  -- An imported option can lack a name; SetText(nil) and concatenation would break the panel.
+  local name = option.name or ""
   local firstValue
   for id, optionData in pairs(option.references) do
     local childConfig = optionData.config
     if not childConfig then
-      return option.name
+      return name
     elseif firstValue == nil then
       firstValue = childConfig[option.key]
     elseif neq(firstValue, childConfig[option.key]) then
-      return conflictBlue .. option.name
+      return conflictBlue .. name
     end
   end
-  return option.name
+  return name
 end
 
 ---@type fun(option: Option): string
@@ -1484,7 +1486,7 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
   end
   local optionClass = OptionsPrivate.Private.author_option_classes[option.type]
   local optionName = optionClass == "noninteractive" and OptionsPrivate.Private.author_option_types[option.type]
-                     or option.name
+                     or option.name or ""
 
   addCollapseHeaderControl(args, prefix, data, option, optionName, order, buttonWidth, collapsed)
 
@@ -2522,7 +2524,7 @@ typeControlAdders = {
     end
     args[prefix .. "groupStart"] = {
       type = "header",
-      name = L["Start of %s"]:format(option.name),
+      name = L["Start of %s"]:format(option.name or ""),
       order = order()
     }
     local subPrefix = prefix .. "option"
@@ -2570,7 +2572,7 @@ typeControlAdders = {
     }
     args[prefix .. "groupEnd"] = {
       type = "header",
-      name = L["End of %s"]:format(option.name),
+      name = L["End of %s"]:format(option.name or ""),
       order = order()
     }
   end
@@ -2590,7 +2592,7 @@ local function addUserGroupCollapseControl(args, prefix, order, data, option)
     end
     args[prefix .. "collapse"] = {
       type = "execute",
-      name = option.name,
+      name = option.name or "",
       order = order(),
       width = WeakAuras.doubleWidth,
       func = function()
@@ -3060,7 +3062,7 @@ local function addUserModeOption(options, args, data, order, prefix, i)
       local conflict = false
       for _, optionData in pairs(option.references) do
         local childOption = optionData.options[optionData.index]
-        if childOption.useName and #childOption.text > 0 then
+        if childOption.useName and childOption.text and #childOption.text > 0 then
           if firstName == nil then
             firstName = childOption.text
             tinsert(name, (childOption.text:gsub("||", "|")))

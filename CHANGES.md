@@ -62,6 +62,22 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-09
+
+Not yet tested in game. Headless test bench: 124 scenarios, 0 failed.
+
+### Added
+- `WeakAuras/Types.lua`, `Private.glow_types`: "Proc Glow" is offered in the glow type lists of the Glow
+  sub-region, the glow actions and the conditions. The Proc code was already there, only the list entry was
+  missing. A Proc glow in classic mode, for example after "Switch to classic mode" on an Aura (Modern) display,
+  now shows its type in the menu.
+
+### Fixed
+- `WeakAurasOptions/AuthorOptions.lua`: a custom option or group without a name (imported aura) no longer breaks
+  the custom options panel. `nameUser`, the collapse button of a group, the collapse header in author mode and
+  the "Start of %s" / "End of %s" labels use an empty name instead of `nil`. A header with "Use Name" and no text
+  no longer raises an error when the custom options open.
+
 ## 2026-11-06
 
 Not yet tested in game. Headless test bench: 124 scenarios, 0 failed.
