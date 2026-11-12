@@ -73,6 +73,26 @@ Every aura has these tabs:
 An aura can have several triggers. In the Trigger tab, choose **All triggers** (every trigger must be active),
 **Any trigger** (one is enough) or **Custom**. The first trigger gives the icon, name and timer by default.
 
+### Placing your auras
+
+Type `/wa unlock`, or click **Unlock** at the top of the `/wa` window. The screen darkens under a grid and every
+aura gets a box, loaded or not. Placement mode does not open during combat.
+
+- Drag a box to move the aura. The children of a dynamic group are placed by their group.
+- The panel of the selected aura sets its X/Y position and its size, and the aura it follows (anchor link). For a
+  dynamic group, it also sets the growth, alignment and spacing.
+- Right click a box: show always, in combat or out of combat, disable or enable, or edit in `/wa`.
+- The bar on top has **Grid**, **Snap**, **Revert**, **Quit** and **Save and quit**. Escape closes the menu, the link
+  and the selection in turn, then asks whether to keep your changes.
+
+**Magnetism.** While you drag, an aura snaps to the screen edges, the grid lines, and the edges and centers of the
+other auras. Hold Ctrl to align centers only, hold Shift to turn the snap off. A yellow ghost box shows where the aura
+will land. The same snap works in `/wa` and in Edit Mode.
+
+**In `/wa`.** The **Grid** button of the toolbar draws a grid over the screen: right click it to set the spacing. The
+arrow keys move the selected aura by 1 unit, 10 with Shift. With several auras selected, **Align Selection** aligns
+their edges or centers, or spreads them with equal gaps.
+
 ---
 
 ## 3. How combat works on Forever
@@ -557,6 +577,7 @@ Not converted: TimelineParser triggers. Never run both addons at the same time.
 | --- | --- |
 | `/wa` | Opens the options. |
 | `/wa tutorial` | Opens the in-game tutorial. |
+| `/wa unlock` | Placement mode: move, resize and anchor your auras on the screen (out of combat). |
 | `/wa cdm` | Shows or hides the Blizzard Cooldown Manager (out of combat). |
 | `/wa minimap` | Shows or hides the minimap button. |
 | `/wa pstart`, `/wa pstop`, `/wa pprint` | Profiling: find which aura costs the most. `/wa pstart combat` profiles the next combat. |

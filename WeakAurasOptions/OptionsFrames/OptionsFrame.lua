@@ -27,63 +27,37 @@ local displayButtons = OptionsPrivate.displayButtons
 local tempGroup = OptionsPrivate.tempGroup
 local aceOptions = {}
 
-local function CreateFrameSizer(frame, callback, position)
-  callback = callback or (function() end)
-
-  local left, right, top, bottom, xOffset1, yOffset1, xOffset2, yOffset2
-  if position == "BOTTOMLEFT" then
-    left, right, top, bottom = 1, 0, 0, 1
-    xOffset1, yOffset1 = 1, 1
-    xOffset2, yOffset2 = 0, 0
-  elseif position == "BOTTOMRIGHT" then
-    left, right, top, bottom = 0, 1, 0, 1
-    xOffset1, yOffset1 = 0, 1
-    xOffset2, yOffset2 = -1, 0
-  elseif position == "TOPLEFT" then
-    left, right, top, bottom = 1, 0, 1, 0
-    xOffset1, yOffset1 = 1, 0
-    xOffset2, yOffset2 = 0, -1
-  elseif position == "TOPRIGHT" then
-    left, right, top, bottom = 0, 1, 1, 0
-    xOffset1, yOffset1 = 0, 0
-    xOffset2, yOffset2 = -1, -1
-  end
-
+-- Grip of the bottom right corner: three diagonals of 1 pixel, brass under the mouse.
+local function CreateFrameSizer(frame, callback)
+  local Style = OptionsPrivate.Private.Style
   local handle = CreateFrame("Button", nil, frame)
-  handle:SetPoint(position, frame)
-  handle:SetSize(25, 25)
-  handle:EnableMouse()
-
+  handle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+  handle:SetSize(16, 16)
+  handle:SetFrameLevel(frame:GetFrameLevel() + 20)
+  local lines = {}
+  for _, length in ipairs({ 12, 8, 4 }) do
+    local line = handle:CreateTexture(nil, "OVERLAY")
+    line:SetTexture(Style.white)
+    line:SetSize(length * math.sqrt(2), 1)
+    line:SetPoint("CENTER", handle, "BOTTOMRIGHT", -2 - length / 2, 2 + length / 2)
+    line:SetRotation(math.rad(45))
+    tinsert(lines, line)
+  end
+  local function Paint(color)
+    for _, line in ipairs(lines) do
+      line:SetVertexColor(Style.Color(color))
+    end
+  end
+  Paint("borderField")
+  handle:SetScript("OnEnter", function() Paint("primary") end)
+  handle:SetScript("OnLeave", function() Paint("borderField") end)
   handle:SetScript("OnMouseDown", function()
-    frame:StartSizing(position)
+    frame:StartSizing("BOTTOMRIGHT")
   end)
-
   handle:SetScript("OnMouseUp", function()
     frame:StopMovingOrSizing()
     callback()
   end)
-
-  local normal = handle:CreateTexture(nil, "OVERLAY")
-  normal:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
-  normal:SetTexCoord(left, right, top, bottom)
-  normal:SetPoint("BOTTOMLEFT", handle, xOffset1, yOffset1)
-  normal:SetPoint("TOPRIGHT", handle, xOffset2, yOffset2)
-  handle:SetNormalTexture(normal)
-
-  local pushed = handle:CreateTexture(nil, "OVERLAY")
-  pushed:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
-  pushed:SetTexCoord(left, right, top, bottom)
-  pushed:SetPoint("BOTTOMLEFT", handle, xOffset1, yOffset1)
-  pushed:SetPoint("TOPRIGHT", handle, xOffset2, yOffset2)
-  handle:SetPushedTexture(pushed)
-
-  local highlight = handle:CreateTexture(nil, "OVERLAY")
-  highlight:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
-  highlight:SetTexCoord(left, right, top, bottom)
-  highlight:SetPoint("BOTTOMLEFT", handle, xOffset1, yOffset1)
-  highlight:SetPoint("TOPRIGHT", handle, xOffset2, yOffset2)
-  handle:SetHighlightTexture(highlight)
-
   return handle
 end
 
@@ -100,18 +74,64 @@ function OptionsPrivate.CreateFrame()
   local db = OptionsPrivate.savedVars.db
   local odb = OptionsPrivate.savedVars.odb
 
-  frame = CreateFrame("Frame", "WeakAurasOptions", UIParent, "PortraitFrameTemplate")
-  local color = CreateColorFromHexString("ff1f1e21") -- PANEL_BACKGROUND_COLOR
-  local r, g, b = color:GetRGB()
-  frame.Bg:SetColorTexture(r, g, b, 0.8)
-  frame.Bg.colorTexture = {r, g, b, 0.8}
+  local Style = OptionsPrivate.Private.Style
+  frame = CreateFrame("Frame", "WeakAurasOptions", UIParent, "BackdropTemplate")
+  Style.Fill(frame, "background")
+
+  -- Drop shadow, 4 pixels down and right, under the window.
+  local shadow = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+  shadow:SetPoint("TOPLEFT", frame, "TOPLEFT", -12, 12)
+  shadow:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 20, -20)
+  shadow:SetBackdrop({ edgeFile = [[Interface\AddOns\WeakAuras\Media\Textures\Border_DropShadow]], edgeSize = 16 })
+  shadow:SetBackdropBorderColor(Style.Color("shadow"))
+
+  -- Title bar: band, sheen on top, brass rule below; the whole bar drags the window.
+  local titleBar = CreateFrame("Frame", nil, frame)
+  titleBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+  titleBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+  titleBar:SetHeight(28)
+  titleBar:EnableMouse(true)
+  local titleBand = titleBar:CreateTexture(nil, "BACKGROUND")
+  titleBand:SetAllPoints()
+  titleBand:SetColorTexture(Style.Color("band"))
+  local titleSheen = titleBar:CreateTexture(nil, "BORDER")
+  titleSheen:SetColorTexture(Style.Color("sheen"))
+  titleSheen:SetHeight(1)
+  titleSheen:SetPoint("TOPLEFT")
+  titleSheen:SetPoint("TOPRIGHT")
+  -- The rule fades in from the left edge to the middle and out to the right edge.
+  local ruleLeft = titleBar:CreateTexture(nil, "BORDER")
+  ruleLeft:SetTexture(Style.white)
+  ruleLeft:SetHeight(1)
+  ruleLeft:SetPoint("BOTTOMLEFT")
+  ruleLeft:SetPoint("BOTTOMRIGHT", titleBar, "BOTTOM")
+  ruleLeft:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule", 0)), CreateColor(Style.Color("rule")))
+  local ruleRight = titleBar:CreateTexture(nil, "BORDER")
+  ruleRight:SetTexture(Style.white)
+  ruleRight:SetHeight(1)
+  ruleRight:SetPoint("BOTTOMLEFT", titleBar, "BOTTOM")
+  ruleRight:SetPoint("BOTTOMRIGHT")
+  ruleRight:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule")), CreateColor(Style.Color("rule", 0)))
+  local logo = titleBar:CreateTexture(nil, "ARTWORK")
+  logo:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
+  logo:SetSize(18, 18)
+  logo:SetPoint("LEFT", titleBar, "LEFT", 8, 0)
+  -- Name, version and the name of the mounted window, hidden while the window is reduced.
+  local titleLabels = CreateFrame("Frame", nil, titleBar)
+  titleLabels:SetAllPoints()
+  local titleText = Style.NewText(titleLabels, "title", "m")
+  titleText:SetPoint("LEFT", logo, "RIGHT", 6, 0)
+  titleText:SetText("Musca Auras")
+  local versionText = Style.NewText(titleLabels, "number", "xs", "textQuiet")
+  versionText:SetPoint("LEFT", titleText, "RIGHT", 6, 0)
+  versionText:SetText(OptionsPrivate.changelog.versionString)
+  local subtitleText = Style.NewText(titleLabels, "text", "s", "textSecondary")
+  subtitleText:SetPoint("LEFT", versionText, "RIGHT", 8, 0)
+  frame.TitleContainer = titleBar
+  frame.titleLabels = titleLabels
 
   function OptionsPrivate.SetTitle(title)
-    local text = "Musca Auras " .. OptionsPrivate.changelog.versionString
-    if title and title ~= "" then
-      text = ("%s - %s"):format(text, title)
-    end
-    WeakAurasOptionsTitleText:SetText(text)
+    subtitleText:SetText(title or "")
   end
 
   tinsert(UISpecialFrames, frame:GetName())
@@ -120,9 +140,24 @@ function OptionsPrivate.CreateFrame()
   frame:SetResizable(true)
   frame:SetResizeBounds(minWidth, minHeight)
   frame:SetFrameStrata("DIALOG")
-  -- Workaround classic issue
+  shadow:SetFrameLevel(math.max(frame:GetFrameLevel() - 1, 0))
 
-  WeakAurasOptionsPortrait:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
+  -- Opening: from 8 pixels lower and transparent, brief; closing is instant.
+  local entrance = frame:CreateAnimationGroup()
+  local drop = entrance:CreateAnimation("Translation")
+  drop:SetOffset(0, -8)
+  drop:SetDuration(0)
+  drop:SetOrder(1)
+  Style.AddFade(entrance, 0, 0, 0):SetOrder(1)
+  local rise = entrance:CreateAnimation("Translation")
+  rise:SetOffset(0, 8)
+  rise:SetDuration(Style.durations.brief)
+  rise:SetSmoothing("OUT")
+  rise:SetOrder(2)
+  Style.AddFade(entrance, 0, 1, Style.durations.brief, 0, "OUT"):SetOrder(2)
+  frame:HookScript("OnShow", function()
+    entrance:Play()
+  end)
 
   frame.window = "default"
 
@@ -219,11 +254,6 @@ function OptionsPrivate.CreateFrame()
     end
   end
 
-  if not frame.TitleContainer then
-    frame.TitleContainer = CreateFrame("Frame", nil, frame)
-    frame.TitleContainer:SetAllPoints(frame.TitleBg)
-  end
-
   frame.TitleContainer:SetScript("OnMouseDown", function()
     frame:StartMoving()
   end)
@@ -233,13 +263,13 @@ function OptionsPrivate.CreateFrame()
   end)
 
 
-  frame.bottomRightResizer = CreateFrameSizer(frame, commitWindowChanges, "BOTTOMRIGHT")
+  frame.bottomRightResizer = CreateFrameSizer(frame, commitWindowChanges)
 
   frame.UpdateFrameVisible = function(self)
     self.tipPopup:Hide()
     self.guideButton:SetShown(not self.minimized)
     if self.minimized then
-      WeakAurasOptionsTitleText:Hide()
+      self.titleLabels:Hide()
       self.buttonsContainer.frame:Hide()
       for _, fn in ipairs({"TexturePicker", "IconPicker", "ModelPicker", "ImportExport", "TextEditor", "CodeReview", "UpdateFrame", "DebugLog"}) do
         local obj = OptionsPrivate[fn](self, true)
@@ -260,7 +290,7 @@ function OptionsPrivate.CreateFrame()
       self.bottomRightResizer:Hide()
       self.dynamicTextCodesFrame:Hide()
     else
-      WeakAurasOptionsTitleText:Show()
+      self.titleLabels:Show()
       self.bottomRightResizer:Show()
       if self.window == "default" then
         OptionsPrivate.SetTitle()
@@ -327,10 +357,75 @@ function OptionsPrivate.CreateFrame()
 
 
 
-  local minimizebutton = CreateFrame("Button", nil, frame, "MaximizeMinimizeButtonFrameTemplate")
-  minimizebutton:SetFrameLevel(frame.TitleContainer:GetFrameLevel() + 1)
-  minimizebutton:SetPoint("RIGHT", frame.CloseButton, "LEFT", 10, 0)
-  minimizebutton:SetOnMaximizedCallback(function()
+  -- Buttons of the title bar, 28 pixels: raised under the mouse, their drawing painted by Paint(over).
+  local function TitleButton(onClick)
+    local button = CreateFrame("Button", nil, frame.TitleContainer)
+    button:SetSize(28, 28)
+    button.hover = button:CreateTexture(nil, "BACKGROUND")
+    button.hover:SetAllPoints()
+    button.hover:SetColorTexture(Style.Color("raised"))
+    button.hover:Hide()
+    button:SetScript("OnEnter", function(self)
+      self.hover:Show()
+      self:Paint(true)
+    end)
+    button:SetScript("OnLeave", function(self)
+      self.hover:Hide()
+      self:Paint(false)
+    end)
+    button:SetScript("OnClick", onClick)
+    return button
+  end
+
+  -- Close: a cross of two bars turned by 45 degrees.
+  local closeButton = TitleButton(function()
+    frame:Hide()
+  end)
+  closeButton:SetPoint("TOPRIGHT")
+  local crossBars = {}
+  for _, angle in ipairs({ 45, -45 }) do
+    local bar = closeButton:CreateTexture(nil, "ARTWORK")
+    bar:SetTexture(Style.white)
+    bar:SetSize(1.5, 12)
+    bar:SetPoint("CENTER")
+    bar:SetRotation(math.rad(angle))
+    tinsert(crossBars, bar)
+  end
+  function closeButton:Paint(over)
+    for _, bar in ipairs(crossBars) do
+      bar:SetVertexColor(Style.Color(over and "error" or "textSecondary"))
+    end
+  end
+  closeButton:Paint(false)
+  frame.CloseButton = closeButton
+
+  -- Reduce and restore: one square while reduced, two offset squares while the window is full size.
+  local minimizebutton = TitleButton()
+  minimizebutton:SetPoint("RIGHT", closeButton, "LEFT")
+  local function Square(size, x, y)
+    local square = CreateFrame("Frame", nil, minimizebutton, "BackdropTemplate")
+    square:SetSize(size, size)
+    square:SetPoint("CENTER", x, y)
+    square:SetBackdrop({ bgFile = Style.white, edgeFile = Style.white, edgeSize = 1 })
+    return square
+  end
+  local backSquare = Square(8, 2, 2)
+  local frontSquare = Square(8, -1, -1)
+  frontSquare:SetFrameLevel(backSquare:GetFrameLevel() + 1)
+  function minimizebutton:Paint(over)
+    local line = over and "text" or "textSecondary"
+    local fill = over and "raised" or "band"
+    frontSquare:SetSize(frame.minimized and 10 or 8, frame.minimized and 10 or 8)
+    frontSquare:SetPoint("CENTER", frame.minimized and 0 or -1, frame.minimized and 0 or -1)
+    backSquare:SetShown(not frame.minimized)
+    for _, square in ipairs({ backSquare, frontSquare }) do
+      square:SetBackdropColor(Style.Color(fill))
+      square:SetBackdropBorderColor(Style.Color(line))
+    end
+  end
+  minimizebutton:Paint(false)
+
+  local function Maximize()
     frame.minimized = false
     local right, top = frame:GetRight(), frame:GetTop()
     frame:ClearAllPoints()
@@ -339,8 +434,8 @@ function OptionsPrivate.CreateFrame()
     frame:SetWidth(odb.frame and odb.frame.width or defaultWidth)
     frame.buttonsScroll:DoLayout()
     frame:UpdateFrameVisible()
-  end)
-  minimizebutton:SetOnMinimizedCallback(function()
+  end
+  local function Minimize()
     commitWindowChanges()
     frame.minimized = true
     local right, top = frame:GetRight(), frame:GetTop()
@@ -349,60 +444,67 @@ function OptionsPrivate.CreateFrame()
     frame:SetHeight(75)
     frame:SetWidth(160)
     frame:UpdateFrameVisible()
+  end
+  minimizebutton:SetScript("OnClick", function(self)
+    if frame.minimized then
+      Maximize()
+    else
+      Minimize()
+    end
+    self:Paint(self:IsMouseOver())
   end)
 
-  local guideButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-  guideButton:SetFrameLevel(frame.TitleContainer:GetFrameLevel() + 1)
-  guideButton:SetSize(170, 20)
+  local guideButton = Style.NewButton(frame.TitleContainer, L["Guide:"] .. " " .. L["learn WeakAuras"], "secondary",
+    function()
+      OptionsPrivate.Private.ShowForeverTutorial()
+    end)
   guideButton:SetPoint("RIGHT", minimizebutton, "LEFT", -4, 0)
-  guideButton:SetText("|cffffd100" .. L["Guide:"] .. "|r " .. L["learn WeakAuras"])
-  guideButton:SetWidth(guideButton:GetFontString():GetStringWidth() + 24)
-  guideButton:SetScript("OnClick", function()
-    OptionsPrivate.Private.ShowForeverTutorial()
-  end)
-  guideButton:SetScript("OnEnter", function(self)
+  guideButton:HookScript("OnShow", Style.FitButton)
+  guideButton:HookScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
     GameTooltip:SetText(L["Musca Auras Guide"])
     GameTooltip:AddLine(L["Learn everything about WeakAuras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
-  guideButton:SetScript("OnLeave", function()
+  guideButton:HookScript("OnLeave", function()
     GameTooltip:Hide()
   end)
   frame.guideButton = guideButton
 
   local tipFrame = CreateFrame("Frame", nil, frame)
-  tipFrame:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 17, 30)
-  tipFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 10)
+  tipFrame:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 17, 19)
+  tipFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 3)
   tipFrame:Hide()
   frame.tipFrame = tipFrame
+  -- Footer: band with a border on top, shown with the links.
+  local footerBand = tipFrame:CreateTexture(nil, "BACKGROUND")
+  footerBand:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
+  footerBand:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", -1, 22)
+  footerBand:SetColorTexture(Style.Color("band"))
+  local footerLine = tipFrame:CreateTexture(nil, "BORDER")
+  footerLine:SetHeight(1)
+  footerLine:SetPoint("BOTTOMLEFT", footerBand, "TOPLEFT")
+  footerLine:SetPoint("BOTTOMRIGHT", footerBand, "TOPRIGHT")
+  footerLine:SetColorTexture(Style.Color("border"))
 
   local tipPopup = CreateFrame("Frame", nil, frame, "BackdropTemplate")
   tipPopup:SetFrameStrata("FULLSCREEN")
-  tipPopup:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true,
-    tileSize = 16,
-    edgeSize = 16,
-    insets = { left = 4, right = 4, top = 4, bottom = 4 }
-  })
-  tipPopup:SetBackdropColor(0, 0, 0, 0.8)
-  --tipPopup:SetHeight(100)
+  Style.Fill(tipPopup, "raised", "borderHover")
+  local tipPopupMark = tipPopup:CreateTexture(nil, "ARTWORK")
+  tipPopupMark:SetHeight(2)
+  tipPopupMark:SetPoint("TOPLEFT", 1, -1)
+  tipPopupMark:SetPoint("TOPRIGHT", -1, -1)
+  tipPopupMark:SetColorTexture(Style.Color("primary"))
   tipPopup:Hide()
   frame.tipPopup = tipPopup
 
-  local tipPopupTitle = tipPopup:CreateFontString(nil, "BACKGROUND", "GameFontNormalLarge")
+  local tipPopupTitle = Style.NewText(tipPopup, "title", "m", "text", "BACKGROUND")
   tipPopupTitle:SetPoint("TOPLEFT", tipPopup, "TOPLEFT", 10, -10)
   tipPopupTitle:SetPoint("TOPRIGHT", tipPopup, "TOPRIGHT", -10, -10)
   tipPopupTitle:SetJustifyH("LEFT")
   tipPopupTitle:SetJustifyV("TOP")
 
-  local tipPopupLabel = tipPopup:CreateFontString(nil, "BACKGROUND", "GameFontWhite")
-  local fontPath = SharedMedia:Fetch("font", "Fira Sans Medium")
-  if (fontPath) then
-    tipPopupLabel:SetFont(fontPath, 12, "")
-  end
+  local tipPopupLabel = Style.NewText(tipPopup, "text", "s", "text", "BACKGROUND")
   tipPopupLabel:SetPoint("TOPLEFT", tipPopupTitle, "BOTTOMLEFT", 0, -6)
   tipPopupLabel:SetPoint("TOPRIGHT", tipPopupTitle, "BOTTOMRIGHT", 0, -6)
   tipPopupLabel:SetJustifyH("LEFT")
@@ -410,6 +512,7 @@ function OptionsPrivate.CreateFrame()
 
   local tipPopupLabelCJ = tipPopup:CreateFontString(nil, "BACKGROUND", "GameFontWhite")
   tipPopupLabelCJ:SetFont("Fonts\\ARKai_T.ttf", 12, "")
+  tipPopupLabelCJ:SetTextColor(Style.Color("text"))
   tipPopupLabelCJ:SetPoint("TOPLEFT", tipPopupLabel, "BOTTOMLEFT", 0, 0)
   tipPopupLabelCJ:SetPoint("TOPRIGHT", tipPopupLabel, "BOTTOMRIGHT", 0, 0)
   tipPopupLabelCJ:SetJustifyH("LEFT")
@@ -417,23 +520,26 @@ function OptionsPrivate.CreateFrame()
 
   local tipPopupLabelK = tipPopup:CreateFontString(nil, "BACKGROUND", "GameFontWhite")
   tipPopupLabelK:SetFont("Fonts\\K_Pagetext.TTF", 12, "")
+  tipPopupLabelK:SetTextColor(Style.Color("text"))
   tipPopupLabelK:SetPoint("TOPLEFT", tipPopupLabelCJ, "BOTTOMLEFT", 0, 0)
   tipPopupLabelK:SetPoint("TOPRIGHT", tipPopupLabelCJ, "BOTTOMRIGHT", 0, 0)
   tipPopupLabelK:SetJustifyH("LEFT")
   tipPopupLabelK:SetJustifyV("TOP")
 
-  local urlWidget = CreateFrame("EditBox", nil, tipPopup, "InputBoxTemplate")
-  urlWidget:SetFont(STANDARD_TEXT_FONT, 12, "")
-  urlWidget:SetPoint("TOPLEFT", tipPopupLabelK, "BOTTOMLEFT", 6, 0)
-  urlWidget:SetPoint("TOPRIGHT", tipPopupLabelK, "BOTTOMRIGHT", 0, 0)
+  local urlWidget = CreateFrame("EditBox", nil, tipPopup, "BackdropTemplate")
+  urlWidget:SetAutoFocus(false)
+  Style.SkinEditBox(urlWidget, "text")
+  urlWidget:HookScript("OnEditFocusGained", urlWidget.HighlightText)
+  urlWidget:SetPoint("TOPLEFT", tipPopupLabelK, "BOTTOMLEFT", 0, -6)
+  urlWidget:SetPoint("TOPRIGHT", tipPopupLabelK, "BOTTOMRIGHT", 0, -6)
   urlWidget:SetScript("OnChar", function() urlWidget:SetText(urlWidget.text); urlWidget:HighlightText(); end);
   urlWidget:SetScript("OnMouseUp", function() urlWidget:HighlightText(); end);
   urlWidget:SetScript("OnEscapePressed", function() tipPopup:Hide() end)
-  urlWidget:SetHeight(34)
+  urlWidget:SetHeight(22)
 
-  local tipPopupCtrlC = tipPopup:CreateFontString(nil, "BACKGROUND", "GameFontWhite")
-  tipPopupCtrlC:SetPoint("TOPLEFT", urlWidget, "BOTTOMLEFT", -6, 0)
-  tipPopupCtrlC:SetPoint("TOPRIGHT", urlWidget, "BOTTOMRIGHT", 0, 0)
+  local tipPopupCtrlC = Style.NewText(tipPopup, "text", "xs", "textQuiet", "BACKGROUND")
+  tipPopupCtrlC:SetPoint("TOPLEFT", urlWidget, "BOTTOMLEFT", 0, -6)
+  tipPopupCtrlC:SetPoint("TOPRIGHT", urlWidget, "BOTTOMRIGHT", 0, -6)
   tipPopupCtrlC:SetJustifyH("LEFT")
   tipPopupCtrlC:SetJustifyV("TOP")
   tipPopupCtrlC:SetText(L["Press Ctrl+C to copy the URL"])
@@ -462,7 +568,7 @@ function OptionsPrivate.CreateFrame()
 
     tipPopup:SetWidth(width)
     tipPopup:Show()
-    tipPopup:SetHeight(26 + tipPopupTitle:GetHeight() + tipPopupLabel:GetHeight() + tipPopupLabelCJ:GetHeight() + tipPopupLabelK:GetHeight()
+    tipPopup:SetHeight(38 + tipPopupTitle:GetHeight() + tipPopupLabel:GetHeight() + tipPopupLabelCJ:GetHeight() + tipPopupLabelK:GetHeight()
                        + urlWidget:GetHeight() + tipPopupCtrlC:GetHeight())
     -- This does somehow fix an issue where the first popup after a game restart doesn't show up.
     -- This isn't reproducable after a simple ui reload, so no idea what goes wrong, but with this line here,
@@ -478,6 +584,7 @@ function OptionsPrivate.CreateFrame()
   local addFooter = function(title, texture, url, description, descriptionCJ, descriptionK, rightAligned, width)
     local button = AceGUI:Create("WeakAurasToolbarButton")
     button:SetSmallFont(true)
+    button.icon:SetSize(14, 14)
     button:SetText(title)
     button:SetTexture(texture)
     button:SetCallback("OnClick", function()
@@ -574,14 +681,49 @@ function OptionsPrivate.CreateFrame()
 
   frame.ShowTip = function(self)
     self.tipFrame:Show()
-    self.buttonsContainer.frame:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 17, 30)
-    self.container.frame:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -17, 28)
+    self.buttonsContainer.frame:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 17, 24)
+    self.container.frame:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -17, 22)
   end
 
   frame.HideTip = function(self)
     self.tipFrame:Hide()
     self.buttonsContainer.frame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 17, 12)
     self.container.frame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 10)
+  end
+
+  -- Section title of the New Aura panel, as the section headers of DESIGN.md: the title font, in capitals in English.
+  local function PaintSectionTitle(label, text)
+    -- Through the font object of the Label, which OnAcquire drops: the pool of Label is shared with other addons.
+    label:SetFont(STANDARD_TEXT_FONT, 10, "")
+    Style.SetFont(label.fontObject, "title", "xs")
+    label:SetColor(Style.Color("textSecondary"))
+    label:SetText(GetLocale():find("^en") and text:upper() or text)
+    label:SetFullWidth(true)
+  end
+
+  -- The thin scroll bar of DESIGN.md on a ScrollFrame of AceGUI; its pool is shared with other addons, so the bar
+  -- gets the look of the game back when the widget is released.
+  local function SkinScrollFrame(scroll)
+    Style.SkinScrollBar(scroll.scrollbar)
+    scroll:SetCallback("OnRelease", function(widget) Style.UnskinScrollBar(widget.scrollbar) end)
+  end
+
+  -- An InlineGroup of AceGUI drawn as a block of DESIGN.md; its own look is given back when the pool takes it again.
+  local function PaintInlineGroup(group, fill)
+    local box = group.content:GetParent()
+    local backdrop = box:GetBackdrop()
+    local color, borderColor = { box:GetBackdropColor() }, { box:GetBackdropBorderColor() }
+    Style.Fill(box, fill)
+    local release = group.OnRelease
+    group.OnRelease = function(self)
+      box:SetBackdrop(backdrop)
+      if backdrop then
+        box:SetBackdropColor(unpack(color))
+        box:SetBackdropBorderColor(unpack(borderColor))
+      end
+      self.OnRelease = release
+      if release then release(self) end
+    end
   end
 
   -- Right Side Container
@@ -599,23 +741,57 @@ function OptionsPrivate.CreateFrame()
   frame.container = container
   frame.moversizer, frame.mover = OptionsPrivate.MoverSizer(frame)
 
-  -- filter line
-  local filterInput = CreateFrame("EditBox", "WeakAurasFilterInput", frame, "SearchBoxTemplate")
+  -- filter line: a well with a drawn magnifier, a hint while empty, a cross to clear it.
+  local filterInput = CreateFrame("EditBox", "WeakAurasFilterInput", frame, "BackdropTemplate")
+  filterInput:SetAutoFocus(false)
+  Style.SkinEditBox(filterInput, "text")
+  filterInput:SetTextInsets(20, 20, 0, 0)
+  local lensRing = filterInput:CreateTexture(nil, "ARTWORK")
+  lensRing:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\Circle_White_Border.tga]])
+  lensRing:SetVertexColor(Style.Color("textQuiet"))
+  lensRing:SetSize(8, 8)
+  lensRing:SetPoint("LEFT", filterInput, "LEFT", 6, 1)
+  local lensHandle = filterInput:CreateTexture(nil, "ARTWORK")
+  lensHandle:SetTexture(Style.white)
+  lensHandle:SetVertexColor(Style.Color("textQuiet"))
+  lensHandle:SetSize(1.5, 4)
+  lensHandle:SetPoint("CENTER", lensRing, "BOTTOMRIGHT", 0, 0)
+  lensHandle:SetRotation(math.rad(45))
+  local filterHint = Style.NewText(filterInput, "text", "s", "textDisabled")
+  filterHint:SetPoint("LEFT", filterInput, "LEFT", 20, 0)
+  filterHint:SetText(L["Search"])
+  local filterClear = CreateFrame("Button", nil, filterInput)
+  filterClear:SetSize(16, 16)
+  filterClear:SetPoint("RIGHT", filterInput, "RIGHT", -2, 0)
+  local clearText = Style.NewText(filterClear, "text", "s", "textQuiet")
+  clearText:SetPoint("CENTER")
+  clearText:SetText("×")
+  filterClear:SetScript("OnEnter", function() clearText:SetTextColor(Style.Color("text")) end)
+  filterClear:SetScript("OnLeave", function() clearText:SetTextColor(Style.Color("textQuiet")) end)
+  filterClear:SetScript("OnClick", function()
+    filterInput:SetText("")
+    filterInput:ClearFocus()
+  end)
+  filterClear:Hide()
   filterInput:SetScript("OnTextChanged", function(self)
-    SearchBoxTemplate_OnTextChanged(self)
+    local empty = self:GetText() == ""
+    filterHint:SetShown(empty)
+    filterClear:SetShown(not empty)
     OptionsPrivate.SortDisplayButtons(filterInput:GetText())
   end)
-  filterInput:SetHeight(15)
-  filterInput:SetPoint("TOP", frame, "TOP", 0, -65)
+  filterInput:SetScript("OnEscapePressed", filterInput.ClearFocus)
+  filterInput:SetScript("OnEnterPressed", filterInput.ClearFocus)
+  filterInput:SetHeight(18)
+  filterInput:SetPoint("TOP", frame, "TOP", 0, -70)
   filterInput:SetPoint("LEFT", frame, "LEFT", 24, 0)
   filterInput:SetPoint("RIGHT", container.frame, "LEFT", -2, 0)
-  filterInput:SetFont(STANDARD_TEXT_FONT, 10, "")
   frame.filterInput = filterInput
   filterInput:Hide()
 
   -- Left Side Container
   local buttonsContainer = AceGUI:Create("InlineGroup")
   buttonsContainer:SetWidth(170)
+  PaintInlineGroup(buttonsContainer, "surface")
   buttonsContainer.frame:SetParent(frame)
   buttonsContainer.frame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 17, 12)
   buttonsContainer.frame:SetPoint("TOP", frame, "TOP", 0, -67)
@@ -629,6 +805,17 @@ function OptionsPrivate.CreateFrame()
   -- toolbarContainer:Hide()
   toolbarContainer:SetPoint("TOPLEFT", buttonsContainer.frame, "TOPLEFT", 30, 30)
   toolbarContainer:SetPoint("BOTTOMRIGHT", buttonsContainer.frame, "TOPRIGHT", 0, 0)
+  -- Band of the toolbar, from the left edge of the window, a border below.
+  local toolbarBand = toolbarContainer:CreateTexture(nil, "BACKGROUND")
+  toolbarBand:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -29)
+  toolbarBand:SetPoint("BOTTOM", toolbarContainer, "BOTTOM")
+  toolbarBand:SetPoint("RIGHT", toolbarContainer, "RIGHT")
+  toolbarBand:SetColorTexture(Style.Color("band"))
+  local toolbarLine = toolbarContainer:CreateTexture(nil, "BORDER")
+  toolbarLine:SetHeight(1)
+  toolbarLine:SetPoint("BOTTOMLEFT", toolbarBand, "BOTTOMLEFT")
+  toolbarLine:SetPoint("BOTTOMRIGHT", toolbarBand, "BOTTOMRIGHT")
+  toolbarLine:SetColorTexture(Style.Color("border"))
 
   -- A restored aura may have moved or resized: its group, thumbnail and mover follow, as after a setter.
   local function RefreshRestored(records)
@@ -644,9 +831,28 @@ function OptionsPrivate.CreateFrame()
     OptionsPrivate.ResetMoverSizer()
   end
 
+  -- Toolbar of DESIGN.md: 24 pixel buttons in groups (history, creation, toggles, tools) split by a 1 pixel rule.
+  local function SizeToolbarButton(button, text)
+    button:SetHeight(24)
+    button:SetText(text)
+  end
+  local function NewToolbarSeparator(anchor)
+    local separator = CreateFrame("Frame", nil, toolbarContainer)
+    separator:SetSize(17, 14)
+    separator:SetPoint("LEFT", anchor, "RIGHT", 0, 0)
+    local line = separator:CreateTexture(nil, "ARTWORK")
+    line:SetColorTexture(Style.Color("border"))
+    line:SetSize(1, 14)
+    line:SetPoint("CENTER")
+    return separator
+  end
+
   local undo = AceGUI:Create("WeakAurasToolbarButton")
-  undo:SetText(L["Undo"])
+  SizeToolbarButton(undo)
+  undo:SetTooltip(L["Undo"])
   undo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upleft")
+  -- The arrow fills half of its texture: only the drawn part, 14 pixels wide.
+  undo:SetIconCoords(8/32, 24/32, 6/32, 24/32, 14, 16)
   undo:SetCallback("OnClick", function()
     local records = OptionsPrivate.Private.TimeMachine:DescribePrevious()
     OptionsPrivate.Private.TimeMachine:StepBackward()
@@ -659,8 +865,10 @@ function OptionsPrivate.CreateFrame()
   undo.frame:SetCollapsesLayout(true)
 
   local redo = AceGUI:Create("WeakAurasToolbarButton")
-  redo:SetText(L["Redo"])
+  SizeToolbarButton(redo)
+  redo:SetTooltip(L["Redo"])
   redo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upright")
+  redo:SetIconCoords(7/32, 23/32, 6/32, 24/32, 14, 16)
   redo:SetCallback("OnClick", function()
     local records = OptionsPrivate.Private.TimeMachine:DescribeNext()
     OptionsPrivate.Private.TimeMachine:StepForward()
@@ -669,17 +877,22 @@ function OptionsPrivate.CreateFrame()
   end)
   redo.frame:SetParent(toolbarContainer)
   redo.frame:SetShown(OptionsPrivate.Private.Features:Enabled("undo"))
-  redo:SetPoint("LEFT", undo.frame, "RIGHT", 10, 0)
+  redo:SetPoint("LEFT", undo.frame, "RIGHT", 4, 0)
   redo.frame:SetEnabled(OptionsPrivate.Private.TimeMachine:DescribeNext() ~= nil)
   redo.frame:SetCollapsesLayout(true)
+  local historySeparator = NewToolbarSeparator(redo.frame)
+  historySeparator:SetShown(OptionsPrivate.Private.Features:Enabled("undo"))
+  historySeparator:SetCollapsesLayout(true)
   OptionsPrivate.Private.Features:Subscribe("undo",
     function()
       undo.frame:Show()
       redo.frame:Show()
+      historySeparator:Show()
     end,
     function()
       undo.frame:Hide()
       redo.frame:Hide()
+      historySeparator:Hide()
     end
   )
 
@@ -704,11 +917,11 @@ function OptionsPrivate.CreateFrame()
   OptionsPrivate.Private.TimeMachine.sub:AddSubscriber("Record", tmControls)
 
   local newButton = AceGUI:Create("WeakAurasToolbarButton")
-  newButton:SetText(L["New Aura"])
+  SizeToolbarButton(newButton, L["New Aura"])
   newButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\newaura")
   newButton.frame:SetParent(toolbarContainer)
   newButton.frame:Show()
-  newButton:SetPoint("LEFT", redo.frame, "RIGHT", 10, 0)
+  newButton:SetPoint("LEFT", historySeparator, "RIGHT", 0, 0)
   frame.toolbarContainer = toolbarContainer
 
   newButton:SetCallback("OnClick", function()
@@ -716,16 +929,50 @@ function OptionsPrivate.CreateFrame()
   end)
 
   local importButton = AceGUI:Create("WeakAurasToolbarButton")
-  importButton:SetText(L["Import"])
+  SizeToolbarButton(importButton, L["Import"])
   importButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\importsmall")
   importButton:SetCallback("OnClick", OptionsPrivate.ImportFromString)
   importButton.frame:SetParent(toolbarContainer)
   importButton.frame:Show()
-  importButton:SetPoint("LEFT", newButton.frame, "RIGHT", 10, 0)
+  importButton:SetPoint("LEFT", newButton.frame, "RIGHT", 4, 0)
+
+  local creationSeparator = NewToolbarSeparator(importButton.frame)
+
+  -- /wa unlock from the toolbar, the primary button of the window: the placement mode closes the options itself.
+  local unlockButton = Style.NewButton(toolbarContainer, L["Unlock"], "primary", function()
+    OptionsPrivate.Private.StartPlacementMode()
+  end)
+  -- A crosshair of flat bars on the left of the text: four arms around a center square.
+  for _, bar in ipairs({ { 2, 2, 0, 0 }, { 2, 4, 0, 5 }, { 2, 4, 0, -5 }, { 4, 2, -5, 0 }, { 4, 2, 5, 0 } }) do
+    local part = unlockButton:CreateTexture(nil, "ARTWORK")
+    part:SetColorTexture(Style.Color("onPrimary"))
+    part:SetSize(bar[1], bar[2])
+    part:SetPoint("CENTER", unlockButton, "LEFT", 14 + bar[3], bar[4])
+  end
+  unlockButton.text:ClearAllPoints()
+  unlockButton.text:SetPoint("LEFT", 28, 0)
+  local function FitUnlockButton()
+    unlockButton:SetSize(unlockButton.text:GetStringWidth() + 40, 22)
+  end
+  FitUnlockButton()
+  unlockButton:HookScript("OnShow", FitUnlockButton)
+  unlockButton:HookScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_NONE")
+    GameTooltip:SetPoint("BOTTOM", self, "TOP", 0, 5)
+    GameTooltip:SetText(L["Unlock"])
+    GameTooltip:AddLine(L["Opens the placement mode (/wa unlock): move, size and anchor the auras on the screen."], 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  unlockButton:HookScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+  unlockButton:SetPoint("LEFT", creationSeparator, "RIGHT", 0, 0)
 
   local lockButton = AceGUI:Create("WeakAurasToolbarButton")
-  lockButton:SetText(L["Lock Positions"])
+  SizeToolbarButton(lockButton)
+  lockButton:SetTooltip(L["Lock Positions"])
   lockButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\lockPosition")
+  lockButton:SetIconCoords(5/32, 27/32, 2/32, 32/32, 12, 16)
   lockButton:SetCallback("OnClick", function(self)
     if WeakAurasOptionsSaved.lockPositions then
       lockButton:SetStrongHighlight(false)
@@ -742,10 +989,11 @@ function OptionsPrivate.CreateFrame()
   end
   lockButton.frame:SetParent(toolbarContainer)
   lockButton.frame:Show()
-  lockButton:SetPoint("LEFT", importButton.frame, "RIGHT", 10, 0)
+  lockButton:SetPoint("LEFT", unlockButton, "RIGHT", 4, 0)
 
   local magnetButton = AceGUI:Create("WeakAurasToolbarButton")
-  magnetButton:SetText(L["Magnetically Align"])
+  SizeToolbarButton(magnetButton)
+  magnetButton:SetTooltip(L["Magnetically Align"])
   magnetButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\magnetic")
   magnetButton:SetCallback("OnClick", function(self)
     if WeakAurasOptionsSaved.magnetAlign then
@@ -764,59 +1012,118 @@ function OptionsPrivate.CreateFrame()
   end
   magnetButton.frame:SetParent(toolbarContainer)
   magnetButton.frame:Show()
-  magnetButton:SetPoint("LEFT", lockButton.frame, "RIGHT", 10, 0)
+  magnetButton:SetPoint("LEFT", lockButton.frame, "RIGHT", 4, 0)
+
+  local gridButton = AceGUI:Create("WeakAurasToolbarButton")
+  SizeToolbarButton(gridButton)
+  -- A 13 pixel grid of 4 pixel cells, drawn with flat bars: the bordered square texture was too faint.
+  gridButton:SetGlyph({
+    { 13, 1, 0, 6 }, { 13, 1, 0, 2 }, { 13, 1, 0, -2 }, { 13, 1, 0, -6 },
+    { 1, 13, -6, 0 }, { 1, 13, -2, 0 }, { 1, 13, 2, 0 }, { 1, 13, 6, 0 },
+  })
+  gridButton:SetTooltip(L["Grid"] .. "\n" .. L["Shows a grid while the options are open. With Magnetically Align, the auras snap to its lines.\nRight-click: grid spacing."])
+
+  -- Pitch of the grid, opened by a right click on the Grid button.
+  local gridSpacingSlider = AceGUI:Create("Slider")
+  gridSpacingSlider:SetLabel(L["Grid Spacing"])
+  gridSpacingSlider:SetSliderValues(8, 128, 1)
+  gridSpacingSlider:SetWidth(180)
+  gridSpacingSlider:SetCallback("OnValueChanged", function(_, _, value)
+    WeakAurasOptionsSaved.gridSpacing = value
+    OptionsPrivate.UpdatePlacementGrid()
+  end)
+  local gridSpacingBackground = gridSpacingSlider.frame:CreateTexture(nil, "BACKGROUND")
+  gridSpacingBackground:SetColorTexture(Style.Color("raised"))
+  gridSpacingBackground:SetPoint("TOPLEFT", -6, 6)
+  gridSpacingBackground:SetPoint("BOTTOMRIGHT", 6, -6)
+  gridSpacingSlider.frame:SetParent(toolbarContainer)
+  gridSpacingSlider.frame:SetFrameLevel(toolbarContainer:GetFrameLevel() + 100)
+  gridSpacingSlider.frame:Hide()
+  toolbarContainer:HookScript("OnHide", function()
+    gridSpacingSlider.frame:Hide()
+  end)
+
+  gridButton.frame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  gridButton:SetCallback("OnClick", function(self, _, mouseButton)
+    if mouseButton == "RightButton" then
+      gridSpacingSlider:SetValue(OptionsPrivate.GridSpacing())
+      gridSpacingSlider.frame:SetShown(not gridSpacingSlider.frame:IsShown())
+      return
+    end
+    WeakAurasOptionsSaved.gridAlign = not WeakAurasOptionsSaved.gridAlign
+    gridButton:SetStrongHighlight(WeakAurasOptionsSaved.gridAlign)
+    if WeakAurasOptionsSaved.gridAlign then
+      gridButton:LockHighlight()
+    else
+      gridButton:UnlockHighlight()
+    end
+    OptionsPrivate.UpdatePlacementGrid()
+  end)
+  if WeakAurasOptionsSaved.gridAlign then
+    gridButton:LockHighlight()
+  end
+  gridButton.frame:SetParent(toolbarContainer)
+  gridButton.frame:Show()
+  gridButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 4, 0)
+  local toggleSeparator = NewToolbarSeparator(gridButton.frame)
+  gridSpacingSlider:SetPoint("TOP", gridButton.frame, "BOTTOM", 0, -10)
 
   local unusedButton = AceGUI:Create("WeakAurasToolbarButton")
-  unusedButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\delete")
+  SizeToolbarButton(unusedButton)
+  -- A cross of two flat bars, red under the mouse: the button deletes.
+  unusedButton:SetGlyph({ { 1.5, 12, 0, 0, 45 }, { 1.5, 12, 0, 0, -45 } })
+  unusedButton:SetDanger(true)
   unusedButton:SetCallback("OnClick", OptionsPrivate.ConfirmDeleteUnused)
   unusedButton:SetTooltip(L["Unused Auras"] .. "\n" .. L["Deletes the auras no character of the account loaded for 30 days, and the empty groups.\nThe list is shown in the chat before the confirmation."])
   unusedButton.frame:SetParent(toolbarContainer)
   unusedButton.frame:Show()
-  unusedButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 10, 0)
+  unusedButton:SetPoint("LEFT", toggleSeparator, "RIGHT", 0, 0)
 
   local replaceButton = AceGUI:Create("WeakAurasToolbarButton")
+  SizeToolbarButton(replaceButton)
   replaceButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\edit")
+  replaceButton:SetIconCoords(7/32, 28/32, 5/32, 26/32, 14, 14)
   replaceButton:SetCallback("OnClick", OptionsPrivate.AskReplace)
   replaceButton:SetTooltip(L["Replace"] .. "\n" .. L["Replaces a spell, a texture, a font or a sound in the selected auras, or in all auras when none is selected.\nThe changes are shown in the chat before the confirmation, and Undo reverts them."])
   replaceButton.frame:SetParent(toolbarContainer)
   replaceButton.frame:Show()
-  replaceButton:SetPoint("LEFT", unusedButton.frame, "RIGHT", 10, 0)
+  replaceButton:SetPoint("LEFT", unusedButton.frame, "RIGHT", 4, 0)
 
   local auraSetButton = AceGUI:Create("WeakAurasToolbarButton")
+  SizeToolbarButton(auraSetButton)
   auraSetButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\browse")
   auraSetButton:SetCallback("OnClick", OptionsPrivate.AskAuraSet)
   auraSetButton:SetTooltip(L["Aura Set"] .. "\n" .. L["Chooses a tag for this character: it then loads only the auras with this tag, or whose group has it.\nThe other characters keep their own choice."])
   auraSetButton.frame:SetParent(toolbarContainer)
   auraSetButton.frame:Show()
-  auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", 10, 0)
+  auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", 4, 0)
 
   if C_CooldownViewer then
     local hideCDMLabel = L["Hide Blizzard's CDM"]
-    local hideCDMToggle = AceGUI:Create("CheckBox")
-    local function ReadHideCDM()
-      hideCDMToggle:SetValue(OptionsPrivate.Private.db.cdmHideBlizzard == true)
-    end
-    hideCDMToggle:SetWidth(24)
-    hideCDMToggle:SetLabel("")
-    hideCDMToggle.frame:SetParent(toolbarContainer)
-    hideCDMToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 10, 0)
-    ReadHideCDM()
-    hideCDMToggle.frame:HookScript("OnShow", ReadHideCDM)
-    hideCDMToggle:SetCallback("OnValueChanged", function(_, _, checked)
-      OptionsPrivate.Private.db.cdmHideBlizzard = checked
+    -- The toolbar has no room for the whole name: the acronym, the name in the tooltip.
+    local hideCDMToggle = Style.NewCheck(toolbarContainer, "CDM", function(check)
+      OptionsPrivate.Private.db.cdmHideBlizzard = check:GetChecked() == true
       OptionsPrivate.Private.ApplyCDMBackground()
     end)
-    hideCDMToggle:SetCallback("OnEnter", function(widget)
-      GameTooltip:SetOwner(widget.frame, "ANCHOR_RIGHT")
+    local function ReadHideCDM()
+      hideCDMToggle:SetChecked(OptionsPrivate.Private.db.cdmHideBlizzard == true)
+    end
+    hideCDMToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 4, 0)
+    ReadHideCDM()
+    hideCDMToggle:HookScript("OnShow", function(check)
+      ReadHideCDM()
+      Style.FitCheck(check)
+    end)
+    hideCDMToggle:HookScript("OnEnter", function(check)
+      GameTooltip:SetOwner(check, "ANCHOR_RIGHT")
       GameTooltip:SetText(hideCDMLabel)
       GameTooltip:AddLine(L["Sets the Cooldown Manager viewers to zero opacity. They stay shown, so aura tracking is unaffected."], 1, 1, 1, true)
       GameTooltip:AddLine(L["Applied out of combat; unchecking restores the original opacity."], 1, 1, 1, true)
       GameTooltip:Show()
     end)
-    hideCDMToggle:SetCallback("OnLeave", function()
+    hideCDMToggle:HookScript("OnLeave", function()
       GameTooltip:Hide()
     end)
-    hideCDMToggle.frame:Show()
   end
 
   local loadProgress = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -830,6 +1137,7 @@ function OptionsPrivate.CreateFrame()
   end
 
   local buttonsScroll = AceGUI:Create("ScrollFrame")
+  SkinScrollFrame(buttonsScroll)
   buttonsScroll:SetLayout("ButtonsScrollLayout")
   buttonsScroll.width = "fill"
   buttonsScroll.height = "fill"
@@ -1067,7 +1375,7 @@ function OptionsPrivate.CreateFrame()
   sidegroup:SetLayout("flow")
 
   local dynamicTextCodesFrame = CreateFrame("Frame", "WeakAurasTextReplacements", sidegroup.frame, "PortraitFrameTemplate")
-  dynamicTextCodesFrame.Bg:SetColorTexture(unpack(frame.Bg.colorTexture))
+  dynamicTextCodesFrame.Bg:SetColorTexture(Style.Color("background"))
   ButtonFrameTemplate_HidePortrait(dynamicTextCodesFrame)
   dynamicTextCodesFrame:SetPoint("TOPLEFT", sidegroup.frame, "TOPRIGHT", 20, 0)
   dynamicTextCodesFrame:SetPoint("BOTTOMLEFT", sidegroup.frame, "BOTTOMRIGHT", 20, 0)
@@ -1302,10 +1610,11 @@ function OptionsPrivate.CreateFrame()
 
     local tabsWidget
 
-    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -10)
+    -- 8 pixels between the toolbar and the tabs.
+    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -18)
     container:ReleaseChildren()
     container:SetLayout("Fill")
-    tabsWidget = AceGUI:Create("TabGroup")
+    tabsWidget = AceGUI:Create("WeakAurasTabGroup")
 
     local tabs = {
       { value = "region", text = L["Display"]},
@@ -1427,19 +1736,18 @@ function OptionsPrivate.CreateFrame()
     container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
     container:SetLayout("fill")
     local border = AceGUI:Create("InlineGroup")
+    PaintInlineGroup(border, "raised")
     border:SetLayout("Fill")
     container:AddChild(border)
 
     local containerScroll = AceGUI:Create("ScrollFrame")
+    SkinScrollFrame(containerScroll)
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
 
-    local function AddTitle(text, size)
+    local function AddTitle(text)
       local label = AceGUI:Create("Label")
-      label:SetFont(STANDARD_TEXT_FONT, size, "OUTLINE")
-      label:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-      label:SetText(text)
-      label:SetFullWidth(true)
+      PaintSectionTitle(label, text)
       containerScroll:AddChild(label)
     end
 
@@ -1456,7 +1764,7 @@ function OptionsPrivate.CreateFrame()
     local classPack = OptionsPrivate.classPacks[playerClass]
     if classPack then
       local classIcon = "Interface\\Icons\\ClassIcon_" .. playerClass
-      AddTitle(L["Class HUD"], 24)
+      AddTitle(L["Class HUD"])
       local intro = AceGUI:Create("Label")
       intro:SetText(L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."])
       intro:SetFullWidth(true)
@@ -1478,12 +1786,12 @@ function OptionsPrivate.CreateFrame()
       end
     end
 
-    AddTitle(L["Utility Packs"], 24)
+    AddTitle(L["Utility Packs"])
     local category
     for _, utilityPack in ipairs(OptionsPrivate.utilityPacks) do
       if utilityPack.category ~= category then
         category = utilityPack.category
-        AddTitle(L[category], 18)
+        AddTitle(L[category])
       end
       AddPackButton(L[utilityPack.name], L[utilityPack.description], utilityPack.icon, function()
         WeakAuras.Import(utilityPack.data)
@@ -1524,18 +1832,17 @@ function OptionsPrivate.CreateFrame()
     container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
     container:SetLayout("fill")
     local border = AceGUI:Create("InlineGroup")
+    PaintInlineGroup(border, "raised")
     border:SetLayout("Fill")
     container:AddChild(border)
 
     local containerScroll = AceGUI:Create("ScrollFrame")
+    SkinScrollFrame(containerScroll)
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
 
     local simpleLabel = AceGUI:Create("Label")
-    simpleLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
-    simpleLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-    simpleLabel:SetText(L["Simple"])
-    simpleLabel:SetFullWidth(true)
+    PaintSectionTitle(simpleLabel, L["Simple"])
     containerScroll:AddChild(simpleLabel)
 
     local packsButton = AceGUI:Create("WeakAurasNewButton")
@@ -1563,10 +1870,7 @@ function OptionsPrivate.CreateFrame()
     containerScroll:AddChild(spacer1Label)
 
     local advancedLabel = AceGUI:Create("Label")
-    advancedLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
-    advancedLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-    advancedLabel:SetText(L["Advanced"])
-    advancedLabel:SetFullWidth(true)
+    PaintSectionTitle(advancedLabel, L["Advanced"])
     containerScroll:AddChild(advancedLabel)
 
     local regionTypesSorted = {}
@@ -1630,10 +1934,7 @@ function OptionsPrivate.CreateFrame()
     containerScroll:AddChild(spacer2Label)
 
     local externalLabel = AceGUI:Create("Label")
-    externalLabel:SetFont(STANDARD_TEXT_FONT, 24, "OUTLINE")
-    externalLabel:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-    externalLabel:SetText(L["External"])
-    externalLabel:SetFullWidth(true)
+    PaintSectionTitle(externalLabel, L["External"])
     containerScroll:AddChild(externalLabel)
 
     local spacer3Label = AceGUI:Create("Label")

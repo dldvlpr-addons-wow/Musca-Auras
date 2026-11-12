@@ -5,7 +5,7 @@ package.path = testsDirectory .. "/Harness/?.lua;" .. package.path
 
 local isWindows = package.config:sub(1, 1) == "\\"
 local verbose = false
-local mode, scenarioPath
+local mode, scenarioPath, filter
 
 for _, value in ipairs(arg) do
   if value == "--verbose" then
@@ -14,8 +14,11 @@ for _, value in ipairs(arg) do
     mode = "single"
   elseif mode == "single" then
     scenarioPath = value
-  elseif not scenarioPath then
-    scenarioPath = value
+  elseif value:find("%.lua$") then
+    scenarioPath = scenarioPath or value
+  else
+    -- Number ("68") or part of the file name ("EditMode"): runs the matching scenarios only, without the packs.
+    filter = filter or value:lower()
   end
 end
 
@@ -48,6 +51,7 @@ local function RunSingle(path)
     Clock = require("Clock"),
     Secret = require("Secret"),
     DocumentedApi = require("DocumentedApi"),
+    Assertions = require("Assertions"),
     tocPath = repositoryRoot .. "/WeakAuras/WeakAuras.toc",
   }
 
@@ -107,7 +111,16 @@ local function ListScenarios()
   local list = {}
   local handle = io.popen(command)
   for name in handle:lines() do
-    if name:find("%.lua$") then
+    local lowerName = name:lower()
+    local matches
+    if not filter then
+      matches = true
+    elseif filter:find("^%d+$") then
+      matches = lowerName:find("^0*" .. tonumber(filter) .. "_")
+    else
+      matches = lowerName:find(filter, 1, true)
+    end
+    if name:find("%.lua$") and matches then
       list[#list + 1] = directory .. "/" .. name
     end
   end
@@ -122,7 +135,11 @@ end
 
 local interpreter = arg[-1] or "lua"
 local scenarios = scenarioPath and { scenarioPath } or ListScenarios()
-if not scenarioPath then
+if filter and #scenarios == 0 then
+  print("no scenario matches " .. filter)
+  os.exit(1)
+end
+if not scenarioPath and not filter then
   -- Every shipped pack also loads in the addon: Tests/Packs/VerificationPack.lua, once per pack.
   local folders = dofile(testsDirectory .. "/Packs/PackFolders.lua")
   local packs = {}

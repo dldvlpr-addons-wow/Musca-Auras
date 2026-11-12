@@ -498,7 +498,7 @@ local function modifyThumbnail(parent, borderframe, data, fullModify, size)
   local mask, content, text, fontObject =
     borderframe.mask, borderframe.content, borderframe.text, borderframe.fontObject;
 
-  size = size or 28;
+  size = size or 26;
 
   local fontPath = SharedMedia:Fetch("font", data.font) or data.font;
   fontObject:SetFont(fontPath, data.fontSize, data.outline and "OUTLINE" or "");

@@ -149,6 +149,23 @@ Enable this setting if you want this timer to be hidden, or when using a WeakAur
 	L["Advanced"] = "고급 제작"
 	L["Affected Unit Filters and Info"] = "오라에 걸린 유닛의 필터 및 정보"
 	L["Align"] = "정렬"
+	--[[Translation missing --]]
+	L["Link"] = "Link"
+	--[[Translation missing --]]
+	L["Unlink"] = "Unlink"
+	--[[Translation missing --]]
+	L["Linked to %s"] = "Linked to %s"
+	--[[Translation missing --]]
+	--[[Translation missing --]]
+	L["Click the aura, group or game frame to follow. Right click or Escape: cancel."] = "Click the aura, group or game frame to follow. Right click or Escape: cancel."
+	--[[Translation missing --]]
+	L["%s follows %s: linking it would make a loop."] = "%s follows %s: linking it would make a loop."
+	--[[Translation missing --]]
+	L["%s. Mouse wheel: parent group. Right click or Escape: cancel."] = "%s. Mouse wheel: parent group. Right click or Escape: cancel."
+	--[[Translation missing --]]
+	L["Unlink: the aura stays in place and follows its group or the screen again."] = "Unlink: the aura stays in place and follows its group or the screen again."
+	--[[Translation missing --]]
+	L["Anchors this aura to a side of another aura, group or game frame: the aura then follows it, by position only. It stays in place."] = "Anchors this aura to a side of another aura, group or game frame: the aura then follows it, by position only. It stays in place."
 	L["Aligned left"] = "왼쪽 정렬됨"
 	L["Aligned right"] = "오른쪽 정렬됨"
 	L["Alignment"] = "정렬"

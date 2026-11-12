@@ -183,6 +183,11 @@ end
 
 local frame;
 local db;
+-- Whether the placement mode of Musca shows the auras, the options window hidden.
+local placementOpen = false
+-- The window may be made by the placement mode: the steps of the first opening wait for the first real one.
+local optionsShown = false
+local LayoutDisplayButtons
 local odb;
 --- @type boolean?
 local reopenAfterCombat = false;
@@ -210,6 +215,9 @@ loadedFrame:SetScript("OnEvent", function(self, event, addon)
 
       if odb.magnetAlign == nil then
         odb.magnetAlign = true
+      end
+      if odb.gridAlign == nil then
+        odb.gridAlign = false
       end
 
       if db.import_disabled then
@@ -783,47 +791,56 @@ local function OptionsFrame()
   end
 end
 
+-- The callbacks of the options, registered once, by the first /wa or /wa unlock.
+local function UsePrivate(Private)
+  if not OptionsPrivate.Private then
+    OptionsPrivate.Private = Private
+    Private.OptionsFrame = OptionsFrame
+    for _, fn in ipairs(OptionsPrivate.registerRegions) do
+      fn()
+    end
+    OptionsPrivate.Private.callbacks:RegisterCallback("AuraWarningsUpdated", function(event, uid)
+      local id = OptionsPrivate.Private.UIDtoID(uid)
+      if displayButtons[id] then
+        -- The button does not yet exists if a new aura is created
+        displayButtons[id]:UpdateWarning()
+      end
+      local data = Private.GetDataByUID(uid)
+      if data and data.parent then
+        local button = OptionsPrivate.GetDisplayButton(data.parent);
+        if button then
+          button:UpdateParentWarning()
+        end
+      end
+    end)
+
+    OptionsPrivate.Private.callbacks:RegisterCallback("ProfileCostsUpdated", function()
+      for _, button in pairs(displayButtons) do
+        button:UpdateWarning()
+      end
+    end)
+
+    OptionsPrivate.Private.callbacks:RegisterCallback("Add", function(_, _, _, data)
+      OptionsPrivate.TriggerSecretWarnings.UpdateAuraWarning(data)
+    end)
+    OptionsPrivate.Private.callbacks:RegisterCallback("ScanForLoads", AfterScanForLoads)
+    OptionsPrivate.Private.callbacks:RegisterCallback("AboutToDelete", OnAboutToDelete)
+    OptionsPrivate.Private.callbacks:RegisterCallback("RenameFirst", OnRename)
+    OptionsPrivate.Private.OpenUpdate = OptionsPrivate.OpenUpdate
+    OptionsPrivate.Private.ShowDemo = OptionsPrivate.ShowDemo
+  end
+end
+
 if not WeakAuras.ToggleOptions then
   ---@type fun(msg: string, Private: Private)
   function WeakAuras.ToggleOptions(msg, Private)
     if not Private then
       return
     end
-    if not OptionsPrivate.Private then
-      OptionsPrivate.Private = Private
-      Private.OptionsFrame = OptionsFrame
-      for _, fn in ipairs(OptionsPrivate.registerRegions) do
-        fn()
-      end
-      OptionsPrivate.Private.callbacks:RegisterCallback("AuraWarningsUpdated", function(event, uid)
-        local id = OptionsPrivate.Private.UIDtoID(uid)
-        if displayButtons[id] then
-          -- The button does not yet exists if a new aura is created
-          displayButtons[id]:UpdateWarning()
-        end
-        local data = Private.GetDataByUID(uid)
-        if data and data.parent then
-          local button = OptionsPrivate.GetDisplayButton(data.parent);
-          if button then
-            button:UpdateParentWarning()
-          end
-        end
-      end)
-
-      OptionsPrivate.Private.callbacks:RegisterCallback("ProfileCostsUpdated", function()
-        for _, button in pairs(displayButtons) do
-          button:UpdateWarning()
-        end
-      end)
-
-      OptionsPrivate.Private.callbacks:RegisterCallback("Add", function(_, _, _, data)
-        OptionsPrivate.TriggerSecretWarnings.UpdateAuraWarning(data)
-      end)
-      OptionsPrivate.Private.callbacks:RegisterCallback("ScanForLoads", AfterScanForLoads)
-      OptionsPrivate.Private.callbacks:RegisterCallback("AboutToDelete", OnAboutToDelete)
-      OptionsPrivate.Private.callbacks:RegisterCallback("RenameFirst", OnRename)
-      OptionsPrivate.Private.OpenUpdate = OptionsPrivate.OpenUpdate
-      OptionsPrivate.Private.ShowDemo = OptionsPrivate.ShowDemo
+    UsePrivate(Private)
+    if OptionsPrivate.LeavePlacementMode then
+      -- The placement mode of Musca closes first, its changes kept.
+      OptionsPrivate.LeavePlacementMode()
     end
 
     if(frame and frame:IsVisible()) then
@@ -844,10 +861,49 @@ function WeakAuras.HideOptions()
 end
 
 function WeakAuras.IsOptionsOpen()
-  if(frame and frame:IsVisible()) then
+  -- The placement mode of Musca shows the auras the way the options do.
+  if(frame and (frame:IsVisible() or placementOpen)) then
     return true;
   else
     return false;
+  end
+end
+
+--- Shows every aura, loaded or not, as the options do, without their window: for the placement mode of Musca.
+function OptionsPrivate.StartPlacementPreview(Private)
+  UsePrivate(Private)
+  if frame and frame:IsVisible() then
+    frame:Hide()
+  end
+  OptionsPrivate.Private.Pause()
+  OptionsPrivate.Private.SetFakeStates()
+  if not frame then
+    frame = OptionsPrivate.CreateFrame()
+    frame.buttonsScroll.frame:Show()
+    LayoutDisplayButtons()
+  end
+  placementOpen = true
+  if OptionsPrivate.Private.mouseFrame then
+    OptionsPrivate.Private.mouseFrame:OptionsOpened()
+  end
+  if OptionsPrivate.Private.personalRessourceDisplayFrame then
+    OptionsPrivate.Private.personalRessourceDisplayFrame:OptionsOpened()
+  end
+  local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
+  for id, data in pairs(db.displays) do
+    if not OptionsPrivate.Private.IsGroupType(data) then
+      OptionsPrivate.Private.EnsureRegion(id)
+      OptionsPrivate.Private.FakeStatesFor(id, true)
+    end
+  end
+  OptionsPrivate.Private.ResumeAllDynamicGroups(suspended)
+end
+
+--- Puts the auras back the way they are without the options, as closing the options does.
+function OptionsPrivate.StopPlacementPreview()
+  if placementOpen then
+    placementOpen = false
+    frame:GetScript("OnHide")(frame)
   end
 end
 
@@ -935,7 +991,7 @@ function OptionsPrivate.ShowDemo(id)
   OptionsPrivate.Private.StartDemoTimers()
 end
 
-local function LayoutDisplayButtons(msg)
+function LayoutDisplayButtons(msg)
   local total = 0;
   for _,_ in pairs(db.displays) do
     total = total + 1;
@@ -1109,6 +1165,8 @@ end
 
 function WeakAuras.ShowOptions(msg)
   local firstLoad = not(frame);
+  local firstShow = not optionsShown
+  optionsShown = true
   OptionsPrivate.Private.Pause();
   OptionsPrivate.Private.SetFakeStates()
 
@@ -1119,6 +1177,8 @@ function WeakAuras.ShowOptions(msg)
     frame.buttonsScroll.frame:Show();
 
     LayoutDisplayButtons(msg);
+  elseif firstShow and msg and msg ~= "" then
+    OptionsPrivate.SortDisplayButtons(msg)
   end
 
   if (frame:GetWidth() > GetScreenWidth()) then
@@ -1180,7 +1240,7 @@ function WeakAuras.ShowOptions(msg)
     end
   end
 
-  if firstLoad then
+  if firstShow then
     frame:ShowTip()
     for _, font in pairs(AceGUIWidgetLSMlists.font) do
       local fs = frame:CreateFontString(nil, "OVERLAY", "GameFontWhite")
@@ -1599,6 +1659,7 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
       tinsert(frame.loadedButton.childButtons, displayButtons[child.id])
     end
   end
+  frame.loadedButton:SetCount(#frame.loadedButton.childButtons)
 
   tinsert(frame.buttonsScroll.children, frame.unloadedButton);
 
@@ -1617,6 +1678,7 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
       tinsert(frame.unloadedButton.childButtons, displayButtons[child.id])
     end
   end
+  frame.unloadedButton:SetCount(#frame.unloadedButton.childButtons)
 
   for _, child in pairs(displayButtons) do
     if(not visible[child]) then
@@ -2003,17 +2065,18 @@ function OptionsPrivate.DropIndicator()
   if not indicator then
     ---@class Frame
     indicator = CreateFrame("Frame", "WeakAuras_DropIndicator")
-    indicator:SetHeight(4)
+    indicator:SetHeight(2)
     indicator:SetFrameStrata("FULLSCREEN")
 
-    local groupTexture = indicator:CreateTexture(nil, "ARTWORK")
-    groupTexture:SetBlendMode("ADD")
-    groupTexture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
+    -- Drop target of DESIGN.md: a 2 pixel brass line between rows, a 1 pixel brass border around a group.
+    local Style = OptionsPrivate.Private.Style
+    local groupTexture = CreateFrame("Frame", nil, indicator, "BackdropTemplate")
+    groupTexture:SetBackdrop({ edgeFile = Style.white, edgeSize = 1 })
+    groupTexture:SetBackdropBorderColor(Style.Color("primary"))
 
     local lineTexture = indicator:CreateTexture(nil, "ARTWORK")
-    lineTexture:SetBlendMode("ADD")
     lineTexture:SetAllPoints(indicator)
-    lineTexture:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-Tab-Highlight")
+    lineTexture:SetColorTexture(Style.Color("primary"))
 
     indicator.lineTexture = lineTexture
     indicator.groupTexture = groupTexture
@@ -2025,10 +2088,9 @@ function OptionsPrivate.DropIndicator()
       self:ClearAllPoints()
       if action == "GROUP" then
         self.groupTexture:ClearAllPoints()
-        self.groupTexture:SetVertexColor(0.4, 0.7, 1, 0.7)
         self.groupTexture:Show()
-        self.groupTexture:SetPoint("TOPLEFT", target.icon, "TOPRIGHT", 2, -1)
-        self.groupTexture:SetPoint("BOTTOMRIGHT", target.frame, "BOTTOMRIGHT", 0, 1)
+        self.groupTexture:SetPoint("TOPLEFT", target.frame, "TOPLEFT")
+        self.groupTexture:SetPoint("BOTTOMRIGHT", target.frame, "BOTTOMRIGHT")
       else
         self.groupTexture:Hide()
       end
@@ -2038,12 +2100,12 @@ function OptionsPrivate.DropIndicator()
         self.lineTexture:Show()
         self:SetPoint("BOTTOMLEFT", target.frame, "TOPLEFT", 0, -1)
         self:SetPoint("BOTTOMRIGHT", target.frame, "TOPRIGHT", 0, -1)
-        self:SetHeight(4)
+        self:SetHeight(2)
       elseif action == "AFTER" then
         self.lineTexture:Show()
         self:SetPoint("TOPLEFT", target.frame, "BOTTOMLEFT", 0, 1)
         self:SetPoint("TOPRIGHT", target.frame, "BOTTOMRIGHT", 0, 1)
-        self:SetHeight(4)
+        self:SetHeight(2)
       else
         self.lineTexture:Hide()
       end

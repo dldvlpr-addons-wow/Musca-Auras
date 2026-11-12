@@ -49,11 +49,12 @@ return Pack.Build({
     { name = "Frostbolt", aura = { 116, 205, 837, 7322, 8406, 8407, 8408, 10179, 10180, 10181, 25304 } },
     { name = "Polymorph", aura = { 118, 12824, 12825, 12826, 28272, 28271, 28270 } },
   },
-  -- Arcane Blast stacks (debuff 400573, 4 stacks, 15 s in DB2 build 70532) counted from the casts: each rank adds
-  -- one. The aura has no proc charge in that build, so no other spell spends them: they only expire.
+  -- Arcane Blast stacks (debuff 400573, 4 stacks) counted from the casts: each rank adds one. The debuff lasts 18 s
+  -- from the first cast in game (players' report; 15 s in DB2 build 70532), the next casts do not restart it. The
+  -- aura has no proc charge in that build, so no other spell spends them: they only expire.
   segments = { name = "Arcane Blast", count = 4, known = 400574, casts = {
     add = { 400574, 1239696, 1239697, 1239699, 1239700 },
-    duration = 15 } },
+    duration = 18 } },
   power = { { label = "Mana", type = 0 } },
   fiveSecondRule = { 116, 133, 5143, 2948, 2136, 122, 120, 1449, 10, 2120, 11366, 118, 400574 },
   castBar = true,

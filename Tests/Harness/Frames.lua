@@ -346,6 +346,15 @@ function Methods:SetTexture(texture, wrapHorizontal, wrapVertical, filter)
 end
 function Methods:GetTexture() return State[self].texture end
 function Methods:GetTextureFileID() return type(State[self].texture) == "number" and State[self].texture or nil end
+-- Button textures: Set<Kind>Texture creates the texture once, Get<Kind>Texture returns it.
+for _, kind in ipairs({ "Normal", "Highlight", "Pushed", "Disabled" }) do
+  local key = kind:lower() .. "Texture"
+  Methods["Set" .. kind .. "Texture"] = function(self, file)
+    State[self][key] = State[self][key] or self:CreateTexture()
+    State[self][key]:SetTexture(file)
+  end
+  Methods["Get" .. kind .. "Texture"] = function(self) return State[self][key] end
+end
 function Methods:SetAtlas(atlas) State[self].atlas = atlas return true end
 function Methods:GetAtlas() return State[self].atlas end
 function Methods:SetColorTexture(r, g, b, a) State[self].colorTexture = { r, g, b, a } end
@@ -413,6 +422,8 @@ function Methods:GetWidth() return State[self].width end
 function Methods:GetHeight() return State[self].height end
 function Methods:GetSize() return State[self].width, State[self].height end
 function Methods:GetRect() return 0, 0, State[self].width, State[self].height end
+function Methods:SetResizable(resizable) State[self].resizable = resizable end
+function Methods:IsResizable() return State[self].resizable == true end
 function Methods:GetCenter() return 500, 400 end
 function Methods:GetLeft() return 500 - State[self].width / 2 end
 function Methods:GetRight() return 500 + State[self].width / 2 end
@@ -443,6 +454,21 @@ function Methods:SetID(id) State[self].id = id end
 function Methods:IsMouseOver() return false end
 function Methods:IsMouseEnabled() return State[self].mouseEnabled end
 function Methods:EnableMouse(enabled) State[self].mouseEnabled = enabled end
+-- Protected for any frame of an addon in combat (IsProtectedFunction), restricted for the propagation.
+local function KeyboardBlocked(method)
+  if rawget(_G, "InCombatLockdown") and _G.InCombatLockdown() then
+    Frames.onForbidden("ADDON_ACTION_BLOCKED: Frame:" .. method .. "()")
+    return true
+  end
+end
+function Methods:IsKeyboardEnabled() return State[self].keyboardEnabled == true end
+function Methods:EnableKeyboard(enabled)
+  if not KeyboardBlocked("EnableKeyboard") then State[self].keyboardEnabled = enabled end
+end
+function Methods:GetPropagateKeyboardInput() return State[self].propagateKeyboard == true end
+function Methods:SetPropagateKeyboardInput(propagate)
+  if not KeyboardBlocked("SetPropagateKeyboardInput") then State[self].propagateKeyboard = propagate end
+end
 
 function Methods:SetMinMaxValues(minValue, maxValue) State[self].minValue, State[self].maxValue = minValue, maxValue end
 function Methods:GetMinMaxValues() return State[self].minValue or 0, State[self].maxValue or 1 end

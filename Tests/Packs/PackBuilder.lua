@@ -99,7 +99,8 @@ local function IdSet(ids)
 end
 
 -- Stacks counted from the player's casts, for a stacking debuff on the player that spell ID filters miss in combat:
--- each cast of add adds one stack up to max and restarts the duration, a cast of reset (optional) drops them.
+-- each cast of add adds one stack up to max, the duration runs from the first cast and is not
+-- restarted by the next ones, a cast of reset (optional) drops them.
 local function CastCountTrigger(casts, max, threshold)
   local code = [[function(allstates, event, unit, castGUID, spellID)
   if event ~= "UNIT_SPELLCAST_SUCCEEDED" or not spellID or issecretvalue and issecretvalue(spellID) then
@@ -108,10 +109,13 @@ local function CastCountTrigger(casts, max, threshold)
   local env, now = aura_env, GetTime()
   env.add, env.reset = env.add or %s, env.reset or %s
   if env.add[spellID] then
-    env.stacks = (env.expires or 0) > now and math.min((env.stacks or 0) + 1, %d) or 1
-    env.expires = now + %d
+    if (env.expires or 0) > now then
+      env.stacks = math.min((env.stacks or 0) + 1, %d)
+    else
+      env.stacks, env.expires = 1, now + %d
+    end
   elseif env.reset[spellID] then
-    env.stacks = 0
+    env.stacks, env.expires = 0, now
   else
     return false
   end
@@ -517,9 +521,10 @@ function Pack.Build(spec)
     return width, function(index) return (index - (count + 1) / 2) * (width + 3) end
   end
 
-  local segments = Group("Segments", "group", 46)
+  -- A Modern Aura Group places only aura triggers: custom cast counters sit in a fixed group.
+  local segments = Group("Segments", "group", 46, spec.segments and spec.segments.casts and "FIXED" or nil)
   if spec.segments then
-    local width = Pip(spec.segments.count)
+    local width, column = Pip(spec.segments.count)
     for count = 1, spec.segments.count do
       local trigger
       if spec.segments.casts then
@@ -535,6 +540,7 @@ function Pack.Build(spec)
         Requirements(spec.segments, { size = { width, 6 }, glow = false }))
       -- Native stack conditions only colour text: the last segment carries the "full" colour.
       if count == spec.segments.count then segment.color = FULL end
+      if spec.segments.casts then segment.xOffset, segment.yOffset = column(count), 0 end
     end
   end
 

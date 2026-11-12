@@ -135,6 +135,107 @@ local function union(table1, table2)
   return meta;
 end
 
+-- Rectangle of an aura in the units of its offsets, around its anchor point.
+local function OffsetRect(data)
+  local width, height = data.width or 0, data.height or 0
+  -- A text is sized by its region, built on demand: a multi-selection does not build it.
+  local region = data.regionType == "text" and OptionsPrivate.Private.EnsureRegion(data.id)
+  if region then
+    width, height = region.width or 0, region.height or 0
+  end
+  local selfPoint = data.selfPoint or "CENTER"
+  local left, bottom = data.xOffset or 0, data.yOffset or 0
+  if selfPoint:find("RIGHT") then
+    left = left - width
+  elseif not selfPoint:find("LEFT") then
+    left = left - width / 2
+  end
+  if selfPoint:find("TOP") then
+    bottom = bottom - height
+  elseif not selfPoint:find("BOTTOM") then
+    bottom = bottom - height / 2
+  end
+  return { left = left, bottom = bottom, right = left + width, top = bottom + height }
+end
+
+-- The auras of the multi-selection that can be aligned: at least two, none a group nor in a dynamic group, all with
+-- the same anchor, so that their offsets share one origin. nil otherwise. A unit frame, nameplate or custom anchor
+-- is resolved per aura, and a Modern Aura Group places its children itself: left out.
+local alignAnchorTypes = { SCREEN = true, UIPARENT = true, SELECTFRAME = true, MOUSE = true }
+local function AurasToAlign(data)
+  local auras, anchor = {}, nil
+  for _, childId in ipairs(data.controlledChildren) do
+    local child = WeakAuras.GetData(childId)
+    local parent = child and child.parent and WeakAuras.GetData(child.parent)
+    if not child or child.controlledChildren or not alignAnchorTypes[child.anchorFrameType or "SCREEN"]
+      or (parent and (parent.regionType == "dynamicgroup" or parent.blizzardFlow)) then
+      return nil
+    end
+    -- The anchor the engine uses (WeakAuras.lua, AnchorFrame): a frame only with SELECTFRAME, with its parenting, and
+    -- CENTER for the mouse and for a child on the screen. Hidden leftover fields do not count.
+    local anchorType = child.anchorFrameType or "SCREEN"
+    local selectFrame = anchorType == "SELECTFRAME"
+    local anchorPoint = child.anchorPoint or ""
+    if anchorType == "MOUSE" or (child.parent and anchorType == "SCREEN") then
+      anchorPoint = "CENTER"
+    end
+    local childAnchor = table.concat({ child.parent or "", anchorType, selectFrame and child.anchorFrameFrame or "",
+      selectFrame and tostring(child.anchorFrameParent ~= false) or "", anchorPoint }, "|")
+    if anchor and anchor ~= childAnchor then
+      return nil
+    end
+    anchor = childAnchor
+    auras[#auras + 1] = child
+  end
+  return #auras > 1 and auras or nil
+end
+
+local alignCommands = {
+  { "LEFT", L["Left Edges"] }, { "RIGHT", L["Right Edges"] }, { "CENTERX", L["Centers on a Column"] },
+  { "TOP", L["Top Edges"] }, { "BOTTOM", L["Bottom Edges"] }, { "CENTERY", L["Centers on a Row"] },
+  { "SPREADX", L["Distribute Horizontally"] }, { "SPREADY", L["Distribute Vertically"] },
+}
+
+-- Commands of the multi-selection that align or spread its auras, after the position settings. One step of the time
+-- machine: the auras are added in the same click.
+local function AddAlignSelection(args, data, order)
+  args["alignSelection.header"] = { type = "header", name = L["Align Selection"], order = order, hidden = false }
+  for index, command in ipairs(alignCommands) do
+    args["alignSelection." .. command[1]] = {
+      type = "execute",
+      name = command[2],
+      desc = L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."],
+      width = WeakAuras.normalWidth,
+      order = order + index / 10,
+      hidden = false,
+      disabled = function() return not AurasToAlign(data) end,
+      func = function()
+        local auras = AurasToAlign(data)
+        if not auras then
+          return
+        end
+        local rects = {}
+        for auraIndex, aura in ipairs(auras) do
+          rects[auraIndex] = OffsetRect(aura)
+        end
+        local Private = OptionsPrivate.Private
+        for auraIndex, shift in ipairs(Private.PlacementSnap.AlignShifts(rects, command[1])) do
+          local aura = auras[auraIndex]
+          if shift[1] ~= 0 or shift[2] ~= 0 then
+            Private.TimeMachine:Watch(aura)
+            aura.xOffset = (aura.xOffset or 0) + shift[1]
+            aura.yOffset = (aura.yOffset or 0) + shift[2]
+            WeakAuras.Add(aura)
+            Private.AddParents(aura)
+          end
+        end
+        WeakAuras.ClearAndUpdateOptions(data.id)
+        OptionsPrivate.ResetMoverSizer()
+      end,
+    }
+  end
+end
+
 function OptionsPrivate.GetDisplayOptions(data)
   local id = data.id
 
@@ -364,6 +465,11 @@ function OptionsPrivate.GetDisplayOptions(data)
     end
     region.hidden = function(info, ...) return hiddenAll(data, info, ...); end;
     region.disabled = function(info, ...) return disabledAll(data, info, ...); end;
+    for _, options in pairs(allOptions) do
+      if type(data.id) == "table" and options.__title == L["Position and Size Settings"] then
+        AddAlignSelection(region.args, data, options.__order * 1000 + 900)
+      end
+    end
     return region
   end
 

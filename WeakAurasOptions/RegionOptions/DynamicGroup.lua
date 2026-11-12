@@ -87,6 +87,18 @@ local gridSelfPoints = {
   VH = "CENTER",
 }
 
+-- The point a dynamic group is anchored by for its grow and align, for the placement panel of Musca.
+function OptionsPrivate.DynamicGroupSelfPoint(data)
+  if data.grow == "GRID" then
+    return gridSelfPoints[data.gridType]
+  end
+  local selfPoint = selfPoints[data.grow] or selfPoints.default
+  if type(selfPoint) == "function" then
+    selfPoint = selfPoint(data)
+  end
+  return selfPoint
+end
+
 local function createOptions(id, data)
   local options = {
     __title = L["Dynamic Group Settings"],

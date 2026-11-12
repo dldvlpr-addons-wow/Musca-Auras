@@ -370,6 +370,30 @@ return function(test)
   Same(swipe.type, "color", "swipe type")
   Same(swipe.hasAlpha, true, "swipe alpha")
   Same(swipe.width, 1.3, "swipe width")
+
+  -- Placement 15: Align Selection of a multi-selection. A (CENTER) covers 0..20, B (TOPLEFT) 50..60 and 10..40.
+  private.regionOptions.icon.create = function()
+    return { icon = { __order = 1 }, position = { __order = 2, __title = "Position and Size Settings" } }
+  end
+  groupChildren.AlignA, groupChildren.AlignB = DisplayData("aura2", "AlignA"), DisplayData("aura2", "AlignB")
+  local alignA, alignB = groupChildren.AlignA, groupChildren.AlignB
+  alignA.width, alignA.height, alignA.selfPoint, alignA.xOffset, alignA.yOffset = 20, 20, "CENTER", 10, 10
+  alignB.width, alignB.height, alignB.selfPoint, alignB.xOffset, alignB.yOffset = 10, 30, "TOPLEFT", 50, 40
+  local selection = { id = { "tempGroup" }, uid = "tempGroup", regionType = "group",
+    controlledChildren = { "AlignA", "AlignB" } }
+  local alignArgs = optionsPrivate.GetDisplayOptions(selection).args
+  Same(alignArgs["alignSelection.header"] and alignArgs["alignSelection.header"].name, "Align Selection",
+    "align header after the position settings")
+  Same(alignArgs["alignSelection.LEFT"].disabled(), false, "two auras on the screen: enabled")
+  Take()
+  alignArgs["alignSelection.LEFT"].func()
+  Same(alignA.xOffset .. "," .. alignB.xOffset, "10,0", "left edges on the leftmost, in units of each anchor point")
+  assert(Take():find("add:AlignB", 1, true), "moved aura added")
+  alignArgs["alignSelection.TOP"].func()
+  Same(alignA.yOffset .. "," .. alignB.yOffset, "30,40", "top edges on the highest")
+  alignB.anchorFrameType = "NAMEPLATE"
+  Same(alignArgs["alignSelection.LEFT"].disabled(), true, "anchor resolved per aura: disabled")
+  Take()
   WeakAuras.GetData = realGetDataForGroup
   private.regionOptions, private.subRegionOptions = realRegionOptions, realSubRegionOptions
 

@@ -5,7 +5,7 @@
 Séries :
 - « Packs » : compléments des packs de classe (8) ;
 - « Dette » : dette technique et bugs (23) ;
-- « Placement » : grille et magnétisme (7) ;
+- « Placement » : grille et magnétisme (15, dont 8 ajoutés le 2026-11-10) ;
 - « Rebranding » : interface de la 1.18 (9) ;
 - « Accueil » : accueil du nouveau joueur (4) ;
 - « Populaire » : demandes populaires de WeakAuras (10).
@@ -26,7 +26,7 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 |---|---|---|
 | 1.15 | Packs (gros du travail fait, non commité) | Packs 2, 3, 4, 6, 8, 1 |
 | 1.16 | Stabilisation | Dette 2, 9, 10 à 23, Packs 5, 7, Dette 6, 8 |
-| 1.17 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6 |
+| 1.17 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6, puis 9, 8, 10 à 15 |
 | 1.18 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 9, 8, 4 |
 | 1.19 | Accueil et commandes | Accueil 2, 1, 3, 4, Populaire 1, 10 |
 | 1.20 | Fiabilité, chargement et import | Dette 3, 5, 4, Populaire 5, 3, 2 |
@@ -732,7 +732,7 @@ Dette 7 passe d'abord : les tickets de placement ajoutent des scénarios. Dette 
 
 Deux outils placent aujourd'hui les auras, sans logique commune :
 
-- `WeakAuras/EditModePlacement.lua` : mode édition Blizzard. Il place les auras de premier niveau ancrées à l'écran et les cale sur la grille Blizzard, seulement au lâcher.
+- `WeakAuras/EditModePlacement.lua` : mode édition Blizzard. Il place les auras de premier niveau ancrées à l'écran et les cale sur la grille Blizzard au lâcher (un fantôme montre la place calée pendant le glisser depuis Placement 3).
 - `WeakAurasOptions/OptionsFrames/MoverSizer.lua` : déplacement dans `/wa`. Il cale sur les bords des autres auras et sur le centre de l'écran, sans grille régulière.
 
 Contraintes API (source Forever 1.60.1.70532) :
@@ -740,6 +740,68 @@ Contraintes API (source Forever 1.60.1.70532) :
 - Aucune API publique ne permet d'inscrire une frame d'addon dans le mode édition.
 - `EditModeMagnetismManager`, `EditModeGridMixin` et `ProcessMovementKey` sont des internes Blizzard. Les appeler ou les hooker expose au taint : recopier leur logique.
 - Lectures sans risque : `EditModeManagerFrame:IsEditModeActive()`, callbacks `EditMode.Enter` et `EditMode.Exit`, `EditModeManagerFrame.Grid:IsShown()`, `EditModeManagerFrame.Grid.gridSpacing` (défaut 100, de 20 à 300).
+
+### Déjà fait
+
+Entrée du 2026-11-08 de `CHANGES.md`. Banc headless vert (125 scénarios, 0 échec). Rien n'est testé en jeu.
+
+- Dette 7 : `Tests/Harness/Assertions.lua` (`Same`, `Near`, seuls helpers identiques), filtre de `run.lua` par numéro
+  ou par nom, sans les packs. Aucun scénario migré : migration au fil des modifications.
+- Dette 1 : `parentData.regionType == "dynamicgroup"`, coin fixe opposé au bord tiré (calage juste sur les bords
+  droit et haut). À vérifier en jeu : redimensionner un enfant de groupe dynamique dans `/wa`, puis contrôler ses
+  offsets.
+- Placement 2 : arrondi à l'unité au lâcher (`OnDragStop`, `doneMoving`) et en fin de redimensionnement
+  (`doneSizing` : largeur ou hauteur et offsets modifiés, sur les axes que le bord tiré déplace), sauf sur un axe calé sur une ligne de grille ou
+  d'alignement, qui garde sa valeur exacte. Les flèches de `moveOnePxl` arrondissent l'offset puis avancent d'une
+  unité. Le banc gagne `math.round` (`Round = math.round` dans `MathUtil.lua`), jusque-là remplacé par un stub qui
+  rendait 0, et charge `MoverSizer.lua` (scénario 96). À vérifier en jeu : glisser une aura dans `/wa` puis
+  cliquer sur les flèches ; redimensionner une aura ; caler une aura de largeur impaire sur une ligne ; arrondi
+  des demis par le client (`/dump Round(0.5), Round(1.5), Round(-0.5), Round(-1.5)`).
+- Placement 1 : lignes des bords d'écran avec l'aimantation, et bouton « Grille » (`gridAlign`, désactivé par défaut)
+  qui ajoute les lignes de la grille du mode édition, centrées sur l'écran, au pas de
+  `EditModeManagerFrame.Grid.gridSpacing` (100 sans grille du client). Pas de réglage propre du pas. Les lignes
+  restent tirées du pool existant, seulement quand elles sont mises en évidence. À vérifier en jeu : activer
+  « Grille », glisser et redimensionner une aura près d'une ligne de grille et d'un bord d'écran, comparer avec la
+  grille du mode édition ; aspect de l'icône du bouton (`square_border_1px`) ; barre d'outils à la largeur
+  minimale de la fenêtre (750) en frFR, la case du CDM ne doit pas déborder.
+- Placement 3 : boîte fantôme jaune (`box.snapPreview`) à la position calée pendant le glisser dans le mode édition,
+  par un `OnUpdate` posé au début du glisser et retiré au lâcher (`PreviewSnap`, `StopPreview`). Cachée quand aucun
+  axe n'est près d'une ligne. À vérifier en jeu : glisser une aura près d'une ligne de la grille du mode édition,
+  le fantôme doit montrer la place du lâcher ; couleur et lisibilité du fantôme.
+- Placement 5 : flèches du clavier, 1 unité (10 avec Maj), sur la boîte cliquée en dernier dans le mode édition et
+  sur l'aura du déplaceur `/wa` (pas avec « Verrouiller les positions »). L'axe non déplacé garde sa valeur. Clavier
+  rendu au jeu en combat. Sélection suivie au renommage, perdue à la suppression et au clic sur un cadre Blizzard
+  (`hooksecurefunc` sur `SelectSystem`, sans appel à `ClearSelectedSystem`, pour éviter le taint). À vérifier en
+  jeu : flèches avec et sans Maj dans les deux outils ; entrée en combat touche tenue ; saisie dans un champ de
+  texte du dialogue Blizzard pendant qu'une aura est sélectionnée ; clic sur un cadre Blizzard puis flèches.
+- Placement 4 : moteur de calage commun `WeakAuras/PlacementSnap.lua`, utilisé par le déplaceur `/wa` et le mode
+  édition. Le mode édition cale aussi sur les bords et centres des autres boîtes et sur les bords d'écran, dès que
+  l'option d'aimantation du mode édition est active, grille affichée ou non. Ligne d'aura prioritaire sur une ligne
+  de grille plus proche, Ctrl pour les centres, Maj pour ne pas caler. Distance stricte (< 8). À vérifier en jeu :
+  dans le mode édition, glisser une aura près du bord d'une autre, avec et sans Ctrl, avec Maj, grille cachée puis
+  affichée ; même geste dans `/wa` avec « Aligner magnétiquement » et « Grille ».
+- Placement 6 : enfants de groupe simple (groupes imbriqués compris) placables dans le mode édition, boîte au-dessus
+  de celle du groupe ; Alt sur la boîte d'un enfant sélectionne et déplace son groupe, que ses enfants peuvent couvrir.
+  Enfants de groupe dynamique et de Modern Aura Group toujours exclus. Pas de calage d'une boîte sur son groupe ni ses
+  enfants. Offsets relatifs au groupe, groupes ajoutés de nouveau au lâcher pour recalculer leur boîte. À vérifier en
+  jeu : glisser un enfant d'un groupe simple, la boîte du groupe doit suivre ; groupe mis à l'échelle ; annuler dans
+  `/wa`, la boîte du groupe doit revenir ; « Revert All Changes » ; Alt + glisser sur un enfant ; enfant d'un groupe
+  dynamique ou d'un Modern Aura Group sans boîte.
+- Suivis de Placement 5 et 6 : l'annulation et le rétablissement ajoutent de nouveau les groupes de l'aura
+  (`TimeMachine`, effet `add`), le déplaceur et la bordure d'un groupe dans `/wa` suivent ; Alt remonte d'un niveau
+  par clic dans des groupes imbriqués, puis revient au premier groupe ; aucune région créée pour un enfant de groupe
+  dynamique à l'entrée du mode édition ; flèches de `/wa` rendues au jeu en multi-sélection, pendant le glisser et
+  pour un enfant de groupe dynamique. À vérifier en jeu : dans `/wa`, déplacer un enfant de groupe, annuler, la
+  bordure du groupe doit revenir ; Alt + clics successifs sur un enfant de groupes imbriqués ; multi-sélection puis
+  flèches (la caméra ou le personnage doit répondre) ; taint après un clic sur un cadre Blizzard (`/console
+  taintLog 1`).
+- Grille aimantée visible dans `/wa` : avec « Grille », la grille est dessinée sur tout l'écran tant que `/wa` est
+  ouvert, lignes centrales plus marquées, redessinée au changement de taille de l'écran. Pas propre `gridSpacing`
+  (64 par défaut, curseur de 8 à 128 au clic droit sur « Grille »), qui remplace le pas de la grille du mode édition
+  dans `/wa` ; pas enregistré hors bornes ramené entre 8 et 128. Le mode édition garde la grille Blizzard, et la
+  grille de `/wa` est cachée tant que le mode édition est ouvert. À vérifier en jeu : clic droit sur « Grille », bouger le
+  curseur, la grille doit suivre ; aura glissée près d'une ligne ; fermer `/wa`, la grille doit disparaître ;
+  lisibilité des lignes sur un décor clair ; curseur lisible au-dessus de la liste des auras.
 
 ### Ordre
 
@@ -925,6 +987,187 @@ Le mode édition n'aligne ni sur les autres auras, ni sur les bords d'écran. Le
 - `WeakAuras/EditModePlacement.lua`
 - `WeakAuras/RegionTypes/Group.lua`
 - `Tests/Scenarios/68_EditModePlacement.lua`
+
+---
+
+### Suite du placement (2026-11-10)
+
+Issue de `/evolutions` sur la feature placement, après Placement 1 à 6 et les guides d'alignement du mode édition. Ordre : bug d'abord (Placement 9), puis les S, puis les M, puis le L.
+
+1. Placement 9 : Bords des petits groupes dans le mode édition
+2. Placement 8 : Ligne du milieu de l'écran dans le mode édition
+3. Placement 10 : Même seuil, même Maj, même centre dans les deux outils
+4. Placement 11 : Coordonnées pendant le glisser dans le mode édition
+5. Placement 12 : Aura de référence mise en évidence
+6. Placement 13 : Guides bornés et espacement égal
+7. Placement 14 : Redimensionnement aimanté dans le mode édition
+8. Placement 15 : Aligner et répartir plusieurs auras dans `/wa`
+
+Écartés : lignes vers les cadres Blizzard (la liste des cadres du mode édition est le champ interne `registeredSystemFrames`, risque de taint ; `GetRect` peut renvoyer nil ou une valeur secrète), aimantation des enfants de groupe dynamique (le groupe calcule leur position), seuil réglable (une option de plus pour peu de gain).
+
+Dette notée : `ShiftOfSnap` reconstruit et trie toutes les lignes à chaque `OnUpdate` du glisser ; `Candidates` écrit `line.delta` dans les lignes ; `MoverSizer.lua:1472` divise par `GetScale()` au lieu de l'échelle effective ; aucun test avec une échelle différente de 1.
+
+---
+
+### Placement 9 : Bords des petits groupes dans le mode édition
+
+**Pourquoi.** `CoverRegion` (`EditModePlacement.lua:53`) donne à la boîte d'un groupe au moins 16 de côté. Les lignes d'aimantation viennent de la boîte : un groupe plus petit propose des bords qui ne sont pas les siens.
+
+**Valeur.** Une aura se cale sur le vrai bord du groupe.
+
+**À faire.**
+- Garder la boîte cliquable à 16 au moins.
+- Tirer les lignes d'aimantation du vrai rectangle du groupe.
+
+**Coût.** S.
+
+**Risque.** Faible.
+
+**Fichiers.**
+- `WeakAuras/EditModePlacement.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`
+
+---
+
+### Placement 8 : Ligne du milieu de l'écran dans le mode édition
+
+**Pourquoi.** Sans grille, `PlacementSnap.ScreenLines` (`PlacementSnap.lua:26`) ne rend que les deux bords de l'écran. Grille Blizzard cachée, rien ne passe au centre de l'écran en mode édition. `/wa` a cette ligne (`CreateMiddleLines`, `MoverSizer.lua:589`).
+
+**Valeur.** Centrer une aura sans afficher la grille.
+
+**À faire.** Ajouter le milieu de l'écran aux lignes de `ScreenLines`.
+
+**Coût.** S.
+
+**Risque.** Faible. `/wa` passe aussi par `ScreenLines` : vérifier que le milieu n'y est pas compté deux fois.
+
+**Fichiers.**
+- `WeakAuras/PlacementSnap.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`, `97_PlacementSnap.lua`
+
+---
+
+### Placement 10 : Même seuil, même Maj, même centre dans les deux outils
+
+**Pourquoi.** Seuil de 8 en mode édition (`EditModePlacement.lua:15`), de 10 dans `/wa` (`MAGNETIC_ALIGNMENT`, `MoverSizer.lua:27`). Maj coupe l'aimantation en mode édition et l'inverse dans `/wa`. Le centre de l'aura s'aimante aux lignes d'écran sans Ctrl en mode édition, pas dans `/wa`.
+
+**Valeur.** Un même geste donne le même résultat dans les deux outils.
+
+**À faire.**
+- Une constante de seuil dans `PlacementSnap`, lue par les deux outils.
+- Aligner le centre de l'aura sur les lignes d'écran et de grille dans `/wa`, comme en mode édition.
+- Maj : garder l'inversion de `/wa` (option « Aligner magnétiquement » désactivée, Maj l'active) ; en mode édition, l'option est celle de Blizzard, Maj y coupe.
+
+**Coût.** S.
+
+**Risque.** Habitude des joueurs changée.
+
+**Fichiers.**
+- `WeakAuras/PlacementSnap.lua`
+- `WeakAuras/EditModePlacement.lua`
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`, `96_MoverSizerRounding.lua`, `97_PlacementSnap.lua`
+
+---
+
+### Placement 11 : Coordonnées pendant le glisser dans le mode édition
+
+**Pourquoi.** `/wa` affiche les offsets pendant le glisser (`MoverSizer.lua:1472`). La boîte du mode édition n'affiche que le nom de l'aura (`EditModePlacement.lua:380`).
+
+**Valeur.** Placer au pixel près sans ouvrir `/wa`.
+
+**À faire.** Pendant le glisser, afficher sur la boîte les offsets que l'aura aura au lâcher (position calée comprise), puis revenir au nom.
+
+**Coût.** S.
+
+**Risque.** Faible.
+
+**Fichiers.**
+- `WeakAuras/EditModePlacement.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`
+
+---
+
+### Placement 12 : Aura de référence mise en évidence
+
+**Pourquoi.** Aucun des deux outils ne montre sur quelle aura on s'aimante. `/wa` surligne la ligne (`SelectLines`, `MoverSizer.lua:832`), pas l'aura. `AddAuraLines` reçoit déjà l'id de l'aura.
+
+**Valeur.** Comprendre tout de suite un calage inattendu.
+
+**À faire.**
+- Garder l'id de l'aura dans la ligne retenue.
+- Mode édition : surligner la boîte de cette aura pendant le glisser.
+
+**Coût.** S à M.
+
+**Risque.** Faible.
+
+**Fichiers.**
+- `WeakAuras/PlacementSnap.lua`
+- `WeakAuras/EditModePlacement.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`
+
+---
+
+### Placement 13 : Guides bornés et espacement égal
+
+**Pourquoi.** `ShowGuide` (`EditModePlacement.lua:244`) trace la ligne sur tout l'écran, alors que la ligne d'une aura porte sa portée (`pos1`, `pos2`). Aucun guide d'espacement égal entre auras.
+
+**Valeur.** Moins de bruit à l'écran. Rangées d'icônes à intervalles réguliers.
+
+**À faire.**
+- Guide d'une ligne d'aura borné entre l'aura dragée et l'aura de référence.
+- Lignes d'espacement égal : à côté d'une aura voisine, la position qui reproduit l'écart entre deux auras déjà alignées.
+
+**Coût.** M.
+
+**Risque.** Nouvelles lignes qui l'emportent à tort sur une ligne de bord.
+
+**Fichiers.**
+- `WeakAuras/PlacementSnap.lua`
+- `WeakAuras/EditModePlacement.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`, `97_PlacementSnap.lua`
+
+---
+
+### Placement 14 : Redimensionnement aimanté dans le mode édition
+
+**Pourquoi.** Le mode édition ne fait que déplacer (`StartMoving`, `EditModePlacement.lua:286`). `/wa` redimensionne avec aimantation (`doneSizing`). `SetResizable`, `SetResizeBounds` et `StartSizing(point)` existent dans Forever 1.60.1.70790, sans restriction sur une frame d'addon non protégée.
+
+**Valeur.** Régler la taille sans quitter le mode édition.
+
+**À faire.**
+- Poignée sur le coin bas droit de la boîte sélectionnée, auras à `width` et `height` seulement (pas les groupes).
+- Au lâcher : bord tiré calé sur la ligne la plus proche, taille convertie à l'échelle de l'aura et arrondie.
+
+**Coût.** M.
+
+**Risque.** Conversion d'échelle. Auras dont la taille vient d'ailleurs (texte, modèle).
+
+**Fichiers.**
+- `WeakAuras/EditModePlacement.lua`
+- `Tests/Scenarios/68_EditModePlacement.lua`
+
+---
+
+### Placement 15 : Aligner et répartir plusieurs auras dans `/wa`
+
+**Pourquoi.** En multi-sélection, le déplaceur `/wa` ne bouge que la première aura (`MoverSizer.lua:1197-1204`). Aucune commande d'alignement ni de répartition.
+
+**Valeur.** Aligner une barre de 6 icônes en un clic.
+
+**À faire.**
+- Commandes sur la multi-sélection : aligner à gauche, à droite, en haut, en bas, centres ; répartir horizontalement et verticalement.
+- Annulables par `TimeMachine`.
+- Auras de même ancrage seulement.
+
+**Coût.** L.
+
+**Risque.** Ancrages mixtes. Groupes dynamiques exclus.
+
+**Fichiers.**
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua` ou `OptionsFrame.lua`
+- Nouveau scénario dans `Tests/Scenarios/`
 
 ---
 

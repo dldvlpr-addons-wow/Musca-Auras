@@ -62,6 +62,154 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-12
+
+Not yet tested in game.
+
+### Added
+- `WeakAuras/WeakAuras.lua`: popup `WEAKAURAS_WHATS_NEW`, shown once at the first login after the update
+  (`db.whatsNewSeen` against `WHATS_NEW_VERSION`), presents the placement mode. Its Unlock button calls
+  `Private.StartPlacementMode`; closing it shows the class pack notice when it is due. The first-run disclaimer marks
+  it as seen. Strings in `WeakAuras/Locales/enUS.lua` and `frFR.lua`.
+- `GUIDE.md`: "Placing your auras" in section 2 and `/wa unlock` in the commands. `TUTORIAL.md`: "Place your auras on
+  the screen" in section 1, `WeakAuras/ForeverTutorial.lua` regenerated, strings in `WeakAuras/Locales/enUS.lua` and
+  `frFR.lua`.
+
+## 2026-11-11
+
+Not yet tested in game. Headless test bench: 128 scenarios, 0 failed.
+
+### Added
+- `WeakAuras/AnchorLinks.lua` (new) and `WeakAurasOptions/OptionsFrames/AnchorLinker.lua` (new), called at the end of
+  `ConstructMoverSizer` in `WeakAurasOptions/OptionsFrames/MoverSizer.lua`: a Link button under the `/wa` mover
+  anchors the aura or group to a side or a corner of another aura, group or game frame (player, target, action bars,
+  Cooldown Viewer...), by position only (`anchorFrameType` SELECTFRAME, `anchorFrameParent` false). The aura stays in
+  place: the offsets are captured. A link that would make a loop is refused. Unlink anchors it back to its group or
+  to the screen, in place too. One undo step each. Strings in all `WeakAurasOptions/Locales` files, French in
+  `frFR.lua`. Test in `Tests/Scenarios/98_AnchorLinks.lua`.
+- `WeakAuras/EditModePlacement.lua`: the boxes of the Edit Mode get a dark background, a 1 px border and a centred
+  name; the selected box has a brass border, the snap reference a frost border. An Anchor link, shown on
+  hover, then a click on another aura opens a menu of the 4 sides and 4 corners (and Remove Anchor when the aura is
+  already linked); the aura follows that aura in place. The auras that follow the source are refused in red. Revert
+  All Changes also restores the anchor fields. While a linked box or the `/wa` mover is hovered or dragged, the
+  aura it follows gets a light blue frame, with a dot on each point of the link. The `/wa` Link tool uses the same menu instead of the 9 points.
+  Shared code in `WeakAuras/AnchorLinks.lua` (`sides`, `LinkInPlace`, `UnlinkInPlace`, `ShowMenu`, `CreateMarker`). Strings in
+  `WeakAuras/Locales/enUS.lua` and `frFR.lua`. Tests in `Tests/Scenarios/68_EditModePlacement.lua` and
+  `98_AnchorLinks.lua`.
+- `/wa unlock` (`WeakAuras/WeakAuras.lua`): placement mode, refused in combat. New
+  `WeakAurasOptions/OptionsFrames/PlacementMode.lua`: the screen darkened under a 32 px grid, a bar on top with Grid,
+  Snap, Revert, Quit, Save and quit. Every aura gets a box, loaded or not, except the children of a dynamic group,
+  through the boxes of the Edit Mode with another host (`Private.PlacementBoxes` in `WeakAuras/EditModePlacement.lua`).
+  New `WeakAurasOptions/OptionsFrames/PlacementPanel.lua`: X/Y, size, the aura followed (Anchor to..., Remove
+  Anchor), and for a dynamic group its grow, align and space, typed in. Escape closes the anchor menu, the link, the
+  selection, then asks to keep the changes (Save and quit, Cancel, Discard). Combat suspends the mode, which comes
+  back after it with its changes. `/wa` and the Edit Mode of Blizzard close it with its changes kept. Revert also
+  restores grow, align and space. Strings in `WeakAuras/Locales/enUS.lua` and `frFR.lua`. Test in
+  `Tests/Scenarios/99_PlacementMode.lua`.
+- Placement of nested groups (`/wa unlock` and the Edit Mode, `WeakAuras/EditModePlacement.lua`): a left click
+  inside the selected group keeps it, so a drag from any of its children moves the whole group; let go without a
+  drag, it selects one level lower (group, subgroup, aura). The selected box gets a brass outline above the boxes of
+  its children, and lights up with the mouse over one of them. The panel
+  (`WeakAurasOptions/OptionsFrames/PlacementPanel.lua`) lists the groups of the selected aura from the top one, each
+  selectable, and for a group with boxes in it a hint of the drag and the click. Alt click unchanged. Strings in
+  `WeakAuras/Locales/enUS.lua` and `frFR.lua`. Tests in
+  `Tests/Scenarios/68_EditModePlacement.lua` and `99_PlacementMode.lua`.
+- Toolbar of `/wa` (`WeakAurasOptions/OptionsFrames/OptionsFrame.lua`): Unlock becomes the primary button of the
+  window, brass with a crosshair, first of the toggles. Grid and Unused Auras are drawn with flat bars, Unused Auras
+  red under the mouse; Undo, Redo, Lock Positions and Replace show only the drawn part of their texture, larger.
+  `WeakAurasToolbarButton` gets `SetIconCoords`, `SetGlyph` and `SetDanger`. In the list, group icon 14 px, chevrons
+  10 px, arrows of the group order wider to click. French strings for Loaded/Standby, Premade Auras, Find Auras,
+  Thanks, Empty Base Region, Stop Motion, Placement Mode and two descriptions. `DESIGN.md` amended.
+- New aura panels of `/wa`: section titles in the title font, secondary color, capitals in English
+  (`PaintSectionTitle` in `OptionsFrame.lua`); the buttons of `WeakAurasNewButton` get a 34 px icon well, a light
+  veil under the mouse and the text styles of `DESIGN.md`. Thin scroll bars (`Style.SkinScrollBar`, no arrows, 6 px
+  thumb) on the aura list and the New aura and Packs panels, given back to the look of the game when AceGUI
+  releases the widget (`Style.UnskinScrollBar`).
+- New `WeakAuras/Style.lua` (`Private.Style`, in `WeakAuras/WeakAuras.toc`): the colors, fonts (Fira), spaces and
+  durations of `DESIGN.md`, with buttons, check boxes and fields built from them. The placement mode, its panel, the
+  boxes of the Edit Mode, the anchor menu and link marker use it: brass on graphite, square corners, 1 px borders.
+  `/wa unlock` opens with an entrance of 1.15 s (veil, the Musca emblem inside four closing marks, then grid and
+  bar); a newly selected box pulses twice. Test colors in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/EditModePlacement.lua`: a right click on a box of `/wa unlock` or of the Edit Mode opens a menu: Show
+  always, in combat or out of combat (load "In Combat"), Disable or Enable (load "Never", the box dimmed), Edit in
+  /wa. Applied to every aura of a group, kept for Revert and Discard. The menu rows come from the new
+  `AnchorLinks.ShowChoices` in `WeakAuras/AnchorLinks.lua`. Strings in `WeakAuras/Locales/enUS.lua` and `frFR.lua`.
+  Test in `Tests/Scenarios/99_PlacementMode.lua`.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the /wa window takes the colors of `WeakAuras/Style.lua`: dark
+  frame with a shadow, title bar with the logo, the version and a brass rule, drawn close and reduce buttons,
+  secondary Guide button, toolbar and footer bands, search field with a hint and a clear button, link popups of the
+  footer, corner grip. The window rises and fades in on opening. New token `shadow` in `WeakAuras/Style.lua`.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: an Unlock button in the toolbar of /wa opens the placement mode
+  (/wa unlock). Strings in `WeakAurasOptions/Locales/enUS.lua` and `frFR.lua`.
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasToolbarButton.lua` (version 8): the toolbar buttons take the
+  colors of `WeakAuras/Style.lua`: no fill, raised fill under the mouse, brass icon and line under it while a toggle is
+  on, dimmed when disabled, width measured again once shown. In `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, the
+  buttons are 24 pixels high, in groups split by a rule; Undo, Redo, Lock Positions, Magnetically Align and Grid show
+  their icon only, with a tooltip.
+- New `WeakAurasOptions/AceGUI-Widgets/AceGUIContainer-WeakAurasTabGroup.lua` (listed in
+  `WeakAurasOptions/WeakAurasOptions.toc`), based on the TabGroup container of AceGUI-3.0: the tabs of the options of an
+  aura are text on a band, the selected one on the surface with a brass line under it. In
+  `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, the options use it; the aura list and the New and Packs screens are
+  drawn as flat blocks; the footer is 22 pixels high with 14 pixel icons; Hide Blizzard's CDM is a check box of
+  `WeakAuras/Style.lua`.
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua` (version 61): 26 pixel icons, raised fill
+  under the mouse, selection fill and brass bar on the left when picked, children of a group indented by 12 pixels with
+  a rule, names of auras not loaded in the quiet color. `AceGUIWidget-WeakAurasLoadedHeaderButton.lua` (version 23):
+  22 pixel band, title font in capitals. In `WeakAurasOptions/WeakAurasOptions.lua`, the drop target is a 2 pixel brass
+  line.
+- `AceGUIWidget-WeakAurasDisplayButton.lua` (version 62) and `AceGUIWidget-WeakAurasLoadedHeaderButton.lua` (version
+  24): no fill at rest, flat chevrons, eye and group arrows of `WeakAuras/Media/Textures` tinted by `WeakAuras/Style.lua`
+  (`NewIcon`, `NewEye`), statuses as 6 pixel colored squares, disabled rows with their name dimmed, the number of auras
+  on the section headers. In `WeakAurasOptions/WeakAurasOptions.lua`, a group targeted by a drop gets a 1 pixel brass
+  border. In `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, the CDM check box shows its label.
+  `WeakAurasOptions/OptionsFrames/IconPicker.lua` is a flat block. Thumbnails of
+  `WeakAurasOptions/RegionOptions/ProgressTexture.lua`, `StopMotion.lua`, `Text.lua` and `Texture.lua` default to 26
+  pixels.
+
+### Fixed
+- `WeakAurasOptions/ClassPacks.lua` (Mage pack, built by `Tests/Packs/PackBuilder.lua`): the Arcane Blast segments
+  run 18 s from the first cast; the next casts add a stack without restarting the timer. Test in
+  `Tests/Scenarios/89_ArcaneBlastStacks.lua`.
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`: a click to move an aura in /wa no longer throws it, with its
+  group, to the bottom left of the screen. The move waits for the rect of the region re-anchored by the reset of
+  its animation; the alignment lines skip an update without a center, and drop the snap of the previous move.
+  A sizing waits the same way. The arrow buttons no longer move an aura with Lock Positions. Test in
+  `Tests/Scenarios/96_MoverSizerRounding.lua`.
+- `WeakAuras/EditModePlacement.lua`, `WeakAuras/WeakAuras.lua`: a box of the Edit Mode or /wa unlock, and the mover
+  of the mouse anchor, are no longer dragged or sized from the bottom left of the screen before their rect is laid
+  out. Test in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/WeakAuras.lua`: `CLASS_PACK_VERSION` is "1.17.0", so the class packs notice shows again for the Mage
+  pack change above.
+
+## 2026-11-10
+
+Not yet tested in game. Headless test bench: 126 scenarios, 0 failed.
+
+### Changed
+- `WeakAuras/EditModePlacement.lua`: the boxes of small groups snap on the real edges of the group, not on the 16
+  wide minimum box (Placement 9). The middle lines of the screen are snap targets in Edit Mode too (Placement 8).
+- `WeakAuras/PlacementSnap.lua` (`PlacementSnap.snapDistance = 10`), `WeakAuras/EditModePlacement.lua` and
+  `WeakAurasOptions/OptionsFrames/MoverSizer.lua`: the same snap distance, the same Shift (no snap) and the same Ctrl
+  (centers only) in `/wa` and in Edit Mode (Placement 10).
+- `WeakAuras/EditModePlacement.lua` (`DropOffsets`): the offsets the aura will get are shown next to the box while it
+  is dragged (Placement 11). The aura a guide comes from is outlined in yellow (`ColorBoxes`, Placement 12).
+- `WeakAuras/PlacementSnap.lua` (`AddSpacingLines`): two auras in a row or a column add a line at the same gap after
+  and before them, so a third aura repeats the spacing. Such a line only snaps the edge of its side, and its two
+  references count once in `Score`, so an aura edge in reach still wins. Guides only cover the span of the auras
+  they come from (Placement 13).
+- `WeakAuras/EditModePlacement.lua` (`DropSize`, `PreviewSize`, `OnSizerDown`, `OnSizerUp`): the selected aura has a
+  handle at its bottom right corner in Edit Mode. Dragging it resizes the aura, the top left corner fixed, the right
+  and bottom edges snapping like a move. Width and height are rounded except on a snapped axis; one undo step
+  restores them. Groups and auras without a width and height have no handle (Placement 14).
+- `WeakAuras/PlacementSnap.lua` (`AlignShifts`) and `WeakAurasOptions/DisplayOptions.lua` (`AddAlignSelection`):
+  with several auras selected in `/wa`, an Align Selection block in Position and Size Settings aligns their left,
+  right, top or bottom edges or their centers, or spreads them with equal gaps. It needs at least two auras with the
+  same parent and anchor on the screen, UIParent, a chosen frame or the mouse, no group and no child of a dynamic
+  or Modern Aura Group. One undo step restores the moves (Placement 15).
+  Strings in `WeakAurasOptions/Locales/enUS.lua` and `frFR.lua`.
+- Tests in `Tests/Scenarios/36_OptionsBlocksContract.lua`, `Tests/Scenarios/68_EditModePlacement.lua`,
+  `Tests/Scenarios/96_MoverSizerRounding.lua` and `Tests/Scenarios/97_PlacementSnap.lua`.
+
 ## 2026-11-09
 
 Tested in game: Proc Glow, and the custom options panel with options and groups without a name. Headless test bench: 124 scenarios, 0 failed.
@@ -77,6 +225,83 @@ Tested in game: Proc Glow, and the custom options panel with options and groups 
   the custom options panel. `nameUser`, the collapse button of a group, the collapse header in author mode and
   the "Start of %s" / "End of %s" labels use an empty name instead of `nil`. A header with "Use Name" and no text
   no longer raises an error when the custom options open.
+
+## 2026-11-08
+
+Not yet tested in game. Headless test bench: 126 scenarios, 0 failed.
+
+### Fixed
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`, `SizingSetData`: resizing a child of a dynamic group in `/wa`
+  changes its width and height only, without writing `xOffset`/`yOffset` (the test compared the parent data table
+  with the string `"dynamicgroup"`, so it was always false). The fixed corner is the one opposite the dragged edge,
+  so that the magnetic alignment keeps its sign on the right and top edges.
+
+### Changed
+- `WeakAuras/EditModePlacement.lua` (`OnDragStop`) and `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
+  (`doneMoving`, `doneSizing`, `moveBy`): X and Y offsets are rounded to whole units when an aura is dropped.
+  At the end of a resize, the size and the offsets the resize changed are rounded too, on the axes the dragged edge moves. An axis stuck to
+  a grid line or an alignment line keeps its exact values. The arrow buttons around the mover round the offset, then
+  move it by one unit, instead of one physical pixel, which is under half a unit on large screens. Tests in
+  `Tests/Scenarios/68_EditModePlacement.lua` (Edit Mode drop, axis stuck to a line on a half unit) and in the new
+  `Tests/Scenarios/96_MoverSizerRounding.lua` (`/wa` move, resize and arrows).
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua` (`CreateScreenLines`): with Magnetically Align, moving or resizing
+  an aura in `/wa` also snaps to the edges of the screen. A new Grid button in the toolbar
+  (`WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, saved as `gridAlign`, off by default in
+  `WeakAurasOptions/WeakAurasOptions.lua`) draws a grid over the whole screen while the options are open
+  (`PlacementGrid`, `UpdatePlacementGrid`, the middle lines stronger) and adds its lines, centered on the screen, to
+  the snap targets. Its pitch, saved as `gridSpacing` (64 by default), is set by a slider from 8 to 128 opened by a
+  right click on the Grid button; a saved pitch outside 8 to 128 is clamped. The Edit Mode grid is not used in
+  `/wa`, and the `/wa` grid is hidden while Edit Mode is open (`EditMode.Enter`, `EditMode.Exit`). Aura lines are still preferred; between
+  grid, edge and middle lines, the nearest one wins.
+  Strings in `WeakAurasOptions/Locales/enUS.lua` and `frFR.lua`. Tested in `Tests/Scenarios/96_MoverSizerRounding.lua`
+  and `Tests/Scenarios/97_PlacementSnap.lua`.
+- `WeakAuras/EditModePlacement.lua` (`PreviewSnap`, `StopPreview`): while an aura is dragged in Edit Mode, a
+  yellow ghost box shows where it will land on the grid. It follows the box every frame (`OnUpdate` set at the drag
+  start, removed at the drop or when the boxes are removed) and hides when no axis is near a grid line. Yellow
+  alignment guides across the screen (`ShowGuide`, `Private.GetPlacementGuides`) show the line each axis sticks to:
+  a grid or screen line, or the edge or center of another aura. They hide on an axis without a line in reach and at
+  the drop. Tested in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/EditModePlacement.lua` (`Private.MoveWithArrowKeys`, `MoveSelected`) and
+  `WeakAurasOptions/OptionsFrames/MoverSizer.lua` (`moveBy`): the arrow keys move an aura by one unit, ten with
+  Shift, in Edit Mode (the box clicked last, outlined) and in `/wa` (the aura in the mover, not with Lock
+  Positions). The axis not moved keeps its value. Other keys go on to the game. The keyboard is let go at
+  `PLAYER_REGEN_DISABLED` and taken back at `PLAYER_REGEN_ENABLED`. In `/wa`, the keys go to the game with several
+  auras picked, while the mover is dragged, and for a child of a dynamic group, which the group places. The Edit Mode selection follows a renamed aura,
+  is lost with a deleted one, and goes to Blizzard when a Blizzard frame is selected (`SelectSystem` hooked).
+  Revert All Changes undoes the key moves. Tested in `Tests/Scenarios/68_EditModePlacement.lua` and
+  `Tests/Scenarios/96_MoverSizerRounding.lua`.
+- New `WeakAuras/PlacementSnap.lua` (`Private.PlacementSnap`, listed in `WeakAuras/WeakAuras.toc`): one snap engine
+  for the `/wa` mover (`WeakAurasOptions/OptionsFrames/MoverSizer.lua`) and the Edit Mode
+  (`WeakAuras/EditModePlacement.lua`, `ShiftOfSnap`). Screen edges and grid lines, edges and centers of the other
+  auras, lines closer than 1 merged. An aura line wins over a nearer grid line; between lines of the same kind, the
+  nearest wins. Ctrl aligns the centers only, Shift turns the snap off. In Edit Mode, the boxes now stick to the
+  edges of the other boxes and to the screen edges, with the snap option of the Edit Mode on, even when its grid is
+  hidden; the grid adds its lines when shown. The snap distance is now strictly under 8 (it was 8 or under).
+  Without Ctrl, the center of a box sticks to the screen and grid lines only, never to the edge of an aura. Each
+  line takes the nearest edge of the moved aura, not the first one in reach (a narrow aura could jump the wrong way).
+  Tested in the new `Tests/Scenarios/97_PlacementSnap.lua` and in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/EditModePlacement.lua` (`PlacedRegion`, `PlaceBoxes`, `IsInside`, `Target`): the children of a simple
+  group, nested groups included, get an Edit Mode box, above the box of their group; with Alt, a click on the box of a
+  child selects its group, which its children may cover, one level higher on each click in nested groups, then back to
+  the first group; the drag moves the box the click selected, even with Alt let go in between. The children of a dynamic group or of a Modern Aura Group
+  still get none, since the group places them, and no region is made for them on entering Edit Mode. A box does not
+  snap to its own group or children. The drop writes offsets relative to
+  the group and adds the groups again (`Private.AddParents`), so the box of the group follows; undo in `/wa` and
+  Revert All Changes restore the child. Tested in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `WeakAuras/TimeMachine.lua` (effect `add`, `Apply`): an undo or redo adds the groups of the auras again, once
+  each after all the records, without a record, so their bounding rectangle is computed again: in `/wa`, the mover and the border of a group no longer keep the
+  rectangle from before the undo. Tested in `Tests/Scenarios/68_EditModePlacement.lua`.
+- `Tests/Harness/WowApi.lua`: `math.round`, the client function behind `Round` (`MathUtil.lua`).
+- `Tests/Harness/Frames.lua`: `EnableKeyboard`, `IsKeyboardEnabled`, `SetPropagateKeyboardInput` and
+  `GetPropagateKeyboardInput`, blocked in combat like in the client.
+- `Tests/Harness/Frames.lua`: `Set`/`Get` `Normal`, `Highlight`, `Pushed` and `Disabled` `Texture` on buttons, and
+  `SetResizable`/`IsResizable`, so that `MoverSizer.lua` runs in the test bench.
+- `Tests/run.lua`: a filter that matches no scenario fails.
+- `Tests/run.lua`: an argument that is not a `.lua` path filters the scenarios, by number (`lua5.1 Tests/run.lua 68`)
+  or by part of the file name (`lua5.1 Tests/run.lua EditMode`), without the packs. The scenario context gets
+  `Assertions`.
+- New `Tests/Harness/Assertions.lua`: `Same` and `Near` (tolerance 1e-9 by default), the helpers identical in several
+  scenarios. Scenarios move to it when they are changed.
 
 ## 2026-11-06
 

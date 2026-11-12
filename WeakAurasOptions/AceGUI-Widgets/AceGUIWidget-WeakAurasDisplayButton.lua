@@ -8,7 +8,7 @@ local tinsert, tremove = table.insert, table.remove
 local select, pairs, type, unpack = select, pairs, type, unpack
 local error = error
 
-local Type, Version = "WeakAurasDisplayButton", 60
+local Type, Version = "WeakAurasDisplayButton", 62
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 local LibDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0")
@@ -367,6 +367,8 @@ local function ensure(t, k, v)
 end
 
 local statusIconPool = CreateFramePool("Button")
+-- Statuses are 6 pixel squares of DESIGN.md; the tooltip of each says what it is.
+local statusColors = { info = "accent", sound = "textSecondary", tts = "textSecondary", warning = "warning", error = "error" }
 
 --[[     Actions     ]]--
 
@@ -1064,6 +1066,7 @@ local methods = {
     installDragCallbacks(self)
 
     self.frame:SetScript("OnEnter", function()
+      self.hover:SetShown(self:IsEnabled())
       if(OptionsPrivate.IsPickedMultiple() and OptionsPrivate.IsDisplayPicked(self.frame.id)) then
         Show_Long_Tooltip(self.frame, OptionsPrivate.MultipleDisplayTooltipDesc());
       else
@@ -1073,7 +1076,10 @@ local methods = {
         Show_Long_Tooltip(self.frame, self.frame.description);
       end
     end);
-    self.frame:SetScript("OnLeave", Hide_Tooltip);
+    self.frame:SetScript("OnLeave", function()
+      self.hover:Hide()
+      Hide_Tooltip()
+    end);
 
     buildMenu(self)
     if(self.data.controlledChildren) then
@@ -1178,6 +1184,11 @@ local methods = {
       tinsert(namestable, "|cFFFFD100" .. L["Version: "]  .. (data.semver or data.version) .. "|r");
     end
 
+    -- An aura not loaded has no status square: its load state is said here.
+    if self.loadTooltip then
+      tinsert(namestable, " ");
+      tinsert(namestable, self.loadTooltip);
+    end
     tinsert(namestable, " ");
     tinsert(namestable, {" ", "|cFF00FFFF"..L["Right-click for more options"]});
     tinsert(namestable, {" ", "|cFF00FFFF"..L["Drag to move"]});
@@ -1421,10 +1432,11 @@ local methods = {
         depth = depth + 1
         group = WeakAuras.GetData(group).parent
       end
-      self.offset:SetWidth(depth * 8 + 1)
+      self.offset:SetWidth(depth * 12 + 1)
     else
       self.offset:SetWidth(1)
     end
+    self.offset.line:SetShown(self.frame.dgroup ~= nil)
   end,
   ["GetOffset"] = function(self)
     return self.offset:GetWidth()
@@ -1481,8 +1493,7 @@ local methods = {
   ["Expand"] = function(self, reloadTooltip)
     self.expand:Enable();
     OptionsPrivate.SetCollapsed(self.data.id, "displayButton", "", false)
-    self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-MinusButton-Up.blp");
-    self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-MinusButton-Down.blp");
+    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse")
     self.expand.title = L["Collapse"];
     self.expand.desc = L["Hide this group's children"];
     self.expand:SetScript("OnClick", function() self:Collapse(true) end);
@@ -1495,8 +1506,7 @@ local methods = {
   ["Collapse"] = function(self, reloadTooltip)
     self.expand:Enable();
     OptionsPrivate.SetCollapsed(self.data.id, "displayButton", "", true)
-    self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Up.blp");
-    self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-PlusButton-Down.blp");
+    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
     self.expand.title = L["Expand"];
     self.expand.desc = L["Show this group's children"];
     self.expand:SetScript("OnClick", function() self:Expand(true) end);
@@ -1519,7 +1529,7 @@ local methods = {
     self.expand:Disable();
     self.expand.disabled = true;
     self.expand.expanded = false;
-    self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
+    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
   end,
   ["EnableExpand"] = function(self)
     if not self.expand.disabled then
@@ -1532,7 +1542,7 @@ local methods = {
       self:Collapse();
     end
   end,
-  ["UpdateStatusIcon"] = function(self, key, prio, icon, title, tooltip, onClick)
+  ["UpdateStatusIcon"] = function(self, key, prio, color, title, tooltip, onClick)
     local iconButton
     for _, button in ipairs(self.statusIcons.buttons) do
       if button.key == key then
@@ -1546,15 +1556,15 @@ local methods = {
       tinsert(self.statusIcons.buttons, iconButton)
       iconButton:SetParent(self.statusIcons)
       iconButton.key = key
-      iconButton:SetSize(16, 16)
+      iconButton:SetSize(10, 16)
+      if not iconButton.square then
+        iconButton.square = iconButton:CreateTexture(nil, "ARTWORK")
+        iconButton.square:SetSize(6, 6)
+        iconButton.square:SetPoint("CENTER")
+      end
     end
     iconButton.prio = prio
-    if C_Texture.GetAtlasInfo(icon) then
-      iconButton:SetNormalAtlas(icon)
-    else
-      iconButton:SetNormalTexture(icon)
-    end
-    iconButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+    iconButton.square:SetColorTexture(OptionsPrivate.Private.Style.Color(color))
     if title then
       iconButton:SetScript("OnEnter", function()
         Show_Tooltip(
@@ -1592,7 +1602,7 @@ local methods = {
     end
     for _, button in ipairs(self.statusIcons.buttons) do
       button:ClearAllPoints()
-      button:SetPoint("BOTTOMLEFT", lastAnchor, "BOTTOMRIGHT", 4, 0)
+      button:SetPoint("BOTTOMLEFT", lastAnchor, "BOTTOMRIGHT", 0, 0)
       lastAnchor = button
     end
   end,
@@ -1628,7 +1638,8 @@ local methods = {
           end
         end
 
-        self:UpdateStatusIcon(severity, warning.prio, warning.icon, warning.title, warning.message, onClick)
+        self:UpdateStatusIcon(severity, warning.prio, statusColors[severity] or "textSecondary", warning.title,
+          warning.message, onClick)
       end
     end
     self:UpdateProfileCost()
@@ -1641,7 +1652,8 @@ local methods = {
       self:ClearStatusIcon("cpu_cost")
       return
     end
-    local iconButton = self:UpdateStatusIcon("cpu_cost", 20, "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Circle_White",
+    local color = cost >= 1 and "error" or cost >= 0.1 and "warning" or "success"
+    self:UpdateStatusIcon("cpu_cost", 20, color,
       L["CPU Cost"], L["%.2f ms per second, longest run %.2f ms, during the last profiling. /wa pstart starts a new one."]:format(cost, spike),
       function()
         -- The window only fills its list while a profiling runs
@@ -1649,13 +1661,6 @@ local methods = {
         WeakAurasProfilingFrame:ResetBars()
         WeakAurasProfilingFrame:RefreshBars(nil, true)
       end)
-    if cost >= 1 then
-      iconButton:GetNormalTexture():SetVertexColor(1, 0.2, 0.2)
-    elseif cost >= 0.1 then
-      iconButton:GetNormalTexture():SetVertexColor(1, 0.8, 0)
-    else
-      iconButton:GetNormalTexture():SetVertexColor(0.2, 1, 0.2)
-    end
   end,
   ["UpdateParentWarning"] = function(self)
     self:UpdateWarning()
@@ -1675,30 +1680,42 @@ local methods = {
   ["UpdateUpDownButtons"] = function(self)
     if self.first or not self:IsEnabled() then
       self.upgroup:Disable();
-      self.upgroup.texture:SetVertexColor(0.3, 0.3, 0.3);
     else
       self.upgroup:Enable();
-      self.upgroup.texture:SetVertexColor(1, 1, 1);
     end
 
     if self.last or not self:IsEnabled() then
       self.downgroup:Disable();
-      self.downgroup.texture:SetVertexColor(0.3, 0.3, 0.3);
     else
       self.downgroup:Enable();
-      self.downgroup.texture:SetVertexColor(1, 1, 1);
     end
   end,
   ["GetGroupOrder"] = function(self)
     return self.frame.dgrouporder;
   end,
   ["ClearLoaded"] = function(self)
+    self.titleColor = nil
+    self.loadTooltip = nil
+    self:PaintTitle()
     self:ClearStatusIcon("load")
     self:SortStatusIcons()
   end,
   ["SetLoaded"] = function(self, prio, file, title, description)
-    self:UpdateStatusIcon("load", prio, "Interface\\AddOns\\WeakAuras\\Media\\Textures\\" .. file, title, description, nil)
+    -- An aura not loaded has its name in the quiet text color and no square; loaded is green, on standby grey.
+    self.titleColor = prio == 3 and "textQuiet" or nil
+    self.loadTooltip = prio == 3 and { title, description } or nil
+    self:PaintTitle()
+    if prio == 3 then
+      self:ClearStatusIcon("load")
+    else
+      self:UpdateStatusIcon("load", prio, file == "loaded" and "success" or "textSecondary", title, description, nil)
+    end
     self:SortStatusIcons()
+  end,
+  -- Name in the disabled color while the row is disabled, else in the color of its load state.
+  ["PaintTitle"] = function(self)
+    local color = not self:IsEnabled() and "textDisabled" or self.titleColor or "text"
+    self.title:SetTextColor(OptionsPrivate.Private.Style.Color(color))
   end,
   ["IsLoaded"] = function(self)
     return OptionsPrivate.Private.loaded[self.data.id] == true
@@ -1710,12 +1727,14 @@ local methods = {
     return OptionsPrivate.Private.loaded[self.data.id] == nil
   end,
   ["Pick"] = function(self)
-    self.frame:LockHighlight();
+    self.selected:Show()
+    self.selectedBar:Show()
     self:PriorityShow(1);
     self:RecheckParentVisibility()
   end,
   ["ClearPick"] = function(self, noHide)
-    self.frame:UnlockHighlight();
+    self.selected:Hide()
+    self.selectedBar:Hide()
     if not noHide then
       self:PriorityHide(1);
       self:RecheckParentVisibility()
@@ -1809,20 +1828,13 @@ local methods = {
     end
   end,
   ["UpdateViewTexture"] = function(self)
-    local visibility = self.view.visibility
-    if(visibility == 2) then
-      self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking0.blp");
-    elseif(visibility == 1) then
-      self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking2.blp");
-    else
-      self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
-    end
+    OptionsPrivate.Private.Style.PaintIcon(self.view)
   end,
   ["GetVisibility"] = function(self)
     return self.view.visibility;
   end,
   ["Disable"] = function(self)
-    self.background:Hide();
+    self.hover:Hide()
     self.frame:Disable();
     self.view:Disable();
     self.group:Disable();
@@ -1832,10 +1844,11 @@ local methods = {
       button:Disable();
     end
     self:UpdateUpDownButtons()
+    self:PaintTitle()
   end,
   ["Enable"] = function(self)
-    self.background:Show();
     self.frame:Enable();
+    self:PaintTitle()
     self.view:Enable();
     self.group:Enable();
     self.ungroup:Enable();
@@ -1851,6 +1864,11 @@ local methods = {
     return self.frame:IsEnabled();
   end,
   ["OnRelease"] = function(self)
+    self.selected:Hide()
+    self.selectedBar:Hide()
+    self.hover:Hide()
+    self.titleColor = nil
+    self.loadTooltip = nil
     self:ReleaseThumbnail()
     self:Enable();
     self:SetGroup();
@@ -1957,6 +1975,7 @@ Constructor
 -------------------------------------------------------------------------------]]
 
 local function Constructor()
+  local Style = OptionsPrivate.Private.Style
   local name = "WeakAurasDisplayButton"..AceGUI:GetNextWidgetNum(Type);
   ---@class Button
   local button = CreateFrame("Button", name, UIParent, "OptionsListButtonTemplate");
@@ -1971,24 +1990,49 @@ local function Constructor()
   offset:SetPoint("BOTTOM", button, "BOTTOM");
   offset:SetPoint("LEFT", button, "LEFT");
   offset:SetWidth(1)
+  -- Rows of DESIGN.md: a child of a group indented by 12 pixels per level, with a 1 pixel rule.
+  local offsetLine = offset:CreateTexture(nil, "ARTWORK")
+  offset.line = offsetLine
+  offsetLine:SetColorTexture(Style.Color("border"))
+  offsetLine:SetWidth(1)
+  offsetLine:SetPoint("TOPRIGHT", offset, "TOPRIGHT", -6, 0)
+  offsetLine:SetPoint("BOTTOMRIGHT", offset, "BOTTOMRIGHT", -6, 0)
+  offsetLine:Hide()
 
+  -- Rows of DESIGN.md: no fill at rest (background only anchors the fills below).
   local background = button:CreateTexture(nil, "BACKGROUND");
   button.background = background;
-  background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
-  background:SetBlendMode("ADD");
-  background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
   background:SetPoint("TOP", button, "TOP");
   background:SetPoint("BOTTOM", button, "BOTTOM");
   background:SetPoint("LEFT", button, "LEFT")
   background:SetPoint("RIGHT", button, "RIGHT");
 
+  -- The raised fill under the mouse, shown by OnEnter on an enabled row; the selection fill and a 2 pixel brass bar on
+  -- the left while picked.
+  local hover = button:CreateTexture(nil, "BACKGROUND")
+  hover:SetColorTexture(Style.Color("raised"))
+  hover:SetAllPoints(background)
+  hover:Hide()
+  local selected = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+  selected:SetColorTexture(Style.Color("selection"))
+  selected:SetAllPoints(background)
+  selected:Hide()
+  local selectedBar = button:CreateTexture(nil, "OVERLAY")
+  selectedBar:SetColorTexture(Style.Color("primary"))
+  selectedBar:SetWidth(2)
+  selectedBar:SetPoint("TOPLEFT", background, "TOPLEFT")
+  selectedBar:SetPoint("BOTTOMLEFT", background, "BOTTOMLEFT")
+  selectedBar:Hide()
+
   local icon = button:CreateTexture(nil, "OVERLAY");
   button.icon = icon;
-  icon:SetWidth(32);
-  icon:SetHeight(32);
+  icon:SetWidth(26);
+  icon:SetHeight(26);
   icon:SetPoint("LEFT", offset, "RIGHT");
 
-  local title = button:CreateFontString(nil, "OVERLAY", "GameFontNormal");
+  local title = button:CreateFontString(nil, "OVERLAY");
+  Style.SetFont(title, "text", "s")
+  title:SetTextColor(Style.Color("text"))
   button.title = title;
   title:SetHeight(14);
   title:SetJustifyH("LEFT");
@@ -2004,17 +2048,11 @@ local function Constructor()
   view:SetWidth(16);
   view:SetHeight(16);
   view:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 0);
-  local viewTexture = view:CreateTexture()
-  view.texture = viewTexture;
-  viewTexture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
-  viewTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9);
-  viewTexture:SetAllPoints(view);
-  view:SetNormalTexture(viewTexture);
-  view:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   view:SetScript("OnEnter", function() Show_Tooltip(button, L["View"], L["Toggle the visibility of this display"]) end);
   view:SetScript("OnLeave", Hide_Tooltip);
 
   view.visibility = 0;
+  Style.NewEye(view)
 
   local renamebox = CreateFrame("EditBox", nil, button, "InputBoxTemplate");
   renamebox:SetHeight(14);
@@ -2048,29 +2086,21 @@ local function Constructor()
   group:SetWidth(16);
   group:SetHeight(16);
   group:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -18, 0);
-  local grouptexture = group:CreateTexture(nil, "OVERLAY");
-  group.texture = grouptexture;
-  grouptexture:SetTexture("Interface\\GLUES\\CharacterCreate\\UI-RotationRight-Big-Up.blp");
-  grouptexture:SetTexCoord(0.15, 0.85, 0.15, 0.85);
-  grouptexture:SetAllPoints(group);
-  group:SetNormalTexture(grouptexture);
-  group:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   group:SetScript("OnEnter", function() Show_Tooltip(button, L["Group (verb)"], L["Put this display in a group"]) end);
   group:SetScript("OnLeave", Hide_Tooltip);
+  Style.NewIcon(group, "downright", 14)
 
   local ungroup = CreateFrame("Button", nil, button);
   button.ungroup = ungroup;
   ungroup:SetWidth(11);
   ungroup:SetHeight(11);
   ungroup:SetPoint("LEFT", offset, "RIGHT", 0, 0);
-  local ungrouptexture = group:CreateTexture(nil, "OVERLAY");
-  ungrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
-  ungrouptexture:SetTexCoord(0.5, 0, 0.5, 1, 1, 0, 1, 1);
-  ungrouptexture:SetAllPoints(ungroup);
-  ungroup:SetNormalTexture(ungrouptexture);
-  ungroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   ungroup:SetScript("OnEnter", function() Show_Tooltip(button, L["Ungroup"], L["Remove this display from its group"]) end);
   ungroup:SetScript("OnLeave", Hide_Tooltip);
+  -- The three arrows of the group order are stacked 11 pixels apart and the aura icon is on their right:
+  -- wider to the left only, into the indent.
+  ungroup:SetHitRectInsets(-5, 0, 0, 0)
+  Style.NewIcon(ungroup, "upleft", 10)
   ungroup:Hide();
 
   local upgroup = CreateFrame("Button", nil, button);
@@ -2078,16 +2108,10 @@ local function Constructor()
   upgroup:SetWidth(11);
   upgroup:SetHeight(11);
   upgroup:SetPoint("TOPLEFT", offset, "TOPRIGHT", 0, 0);
-  local upgrouptexture = group:CreateTexture(nil, "OVERLAY");
-  upgroup.texture = upgrouptexture;
-  upgrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
-  upgrouptexture:SetTexCoord(0.5, 1, 1, 1, 0.5, 0, 1, 0);
-  upgrouptexture:SetVertexColor(1, 1, 1);
-  upgrouptexture:SetAllPoints(upgroup);
-  upgroup:SetNormalTexture(upgrouptexture);
-  upgroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   upgroup:SetScript("OnEnter", function() Show_Tooltip(button, L["Move Up"], L["Move this display up in its group's order"]) end);
   upgroup:SetScript("OnLeave", Hide_Tooltip);
+  upgroup:SetHitRectInsets(-5, 0, 0, 0)
+  Style.NewIcon(upgroup, "moveup", 8)
   upgroup:Hide();
 
   local downgroup = CreateFrame("Button", nil, button);
@@ -2095,17 +2119,12 @@ local function Constructor()
   downgroup:SetWidth(11);
   downgroup:SetHeight(11);
   downgroup:SetPoint("BOTTOMLEFT", offset, "BOTTOMRIGHT", 0, 0);
-  local downgrouptexture = group:CreateTexture(nil, "OVERLAY");
-  downgroup.texture = downgrouptexture;
-  downgrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
-  downgrouptexture:SetTexCoord(1, 0, 0.5, 0, 1, 1, 0.5, 1);
-  downgrouptexture:SetAllPoints(downgroup);
-  downgroup:SetNormalTexture(downgrouptexture);
-  downgroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   downgroup:SetScript("OnEnter", function()
     Show_Tooltip(button, L["Move Down"], L["Move this display down in its group's order"])
   end)
   downgroup:SetScript("OnLeave", Hide_Tooltip);
+  downgroup:SetHitRectInsets(-5, 0, 0, 0)
+  Style.NewIcon(downgroup, "movedown", 8)
   downgroup:Hide();
 
   ---@class Button
@@ -2114,17 +2133,17 @@ local function Constructor()
   expand.expanded = true;
   expand.disabled = true;
   expand.func = function() end;
-  expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
   expand:Disable();
   expand:SetWidth(16);
   expand:SetHeight(16);
   expand:SetPoint("BOTTOM", button, "BOTTOM");
   expand:SetPoint("LEFT", icon, "RIGHT", 0, 0);
-  expand:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
   expand.title = L["Disabled"];
   expand.desc = L["Expansion is disabled because this group has no children"];
   expand:SetScript("OnEnter", function() Show_Tooltip(button, expand.title, expand.desc) end);
   expand:SetScript("OnLeave", Hide_Tooltip);
+  -- Chevron of DESIGN.md: 10 pixels, pointing down while open.
+  Style.NewIcon(expand, "expand", 10)
 
   local statusIcons = CreateFrame("Frame", nil, button);
   button.statusIcons = statusIcons
@@ -2144,6 +2163,9 @@ local function Constructor()
     upgroup = upgroup,
     downgroup = downgroup,
     background = background,
+    hover = hover,
+    selected = selected,
+    selectedBar = selectedBar,
     expand = expand,
     statusIcons = statusIcons,
     type = Type,

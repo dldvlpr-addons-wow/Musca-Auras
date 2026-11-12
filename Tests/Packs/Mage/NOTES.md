@@ -42,7 +42,10 @@ Fichiers : `PackMage.lua` (données, préfixe `mcMageV1`), `PackMage.txt` et `Pa
 - Ice Barrier, Fire Ward et Frost Ward : simple recharge, comme Fojji. Boucliers actifs (Ice Barrier, Fire Ward, Frost Ward, Mana Shield) dans l'icône Defensives ; les buffs « (active) » et Mana Shield sont retirés.
 - Procs ajoutés : Missile Barrage 400589, Fingers of Frost 400670 (cumuls), Heating Up 400625 (cumuls, « Hot Streak » chez Icy Veins). Candidats DB2 de `Classes/Mage.md`, retenus par Fojji.
 - Clearcasting chargé sur la classe, sans `known = 11213`. Rappel d'armure : alerte d'expiration à 300 s.
-- Cumuls d'Arcane Blast : aura 400573 (DB2 70532 : 4 cumuls, DurationIndex 8 = 15 s, 0 charge de proc ; en 70245 : 31 = 8 s, 1 charge), débuff sur soi illisible par ID de sort en combat. Quatre segments comptent les lancers (`segments.casts` de PackBuilder, déclencheur custom sur `UNIT_SPELLCAST_SUCCEEDED:player`) : chaque rang d'Arcane Blast ajoute un cumul (4 max) et relance les 15 s ; aucun autre sort ne les efface, ils expirent. Aucun sort du DB2 70532 ne référence 400573. Non vérifié en jeu, ni sur ForeverAuras. Scénario `Tests/Scenarios/89_ArcaneBlastStacks.lua`.
+- Cumuls d'Arcane Blast : aura 400573 (DB2 70532 : 4 cumuls, DurationIndex 8 = 15 s, 0 charge de proc ; en 70245 : 31 = 8 s, 1 charge), débuff sur soi illisible par ID de sort en combat. Quatre segments comptent les lancers (`segments.casts` de PackBuilder, déclencheur custom sur `UNIT_SPELLCAST_SUCCEEDED:player`) : chaque rang d'Arcane Blast ajoute un cumul (4 max) ; aucun autre sort ne les efface, ils expirent. Aucun sort du DB2 70532 ne référence 400573. Non vérifié en jeu, ni sur ForeverAuras. Scénario `Tests/Scenarios/89_ArcaneBlastStacks.lua`.
 
 ## Pack 1.15.0 (2026-10-29), à tester en jeu
 - Aucun changement de pack. Auras « à vérifier » tranchées dans le DB2 70532, voir plus haut.
+
+## Correctif cumuls d'Arcane Blast (2026-11-11), à tester en jeu
+- Retour joueur : le débuff dure 18 s depuis le premier lancer, les lancers suivants ne le relancent pas. Le compteur suit ce comportement (durée 18 s fixée au premier lancer, cumuls ajoutés sans relancer). Le DB2 70532 indique 15 s : écart non expliqué, la valeur du jeu prime.

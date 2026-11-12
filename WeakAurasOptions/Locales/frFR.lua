@@ -88,6 +88,7 @@ local L = WeakAuras.L
 	L["added"] = "ajouté"
 	L["Adds an element that stays visible on the display while Aura (Modern) draws the auras."] = "Ajoute un élément qui reste visible sur l'affichage pendant qu'Aura (moderne) dessine les auras."
 	L["Adds the spell IDs of a buff tracked by the Cooldown Manager."] = "Ajoute les ID de sort d'une amélioration suivie par le gestionnaire de temps de recharge."
+	L["Align Selection"] = "Aligner la sélection"
 	L["Alpha (%)"] = "Opacité (%)"
 	L["Also allows auras normally returned only for nameplate displays. Other filters still apply."] = "Autorise aussi les auras normalement renvoyées uniquement pour l'affichage des barres de vie. Les autres filtres restent appliqués."
 	L["Also track the pets of the group members."] = "Suit aussi les familiers des membres du groupe."
@@ -102,6 +103,11 @@ local L = WeakAuras.L
 	L["Aura growth direction"] = "Direction de croissance des auras"
 	L["Aura Missing"] = "Aura manquante"
 	L["Aura Set"] = "Jeu d'auras"
+	L["Bottom Edges"] = "Bords bas"
+	L["Centers on a Column"] = "Centres en colonne"
+	L["Centers on a Row"] = "Centres en ligne"
+	L["Left Edges"] = "Bords gauches"
+	L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."] = "Demande au moins deux auras de même point d'ancrage sur l'écran, un cadre ou la souris, ni groupes ni dans un groupe qui place ses enfants."
 	L["Out of the aura set of this character: %s"] = "Hors du jeu d'auras de ce personnage : %s"
 	L["Aura set of this character: the tag of the auras it loads. Empty: all auras."] = "Jeu d'auras de ce personnage : le tag des auras qu'il charge. Vide : toutes les auras."
 	L["Aura spacing"] = "Espacement des auras"
@@ -188,6 +194,7 @@ local L = WeakAuras.L
 	L["Musca Auras Guide"] = "Guide de Musca Auras"
 	L["Musca Auras: WoW Forever 1.60 port by dldvlpr, based on WeakAuras by The WeakAuras Team."] = "Musca Auras : portage pour WoW Forever 1.60 par dldvlpr, basé sur WeakAuras de The WeakAuras Team."
 	L["Name of the aura"] = "Nom de l'aura"
+	L["Right Edges"] = "Bords droits"
 	L["The game's own aura layout uses a fixed text area."] = "La disposition d'aura propre au jeu utilise une zone de texte fixe."
 	L["Game Categories"] = "Catégories du jeu"
 	L["New group for Aura (Modern) displays: laid out left to right, 2 pixels apart, with the layout kept in combat."] = "Nouveau groupe pour les affichages Aura (moderne) : disposés de gauche à droite, espacés de 2 pixels, avec la disposition conservée en combat."
@@ -266,6 +273,7 @@ local L = WeakAuras.L
 	L["Threat checks:"] = "Vérifications de la menace :"
 	L["Time left on the aura"] = "Temps restant sur l'aura"
 	L["Time since the aura was applied. Auras without duration never match."] = "Temps écoulé depuis l'application de l'aura. Les auras sans durée ne correspondent jamais."
+	L["Top Edges"] = "Bords hauts"
 	L["total"] = "total"
 	L["Track cooldowns"] = "Suivre les temps de recharge"
 	L["Trigger that supplies Dynamic Information while no aura passes the Aura (Modern) filters."] = "Déclencheur qui fournit les informations dynamiques tant qu'aucune aura ne passe les filtres d'Aura (moderne)."
@@ -344,6 +352,14 @@ Enable this setting if you want this timer to be hidden, or when using a WeakAur
 	--[[Translation missing --]]
 	L["Affected Unit Filters and Info"] = "Affected Unit Filters and Info"
 	L["Align"] = "Aligner"
+	L["Link"] = "Lier"
+	L["Unlink"] = "Détacher"
+	L["Linked to %s"] = "Liée à %s"
+	L["Click the aura, group or game frame to follow. Right click or Escape: cancel."] = "Cliquez sur l'aura, le groupe ou le cadre du jeu à suivre. Clic droit ou Échap : annuler."
+	L["%s follows %s: linking it would make a loop."] = "%s suit %s : ce lien ferait une boucle."
+	L["%s. Mouse wheel: parent group. Right click or Escape: cancel."] = "%s. Molette : groupe parent. Clic droit ou Échap : annuler."
+	L["Unlink: the aura stays in place and follows its group or the screen again."] = "Détacher : l'aura reste en place et suit de nouveau son groupe ou l'écran."
+	L["Anchors this aura to a side of another aura, group or game frame: the aura then follows it, by position only. It stays in place."] = "Ancre cette aura sur un côté d'une autre aura, d'un groupe ou d'un cadre du jeu : l'aura le suit alors, pour la position seulement. Elle reste en place."
 	--[[Translation missing --]]
 	L["Aligned left"] = "Aligned left"
 	--[[Translation missing --]]
@@ -595,8 +611,7 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED
 	L["Else If"] = "Else If"
 	--[[Translation missing --]]
 	L["Else If %s"] = "Else If %s"
-	--[[Translation missing --]]
-	L["Empty Base Region"] = "Empty Base Region"
+	L["Empty Base Region"] = "Région vide"
 	--[[Translation missing --]]
 	L["Enable \"Edge\" part of the overlay"] = "Enable \"Edge\" part of the overlay"
 	L["Enable \"swipe\" part of the overlay"] = "Activer la partie \"balayage\" de la superposition"
@@ -688,8 +703,7 @@ Supports multiple entries, separated by commas
 Can use \ to escape -.]=]
 	--[[Translation missing --]]
 	L["Filter to only dispellable de/buffs of the given type(s)"] = "Filter to only dispellable de/buffs of the given type(s)"
-	--[[Translation missing --]]
-	L["Find Auras"] = "Find Auras"
+	L["Find Auras"] = "Trouver des auras"
 	L["Finish"] = "Finir"
 	--[[Translation missing --]]
 	L["Finishing..."] = "Finishing..."
@@ -803,7 +817,9 @@ Can use \ to escape -.]=]
 	L["Glow Frame Type"] = "Type de cadre brillant"
 	L["Glow Type"] = "Type de la brillance"
 	L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."] = "Les options grisées sont indisponibles avec Aura (Modern) : le jeu dessine lui-même cet élément. Survolez une option pour voir pourquoi."
+	L["Grid"] = "Grille"
 	L["Grid direction"] = "Direction de la grille"
+	L["Grid Spacing"] = "Pas de la grille"
 	L["Group (verb)"] = "Groupe (verbe)"
 	--[[Translation missing --]]
 	L["Group Alpha"] = "Group Alpha"
@@ -973,8 +989,7 @@ Si cette case est cochée, ce séparateur inclura du texte. Sinon, ce sera juste
 	L["Linked Auras"] = "Linked Auras"
 	L["Load"] = "Chargement"
 	L["Loaded"] = "Chargé"
-	--[[Translation missing --]]
-	L["Loaded/Standby"] = "Loaded/Standby"
+	L["Loaded/Standby"] = "Chargées / en veille"
 	L["Lock Positions"] = "Verrouiller"
 	L["Low Mana"] = "Mana bas"
 	L["Magnetically Align"] = "Aimantation"
@@ -1068,8 +1083,7 @@ every 3 events starting from 2nd: 2/3
 every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	--[[Translation missing --]]
 	L["OFF"] = "OFF"
-	--[[Translation missing --]]
-	L["Offer a guided way to create auras for your character"] = "Offer a guided way to create auras for your character"
+	L["Offer a guided way to create auras for your character"] = "Crée pas à pas une aura pour votre personnage"
 	--[[Translation missing --]]
 	L["Offset by |cFFFF0000%s|r/|cFFFF0000%s|r"] = "Offset by |cFFFF0000%s|r/|cFFFF0000%s|r"
 	L["Offset by 1px"] = "Décalage de 1px"
@@ -1084,6 +1098,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Only match auras cast by people other than the player or their pet"] = "Only match auras cast by people other than the player or their pet"
 	--[[Translation missing --]]
 	L["Only match auras cast by the player or their pet"] = "Only match auras cast by the player or their pet"
+	L["Opens the placement mode (/wa unlock): move, size and anchor the auras on the screen."] = "Ouvre le mode placement (/wa unlock) : déplacer, redimensionner et ancrer les auras à l'écran."
 	L["Operator"] = "Opérateur"
 	L["Option %i"] = "Option %i"
 	L["Option key"] = "Clef de l'option"
@@ -1122,8 +1137,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Position and Size Settings"] = "Position and Size Settings"
 	--[[Translation missing --]]
 	L["Preferred Match"] = "Preferred Match"
-	--[[Translation missing --]]
-	L["Premade Auras"] = "Premade Auras"
+	L["Premade Auras"] = "Auras prêtes à configurer"
 	--[[Translation missing --]]
 	L["Premade Snippets"] = "Premade Snippets"
 	--[[Translation missing --]]
@@ -1265,6 +1279,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Shows a Circular Progress Texture"] = "Shows a Circular Progress Texture"
 	L["Shows a custom texture"] = "Affiche une texture personnalisée"
 	L["Shows a glow"] = "Afficher les brillantes"
+	L["Shows a grid while the options are open. With Magnetically Align, the auras snap to its lines.\nRight-click: grid spacing."] = "Affiche une grille tant que les options sont ouvertes. Avec l'aimantation, les auras se calent sur ses lignes.\nClic droit : pas de la grille."
 	--[[Translation missing --]]
 	L["Shows a Linear Progress Texture"] = "Shows a Linear Progress Texture"
 	L["Shows a model"] = "Affiche un modèle"
@@ -1272,13 +1287,11 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Shows a spell icon with an optional cooldown overlay"] = "Affiche une icône de sort avec optionnellement la durée ou le temps de recharge intégré"
 	--[[Translation missing --]]
 	L["Shows a Stop Motion"] = "Shows a Stop Motion"
-	--[[Translation missing --]]
-	L["Shows a stop motion texture"] = "Shows a stop motion texture"
+	L["Shows a stop motion texture"] = "Affiche une texture animée image par image"
 	--[[Translation missing --]]
 	L["Shows a Texture"] = "Shows a Texture"
 	L["Shows a texture that changes based on duration"] = "Affiche une texture qui change selon la durée"
-	--[[Translation missing --]]
-	L["Shows nothing, except sub elements"] = "Shows nothing, except sub elements"
+	L["Shows nothing, except sub elements"] = "N'affiche rien, sauf ses sous-éléments"
 	L["Shows one or more lines of text, which can include dynamic information such as progress or stacks"] = "Affiche une ligne de texte ou plus, qui peut inclure des infos dynamiques telles que progression ou piles."
 	L["Size"] = "Taille"
 	--[[Translation missing --]]
@@ -1369,8 +1382,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["Texture X Offset"] = "Texture X Offset"
 	--[[Translation missing --]]
 	L["Texture Y Offset"] = "Texture Y Offset"
-	--[[Translation missing --]]
-	L["Thanks"] = "Thanks"
+	L["Thanks"] = "Remerciements"
 	--[[Translation missing --]]
 	L["The addon ElvUI is enabled. It might add cooldown numbers to the swipe. You can configure these in the ElvUI settings."] = "The addon ElvUI is enabled. It might add cooldown numbers to the swipe. You can configure these in the ElvUI settings."
 	--[[Translation missing --]]
@@ -1487,6 +1499,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	--[[Translation missing --]]
 	L["Unknown Spell"] = "Unknown Spell"
 	L["Unlike the start or finish animations, the main animation will loop over and over until the display is hidden."] = "Contrairement aux animations de début et de fin, l'animation principale bouclera tant que l'affichage est visible."
+	L["Unlock"] = "Placer"
 	L["Unused Auras"] = "Auras inutilisées"
 	L["Unused for %d days, listed above:"] = "Inutilisées depuis %d jours, listées ci-dessus :"
 	--[[Translation missing --]]

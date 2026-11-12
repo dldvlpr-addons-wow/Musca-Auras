@@ -28,18 +28,23 @@ Group Experience and Guild Campfires only show the players who also run the pack
 
 ***
 
-## <span style="color: #3c3;">🆕 New in 1.14 and 1.15</span>
+## <span style="color: #3c3;">🆕 New in 1.15 and 1.16</span>
+
+### <span style="color: #0cf;">1.16</span>
+
+- <span style="color: #ffd100;"><strong>Warrior HUD:</strong></span> Sunder Armor on your target shows 5 segments, whoever cast it.
+- <span style="color: #ffd100;"><strong>Priest HUD:</strong></span> Divine Aegis shows as a buff on you.
+- <span style="color: #ffd100;"><strong>Combat Text pack:</strong></span> hits and heals taken show again in combat.
+- <span style="color: #ffd100;"><strong>Groups by unit:</strong></span> no more holes in centered rows and in Grid mode when a member has no aura or leaves.
+- <span style="color: #ffd100;"><strong>Many fixes</strong></span> in triggers, displays, custom code and options, including a Lua error on enemy nameplates with a raid mark.
+
+<span style="color: #ff9800;"><strong>After the update:</strong></span> re-import the Warrior and Priest packs. Delete the Combat Text aura, then import it again from the Packs page.
 
 ### <span style="color: #0cf;">1.15</span>
 
 - <span style="color: #ffd100;"><strong>Packs page:</strong></span> install the whole class HUD or one block at a time, and 24 utility packs.
 - <span style="color: #ffd100;"><strong>Richer class HUDs:</strong></span> proc sounds, "Fading" reminders, enemy cast bar, ranged swing timer, a Defensives icon, and missing buffs, procs and debuffs added for every class.
 - <span style="color: #ffd100;"><strong>Stock reminders:</strong></span> Rogue poisons and Hunter ammo running low.
-
-### <span style="color: #0cf;">1.14</span>
-
-- <span style="color: #ffd100;"><strong>Livelier demo mode:</strong></span> in `/wa demo`, sample timers start and end at random, like cooldowns and buffs in a fight.
-- <span style="color: #ffd100;"><strong>Sample timers that keep running</strong></span> when you open the options a second time.
 
 Full list in the **Files** tab.
 

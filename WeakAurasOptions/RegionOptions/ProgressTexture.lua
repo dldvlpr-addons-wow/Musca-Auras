@@ -472,7 +472,7 @@ local function modifyThumbnail(parent, borderframe, data, fullModify, size)
   local region, background, foreground = borderframe.region, borderframe.background, borderframe.foreground;
   local foregroundSpinner, backgroundSpinner = borderframe.foregroundSpinner, borderframe.backgroundSpinner;
 
-  size = size or 30;
+  size = size or 26;
   local scale;
   if(data.height > data.width) then
     scale = size/data.height;

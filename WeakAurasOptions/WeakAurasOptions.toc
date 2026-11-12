@@ -4,7 +4,7 @@
 ## Author: The WeakAuras Team, dldvlpr (WoW Forever port)
 ## X-License: GPL-2.0
 ## X-Website: https://muscalab.com/addons/musca-auras
-## Version: 1.16.1
+## Version: 1.17.0
 ## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.blp
 ## Notes: Options for Musca Auras
 ## X-Category: Interface Enhancements
@@ -88,6 +88,9 @@ OptionsFrames\DebugLogFrame.lua
 
 # Misc frames
 OptionsFrames\MoverSizer.lua
+OptionsFrames\AnchorLinker.lua
+OptionsFrames\PlacementPanel.lua
+OptionsFrames\PlacementMode.lua
 OptionsFrames\FrameChooser.lua
 
 AceGUI-Widgets\AceGUIWidget-WeakAurasExpand.lua
@@ -112,6 +115,7 @@ AceGUI-Widgets\AceGUIWidget-WeakAurasSnippetButton.lua
 AceGUI-Widgets\AceGUIWidget-WeakAurasAnchorButtons.lua
 AceGUI-Widgets\AceGUIContainer-WeakAurasTreeGroup.lua
 AceGUI-Widgets\AceGUIContainer-WeakAurasInlineGroup.lua
+AceGUI-Widgets\AceGUIContainer-WeakAurasTabGroup.lua
 AceGUI-Widgets\AceGUIWidget-WeakAurasExpandAnchor.lua
 AceGUI-Widgets\AceGUIWidget-WeakAurasSpacer.lua
 AceGUI-Widgets\AceGuiWidget-WeakAurasProgressBar.lua
