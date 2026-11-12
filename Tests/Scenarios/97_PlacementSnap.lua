@@ -58,12 +58,19 @@ return function(test)
   Same(SnapDeltaAt(625), nil, "nothing in reach")
   -- Grid line at 600 nearer than the edge of Other at 608: the aura line still wins.
   WeakAurasOptionsSaved.gridAlign, WeakAurasOptionsSaved.gridSpacing = true, 100
+  optionsPrivate.UpdatePlacementGrid()
   Same(SnapDeltaAt(603), 5, "aura line before a nearer grid line")
   Same(SnapDeltaAt(703), -3, "grid line alone")
+  -- Edit Mode open: the /wa grid is hidden, and its lines no longer snap.
+  _G.EditModeManagerFrame = { IsEditModeActive = function() return true end }
+  optionsPrivate.UpdatePlacementGrid()
+  Same(SnapDeltaAt(703), nil, "no hidden grid line in Edit Mode")
+  _G.EditModeManagerFrame = nil
   WeakAurasOptionsSaved.gridAlign = nil
+  optionsPrivate.UpdatePlacementGrid()
   -- Ctrl: the centers only. The center of a 40 wide aura at 482 is at 502, 2 from the centers at 500 (screen middle
-  -- and Other); its edges are 18 and 22 from that line.
-  Same(SnapDeltaAt(482, 40), nil, "without Ctrl, the edges are out of reach")
+  -- and Other); its edges are 18 and 22 from that line. Without Ctrl it sticks to the screen middle only.
+  Same(SnapDeltaAt(482, 40), -2, "without Ctrl, the center on the middle of the screen, as in the Edit Mode")
   _G.IsControlKeyDown = function() return true end
   Same(SnapDeltaAt(482, 40), -2, "Ctrl: center on the centers")
   Same(SnapDeltaAt(611, 40), nil, "Ctrl: edges ignored")
@@ -76,7 +83,7 @@ return function(test)
   -- The module itself.
   local Snap = private.PlacementSnap
   Same(table.concat(Snap.ScreenLines(1000, 500, 300), ","), "0,1000,200,500,800", "screen edges and grid lines")
-  Same(table.concat(Snap.ScreenLines(1000, 500), ","), "0,1000", "screen edges only without a spacing")
+  Same(table.concat(Snap.ScreenLines(1000, 500), ","), "0,1000,500", "screen edges and middle without a spacing")
   local vertical, horizontal = {}, {}
   Snap.AddAuraLines(vertical, horizontal, "A", { 10, 20, 50, 60, 30, 40 }, false, true, true, Snap.NewLine)
   Snap.AddAuraLines(vertical, horizontal, "B", { 50.4, 100, 90, 140, 70.2, 120 }, false, true, false, Snap.NewLine)
@@ -102,4 +109,79 @@ return function(test)
   local otherGrid = Snap.NewLine(50, true)
   otherGrid.delta = -3
   Same(Snap.Best({ grid, otherGrid }, positions, 10), grid, "equal scores: the nearest wins")
+  -- Placement 13: A at 0 to 20 and B at 50 to 70 in a row (30 apart): lines at 100 after B and at -30 before A. C,
+  -- under them, and D, 10 right of A, are left out: not in the row, gap under minGap.
+  local spacingVertical, spacingHorizontal = {}, {}
+  Snap.AddSpacingLines(spacingVertical, spacingHorizontal, {
+    { id = "A", left = 0, bottom = 0, right = 20, top = 20 },
+    { id = "B", left = 50, bottom = 5, right = 70, top = 25 },
+    { id = "C", left = 200, bottom = -100, right = 220, top = -80 },
+  }, 20, Snap.NewLine)
+  Same(#spacingVertical, 2, "one pair in a row")
+  Same(spacingVertical[1].position .. spacingVertical[1].references[1].side, "100LEFT", "line after B")
+  Same(spacingVertical[2].position .. spacingVertical[2].references[1].side, "-30RIGHT", "line before A")
+  Same(spacingVertical[1].references[1].id .. spacingVertical[1].references[2].id, "AB", "both auras referenced")
+  Same(spacingVertical[1].references[1].pos1 .. "," .. spacingVertical[1].references[1].pos2, "5,20",
+    "span of the row")
+  Same(#spacingHorizontal, 0, "no pair in a column")
+  local tight = {}
+  Snap.AddSpacingLines(tight, {}, { { id = "A", left = 0, bottom = 0, right = 20, top = 20 },
+    { id = "D", left = 30, bottom = 0, right = 50, top = 20 } }, 20, Snap.NewLine)
+  Same(#tight, 0, "gap under minGap left out")
+  -- X, Y, Z in a row, 20 apart: X and Z, with Y between them, give no line at their gap of 80.
+  local row = {}
+  Snap.AddSpacingLines(row, {}, { { id = "X", left = 0, bottom = 0, right = 40, top = 20 },
+    { id = "Y", left = 60, bottom = 0, right = 100, top = 20 },
+    { id = "Z", left = 120, bottom = 0, right = 160, top = 20 } }, 20, Snap.NewLine)
+  local rowPositions = {}
+  for index, line in ipairs(row) do
+    rowPositions[index] = line.position
+  end
+  Same(table.concat(rowPositions, ","), "120,-20,180,40", "neighbours only, not X and Z")
+  -- Y stuck to X up to a float error still sits between X and Z.
+  local touching = {}
+  Snap.AddSpacingLines(touching, {}, { { id = "X", left = 0, bottom = 0, right = 40, top = 20 },
+    { id = "Y", left = 39.9999, bottom = 0, right = 100, top = 20 },
+    { id = "Z", left = 120, bottom = 0, right = 160, top = 20 } }, 20, Snap.NewLine)
+  Same(#touching, 2, "touching neighbour between X and Z")
+  local column = {}
+  Snap.AddSpacingLines({}, column, { { id = "A", left = 0, bottom = 0, right = 20, top = 20 },
+    { id = "E", left = 0, bottom = 40, right = 20, top = 60 } }, 20, Snap.NewLine)
+  Same(column[1] and column[1].position .. column[1].references[1].side, "80BOTTOM", "line above in a column")
+  -- Its two references share one span: the score counts them once, as one aura edge on the same span.
+  local edge = Snap.NewLine(80, false)
+  edge.references[1] = column[1].references[1]
+  local columnPositions = { BOTTOM = 82, TOP = 102, LEFT = 0, RIGHT = 20 }
+  Same(Snap.Score(column[1], columnPositions, 10), Snap.Score(edge, columnPositions, 10),
+    "spacing line scored as one reference")
+
+  -- Placement 15: align and spread a selection. A at 0..20, B at 50..60 higher, C at 30..40.
+  local selection = { { left = 0, bottom = 0, right = 20, top = 20 }, { left = 50, bottom = 10, right = 60, top = 40 },
+    { left = 30, bottom = 5, right = 40, top = 15 } }
+  local function Shifts(command, axis)
+    local result = {}
+    for index, shift in ipairs(Snap.AlignShifts(selection, command)) do
+      result[index] = shift[axis]
+    end
+    return table.concat(result, ",")
+  end
+  Same(Shifts("LEFT", 1), "0,-50,-30", "left edges on the leftmost")
+  Same(Shifts("RIGHT", 1), "40,0,20", "right edges on the rightmost")
+  Same(Shifts("CENTERX", 1), "20,-25,-5", "centers on the middle of the selection")
+  Same(Shifts("TOP", 2), "20,0,25", "top edges on the highest")
+  Same(Shifts("BOTTOM", 2) .. "/" .. Shifts("BOTTOM", 1), "0,-10,-5/0,0,0", "bottom edges, x kept")
+  -- 40 of sizes in 60: two gaps of 10, A and B kept, C put at 30.
+  Same(Shifts("SPREADX", 1), "0,0,0", "already spread")
+  selection[3].left, selection[3].right = 22, 32
+  Same(Shifts("SPREADX", 1) .. "/" .. Shifts("SPREADX", 2), "0,0,8/0,0,0", "equal gaps between the auras")
+  -- In height, from the bottom A, C then B: 60 of sizes in 40, overlapping by equal gaps of -10, C put at 10.
+  Same(Shifts("SPREADY", 2), "0,0,5", "spread in height, in their order from the bottom")
+  -- A wide bar B around a small icon C: ordered by center, B stays last and the spread keeps the span 0..300.
+  selection = { { left = 0, bottom = 0, right = 10, top = 10 }, { left = 20, bottom = 0, right = 300, top = 10 },
+    { left = 100, bottom = 0, right = 110, top = 10 } }
+  Same(Shifts("SPREADX", 1), "0,0,-90", "spread by center, inside the selection")
+  -- A wide A around B, then C: by center B 0..10, A 55..155, C 200..210, the span 0..210 is kept.
+  selection = { { left = 0, bottom = 0, right = 100, top = 10 }, { left = 30, bottom = 0, right = 40, top = 10 },
+    { left = 200, bottom = 0, right = 210, top = 10 } }
+  Same(Shifts("SPREADX", 1), "55,-30,0", "span of the selection kept")
 end

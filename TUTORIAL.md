@@ -35,6 +35,13 @@ Basic steps:
 4. Set the **Load** tab, so the aura only loads when it is useful.
 5. Close the options and test.
 
+### Place your auras on the screen
+
+Type `/wa unlock`, or click **Unlock** at the top of the `/wa` window. The screen darkens under a grid and every
+aura gets a box: drag it where you want. Auras snap to the grid, to the screen edges and to the other auras. Hold
+**Shift** to turn the snap off. The panel of the selected aura sets its exact position and size. Click **Save and
+quit** when you are done. Placement mode does not open during combat.
+
 ---
 
 ## 2. What changed on Forever

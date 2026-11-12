@@ -9,6 +9,8 @@ local _, Private = ...
 -- screen, middle or grid line; the others are edges or centers of other auras, with the span they cover.
 local PlacementSnap = {}
 Private.PlacementSnap = PlacementSnap
+-- Distance under which an edge sticks to a line, the same in /wa and in the Edit Mode.
+PlacementSnap.snapDistance = 10
 
 local abs, floor, max, min = math.abs, math.floor, math.max, math.min
 
@@ -22,13 +24,16 @@ function PlacementSnap.NewLine(position, gridLine)
   return { position = position, gridLine = gridLine, references = {} }
 end
 
---- Positions on one axis of the screen edges, 0 and length, and with a spacing the grid lines through center.
+--- Positions on one axis of the screen edges, 0 and length, and the middle line at center: alone without a spacing,
+--- with a spacing among the grid lines through it.
 function PlacementSnap.ScreenLines(length, center, spacing)
   local positions = { 0, length }
   if spacing then
     for step = -floor(center / spacing), floor((length - center) / spacing) do
       positions[#positions + 1] = center + step * spacing
     end
+  else
+    positions[3] = center
   end
   return positions
 end
@@ -58,6 +63,110 @@ function PlacementSnap.AddAuraLines(verticalLines, horizontalLines, id, rect, ce
       Add(horizontalLines, bottom, "BOTTOM", left, right)
     end
   end
+end
+
+--- Adds the equal spacing lines of the other auras, rects = { { id, left, bottom, right, top } }: for two auras A then B
+--- in a row (their spans across overlap) with a gap of at least minGap, the line after B and the line before A at that
+--- gap, so a third aura repeats it. A gap under minGap is left out: the edge of B would be in reach too. The lines
+--- have spacing set: they only snap the edge of their side, and Score counts their references once.
+function PlacementSnap.AddSpacingLines(verticalLines, horizontalLines, rects, minGap, NewLine)
+  local function Add(lines, position, side, a, b, pos1, pos2)
+    local line = NewLine(position, false)
+    line.spacing = true
+    line.references[1] = { id = a.id, side = side, pos1 = pos1, pos2 = pos2 }
+    line.references[2] = { id = b.id, side = side, pos1 = pos1, pos2 = pos2 }
+    lines[#lines + 1] = line
+  end
+  -- Another aura of the row between A and B: they are not neighbours, their gap is not a spacing to repeat.
+  local function Between(a, b, low, high, acrossLow, acrossHigh)
+    for _, c in ipairs(rects) do
+      -- 1 of tolerance, as MergeLines: auras stuck together share an edge up to a float error.
+      if c ~= a and c ~= b and c[low] >= a[high] - 1 and c[high] <= b[low] + 1
+        and ((c[acrossLow] < a[acrossHigh] and a[acrossLow] < c[acrossHigh])
+          or (c[acrossLow] < b[acrossHigh] and b[acrossLow] < c[acrossHigh])) then
+        return true
+      end
+    end
+    return false
+  end
+  for _, a in ipairs(rects) do
+    for _, b in ipairs(rects) do
+      local gap = b.left - a.right
+      if gap >= minGap and a.bottom < b.top and b.bottom < a.top
+        and not Between(a, b, "left", "right", "bottom", "top") then
+        Add(verticalLines, b.right + gap, "LEFT", a, b, max(a.bottom, b.bottom), min(a.top, b.top))
+        Add(verticalLines, a.left - gap, "RIGHT", a, b, max(a.bottom, b.bottom), min(a.top, b.top))
+      end
+      gap = b.bottom - a.top
+      if gap >= minGap and a.left < b.right and b.left < a.right
+        and not Between(a, b, "bottom", "top", "left", "right") then
+        Add(horizontalLines, b.top + gap, "BOTTOM", a, b, max(a.left, b.left), min(a.right, b.right))
+        Add(horizontalLines, a.bottom - gap, "TOP", a, b, max(a.left, b.left), min(a.right, b.right))
+      end
+    end
+  end
+end
+
+--- Shifts { dx, dy } by index that align or spread rects = { { left, bottom, right, top } }: "LEFT", "RIGHT", "TOP",
+--- "BOTTOM" put that edge of each on the outermost one, "CENTERX", "CENTERY" the centers on the middle of the whole
+--- selection, "SPREADX", "SPREADY" keep the first and last on that axis and leave equal gaps between all of them.
+function PlacementSnap.AlignShifts(rects, command)
+  local minLeft, minBottom, maxRight, maxTop = math.huge, math.huge, -math.huge, -math.huge
+  for _, rect in ipairs(rects) do
+    minLeft, minBottom = min(minLeft, rect.left), min(minBottom, rect.bottom)
+    maxRight, maxTop = max(maxRight, rect.right), max(maxTop, rect.top)
+  end
+  local shifts = {}
+  for index, rect in ipairs(rects) do
+    local dx, dy = 0, 0
+    if command == "LEFT" then
+      dx = minLeft - rect.left
+    elseif command == "RIGHT" then
+      dx = maxRight - rect.right
+    elseif command == "CENTERX" then
+      dx = (minLeft + maxRight - rect.left - rect.right) / 2
+    elseif command == "BOTTOM" then
+      dy = minBottom - rect.bottom
+    elseif command == "TOP" then
+      dy = maxTop - rect.top
+    elseif command == "CENTERY" then
+      dy = (minBottom + maxTop - rect.bottom - rect.top) / 2
+    end
+    shifts[index] = { dx, dy }
+  end
+  if (command == "SPREADX" or command == "SPREADY") and #rects > 1 then
+    local low, high = "left", "right"
+    if command == "SPREADY" then
+      low, high = "bottom", "top"
+    end
+    local order, total = {}, 0
+    for index, rect in ipairs(rects) do
+      order[index] = index
+      total = total + rect[high] - rect[low]
+    end
+    -- By center, not by low edge: a wide aura around a small one stays last and the spread keeps the selection span.
+    table.sort(order, function(a, b)
+      local centerA, centerB = rects[a][low] + rects[a][high], rects[b][low] + rects[b][high]
+      if centerA ~= centerB then
+        return centerA < centerB
+      end
+      return a < b
+    end)
+    -- Over the span of the whole selection, so that an aura around another one does not leave it.
+    local spanLow, spanHigh = minLeft, maxRight
+    if command == "SPREADY" then
+      spanLow, spanHigh = minBottom, maxTop
+    end
+    local gap = (spanHigh - spanLow - total) / (#order - 1)
+    local position = spanLow
+    for _, index in ipairs(order) do
+      local rect = rects[index]
+      local delta = position - rect[low]
+      shifts[index] = command == "SPREADX" and { delta, 0 } or { 0, delta }
+      position = position + rect[high] - rect[low] + gap
+    end
+  end
+  return shifts
 end
 
 --- Sorts the aura lines and merges the ones under one unit apart, at their mean position.
@@ -112,6 +221,10 @@ function PlacementSnap.Score(line, positions, maxDistance)
           score = score + 8 * (10 * maxDistance - minDistanceOrth)
         end
       end
+    end
+    -- The references of a spacing line share one side and one span: count them once.
+    if line.spacing then
+      break
     end
   end
   return score

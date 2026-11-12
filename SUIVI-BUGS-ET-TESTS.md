@@ -476,7 +476,7 @@ Entrées du 2026-10-25, 2026-10-26 et 2026-10-29 de `CHANGES.md`. Rien n'est tes
 ### 13.5 Packs de classe
 12. [ ] Son sur un proc (Overpower, Clearcasting...) ; rappel « Fading » avant la fin d'un buff ; barre Enemy Cast sur un mob qui incante ; swing timer à distance (chasseur, arme de jet).
 13. [ ] Icône Defensives : Power Word: Shield reçu, potion défensive, et les défensifs de classe actifs (Shield Wall et Last Stand du guerrier, Barkskin du druide, Evasion du voleur, Deterrence du chasseur). Leur ancienne icône de buff a disparu, la recharge reste.
-14. [ ] Prêtre : Power Word: Shield sur la cible en une seule icône (bouclier ou recharge). Paladin : proc Infusion of Light. Mage : 4 segments d'Arcane Blast, remis à 15 s à chaque lancer.
+14. [ ] Prêtre : Power Word: Shield sur la cible en une seule icône (bouclier ou recharge). Paladin : proc Infusion of Light. Mage : 4 segments d'Arcane Blast, 18 s depuis le premier lancer, non relancés par les suivants.
 15. [ ] Paladin : rappel « Fading » sur Righteous Fury à 60 s de la fin.
 16. [ ] Chasseur : texte « In melee range » en combat quand la cible est au contact, caché à distance. Texte « Ammo: N » (aura Low Ammo) sous 200 munitions équipées, hors zone de repos.
 17. [ ] Voleur : rappel de stock de poison sous 5 Instant Poison ou Deadly Poison du plus haut rang connu ; un seul rappel par poison.

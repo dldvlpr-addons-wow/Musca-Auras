@@ -1,5 +1,6 @@
--- Mage pack: the Arcane Blast segments count the player's casts. Each Arcane Blast adds a stack up to 4 and restarts
--- the 15 s, other spells leave them, and a cast after the 15 s starts again at one.
+-- Mage pack: the Arcane Blast segments count the player's casts. Each Arcane Blast adds a stack up to 4, the 18 s run
+-- from the first cast and the next casts do not restart them, other spells leave them, and a cast after the 18 s
+-- starts again at one.
 return function(test)
   local pack = dofile("Tests/Packs/Mage/PackMage.lua")
   local displays, segments = {}, {}
@@ -45,15 +46,17 @@ return function(test)
   Cast(116)
   Cast(10211)
   assert(Shown() == 4, "Frostbolt or Arcane Missiles changed the stacks: " .. Shown())
-  test.Environment.Advance(15.5)
-  assert(Shown() == 0, "stacks still shown after 15 s: " .. Shown())
+  test.Environment.Advance(14.5)
+  assert(Shown() == 4, "stacks gone before 18 s: " .. Shown())
+  test.Environment.Advance(4)
+  assert(Shown() == 0, "stacks still shown after 18 s: " .. Shown())
   Cast(400574)
   Cast(400574)
   test.Environment.Advance(14)
   Cast(400574)
-  assert(Shown() == 3, "a cast within 15 s did not stack: " .. Shown())
-  test.Environment.Advance(15.5)
-  assert(Shown() == 0, "stacks still shown after 15 s: " .. Shown())
+  assert(Shown() == 3, "a cast within 18 s did not stack: " .. Shown())
+  test.Environment.Advance(4)
+  assert(Shown() == 0, "the last cast restarted the 18 s: " .. Shown())
   Cast(400574)
-  assert(Shown() == 1, "a cast after 15 s did not start again at one: " .. Shown())
+  assert(Shown() == 1, "a cast after 18 s did not start again at one: " .. Shown())
 end

@@ -176,6 +176,21 @@ function WeakAuras.OpenOptions(msg)
   end
 end
 
+-- /wa unlock: the placement mode of Musca, from the options addon.
+function Private.StartPlacementMode()
+  if InCombatLockdown() then
+    StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", L["The placement mode does not open during combat."])
+  elseif Private.NeedToRepairDatabase() then
+    StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "downgrade"})
+  elseif not WeakAuras.IsLoginFinished() then
+    -- The Unlock button of the "What's new" popup can be clicked while the auras still load.
+    prettyPrint(Private.LoginMessage())
+    loginQueue[#loginQueue + 1] = Private.StartPlacementMode
+  elseif Private.LoadOptions() and WeakAuras.TogglePlacementMode then
+    WeakAuras.TogglePlacementMode(Private)
+  end
+end
+
 function WeakAuras.ImportClassPack()
   if InCombatLockdown() then
     queueClassPackImport = true
@@ -214,6 +229,7 @@ function Private.PrintHelp()
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
   print(L["/wa repair - Repair tool"])
+  print("/wa unlock - Place your auras on the screen: move, resize, anchor them to each other")
   print("/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout")
   print("/wa backups - List the daily copies of your auras")
   print("/wa restore <number> - Replace your auras with a daily copy and reload the UI")
@@ -252,6 +268,8 @@ function SlashCmdList.WEAKAURAS(input)
     Private.ToggleCooldownManager()
   elseif msg == "help" then
     Private.PrintHelp();
+  elseif msg == "unlock" then
+    Private.StartPlacementMode()
   elseif msg == "demo" then
     -- The aura name keeps its case, unlike args.
     local id = input:match("^%s*%S+%s+(.-)%s*$")
@@ -386,7 +404,14 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.16.0"
+local CLASS_PACK_VERSION = "1.17.0"
+-- Version whose new features the "What's new" popup presents once, at the first login after the update.
+local WHATS_NEW_VERSION = "1.17.0"
+
+local function ShowClassPackNotice()
+  StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"].button1 = L["Update %s HUD"]:format(UnitClass("player"))
+  StaticPopup_Show("WEAKAURAS_CLASS_PACK_UPDATE")
+end
 
 local function HasClassPack()
   local _, playerClass = UnitClass("player")
@@ -1539,9 +1564,11 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
       if not db.foreverDisclaimerSeen then
         StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"].button3 = L["Install %s HUD"]:format(UnitClass("player"))
         StaticPopup_Show("WEAKAURAS_FOREVER_DISCLAIMER")
+      elseif db.whatsNewSeen ~= WHATS_NEW_VERSION then
+        -- The class pack notice follows when this popup is closed.
+        StaticPopup_Show("WEAKAURAS_WHATS_NEW")
       elseif db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
-        StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"].button1 = L["Update %s HUD"]:format(UnitClass("player"))
-        StaticPopup_Show("WEAKAURAS_CLASS_PACK_UPDATE")
+        ShowClassPackNotice()
       end
     else
       -- db isn't valid. Request permission to run repair tool before logging in
@@ -2593,6 +2620,33 @@ StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
   hideOnEscape = true,
 }
 
+StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
+  text = "|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
+    .. L["New: place your auras on the screen."] .. "\n\n"
+    .. L["- |cffffd100/wa unlock|r, or the |cffffd100Unlock|r button of |cffffd100/wa|r: drag your auras over a grid, set their exact position and size, and anchor them to each other."] .. "\n"
+    .. L["- Magnetism: auras snap to the grid, the screen edges and the other auras. Shift turns it off."] .. "\n"
+    .. L["- In |cffffd100/wa|r: a Grid button, arrow keys to move the selected aura, and Align Selection for several auras."] .. "\n"
+    .. L["- A new look for the |cffffd100/wa|r window."] .. "\n\n"
+    .. L["The |cffffd100Guide|r of |cffffd100/wa|r explains it all."],
+  button1 = L["Unlock"],
+  button2 = OKAY,
+  OnAccept = function()
+    Private.StartPlacementMode()
+  end,
+  OnShow = function()
+    db.whatsNewSeen = WHATS_NEW_VERSION
+  end,
+  -- Unlock opens the placement mode: the class pack notice then waits for the next login.
+  OnCancel = function()
+    if db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
+      ShowClassPackNotice()
+    end
+  end,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+}
+
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   text = "|cff00ccffMusca Auras|r\n\n"
     .. L["WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, so many Classic auras need changes."] .. "\n\n"
@@ -2618,6 +2672,7 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   OnShow = function()
     db.foreverDisclaimerSeen = true
     db.classPackNoticeSeen = CLASS_PACK_VERSION
+    db.whatsNewSeen = WHATS_NEW_VERSION
   end,
   timeout = 0,
   whileDead = true,
@@ -6241,10 +6296,17 @@ local function ensureMouseFrame()
 
   moverFrame:EnableMouse(true)
   moverFrame:SetScript("OnMouseDown", function()
+    -- Without a rect, the move would start from the bottom left of the screen.
+    if not mouseFrame:GetLeft() then
+      return
+    end
     mouseFrame:SetMovable(true);
     mouseFrame:StartMoving()
   end);
   moverFrame:SetScript("OnMouseUp", function()
+    if not mouseFrame:IsMovable() then
+      return
+    end
     mouseFrame:StopMovingOrSizing();
     mouseFrame:SetMovable(false);
     local xOffset = mouseFrame:GetRight() - GetScreenWidth();

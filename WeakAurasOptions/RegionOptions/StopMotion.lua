@@ -527,7 +527,7 @@ end
 local function modifyThumbnail(parent, region, data, fullModify, size)
     region:SetParent(parent)
 
-    size = size or 30;
+    size = size or 26;
     local scale;
     if(data.height > data.width) then
         scale = size/data.height;

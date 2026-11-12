@@ -24,7 +24,11 @@ local L = WeakAuras.L
 local moversizer
 local mover
 
-local MAGNETIC_ALIGNMENT = 10
+-- Shared with the Edit Mode. Read on call: OptionsPrivate.Private is only set on the first /wa.
+local function SnapDistance()
+  return OptionsPrivate.Private.PlacementSnap.snapDistance
+end
+
 local function distance(num1, num2)
   return abs(num2 - num1)
 end
@@ -43,9 +47,9 @@ local function EnsureTexture(self, texture)
   end
 end
 
--- Arrow buttons and keys. True when an aura moved.
+-- Arrow buttons and keys. True when an aura moved; nothing moves with Lock Positions.
 local function moveBy(deltaX, deltaY)
-  if mover and mover.moving and not mover.isMoving then
+  if mover and mover.moving and not mover.isMoving and not WeakAurasOptionsSaved.lockPositions then
     local data = mover.moving.data
     local parentData = data and data.parent and WeakAuras.GetData(data.parent)
     -- A dynamic group places its children: their offsets are not used.
@@ -538,7 +542,7 @@ local LineInformationFuncs = {
   end,
   --- @type fun(self: LineInformation, positions: table<"LEFT"|"RIGHT"|"BOTTOM"|"TOP"|"CENTERX"|"CENTERY", number>) : number
   Score = function(self, positions)
-    return OptionsPrivate.Private.PlacementSnap.Score(self, positions, MAGNETIC_ALIGNMENT)
+    return OptionsPrivate.Private.PlacementSnap.Score(self, positions, SnapDistance())
   end,
 
 }
@@ -664,7 +668,12 @@ local function DrawGrid()
     end
     local color = middle and gridHighlightColor or gridColor
     line:SetColorTexture(color[1], color[2], color[3], middle and 0.6 or 0.3)
-    line:SetThickness(middle and 2 or 1)
+    -- In whole pixels, as the Edit Mode grid: a thickness under one pixel hides some lines and merges their cells.
+    local thickness = middle and 2 or 1.2
+    if PixelUtil and PixelUtil.GetNearestPixelSize then
+      thickness = PixelUtil.GetNearestPixelSize(thickness, line:GetEffectiveScale(), thickness)
+    end
+    line:SetThickness(thickness)
     line:Show()
   end
   local spacing = GridSpacing()
@@ -706,7 +715,8 @@ AlignmentLines.CreateScreenLines = function(self, sizerPoint)
   local width, height = UIParent:GetWidth(), UIParent:GetHeight()
   local addVertical = not sizerPoint or sizerPoint:find("LEFT", 1) or sizerPoint:find("RIGHT", 1)
   local addHorizontal = not sizerPoint or sizerPoint:find("BOTTOM", 1) or sizerPoint:find("TOP", 1)
-  local spacing = WeakAurasOptionsSaved.gridAlign and GridSpacing() or nil
+  -- Only the grid on screen snaps: none while Edit Mode hides it.
+  local spacing = WeakAurasOptionsSaved.gridAlign and PlacementGrid:IsShown() and GridSpacing() or nil
   local midX, midY = UIParent:GetCenter()
   if addVertical then
     for _, position in ipairs(OptionsPrivate.Private.PlacementSnap.ScreenLines(width, midX, spacing)) do
@@ -836,7 +846,7 @@ local function SelectLines(lines, positions, auraSize)
     lines[1]:SetHighlighted(true)
     return lines[1].delta
   else
-    local bestLine = OptionsPrivate.Private.PlacementSnap.Best(lines, positions, MAGNETIC_ALIGNMENT)
+    local bestLine = OptionsPrivate.Private.PlacementSnap.Best(lines, positions, SnapDistance())
     for _, line in ipairs(lines) do
       if line == bestLine then
         line:SetHighlighted(true)
@@ -866,6 +876,11 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
   local scale = region:GetEffectiveScale() / UIParent:GetScale()
 
   local centerX, centerY = region:GetCenter()
+  -- No rect yet, as on the frame a move starts: the lines wait for the next update, the snap of a previous move dropped.
+  if not centerX then
+    mover.verticalDelta, mover.horizontalDelta = nil, nil
+    return
+  end
   centerX, centerY = centerX * scale, centerY * scale
   local left, right = region:GetLeft() * scale, region:GetRight() * scale
   local top, bottom = region:GetTop() * scale, region:GetBottom() * scale
@@ -888,8 +903,9 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
     CENTERY = centerY
   }
 
-  -- The edges that snap: the dragged corner, the centers with Ctrl, or the four edges.
-  local verticalEdges, horizontalEdges, auraWidth, auraHeight
+  -- The edges that snap: the dragged corner, the centers with Ctrl, or the four edges. With the four edges, the
+  -- center sticks to the screen and grid lines too, never to the edge of an aura, as in the Edit Mode.
+  local verticalEdges, horizontalEdges, auraWidth, auraHeight, screenCenterX, screenCenterY
   if sizePoint then
     verticalEdges = { sizePoint:find("LEFT", 1) and left or right }
     horizontalEdges = { sizePoint:find("TOP", 1) and top or bottom }
@@ -898,19 +914,31 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
   else
     verticalEdges, horizontalEdges = { left, right }, { bottom, top }
     auraWidth, auraHeight = right - left, top - bottom
+    screenCenterX, screenCenterY = centerX, centerY
   end
-  local function Potentials(lines, edges)
-    local potentials, isPotential = OptionsPrivate.Private.PlacementSnap.Candidates(lines, MAGNETIC_ALIGNMENT,
-      unpack(edges))
+  local function Potentials(lines, edges, center)
+    local Candidates = OptionsPrivate.Private.PlacementSnap.Candidates
+    local auraLines, screenLines = {}, {}
     for _, line in pairs(lines) do
-      if not isPotential[line] then
+      local list = line.gridLine and screenLines or auraLines
+      list[#list + 1] = line
+    end
+    local potentials, isPotential = Candidates(auraLines, SnapDistance(), unpack(edges))
+    local screenPotentials, isScreenPotential = Candidates(screenLines, SnapDistance(), center, unpack(edges))
+    for _, line in ipairs(screenPotentials) do
+      potentials[#potentials + 1] = line
+    end
+    for _, line in pairs(lines) do
+      if not (isPotential[line] or isScreenPotential[line]) then
         line:SetHighlighted(false)
       end
     end
     return potentials
   end
-  mover.verticalDelta = SelectLines(Potentials(self.verticalLines, verticalEdges), positions, auraWidth)
-  mover.horizontalDelta = SelectLines(Potentials(self.horizontalLines, horizontalEdges), positions, auraHeight)
+  mover.verticalDelta = SelectLines(Potentials(self.verticalLines, verticalEdges, screenCenterX), positions,
+    auraWidth)
+  mover.horizontalDelta = SelectLines(Potentials(self.horizontalLines, horizontalEdges, screenCenterY), positions,
+    auraHeight)
 end
 
 local function ConstructMoverSizer(parent)
@@ -1124,6 +1152,12 @@ local function ConstructMoverSizer(parent)
         return
       end
       OptionsPrivate.Private.CancelAnimation(region, true, true, true, true, true)
+      -- The reset above re-anchors the region: the client would start the move from a rect not laid out yet, at the
+      -- bottom left of the screen. GetLeft lays it out first; a region still without a rect does not move.
+      if not region:GetLeft() then
+        OptionsPrivate.Private.Animate("display", data.uid, "main", data.animation.main, region, false, nil, true)
+        return
+      end
       mover:ClearAllPoints()
       if data.regionType == "group" then
         mover:SetPoint("BOTTOMLEFT", region, mover.anchorPoint, region.blx * scale, region.bly * scale)
@@ -1231,8 +1265,13 @@ local function ConstructMoverSizer(parent)
         if WeakAurasOptionsSaved.lockPositions then
           return
         end
-        mover.isMoving = true
         OptionsPrivate.Private.CancelAnimation(region, true, true, true, true, true)
+        -- As startMoving: a region without a rect after the reset would be sized from the bottom left of the screen.
+        if not region:GetLeft() then
+          OptionsPrivate.Private.Animate("display", data.uid, "main", data.animation.main, region, false, nil, true)
+          return
+        end
+        mover.isMoving = true
         -- Offsets before any OnUpdate: doneSizing rounds only those the sizing changed.
         mover.sizingStartX, mover.sizingStartY = data.xOffset, data.yOffset
         region:StartSizing(point)
@@ -1507,6 +1546,10 @@ local function ConstructMoverSizer(parent)
     HighlightFrame:Hide()
   end
 
+  -- Absent where a test loads this file alone.
+  if OptionsPrivate.AnchorLinker then
+    OptionsPrivate.AnchorLinker(frame, mover, parent)
+  end
   return frame, mover
 end
 

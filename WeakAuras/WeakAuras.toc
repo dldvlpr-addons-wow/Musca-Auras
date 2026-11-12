@@ -5,7 +5,7 @@
 ## X-License: GPL-2.0
 ## X-Website: https://muscalab.com/addons/musca-auras
 ## X-Wago-ID: bGoYzp60
-## Version: 1.16.0
+## Version: 1.17.0
 ## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.blp
 ## X-Flavor: Vanilla
 ## Notes: A powerful, comprehensive utility for displaying graphics and information based on buffs, debuffs, and other triggers.
@@ -59,7 +59,9 @@ TriggerExpression.lua
 UnusedAuras.lua
 ReplaceValues.lua
 AuraSets.lua
+Style.lua
 PlacementSnap.lua
+AnchorLinks.lua
 EditModePlacement.lua
 FrozenMarker.lua
 PixelSnapping.lua

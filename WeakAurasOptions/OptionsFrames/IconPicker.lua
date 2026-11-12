@@ -27,6 +27,8 @@ local function ConstructIconPicker(frame)
   group.frame:SetPoint("TOPLEFT", frame, "TOPLEFT", 17, -50);
   group.frame:Hide();
   group:SetLayout("fill");
+  -- A flat block of DESIGN.md; the picker keeps this group for the whole session, it is never released.
+  OptionsPrivate.Private.Style.Fill(group.content:GetParent(), "raised")
 
   local scroll = AceGUI:Create("ScrollFrame");
   scroll:SetLayout("flow");

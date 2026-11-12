@@ -4,7 +4,7 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 
-local Type, Version = "WeakAurasNewButton", 28
+local Type, Version = "WeakAurasNewButton", 29
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -99,33 +99,40 @@ local function Constructor()
   button:SetWidth(380);
   button.dgroup = nil;
 
-  local background = button:CreateTexture(nil, "BACKGROUND");
+  -- Row of DESIGN.md: no fill, a light veil under the mouse (the HIGHLIGHT layer is drawn over the text), a 32 pixel icon in a 1 pixel dark frame, the title
+  -- in the text color and the description quiet under it.
+  local Style = OptionsPrivate.Private.Style
+  local background = button:CreateTexture(nil, "HIGHLIGHT");
   button.background = background;
-  background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
-  background:SetBlendMode("ADD");
-  background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
+  background:SetColorTexture(Style.Color("text", 0.06));
   background:SetAllPoints(button);
+  button:SetHighlightTexture(background);
+
+  local iconFrame = button:CreateTexture(nil, "BORDER");
+  iconFrame:SetColorTexture(Style.Color("background"));
+  iconFrame:SetSize(34, 34);
+  iconFrame:SetPoint("LEFT", button, "LEFT", 3, 0);
 
   local icon = button:CreateTexture(nil, "OVERLAY");
   button.icon = icon;
-  icon:SetWidth(40);
-  icon:SetHeight(40);
-  icon:SetPoint("LEFT", button, "LEFT");
+  icon:SetWidth(32);
+  icon:SetHeight(32);
+  icon:SetPoint("CENTER", iconFrame, "CENTER");
 
-  local title = button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge");
+  local title = Style.NewText(button, "text", "s", "text");
   button.title = title;
   title:SetHeight(14);
   title:SetJustifyH("LEFT");
   title:SetPoint("TOP", button, "TOP", 0, -5);
-  title:SetPoint("LEFT", icon, "RIGHT", 2, 0);
+  title:SetPoint("LEFT", iconFrame, "RIGHT", 8, 0);
   title:SetPoint("RIGHT", button, "RIGHT");
 
-  local description = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight");
+  local description = Style.NewText(button, "text", "xs", "textQuiet");
   button.description = description;
   description:SetHeight(14);
   description:SetJustifyH("LEFT");
-  description:SetPoint("BOTTOM", button, "BOTTOM", 0, 2);
-  description:SetPoint("LEFT", icon, "RIGHT", 2, 0);
+  description:SetPoint("BOTTOM", button, "BOTTOM", 0, 4);
+  description:SetPoint("LEFT", iconFrame, "RIGHT", 8, 0);
   description:SetPoint("RIGHT", button, "RIGHT");
 
 

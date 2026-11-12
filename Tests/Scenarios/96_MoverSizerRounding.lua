@@ -17,10 +17,12 @@ return function(test)
   local private = test.Loader.LoadAddon(test.tocPath, "WeakAuras", saved)
   test.Environment.Advance(1)
   local path = test.tocPath:gsub("WeakAuras/WeakAuras.toc$", "WeakAurasOptions/OptionsFrames/MoverSizer.lua")
-  local optionsPrivate = { Private = private, savedVars = { db = { displays = saved.displays } },
+  local optionsPrivate = { savedVars = { db = { displays = saved.displays } },
     ResetMoverSizer = function() end, displayButtons = {} }
+  -- As in game: the file loads before the first /wa sets OptionsPrivate.Private (WeakAurasOptions.lua ToggleOptions).
   local ok, message = test.Loader.RunFile(path, "WeakAurasOptions", optionsPrivate)
   assert(ok, "MoverSizer.lua: " .. tostring(message))
+  optionsPrivate.Private = private
   -- Set by the other option files, not loaded here.
   WeakAuras.UpdateThumbnail, WeakAuras.FillOptions = function() end, function() end
   -- Magnetic alignment off and Shift up: no alignment line applies.
@@ -134,7 +136,22 @@ return function(test)
   OnKeyDown(frame, "LEFT")
   Same(WeakAuras.GetData("Box").xOffset, 18, "no key move with Lock Positions")
   Same(frame:GetPropagateKeyboardInput(), true, "Lock Positions: key given to the game")
+  -- The arrow buttons too.
+  local leftButton
+  for _, child in ipairs({ frame:GetChildren() }) do
+    for _, button in ipairs({ child:GetChildren() }) do
+      if button:GetPoint() == "LEFT" and button:GetScript("OnClick") then
+        leftButton = button
+      end
+    end
+  end
+  assert(leftButton, "left arrow button")
+  leftButton:GetScript("OnClick")(leftButton)
+  Same(WeakAuras.GetData("Box").xOffset, 18, "no arrow button move with Lock Positions")
   WeakAurasOptionsSaved.lockPositions = nil
+  leftButton:GetScript("OnClick")(leftButton)
+  Same(WeakAuras.GetData("Box").xOffset, 17, "arrow button moves without Lock Positions")
+  OnKeyDown(frame, "RIGHT")
   -- A child of a dynamic group: the group places it, the keys go to the game.
   local GetData = WeakAuras.GetData
   WeakAuras.GetData = function(id)
@@ -167,9 +184,43 @@ return function(test)
   Same(SnapDeltaAt(603), nil, "no grid line without the Grid option")
   Same(SnapDeltaAt(4), -4, "left edge of the screen")
   WeakAurasOptionsSaved.gridAlign, WeakAurasOptionsSaved.gridSpacing = true, 100
+  optionsPrivate.UpdatePlacementGrid()
   Same(SnapDeltaAt(603), -3, "grid line at 600")
-  -- Left edge 3 from the line at 700, right edge 7 from the line at 900: the nearest line wins.
-  Same(SnapDeltaAt(703, 190), -3, "nearest of two grid lines")
+  -- Left edge 3 from the line at 700, right edge 7 from the line at 1000, center 48 from 800: the nearest line wins.
+  Same(SnapDeltaAt(703, 290), -3, "nearest of two grid lines")
+  -- A region without a rect, as just re-anchored: no move from the bottom left of the screen. A rect without a
+  -- center on the first update: no error, the move goes on.
+  local startMoving = rawget(region, "StartMoving")
+  local moves = 0
+  rawset(region, "StartMoving", function() moves = moves + 1 end)
+  region.GetLeft = function() return nil end
+  frame:SetToRegion(region, WeakAuras.GetData("Box"))
+  mover.startMoving()
+  Same(moves, 0, "no move without a rect")
+  Same(mover.isMoving or false, false, "mover not moving without a rect")
+  region.GetLeft = function() return 100 end
+  region.GetCenter = function() return nil end
+  mover.startMoving()
+  Same(moves, 1, "move with a rect")
+  Same(mover.isMoving, true, "start goes on without a center")
+  mover.doneMoving()
+  -- Self and anchor points at the same center in the harness: 0, not the -3 snapped at 703 above.
+  Same(WeakAuras.GetData("Box").xOffset, 0, "no snap of the previous move")
+  region.GetLeft, region.GetCenter = nil, nil
+  rawset(region, "StartMoving", startMoving)
+  -- The same for a sizing: no size from the bottom left of the screen.
+  local startSizing = rawget(region, "StartSizing")
+  local sizings = 0
+  rawset(region, "StartSizing", function() sizings = sizings + 1 end)
+  region.GetLeft = function() return nil end
+  frame:SetToRegion(region, WeakAuras.GetData("Box"))
+  frame.startSizing("RIGHT")
+  Same(sizings, 0, "no sizing without a rect")
+  Same(mover.isMoving, false, "mover not sizing without a rect")
+  region.GetLeft = nil
+  rawset(region, "StartSizing", startSizing)
+  -- Without Ctrl, the center sticks to a grid line too: center at 802, edges 32 from a line.
+  Same(SnapDeltaAt(770, 64), -2, "center on a grid line without Ctrl")
   -- Pitch of the slider, 30: line at 530 from the center at 500. The Edit Mode grid is ignored.
   WeakAurasOptionsSaved.gridSpacing = 30
   _G.EditModeManagerFrame = { Grid = { gridSpacing = 60, GetEffectiveScale = function() return 1 end } }
@@ -181,6 +232,11 @@ return function(test)
   -- The grid is drawn while the options frame (UIParent here) is shown with the Grid option, the middle lines
   -- stronger, and hidden without the option.
   local grid = optionsPrivate.PlacementGrid
+  -- Lines drawn by the snap checks above were made before the CreateLine hook below: start from an empty grid.
+  grid:Hide()
+  for index = #grid.lines, 1, -1 do
+    grid.lines[index] = nil
+  end
   local CreateLine = grid.CreateLine
   grid.CreateLine = function(self, ...)
     local line = CreateLine(self, ...)
@@ -192,7 +248,8 @@ return function(test)
     for _, line in ipairs(grid.lines) do
       if line:IsShown() then
         shown = shown + 1
-        if line.thickness == 2 then
+        -- Thickness in whole pixels: 2 pixels for a middle line, under it for the others.
+        if line.thickness == PixelUtil.GetNearestPixelSize(2, line:GetEffectiveScale(), 2) then
           middle = middle + 1
         end
       end

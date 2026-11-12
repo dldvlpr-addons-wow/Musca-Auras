@@ -1,3 +1,62 @@
+# Musca Auras 1.17.0 (2026-11-12)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Placement mode: `/wa unlock` darkens the screen under a grid and gives every aura a box to drag, loaded or not (the
+  children of a dynamic group are placed by their group). It opens with a short animation, refuses to start in
+  combat, and comes back after combat with your changes. A bar on top has Grid, Snap, Revert, Quit and Save and quit.
+- Placement panel: type the X/Y position and the size of the selected aura, choose the aura it follows, and for a
+  dynamic group set its growth, alignment and spacing. Escape closes the menu, the link and the selection in turn,
+  then asks whether to keep the changes.
+- Magnetism: in `/wa` and in Edit Mode, auras snap to screen edges, grid lines, and the edges and centers of other
+  auras. Two auras in a row or column add a line at the same gap, so a third one repeats the spacing. Ctrl aligns
+  centers only, Shift turns the snap off. A yellow ghost box and guides show where the aura will land, and the
+  offsets are shown next to the box while you drag.
+- Grid button in the `/wa` toolbar: draws a grid over the screen and snaps to it. Right click it to set the spacing
+  (8 to 128).
+- Edit Mode: drag the handle at the bottom right corner of the selected aura to resize it, with the same snap.
+- Arrow keys move the selected aura by 1 unit, 10 with Shift, in Edit Mode and in `/wa` (not with Lock Positions).
+- Align Selection: with several auras selected in `/wa`, align their edges or centers, or spread them with equal gaps.
+  One undo step restores the move.
+- Anchor links: a Link button on the `/wa` mover, and an Anchor link on the Edit Mode boxes, anchor an aura or
+  group to a side or a corner of another aura, group or game frame, without moving it. A link that would make a loop
+  is refused. A light blue frame shows what the aura follows.
+- Right click on a box: show always, in combat or out of combat, disable or enable, or edit in `/wa`. Applies to a
+  whole group, and Revert restores it.
+- Nested groups: a left click inside the selected group keeps it, so you can drag the whole group from any child.
+  Release without dragging to select one level lower. In Edit Mode, the children of simple groups get their own box.
+- New look for the `/wa` window: dark frame, Fira font, brass accents, a title bar with the version, and a toolbar
+  where Unlock is the main button. Flat tabs, a restyled aura list with lighter rows, thin scroll bars, and section
+  titles on the New and Packs panels.
+- At the first login after the update, a window presents the placement mode, with an Unlock button to try it. The
+  in-game guide (`/wa tutorial`) has a new part on placing your auras.
+
+## Changed
+
+- Mage pack: the Arcane Blast segments run 18 s from the first cast. Further casts add a stack without restarting the
+  timer.
+- Magnetically Align in `/wa` also snaps to the edges of the screen.
+- Positions and sizes are rounded to whole units when you drop an aura or finish a resize, except on an axis stuck to
+  a line. The arrow buttons around the mover move by 1 unit.
+- Edit Mode boxes of small groups snap on the real edges of the group, and the middle lines of the screen are snap
+  targets.
+- French translations added for several `/wa` labels.
+
+## Fixed
+
+- A click to move an aura in `/wa` no longer sends it, with its group, to the bottom left of the screen. The same
+  goes for resizing and for the Edit Mode and `/wa unlock` boxes.
+- Resizing a child of a dynamic group in `/wa` changes only its width and height, and the magnetic alignment works on
+  the right and top edges.
+- The arrow buttons around the mover no longer move an aura while Lock Positions is on.
+- Undo and redo restore the border and the mover of a group.
+
+## After the update
+
+- Class HUDs: the class pack notice shows again. Re-import the Mage pack to get the new Arcane Blast segments.
+
 # Musca Auras 1.16.0 (2026-11-07)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
