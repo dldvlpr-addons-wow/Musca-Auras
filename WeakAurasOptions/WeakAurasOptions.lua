@@ -176,8 +176,8 @@ function OptionsPrivate.MultipleDisplayTooltipDesc()
   end
   desc[2][1] = L["Children:"]
   tinsert(desc, " ");
-  tinsert(desc, {" ", "|cFF00FFFF"..L["Right-click for more options"]});
-  tinsert(desc, {" ", "|cFF00FFFF"..L["Drag to move"]});
+  tinsert(desc, {" ", OptionsPrivate.Private.Style.Hex("accent")..L["Right-click for more options"]});
+  tinsert(desc, {" ", OptionsPrivate.Private.Style.Hex("accent")..L["Drag to move"]});
   return desc;
 end
 
@@ -445,7 +445,7 @@ function OptionsPrivate.MultipleDisplayTooltipMenu()
   if(anyGroup) then
     -- Disable "Add to New Dynamic Group"
     menu[2].notClickable = 1;
-    menu[2].text = "|cFF777777"..menu[2].text;
+    menu[2].text = OptionsPrivate.Private.Style.Hex("textQuiet")..menu[2].text;
   end
 
   -- Also disable Add to New Dynamic Group/Group if that would create
@@ -454,11 +454,11 @@ function OptionsPrivate.MultipleDisplayTooltipMenu()
     local parentData = WeakAuras.GetData(commonParent);
     if (parentData and parentData.regionType == "dynamicgroup") then
       menu[1].notClickable = 1;
-      menu[1].text = "|cFF777777"..menu[1].text;
+      menu[1].text = OptionsPrivate.Private.Style.Hex("textQuiet")..menu[1].text;
       menu[2].notClickable = 1;
-      menu[2].text = "|cFF777777"..menu[2].text;
+      menu[2].text = OptionsPrivate.Private.Style.Hex("textQuiet")..menu[2].text;
       menu[3].notClickable = 1;
-      menu[3].text = "|cFF777777"..menu[3].text;
+      menu[3].text = OptionsPrivate.Private.Style.Hex("textQuiet")..menu[3].text;
     end
   end
 
@@ -510,7 +510,7 @@ function OptionsPrivate.ConfirmDelete(toDelete, parents)
   if toDelete then
     local warningForm = OptionsPrivate.Private.ListDeletedAuras()
       and L["You are about to delete %d aura(s). They can be imported again for 30 days with /wa deleted. Would you like to continue?"]
-      or L["You are about to delete %d aura(s). |cFFFF0000This cannot be undone!|r Would you like to continue?"]
+      or OptionsPrivate.Private.Style.Markup(L["You are about to delete %d aura(s). |cFFFF0000This cannot be undone!|r Would you like to continue?"])
     StaticPopupDialogs["WEAKAURAS_CONFIRM_DELETE"].text = warningForm:format(#toDelete)
     StaticPopup_Show("WEAKAURAS_CONFIRM_DELETE", "", "", {toDelete = toDelete, parents = parents})
   end
@@ -917,7 +917,7 @@ local function EnsureDisplayButton(data)
       OptionsPrivate.TriggerSecretWarnings.UpdateAuraWarning(data)
       displayButtons[id]:UpdateWarning()
     else
-      print("|cFF8800FFWeakAuras|r: Error creating button for", id);
+      WeakAuras.prettyPrint("Error creating button for", id);
     end
   end
 end
@@ -2136,7 +2136,7 @@ function OptionsPrivate.OpenModelPicker(baseObject, path)
   if not(C_AddOns.IsAddOnLoaded("WeakAurasModelPaths")) then
     local loaded, reason = C_AddOns.LoadAddOn("WeakAurasModelPaths");
     if not(loaded) then
-      reason = string.lower("|cffff2020" .. _G["ADDON_" .. reason] .. "|r.")
+      reason = string.lower(OptionsPrivate.Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
       WeakAuras.prettyPrint(string.format(L["ModelPaths could not be loaded, the addon is %s"], reason));
       WeakAuras.ModelPaths = {};
     end
@@ -2153,7 +2153,7 @@ function OptionsPrivate.OpenTriggerTemplate(data, targetId)
   if not(C_AddOns.IsAddOnLoaded("WeakAurasTemplates")) then
     local loaded, reason = C_AddOns.LoadAddOn("WeakAurasTemplates");
     if not(loaded) then
-      reason = string.lower("|cffff2020" .. _G["ADDON_" .. reason] .. "|r.")
+      reason = string.lower(OptionsPrivate.Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
       WeakAuras.prettyPrint(string.format(L["Templates could not be loaded, the addon is %s"], reason));
       return;
     end
@@ -2280,7 +2280,7 @@ function OptionsPrivate.UpdateTextReplacements(frame, data)
       if prop.type == "marker" then
         button:SetTitle(prop.desc)
       else
-        button:SetTitle(string.format("|cFFFFCC00%s|r%s", propPrefix, prop.name))
+        button:SetTitle(string.format(OptionsPrivate.Private.Style.Hex("warning") .. "%s|r%s", propPrefix, prop.name))
       end
       if prop.type == "mini" or prop.type == "marker" then
         button:SetRelativeWidth((1/prop.widthFraction) - 1e-10)
@@ -2635,7 +2635,7 @@ function OptionsPrivate.AddTextFormatOption(input, withHeader, get, addOption, h
     headerOption =  {
       type = "execute",
       control = "WeakAurasExpandSmall",
-      name = L["|cffffcc00Format Options|r"],
+      name = OptionsPrivate.Private.Style.Markup(L["|cffffcc00Format Options|r"]),
       width = WeakAuras.doubleWidth,
       func = function(info, button)
         setHidden(not hidden())

@@ -68,7 +68,9 @@ local OptionsPrivate = select(2, ...)
 local WeakAuras = WeakAuras
 local L = WeakAuras.L
 local tinsert, tremove, tconcat = table.insert, table.remove, table.concat
-local conflictBlue = "|cFF4080FF"
+local function conflictBlue()
+  return OptionsPrivate.Private.Style.Hex("accent")
+end
 local conflict = {} -- magic value
 local soundHandle
 local function PlaySound(...)
@@ -237,7 +239,7 @@ local function name(option, key, name, phrase)
   if option[key] ~= nil or not atLeastOneSet(option.references, key) then
     return header
   else
-    return conflictBlue .. header
+    return conflictBlue() .. header
   end
 end
 
@@ -249,7 +251,7 @@ local function nameHead(data, option, phrase)
   else
     for child in OptionsPrivate.Private.TraverseLeafs(data) do
       if not option.references[child.id] then
-        return conflictBlue .. phrase
+        return conflictBlue() .. phrase
       end
     end
   end
@@ -268,7 +270,7 @@ local function nameUser(option)
     elseif firstValue == nil then
       firstValue = childConfig[option.key]
     elseif neq(firstValue, childConfig[option.key]) then
-      return conflictBlue .. name
+      return conflictBlue() .. name
     end
   end
   return name
@@ -286,7 +288,7 @@ local function nameUserDesc(option)
         tinsert(text, childOption.text)
       end
     end
-    return conflictBlue .. tconcat(text, "\n")
+    return conflictBlue() .. tconcat(text, "\n")
   end
 end
 
@@ -296,13 +298,13 @@ local function nameArray(option, array, index, phrase)
   for id, optionData in pairs(option.references) do
     local childOption = optionData.options[optionData.index]
     if not childOption[array] then
-      return conflictBlue .. phrase
+      return conflictBlue() .. phrase
     elseif childOption[array][index] == nil then
-      return conflictBlue .. phrase
+      return conflictBlue() .. phrase
     elseif value == nil then
       value = childOption[array][index]
     elseif value ~= childOption[array][index] then
-      return conflictBlue .. phrase
+      return conflictBlue() .. phrase
     end
   end
   return phrase
@@ -513,7 +515,7 @@ local function getUserValues(option)
   local values = getValues(option)
   for i, v in ipairs(values) do
     if v == conflict then
-      values[i] = conflictBlue .. L["Value %i"]:format(i)
+      values[i] = conflictBlue() .. L["Value %i"]:format(i)
     end
   end
   return values
@@ -2045,7 +2047,7 @@ typeControlAdders = {
     local defaultValues = {}
     for i, v in ipairs(values) do
       if v == conflict then
-        defaultValues[i] = conflictBlue .. L["Value %i"]:format(i)
+        defaultValues[i] = conflictBlue() .. L["Value %i"]:format(i)
       else
         defaultValues[i] = v
       end
@@ -2078,7 +2080,7 @@ typeControlAdders = {
       args[prefix .. "value" .. j] = {
         type = "input",
         width = WeakAuras.normalWidth - 0.15,
-        name = (value == conflict and conflictBlue or "") .. L["Value %i"]:format(j),
+        name = (value == conflict and conflictBlue() or "") .. L["Value %i"]:format(j),
         desc = descSelect(option, j),
         order = order(),
         get = function()
@@ -2313,7 +2315,7 @@ typeControlAdders = {
     local defaultValues = {}
     for i, v in ipairs(values) do
       if v == conflict then
-        defaultValues[i] = conflictBlue .. L["Value %i"]:format(i)
+        defaultValues[i] = conflictBlue() .. L["Value %i"]:format(i)
       else
         defaultValues[i] = v
       end
@@ -2358,7 +2360,7 @@ typeControlAdders = {
       args[prefix .. "value" .. j] = {
         type = "input",
         width = WeakAuras.normalWidth - 0.15,
-        name = (value == conflict and conflictBlue or "") .. L["Value %i"]:format(j),
+        name = (value == conflict and conflictBlue() or "") .. L["Value %i"]:format(j),
         desc = descSelect(option, j),
         order = order(),
         get = function()
@@ -2626,7 +2628,7 @@ local function buildArrayEntryValues(option)
         if firstChild then
           values[i] = entryNames[i]
         elseif values[i] ~= entryNames[i] then
-          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+          values[i] = conflictBlue() .. L["Entry %i"]:format(i)
         end
         i = i + 1
       end
@@ -2641,7 +2643,7 @@ local function buildArrayEntryValues(option)
         if firstChild then
           values[i] = L["Entry %i"]:format(i)
         elseif values[i] == nil or childValues[i] == nil then
-          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+          values[i] = conflictBlue() .. L["Entry %i"]:format(i)
         end
         i = i + 1
       end
@@ -2654,9 +2656,9 @@ local function buildArrayEntryValues(option)
       local childValues = optionData.config[option.key]
       while i <= #values or i <= #childValues do
         if firstChild then
-          values[i] = childValues[i][nameSource] or conflictBlue .. L["Entry %i"]:format(i)
+          values[i] = childValues[i][nameSource] or conflictBlue() .. L["Entry %i"]:format(i)
         elseif not childValues[i] or childValues[i][nameSource] ~= values[i] then
-          values[i] = conflictBlue .. L["Entry %i"]:format(i)
+          values[i] = conflictBlue() .. L["Entry %i"]:format(i)
         end
         i = i + 1
       end
@@ -3072,7 +3074,7 @@ local function addUserModeOption(options, args, data, order, prefix, i)
           end
         end
       end
-      userOption.name = (conflict and conflictBlue or "") .. tconcat(name, " / ")
+      userOption.name = (conflict and conflictBlue() or "") .. tconcat(name, " / ")
     elseif optionType == "description" then
       userOption.name = nameUserDesc(option)
       userOption.fontSize = option.fontSize

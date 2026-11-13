@@ -1403,6 +1403,11 @@ return function(test)
 
     local paletteFile = {}
     local loaded, loadMessage = test.Loader.RunFile(optionsDirectory .. "ColorPalette.lua", "WeakAurasOptions", paletteFile)
+    -- The palette reads its colours from the style tokens once the options are open.
+    local stylePrivate = {}
+    local styleLoaded, styleMessage = test.Loader.RunFile(test.tocPath:gsub("WeakAuras.toc$", "Style.lua"), "WeakAuras", stylePrivate)
+    assert(styleLoaded, tostring(styleMessage))
+    paletteFile.Private = stylePrivate
     SetGlobal("CreateFrame", realCreateFrame)
     assert(loaded, tostring(loadMessage))
     Eq(#created, 0, "loading the palette creates no frame")
@@ -1438,7 +1443,7 @@ return function(test)
     Eq(panelState.backdrop.edgeSize, 1, "panel border size")
     for index = 1, 3 do Within(panelState.backdropColor[index], 0.04, 0.08, "panel background channel " .. index) end
     Within(panelState.backdropColor[4], 0.95, 1, "panel background alpha")
-    for index = 1, 3 do Within(panelState.backdropBorderColor[index], 0.25, 0.40, "panel border channel " .. index) end
+    for index = 1, 3 do Within(panelState.backdropBorderColor[index], 0.20, 0.40, "panel border channel " .. index) end
     Eq(panelState.backdropBorderColor[4], 1, "panel border alpha")
     Eq(panelState.shown, true, "panel is shown")
 

@@ -1,4 +1,4 @@
-<h1 style="text-align: center;"><span style="color: #0cf;">Musca</span> <span style="color: #ffd100;">Auras</span></h1>
+<h1 style="text-align: center;"><span style="color: #e8b543;">Musca</span> <span style="color: #e8b543;">Auras</span></h1>
 
 <h3 style="text-align: center;"><strong>The WeakAuras you know, with a ready-made HUD for your class in one click, that keeps working in combat on WoW Forever.</strong></h3>
 
@@ -14,15 +14,15 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 ***
 
-## <span style="color: #0cf;">🧩 24 utility packs, for every class</span>
+## <span style="color: #e8b543;">🧩 24 utility packs, for every class</span>
 
-On the Packs page (<span style="color: #ffd100;"><strong>/wa</strong></span>, <span style="color: #ffd100;"><strong>New Aura</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>), each pack installs in one click.
+On the Packs page (<span style="color: #e8b543;"><strong>/wa</strong></span>, <span style="color: #e8b543;"><strong>New Aura</strong></span>, then <span style="color: #e8b543;"><strong>Packs</strong></span>), each pack installs in one click.
 
-- <span style="color: #ffd100;"><strong>Combat:</strong></span> Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
-- <span style="color: #ffd100;"><strong>Group and Buffs:</strong></span> Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements (battle rez, soulstone and summon told to your group).
-- <span style="color: #ffd100;"><strong>Target and Enemies:</strong></span> Target Debuffs, Nameplate Aggro, Crowd Control, Armor Shred, Enemy Targets.
-- <span style="color: #ffd100;"><strong>Character:</strong></span> Level Progress, Character Stats, Group Experience, Equipment Sets (click an icon to equip the set).
-- <span style="color: #ffd100;"><strong>World:</strong></span> World Reminders, Campfire (click to sit), Guild Campfires, Object Highlight.
+- <span style="color: #e8b543;"><strong>Combat:</strong></span> Ready Flash, Combat Text, Combat Items, Engineering Items, Shield Meter, Center Mark.
+- <span style="color: #e8b543;"><strong>Group and Buffs:</strong></span> Buff Check, Raid Coverage, Pre-Pull Check, Conjured Supplies, Announcements (battle rez, soulstone and summon told to your group).
+- <span style="color: #e8b543;"><strong>Target and Enemies:</strong></span> Target Debuffs, Nameplate Aggro, Crowd Control, Armor Shred, Enemy Targets.
+- <span style="color: #e8b543;"><strong>Character:</strong></span> Level Progress, Character Stats, Group Experience, Equipment Sets (click an icon to equip the set).
+- <span style="color: #e8b543;"><strong>World:</strong></span> World Reminders, Campfire (click to sit), Guild Campfires, Object Highlight.
 
 Group Experience and Guild Campfires only show the players who also run the pack.
 
@@ -30,37 +30,37 @@ Group Experience and Guild Campfires only show the players who also run the pack
 
 ## <span style="color: #3c3;">🆕 New in 1.15 and 1.16</span>
 
-### <span style="color: #0cf;">1.16</span>
+### <span style="color: #e8b543;">1.16</span>
 
-- <span style="color: #ffd100;"><strong>Warrior HUD:</strong></span> Sunder Armor on your target shows 5 segments, whoever cast it.
-- <span style="color: #ffd100;"><strong>Priest HUD:</strong></span> Divine Aegis shows as a buff on you.
-- <span style="color: #ffd100;"><strong>Combat Text pack:</strong></span> hits and heals taken show again in combat.
-- <span style="color: #ffd100;"><strong>Groups by unit:</strong></span> no more holes in centered rows and in Grid mode when a member has no aura or leaves.
-- <span style="color: #ffd100;"><strong>Many fixes</strong></span> in triggers, displays, custom code and options, including a Lua error on enemy nameplates with a raid mark.
+- <span style="color: #e8b543;"><strong>Warrior HUD:</strong></span> Sunder Armor on your target shows 5 segments, whoever cast it.
+- <span style="color: #e8b543;"><strong>Priest HUD:</strong></span> Divine Aegis shows as a buff on you.
+- <span style="color: #e8b543;"><strong>Combat Text pack:</strong></span> hits and heals taken show again in combat.
+- <span style="color: #e8b543;"><strong>Groups by unit:</strong></span> no more holes in centered rows and in Grid mode when a member has no aura or leaves.
+- <span style="color: #e8b543;"><strong>Many fixes</strong></span> in triggers, displays, custom code and options, including a Lua error on enemy nameplates with a raid mark.
 
 <span style="color: #ff9800;"><strong>After the update:</strong></span> re-import the Warrior and Priest packs. Delete the Combat Text aura, then import it again from the Packs page.
 
-### <span style="color: #0cf;">1.15</span>
+### <span style="color: #e8b543;">1.15</span>
 
-- <span style="color: #ffd100;"><strong>Packs page:</strong></span> install the whole class HUD or one block at a time, and 24 utility packs.
-- <span style="color: #ffd100;"><strong>Richer class HUDs:</strong></span> proc sounds, "Fading" reminders, enemy cast bar, ranged swing timer, a Defensives icon, and missing buffs, procs and debuffs added for every class.
-- <span style="color: #ffd100;"><strong>Stock reminders:</strong></span> Rogue poisons and Hunter ammo running low.
+- <span style="color: #e8b543;"><strong>Packs page:</strong></span> install the whole class HUD or one block at a time, and 24 utility packs.
+- <span style="color: #e8b543;"><strong>Richer class HUDs:</strong></span> proc sounds, "Fading" reminders, enemy cast bar, ranged swing timer, a Defensives icon, and missing buffs, procs and debuffs added for every class.
+- <span style="color: #e8b543;"><strong>Stock reminders:</strong></span> Rogue poisons and Hunter ammo running low.
 
 Full list in the **Files** tab.
 
 ***
 
-## <span style="color: #0cf;">🚀 Quick start</span>
+## <span style="color: #e8b543;">🚀 Quick start</span>
 
 1. **Install** Musca Auras and start the game.
-2. On the welcome popup, click <span style="color: #ffd100;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #ffd100;"><strong>/wa</strong></span>, click <span style="color: #ffd100;"><strong>New Aura</strong></span>, then <span style="color: #ffd100;"><strong>Packs</strong></span>, then <span style="color: #ffd100;"><strong>Whole HUD</strong></span>. The same page installs one HUD block at a time, and the utility packs.
-3. **Make it yours:** type <span style="color: #ffd100;"><strong>/wa</strong></span> to move, resize or change any aura. New to auras? Click <span style="color: #ffd100;"><strong>Guide</strong></span> at the top of the `/wa` window.
+2. On the welcome popup, click <span style="color: #e8b543;"><strong>Install &lt;your class&gt; HUD</strong></span>. Missed it? Type <span style="color: #e8b543;"><strong>/wa</strong></span>, click <span style="color: #e8b543;"><strong>New Aura</strong></span>, then <span style="color: #e8b543;"><strong>Packs</strong></span>, then <span style="color: #e8b543;"><strong>Whole HUD</strong></span>. The same page installs one HUD block at a time, and the utility packs.
+3. **Make it yours:** type <span style="color: #e8b543;"><strong>/wa</strong></span> to move, resize or change any aura. New to auras? Click <span style="color: #e8b543;"><strong>Guide</strong></span> at the top of the `/wa` window.
 
 <span style="color: #f44336;"><strong>Do not install it next to another WeakAuras build.</strong></span> The folder name and the saved settings are the same, on purpose, so your existing auras keep working.
 
 ***
 
-## <span style="color: #0cf;">⚡ Why Musca Auras?</span>
+## <span style="color: #e8b543;">⚡ Why Musca Auras?</span>
 
 WoW Forever looks like Classic, but it runs on the **modern game engine**. That engine hides most combat data from addons, and the regular WeakAuras breaks. **Musca Auras** is WeakAuras 5.22.0 ported to WoW Forever (client 1.60.1).
 
@@ -73,16 +73,16 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ***
 
-## <span style="color: #0cf;">🧰 What you get</span>
+## <span style="color: #e8b543;">🧰 What you get</span>
 
-- <span style="color: #ffd100;"><strong>Low health and low resource alerts in combat,</strong></span> for example an icon when you have 80 energy or more.
-- <span style="color: #ffd100;"><strong>Colors that react in combat:</strong></span> interruptible casts, spells out of range, not enough mana or rage, a timer about to run out.
-- <span style="color: #ffd100;"><strong>Damage over time timers from your own casts,</strong></span> with no code to write.
-- <span style="color: #ffd100;"><strong>Type spells by name,</strong></span> in your game language: every rank of the spell is tracked.
+- <span style="color: #e8b543;"><strong>Low health and low resource alerts in combat,</strong></span> for example an icon when you have 80 energy or more.
+- <span style="color: #e8b543;"><strong>Colors that react in combat:</strong></span> interruptible casts, spells out of range, not enough mana or rage, a timer about to run out.
+- <span style="color: #e8b543;"><strong>Damage over time timers from your own casts,</strong></span> with no code to write.
+- <span style="color: #e8b543;"><strong>Type spells by name,</strong></span> in your game language: every rank of the spell is tracked.
 
 ***
 
-## <span style="color: #0cf;">🎯 Limits</span>
+## <span style="color: #e8b543;">🎯 Limits</span>
 
 ### <span style="color: #ff9800;">⚠ Works, with limits</span>
 
@@ -96,7 +96,7 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ***
 
-## <span style="color: #0cf;">🌐 Auras made elsewhere</span>
+## <span style="color: #e8b543;">🌐 Auras made elsewhere</span>
 
 - <span style="color: #4caf50;"><strong>Auras from Wago or the regular WeakAuras import the usual way.</strong></span> <span style="color: #ff9800;"><strong>Those that rely on the combat log need to be updated.</strong></span>
 - <span style="color: #4caf50;"><strong>Coming from ForeverAuras?</strong></span> Its Aura (Modern) and Cooldown Manager auras import as they are.
@@ -106,15 +106,15 @@ WoW Forever looks like Classic, but it runs on the **modern game engine**. That 
 
 ## <span style="color: #ff6b35;">🔄 Updating from an older version</span>
 
-Install the latest version, then click <span style="color: #ffd100;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #ffd100;"><strong>Whole HUD</strong></span> on the Packs page. Your positions and options are kept.
+Install the latest version, then click <span style="color: #e8b543;"><strong>Update &lt;your class&gt; HUD</strong></span> in the message shown at login, or <span style="color: #e8b543;"><strong>Whole HUD</strong></span> on the Packs page. Your positions and options are kept.
 
 - <span style="color: #3c3;"><strong>Your own auras are kept.</strong></span> 1.12 converts stance and form auras: an older version no longer reads them correctly.
-- <span style="color: #ffd100;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
-- <span style="color: #ffd100;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
+- <span style="color: #e8b543;"><strong>Skipped a version?</strong></span> Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
+- <span style="color: #e8b543;"><strong>Lua errors, or an aura no longer behaves as before?</strong></span> Install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
 
 ***
 
-## <span style="color: #0cf;">⚖ License and credits</span>
+## <span style="color: #e8b543;">⚖ License and credits</span>
 
 - **Musca Auras** is a modified version of [WeakAuras2](https://github.com/WeakAuras/WeakAuras2), © The WeakAuras Team, released under the [GNU General Public License v2](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/LICENSE). Changes © 2026 dldvlpr, same license.
 - Imports [ForeverAuras](https://github.com/neroxrw/foreverauras) auras: saved field names stay compatible. Versions up to 1.12 held code from ForeverAuras (Neroxrw), GPL v2, and versions before 1.10 code from [M33kAuras](https://github.com/m33shoq/M33kAuras) (m33shoq).

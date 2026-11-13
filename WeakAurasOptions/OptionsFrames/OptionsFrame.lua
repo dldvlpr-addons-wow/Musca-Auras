@@ -454,7 +454,7 @@ function OptionsPrivate.CreateFrame()
     self:Paint(self:IsMouseOver())
   end)
 
-  local guideButton = Style.NewButton(frame.TitleContainer, L["Guide:"] .. " " .. L["learn WeakAuras"], "secondary",
+  local guideButton = Style.NewButton(frame.TitleContainer, L["Guide:"] .. " " .. L["learn Musca Auras"], "secondary",
     function()
       OptionsPrivate.Private.ShowForeverTutorial()
     end)
@@ -463,7 +463,7 @@ function OptionsPrivate.CreateFrame()
   guideButton:HookScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
     GameTooltip:SetText(L["Musca Auras Guide"])
-    GameTooltip:AddLine(L["Learn everything about WeakAuras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."], 1, 1, 1, true)
+    GameTooltip:AddLine(L["Learn everything about Musca Auras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."], 1, 1, 1, true)
     GameTooltip:Show()
   end)
   guideButton:HookScript("OnLeave", function()

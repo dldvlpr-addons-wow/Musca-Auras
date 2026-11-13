@@ -151,12 +151,12 @@ local function GetCustomTriggerOptions(data, triggernum)
             elseif trueEvent == "CLEU" or trueEvent == "COMBAT_LOG_EVENT_UNFILTERED" then
               local subevent = string.upper(i)
               if not OptionsPrivate.Private.IsCLEUSubevent(subevent) then
-                return "|cFFFF0000"..L["%s is not a valid SubEvent for COMBAT_LOG_EVENT_UNFILTERED"]:format(subevent)
+                return OptionsPrivate.Private.Style.Hex("error")..L["%s is not a valid SubEvent for COMBAT_LOG_EVENT_UNFILTERED"]:format(subevent)
               end
             elseif trueEvent:match("^UNIT_") then
               local unit = string.lower(i)
               if not OptionsPrivate.Private.baseUnitId[unit] and not OptionsPrivate.Private.multiUnitId[unit] then
-                return "|cFFFF0000"..L["Unit %s is not a valid unit for RegisterUnitEvent"]:format(unit)
+                return OptionsPrivate.Private.Style.Hex("error")..L["Unit %s is not a valid unit for RegisterUnitEvent"]:format(unit)
               end
             elseif trueEvent == "TRIGGER" then
               local requestedTriggernum = tonumber(i)
@@ -164,7 +164,7 @@ local function GetCustomTriggerOptions(data, triggernum)
                 if OptionsPrivate.Private.watched_trigger_events[data.id]
                 and OptionsPrivate.Private.watched_trigger_events[data.id][triggernum]
                 and OptionsPrivate.Private.watched_trigger_events[data.id][triggernum][requestedTriggernum] then
-                  return "|cFFFF0000"..L["Reciprocal TRIGGER:# requests will be ignored!"]
+                  return OptionsPrivate.Private.Style.Hex("error")..L["Reciprocal TRIGGER:# requests will be ignored!"]
                 end
               end
             end
@@ -174,7 +174,7 @@ local function GetCustomTriggerOptions(data, triggernum)
         -- Check for warnings
         for _, event in pairs(WeakAuras.split(events)) do
           if event == "CLEU" or event == "COMBAT_LOG_EVENT_UNFILTERED" then
-            return "|cFFFF0000"..L["COMBAT_LOG_EVENT_UNFILTERED with no filter can trigger frame drops in raid environment."]
+            return OptionsPrivate.Private.Style.Hex("error")..L["COMBAT_LOG_EVENT_UNFILTERED with no filter can trigger frame drops in raid environment."]
           end
         end
         return ""
@@ -556,7 +556,7 @@ local function GetGenericTriggerOptions(data, triggernum)
         Mixin(prototypeOptions, combatLogOptions);
       end
     else
-      print("|cFF8800FFWeakAuras|r: No prototype for", trigger.event);
+      WeakAuras.prettyPrint("No prototype for", trigger.event);
     end
     if (prototypeOptions) then
       Mixin(options, prototypeOptions);

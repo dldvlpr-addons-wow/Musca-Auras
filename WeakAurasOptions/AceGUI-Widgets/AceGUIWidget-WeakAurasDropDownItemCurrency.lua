@@ -3,6 +3,7 @@
 -- Does not close the pullout on click.
 -- Based on the AceGUI Toggle Item. Extracts the icon from the text
 
+local OptionsPrivate = select(2, ...)
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 local ItemBase = LibStub("AceGUI-3.0-DropDown-ItemBase"):GetItemBase()
 
@@ -49,7 +50,7 @@ local function Frame_OnShow(self)
 
   if isHeader then
     self:SetScript("OnClick", nil)
-    self.obj.text:SetTextColor(1, 1, 0)
+    self.obj.text:SetTextColor(OptionsPrivate.Private.Style.Color("primary"))
     self.obj.useHighlight = false
 
     self.obj.text:ClearAllPoints()
@@ -58,7 +59,7 @@ local function Frame_OnShow(self)
     self.obj.icon:Hide()
   else
     self:SetScript("OnClick", Frame_OnClick)
-    self.obj.text:SetTextColor(1, 1, 1)
+    self.obj.text:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
     self.obj.useHighlight = true
 
     if self.obj.hasIcon then

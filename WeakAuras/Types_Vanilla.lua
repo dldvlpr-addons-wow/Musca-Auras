@@ -131,7 +131,7 @@ function Private.InitializeEncounterAndZoneLists()
   }
 
   for _, raid in ipairs(raids) do
-    encounter_list = ("%s|cffffd200%s|r\n"):format(encounter_list, raid[1])
+    encounter_list = ("%s" .. Private.Style.Hex("primary") .. "%s|r\n"):format(encounter_list, raid[1])
     for _, boss in ipairs(raid[2]) do
         encounter_list = ("%s%s: %d\n"):format(encounter_list, boss[1], boss[2])
     end

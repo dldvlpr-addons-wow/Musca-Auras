@@ -127,7 +127,7 @@ local L = WeakAuras.L
 	L["A 64x64 pixels icon"] = "64x64 픽셀 아이콘"
 	L["A group that dynamically controls the positioning of its children"] = "자식 위크오라의 위치를 동적으로 제어하는 그룹입니다"
 	L[ [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
-Enable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer]=] ] = "타이머가 기본 인터페이스 설정(일부 애드온에 의해 설정이 무시됨)에 따라 자동으로 표시됩니다. 이 타이머를 숨기거나 WeakAuras의 텍스트를 사용해서 표시하고 싶으면 이 설정을 켜세요."
+Enable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer]=] ] = "타이머가 기본 인터페이스 설정(일부 애드온에 의해 설정이 무시됨)에 따라 자동으로 표시됩니다. 이 타이머를 숨기거나 Musca Auras의 텍스트를 사용해서 표시하고 싶으면 이 설정을 켜세요."
 	L["A Unit ID (e.g., party1)."] = "유닛 ID입니다. (party1 같은식)"
 	L["Ace: Funkeh, Nevcairiel"] = "Ace: Funkeh, Nevcairiel"
 	L["Active Aura Filters and Info"] = "활성화된 오라의 필터 및 정보"
@@ -856,7 +856,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=] ] = [=[이벤트 
 	L["The Multi Target mode requires a name or spell id filter"] = "다중 대상 모드에는 이름 또는 주문 ID 필터가 필요합니다."
 	L["The trigger number is optional. When no trigger number is specified, the trigger selected via dynamic information will be used."] = "활성 조건 번호는 선택 사항입니다. 활성 조건 번호를 지정하지 않으면 동적 정보를 통해 선택된 활성 조건이 사용됩니다."
 	L["The type of trigger"] = "활성 조건 종류"
-	L["The WeakAuras Options Addon version %s doesn't match the WeakAuras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling WeakAuras"] = "WeakAuras Options 애드온 %s 버전이 WeakAuras %s 버전과 맞지 않습니다. 게임을 실행한 상태에서 애드온을 업데이트 했다면 월드 오브 워크래프트를 종료 후 다시 실행하세요. 그래도 안되면 WeakAuras를 다시 설치해 보시기 바랍니다."
+	L["The Musca Auras Options Addon version %s doesn't match the Musca Auras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling Musca Auras"] = "Musca Auras Options 애드온 %s 버전이 Musca Auras %s 버전과 맞지 않습니다. 게임을 실행한 상태에서 애드온을 업데이트 했다면 월드 오브 워크래프트를 종료 후 다시 실행하세요. 그래도 안되면 Musca Auras를 다시 설치해 보시기 바랍니다."
 	L["Then "] = "Then"
 	L["There are several special codes available to make this text dynamic. Click to view a list with all dynamic text codes."] = "이 텍스트를 동적으로 만들 수 있는 여러 특수 코드가 있습니다. 클릭하면 모든 동적 텍스트 코드가 표시됩니다."
 	L["This adds %raidMark as text replacements."] = "이 옵션을 켜면 텍스트 대체 코드에 %raidMark가 추가됩니다."
@@ -868,8 +868,8 @@ Make sure you can trust the person who sent it!]=] ] = "이 위크오라는 사�
 	L["This aura is marked as an update to auras '%s', but cannot be used to update them. This usually happens if an aura is moved out of a group."] = "이 위크오라는 '%s' 위크오라의 업데이트로 표시됐지만 업데이트를 할 수 없었습니다. 보통 이런 현상은 그룹에서 위크오라가 빠져있을 때 발생합니다."
 	L[ [=[This aura was created with a different version (%s) of World of Warcraft.
 It might not work correctly!]=] ] = "이 위크오라는 월드 오브 워크래프트의 다른 버전 (%s)용으로 제작되었습니다. 제대로 작동하지 않을 수 있습니다!"
-	L[ [=[This aura was created with a newer version of WeakAuras.
-Upgrade your version of WeakAuras or wait for next release before installing this aura.]=] ] = "이 위크오라는 보다 최신 버전의 WeakAuras로 제작되었습니다. WeakAuras 버전을 업그레이드하거나 이 위크오라를 설치하지 말고 다음 릴리즈를 기다리세요."
+	L[ [=[This aura was created with a newer version of Musca Auras.
+Upgrade your version of Musca Auras or wait for next release before installing this aura.]=] ] = "이 위크오라는 보다 최신 버전의 Musca Auras로 제작되었습니다. Musca Auras 버전을 업그레이드하거나 이 위크오라를 설치하지 말고 다음 릴리즈를 기다리세요."
 	L["This display is currently loaded"] = "이 디스플레이는 불러온 상태입니다"
 	L["This display is not currently loaded"] = "이 디스플레이는 불러오지 않았습니다"
 	L["This display is on standby, it will be loaded when needed."] = "이 디스플레이는 대기 중입니다. 사용할 때 불러들입니다."
@@ -941,7 +941,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "사용자 정의 코드 보기"
 	L["Voice Settings"] = "음성 환경 설정"
 	L["We thank"] = "감사합니다"
-	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras는 주문 이름 대신 주문 ID 사용을 권장합니다. 주문 ID는 언어에 맞게 자동 번역됩니다."
+	L["Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."] = "Musca Auras는 주문 이름 대신 주문 ID 사용을 권장합니다. 주문 ID는 언어에 맞게 자동 번역됩니다."
 	L["What do you want to do?"] = "무엇을 할까요?"
 	L["Whole Area"] = "전체 구역"
 	L["Width |cFFFF0000%s|r and %s"] = "너비 |cFFFF0000%s|r 및 %s"
@@ -962,13 +962,13 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 |cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r
 
 Would you like to continue?]=] ] = "하드코어 서버에서 사용자 정의 Lua 코드가 포함된 위크오라를 가져오고 있습니다. |cFFFF0000사용자 정의 코드가 당신의 하드코어 캐릭터를 죽이는 데 사용될 위험이 있습니다!|r 계속하시겠습니까?"
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.
 
-WeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) WeakAuras가 위치 고정 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 WeakAuras는 반드시 사용자 정의 고정 코드를 실행합니다."
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.
+Musca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) Musca Auras가 위치 고정 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 Musca Auras는 반드시 사용자 정의 고정 코드를 실행합니다."
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.
 
-WeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) WeakAuras가 그룹 확장 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 WeakAuras는 반드시 사용자 정의 그룹 확장 코드를 실행합니다."
-	L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) WeakAuras가 정렬 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 WeakAuras는 반드시 사용자 정의 정렬 코드를 실행합니다."
+Musca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) Musca Auras가 그룹 확장 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 Musca Auras는 반드시 사용자 정의 그룹 확장 코드를 실행합니다."
+	L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "이곳에 State 테이블 값들을 쉼표로 구분해서 목록으로 만들어 넣을 수 있으며 (값이 바뀔 때) Musca Auras가 정렬 코드를 실행하게 됩니다. 이 목록에 테이블 값 'changed'를 넣을 경우 또는 표시 영역(region)이 추가, 삭제, 재정렬 될 때 Musca Auras는 반드시 사용자 정의 정렬 코드를 실행합니다."
 	L["Your Saved Snippets"] = "저장된 스니펫"
 	L["Z Offset"] = "Z 위치 조정"
 	L["Z Rotation"] = "Z 회전"

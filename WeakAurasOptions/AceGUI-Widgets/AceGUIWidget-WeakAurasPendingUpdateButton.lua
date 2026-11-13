@@ -152,27 +152,27 @@ local methods = {
     end
 
     if hasVersionNote then
-      tinsert(namestable, "|cFFFFD100"..self.companionData.versionNote)
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. self.companionData.versionNote)
       tinsert(namestable, " ")
     end
 
     for auraId in pairs(self.linkedAuras) do
       if not self.linkedChildren[auraId] then
-        tinsert(namestable, "|cFFFFD100" .. L["Linked aura: "]  .. auraId .. "|r")
+        tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. L["Linked aura: "]  .. auraId .. "|r")
       end
     end
     tinsert(namestable, " ")
 
     if(hasDescription) then
-      tinsert(namestable, "|cFFFFD100"..data.desc)
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. data.desc)
     end
 
     if (hasUrl) then
-      tinsert(namestable, "|cFFFFD100" .. data.url .. "|r")
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. data.url .. "|r")
     end
 
     if (hasVersion) then
-      tinsert(namestable, "|cFFFFD100" .. L["Version: "]  .. (data.semver or data.version) .. "|r")
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. L["Version: "]  .. (data.semver or data.version) .. "|r")
     end
 
     self:SetDescription({self.companionData.name or self.data.id, self.companionData.author or ""}, unpack(namestable))
@@ -285,7 +285,7 @@ local function Constructor()
   button.background = background
   background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
   background:SetBlendMode("ADD")
-  background:SetVertexColor(0.88, 0.88, 0, 0.3)
+  background:SetVertexColor(OptionsPrivate.Private.Style.Color("primary", 0.3))
   background:SetPoint("TOP", button, "TOP")
   background:SetPoint("BOTTOM", button, "BOTTOM")
   background:SetPoint("LEFT", button, "LEFT")
@@ -368,7 +368,7 @@ local function Constructor()
   title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 2, 0)
   title:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 2, 0)
   title:SetPoint("RIGHT", updateLogo, "LEFT", -2, 0)
-  title:SetVertexColor(0.6, 0.6, 0.6)
+  title:SetVertexColor(OptionsPrivate.Private.Style.Color("textQuiet"))
 
   button.description = {}
   --- @type table<string, any>

@@ -3,6 +3,7 @@ if not WeakAuras.IsLibsOK() then return end
 SnippetButton Widget, based on AceGUI Button (and WA ToolbarButton)
 Graphical Button.
 -------------------------------------------------------------------------------]]
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasSnippetButton", 3
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then
@@ -72,10 +73,10 @@ local methods = {
     self:SetEditable(false)
 
     self.ntex:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
-    self.ntex:SetVertexColor(0.8, 0.8, 0.8, 0.25)
+    self.ntex:SetVertexColor(OptionsPrivate.Private.Style.Color("textSecondary", 0.25))
     self.htex:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
-    self.htex:SetVertexColor(0.3, 0.5, 1, 0.5)
-    self.ptex:SetColorTexture(1, 1, 1, 0.2)
+    self.htex:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.5))
+    self.ptex:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
   end,
   -- ["OnRelease"] = nil,
 
@@ -161,7 +162,7 @@ local function Constructor()
   title:SetJustifyH("LEFT")
   title:SetPoint("LEFT", button, "LEFT", 3, 0)
   title:SetPoint("RIGHT", deleteButton, "LEFT")
-  title:SetTextColor(1, 1, 1, 1)
+  title:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
   button.title = title
 
   local ntex = button:CreateTexture()

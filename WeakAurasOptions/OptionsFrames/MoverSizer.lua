@@ -138,7 +138,7 @@ local function ConstructMover(frame)
   arrowTexture:SetTexture("Interface\\Addons\\WeakAuras\\Media\\Textures\\offscreen.tga")
   arrowTexture:SetSize(128, 128)
   arrowTexture:SetPoint("CENTER", arrow, "CENTER")
-  arrowTexture:SetVertexColor(0.8, 0.8, 0.2)
+  arrowTexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
   arrowTexture:Hide()
   local offscreenText = arrow:CreateFontString(nil, "OVERLAY")
   offscreenText:SetFont(STANDARD_TEXT_FONT, 14, "THICKOUTLINE");

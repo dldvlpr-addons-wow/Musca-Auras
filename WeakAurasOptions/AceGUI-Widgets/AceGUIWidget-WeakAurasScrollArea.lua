@@ -3,6 +3,7 @@ ScrollArea Widget
 Plain widget that scrolls a content widget and doesn't grow in height.
 Heavily based on AceGUIContainer-ScrollFrame
 -------------------------------------------------------------------------------]]
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasScrollArea", 1
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -182,7 +183,7 @@ local function Constructor()
 
 	local scrollbg = scrollbar:CreateTexture(nil, "BACKGROUND")
 	scrollbg:SetAllPoints(scrollbar)
-	scrollbg:SetColorTexture(0, 0, 0, 0.4)
+	scrollbg:SetColorTexture(OptionsPrivate.Private.Style.Color("well", 0.4))
 
 	--Container Support
 	local content = CreateFrame("Frame", nil, scrollframe)

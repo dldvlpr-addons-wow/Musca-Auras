@@ -5,6 +5,7 @@ This file was forked from AceGUIContainer-TreeGroup.lua version 41
 -------------------------------------------------------------------------------]]
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasTreeGroup", 3
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -93,7 +94,7 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 
 	if disabled then
 		button:EnableMouse(false)
-		button.text:SetText("|cff808080"..text..FONT_COLOR_CODE_CLOSE)
+		button.text:SetText(OptionsPrivate.Private.Style.Hex("textQuiet") .. text..FONT_COLOR_CODE_CLOSE)
 	else
 		button.text:SetText(text)
 		button:EnableMouse(true)
@@ -256,11 +257,11 @@ local function Tree_OnMouseWheel(frame, delta)
 end
 
 local function Dragger_OnLeave(frame)
-	frame:SetBackdropColor(1, 1, 1, 0)
+	frame:SetBackdropColor(OptionsPrivate.Private.Style.Color("primary", 0))
 end
 
 local function Dragger_OnEnter(frame)
-	frame:SetBackdropColor(1, 1, 1, 0.8)
+	frame:SetBackdropColor(OptionsPrivate.Private.Style.Color("primary", 0.8))
 end
 
 local function Dragger_OnMouseDown(frame)
@@ -650,8 +651,8 @@ local function Constructor()
 
 	local treeframeBG = CreateFrame("Frame", nil, treeframe, "BackdropTemplate")
 	treeframeBG:SetBackdrop(PaneBackdrop)
-	treeframeBG:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
-	treeframeBG:SetBackdropBorderColor(0.4, 0.4, 0.4)
+	treeframeBG:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+	treeframeBG:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
 	treeframeBG:SetAllPoints(treeframe)
 
 	local dragger = CreateFrame("Frame", nil, treeframe, "BackdropTemplate")
@@ -659,7 +660,7 @@ local function Constructor()
 	dragger:SetPoint("TOP", treeframe, "TOPRIGHT")
 	dragger:SetPoint("BOTTOM", treeframe, "BOTTOMRIGHT")
 	dragger:SetBackdrop(DraggerBackdrop)
-	dragger:SetBackdropColor(1, 1, 1, 0)
+	dragger:SetBackdropColor(OptionsPrivate.Private.Style.Color("primary", 0))
 	dragger:SetScript("OnEnter", Dragger_OnEnter)
 	dragger:SetScript("OnLeave", Dragger_OnLeave)
 	dragger:SetScript("OnMouseDown", Dragger_OnMouseDown)
@@ -677,14 +678,14 @@ local function Constructor()
 
 	local scrollbg = scrollbar:CreateTexture(nil, "BACKGROUND")
 	scrollbg:SetAllPoints(scrollbar)
-	scrollbg:SetColorTexture(0, 0, 0, 0.4)
+	scrollbg:SetColorTexture(OptionsPrivate.Private.Style.Color("well", 0.4))
 
 	local border = CreateFrame("Frame", nil, frame, "BackdropTemplate")
 	border:SetPoint("TOPLEFT", treeframe, "TOPRIGHT")
 	border:SetPoint("BOTTOMRIGHT")
 	border:SetBackdrop(PaneBackdrop)
-	border:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
-	border:SetBackdropBorderColor(0.4, 0.4, 0.4)
+	border:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+	border:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
 
 	--Container Support
 	local content = CreateFrame("Frame", nil, border)

@@ -143,7 +143,7 @@ local function AddUnitOptions(context)
   local function NotMember() return trigger.unit ~= "member" end
 
   options.alwaysActive = {
-    type = "description", name = "|cffffffff" .. L["Note: Trigger Always Active"] .. "|r", order = 1.95, width = "full", fontSize = "medium",
+    type = "description", name = OptionsPrivate.Private.Style.Hex("text") .. L["Note: Trigger Always Active"] .. "|r", order = 1.95, width = "full", fontSize = "medium",
   }
   options.help = {
     type = "description", order = 2, width = "full", fontSize = "small",
@@ -318,8 +318,8 @@ local function TriState(caption, desc, order, read, write, hidden)
     name = function()
       local value = read()
       if value == nil then return caption end
-      if value then return "|cFF00FF00" .. caption .. "|r" end
-      return "|cFFFF0000" .. L["Not %s"]:format(caption) .. "|r"
+      if value then return OptionsPrivate.Private.Style.Hex("success") .. caption .. "|r" end
+      return OptionsPrivate.Private.Style.Hex("error") .. L["Not %s"]:format(caption) .. "|r"
     end,
     get = function()
       local value = read()

@@ -224,15 +224,15 @@ end
 
 local function OtherUnitsMessage(failing)
   if failing[1] == nil then
-    return L["|cffff9933Other units' casts: shown in combat, never filtered.|r"]
+    return Private.Style.Markup(L["|cffff9933Other units' casts: shown in combat, never filtered.|r"])
   end
-  return L["|cffff2020Ignored in combat:|r %s |cffff9933(other units' casts are unreadable)|r"]:format(table.concat(failing, ", "))
+  return Private.Style.Markup(L["|cffff2020Ignored in combat:|r %s |cffff9933(other units' casts are unreadable)|r"]):format(table.concat(failing, ", "))
 end
 
 -- Status line shown under a cast trigger in the options.
 function Private.CastCombatStatus(trigger)
   if WatchesPlayer(trigger) then
-    return L["|cff33ff99Fully usable in combat.|r"]
+    return Private.Style.Markup(L["|cff33ff99Fully usable in combat.|r"])
   end
   return OtherUnitsMessage(FailingOptionLabels(trigger))
 end

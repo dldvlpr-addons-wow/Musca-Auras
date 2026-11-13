@@ -1,5 +1,6 @@
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasAnchorButtons", 2
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -21,9 +22,9 @@ local methods = {
     if not tContains(directions, text) then return end
     for direction, button in pairs(self.buttons) do
       if direction == text then
-        button.tex:SetVertexColor(0.9, 0.9, 0, 1)
+        button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
       else
-        button.tex:SetVertexColor(0.3, 0.3, 0.3, 1)
+        button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
       end
       button:SetNormalTexture(button.tex)
     end
@@ -49,12 +50,12 @@ local methods = {
   ["SetDisabled"] = function(self, disabled)
     self.disabled = disabled
     if disabled then
-      self.label:SetTextColor(0.5,0.5,0.5)
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
       for _, button in pairs(self.buttons) do
         button:EnableMouse(false)
       end
     else
-      self.label:SetTextColor(1,.82,0)
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
       for _, button in pairs(self.buttons) do
         button:EnableMouse(true)
       end
@@ -93,8 +94,8 @@ local function Constructor()
      edgeSize = 2
      --insets = { left = 1, right = 1, top = 1, bottom = 1 },
   })
-  background:SetBackdropColor(0.2,0.2,0.2,0.5)
-  background:SetBackdropBorderColor(1,1,1,0.6)
+  background:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+  background:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("borderField"))
 
   local buttons = {}
   for _, direction in ipairs(directions) do
@@ -109,7 +110,7 @@ local function Constructor()
     local buttonTex = button:CreateTexture()
     buttonTex:SetAllPoints()
     buttonTex:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite.tga")
-    buttonTex:SetVertexColor(0.3, 0.3, 0.3, 1)
+    buttonTex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
     button:SetNormalTexture(buttonTex)
     button.tex = buttonTex
     button.value = direction

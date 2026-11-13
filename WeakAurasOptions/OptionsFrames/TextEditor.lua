@@ -827,7 +827,7 @@ local function ConstructTextEditor(frame)
   editorError:SetFont(STANDARD_TEXT_FONT, 12, "")
   editorError:SetJustifyH("LEFT")
   editorError:SetJustifyV("TOP")
-  editorError:SetTextColor(1, 0, 0)
+  editorError:SetTextColor(OptionsPrivate.Private.Style.Color("error"))
   editorError:SetPoint("LEFT", helpButton, "RIGHT", 0, 4)
   editorError:SetPoint("RIGHT", settings_frame, "LEFT")
   group.editorError = editorError
@@ -845,7 +845,7 @@ local function ConstructTextEditor(frame)
 
   local editorLineText = group.frame:CreateFontString(nil, "OVERLAY")
   editorLineText:SetFont(STANDARD_TEXT_FONT, 10, "")
-  editorLineText:SetTextColor(1, 1, 1)
+  editorLineText:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
   editorLineText:SetText(L["Line"])
   editorLineText:SetPoint("RIGHT", editorLine, "LEFT", -8, 0)
 

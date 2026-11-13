@@ -195,7 +195,7 @@ local function ExtraSummary(trigger)
   if trigger.use_ignoreSpellKnown then active[#active + 1] = L["Disable Spell Known Check"] end
   if trigger.use_cdmShowGCD then active[#active + 1] = L["Show GCD"] end
   if trigger.cdmHideGCDText ~= false then active[#active + 1] = L["Hide GCD text"] end
-  return "|cFFffcc00" .. L["Extra Options:"] .. "|r " .. (#active > 0 and table.concat(active, "; ") or L["None"])
+  return OptionsPrivate.Private.Style.Hex("warning") .. L["Extra Options:"] .. "|r " .. (#active > 0 and table.concat(active, "; ") or L["None"])
 end
 
 local function EnsureViewerAddOn()

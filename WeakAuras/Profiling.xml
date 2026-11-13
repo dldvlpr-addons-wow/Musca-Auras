@@ -52,7 +52,6 @@
         <Layers>
           <Layer level="OVERLAY">
             <FontString parentKey="name" font="Interface\AddOns\WeakAuras\Media\Fonts\FiraMono-Medium.ttf" justifyH="LEFT" wordwrap="false"  inherits="GameFontNormal">
-              <Color r="1.0" g="0.82" b="0"/>
               <FontHeight val="12"/>
               <Anchors>
                 <Anchor point="LEFT" x="5"/>
@@ -208,8 +207,7 @@
         </Anchors>
         <Layers>
           <Layer level="BACKGROUND">
-            <Texture>
-              <Color r=".03" g=".03" b=".03" a="0.5"/>
+            <Texture parentKey="background">
             </Texture>
           </Layer>
         </Layers>
@@ -269,8 +267,7 @@
             </Anchors>
             <Layers>
               <Layer level="BACKGROUND">
-                <Texture>
-                  <Color r=".03" g=".03" b=".03" a="0.5"/>
+                <Texture parentKey="background">
                 </Texture>
               </Layer>
             </Layers>

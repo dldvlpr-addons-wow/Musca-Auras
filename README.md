@@ -25,7 +25,7 @@ In short: expect to adapt most of the auras you import, especially the ones
 with custom code. Damage taken, for example, works through `UNIT_COMBAT:player`
 instead of the combat log.
 
-Read the [tutorial](TUTORIAL.md): how WeakAuras works on Forever, and
+Read the [tutorial](TUTORIAL.md): how Musca Auras works on Forever, and
 step-by-step recipes for auras that keep working in combat.
 
 Coming from ForeverAuras? Paste your exported strings in the import window:

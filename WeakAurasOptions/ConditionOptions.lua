@@ -122,7 +122,7 @@ end
 
 local function blueIfSubset(data, reference, totalAuraCount)
   if (isSubset(data, reference, totalAuraCount)) then
-    return "|cFF4080FF";
+    return OptionsPrivate.Private.Style.Hex("accent");
   end
   return "";
 end
@@ -130,7 +130,7 @@ end
 local function blueIfNoValue(data, object, variable, blueString, normalString)
   if (object.references) then
     if (object["same" .. variable] == false) then
-      return "|cFF4080FF" .. blueString;
+      return OptionsPrivate.Private.Style.Hex("accent") .. blueString;
     end
   end
   return normalString or "";
@@ -139,7 +139,7 @@ end
 local function blueIfNoValue2(data, object, variable, subvariable, blueString, normalString)
   if (object.references) then
     if (not object["same" .. variable] or not object["same" .. variable][subvariable]) then
-      return "|cFF4080FF" .. blueString;
+      return OptionsPrivate.Private.Style.Hex("accent") .. blueString;
     end
   end
   return normalString or "";
@@ -162,9 +162,9 @@ local function descIfNoValue(data, object, variable, propertyType, values)
       local desc = "";
       for id, reference in pairs(object.references) do
         if propertyType == "list" and values then
-          desc = desc .."|cFFE0E000".. id .. ": |r" .. (values[reference[variable]] or "") .. "\n";
+          desc = desc ..OptionsPrivate.Private.Style.Hex("primary").. id .. ": |r" .. (values[reference[variable]] or "") .. "\n";
         elseif propertyType == "progressSource" then
-          desc = desc .."|cFFE0E000".. id .. ": |r"
+          desc = desc ..OptionsPrivate.Private.Style.Hex("primary").. id .. ": |r"
           local progressSource = reference[variable]
           if type(progressSource) == "table" then
             local trigger = progressSource[1]
@@ -185,7 +185,7 @@ local function descIfNoValue(data, object, variable, propertyType, values)
           end
           desc = desc .."\n"
         else
-          desc = desc .."|cFFE0E000".. id .. ": |r" .. (valueToString(reference[variable], propertyType) or "") .. "\n";
+          desc = desc ..OptionsPrivate.Private.Style.Hex("primary").. id .. ": |r" .. (valueToString(reference[variable], propertyType) or "") .. "\n";
         end
       end
       return desc;
@@ -200,9 +200,9 @@ local function descIfNoValue2(data, object, variable, subvariable, type, values)
       local desc = "";
       for id, reference in pairs(object.references) do
         if (values) then
-          desc = desc .."|cFFE0E000".. id .. ": |r" .. (values[reference[variable][subvariable]] or "") .. "\n";
+          desc = desc ..OptionsPrivate.Private.Style.Hex("primary").. id .. ": |r" .. (values[reference[variable][subvariable]] or "") .. "\n";
         else
-          desc = desc .."|cFFE0E000".. id .. ": |r" .. valueToString(reference[variable][subvariable], type or "") .. "\n";
+          desc = desc ..OptionsPrivate.Private.Style.Hex("primary").. id .. ": |r" .. valueToString(reference[variable][subvariable], type or "") .. "\n";
         end
       end
       return desc;
@@ -1240,7 +1240,7 @@ local function addChatCustomCodeControls(args, order, data, conditions, i, j, me
         return "";
       end
       local _, errorString = OptionsPrivate.Private.LoadFunction("return " .. custom, data.id, true);
-      return errorString and "|cFFFF0000"..errorString or "";
+      return errorString and OptionsPrivate.Private.Style.Hex("error")..errorString or "";
     end,
     width = WeakAuras.doubleWidth,
     order = order,
@@ -1337,7 +1337,7 @@ local function addCustomCodeValueControls(args, order, data, conditions, i, j, m
         return "";
       end
       local _, errorString = OptionsPrivate.Private.LoadFunction("return function() " .. custom .. "\n end", data.id, true);
-      return errorString and "|cFFFF0000"..errorString or "";
+      return errorString and OptionsPrivate.Private.Style.Hex("error")..errorString or "";
     end,
     width = WeakAuras.doubleWidth,
     order = order,
@@ -2327,7 +2327,7 @@ local function addCustomCheckControls(args, order, data, conditions, i, path, ch
         return ""
       end
       local _, errorString = OptionsPrivate.Private.LoadFunction("return " .. check.value, data.id, true);
-      return errorString and "|cFFFF0000"..errorString or "";
+      return errorString and OptionsPrivate.Private.Style.Hex("error")..errorString or "";
     end,
     width = WeakAuras.doubleWidth,
     order = order,
@@ -2480,7 +2480,7 @@ local function addControlsForIfLine(args, order, data, conditionVariable, totalA
   elseif (trigger and variable) then
     args["condition" .. i .. tostring(path) .. "_incompatible"] = {
       type = "description",
-      name = "|cFFFF0000" .. L["Incompatible condition: %s"]:format(variable),
+      name = OptionsPrivate.Private.Style.Hex("error") .. L["Incompatible condition: %s"]:format(variable),
       width = WeakAuras.doubleWidth,
       order = order
     }

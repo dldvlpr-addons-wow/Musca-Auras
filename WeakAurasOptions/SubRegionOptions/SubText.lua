@@ -160,9 +160,9 @@ local function createOptions(parentData, data, index, subIndex)
             wordWarp = L["eliding"]
           end
           if text == "" then
-            text = L["Width |cFFFF0000%s|r and %s"]:format(data.text_fixedWidth, wordWarp)
+            text = OptionsPrivate.Private.Style.Markup(L["Width |cFFFF0000%s|r and %s"]):format(data.text_fixedWidth, wordWarp)
           else
-            text = text .. " "..L["and with width |cFFFF0000%s|r and %s"]:format(data.text_fixedWidth, wordWarp)
+            text = text .. " "..OptionsPrivate.Private.Style.Markup(L["and with width |cFFFF0000%s|r and %s"]):format(data.text_fixedWidth, wordWarp)
           end
         end
 
@@ -176,17 +176,17 @@ local function createOptions(parentData, data, index, subIndex)
 
          if not hideShadow then
           if text == "" then
-            text = text .. " " .. L["Shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"]
+            text = text .. " " .. OptionsPrivate.Private.Style.Markup(L["Shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"])
                                   :format(color, data.text_shadowXOffset, data.text_shadowYOffset)
           else
-            text = text .. " " .. L["and shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"]
+            text = text .. " " .. OptionsPrivate.Private.Style.Markup(L["and shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"])
                                   :format(color, data.text_shadowXOffset, data.text_shadowYOffset)
           end
         end
         if text == "" then
-          return L["|cFFffcc00Font Flags:|r none"]
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Font Flags:|r none"])
         else
-          return L["|cFFffcc00Font Flags:|r"] .. " " .. text
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Font Flags:|r"]) .. " " .. text
         end
       end,
       width = WeakAuras.doubleWidth,
@@ -388,17 +388,17 @@ local function createOptions(parentData, data, index, subIndex)
 
       if selfPoint then
         if xOffset == 0 and yOffset == 0 then
-          return L["|cFFffcc00Anchors:|r Anchored |cFFFF0000%s|r to frame's |cFFFF0000%s|r"]
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Anchors:|r Anchored |cFFFF0000%s|r to frame's |cFFFF0000%s|r"])
                  :format(selfPoint, anchorPoint)
         else
-          return L["|cFFffcc00Anchors:|r Anchored |cFFFF0000%s|r to frame's |cFFFF0000%s|r with offset |cFFFF0000%s/%s|r"]
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Anchors:|r Anchored |cFFFF0000%s|r to frame's |cFFFF0000%s|r with offset |cFFFF0000%s/%s|r"])
                  :format(selfPoint, anchorPoint, xOffset, yOffset)
         end
       else
         if xOffset == 0 and yOffset == 0 then
-          return L["|cFFffcc00Anchors:|r Anchored to frame's |cFFFF0000%s|r"]:format(anchorPoint)
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Anchors:|r Anchored to frame's |cFFFF0000%s|r"]):format(anchorPoint)
         else
-          return L["|cFFffcc00Anchors:|r Anchored to frame's |cFFFF0000%s|r with offset |cFFFF0000%s/%s|r"]
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Anchors:|r Anchored to frame's |cFFFF0000%s|r with offset |cFFFF0000%s/%s|r"])
                  :format(anchorPoint, xOffset, yOffset)
         end
       end

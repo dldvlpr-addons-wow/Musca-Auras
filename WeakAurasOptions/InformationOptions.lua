@@ -63,7 +63,7 @@ function OptionsPrivate.GetInformationOptions(data)
   local traverseForUrl = isTmpGroup and OptionsPrivate.Private.TraverseAllChildren or OptionsPrivate.Private.TraverseAll
   for child in traverseForUrl(data) do
     if child.url then
-      desc = desc .. "|cFFE0E000"..child.id..": |r"..child.url .. "\n"
+      desc = desc .. OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..child.url .. "\n"
     end
     if not commonURL then
       commonURL = child.url or ""
@@ -74,7 +74,7 @@ function OptionsPrivate.GetInformationOptions(data)
 
   args.url = {
     type = "input",
-    name = sameURL and L["URL"] or "|cFF4080FF" .. L["URL"],
+    name = sameURL and L["URL"] or OptionsPrivate.Private.Style.Hex("accent") .. L["URL"],
     width = WeakAuras.doubleWidth,
     get = function()
       return sameURL and commonURL or ""
@@ -99,8 +99,8 @@ function OptionsPrivate.GetInformationOptions(data)
   if isGroup then
     args.url_note = {
       type = "description",
-      name = isTmpGroup and L["|cFFE0E000Note:|r This sets the URL on all selected auras"]
-                         or L["|cFFE0E000Note:|r This sets the URL on this group and all its members."],
+      name = isTmpGroup and OptionsPrivate.Private.Style.Markup(L["|cFFE0E000Note:|r This sets the URL on all selected auras"])
+                         or OptionsPrivate.Private.Style.Markup(L["|cFFE0E000Note:|r This sets the URL on this group and all its members."]),
       width = WeakAuras.doubleWidth,
       order = order
     }
@@ -166,7 +166,7 @@ function OptionsPrivate.GetInformationOptions(data)
     if isGroup then
       args.description_note = {
         type = "description",
-        name = string.format(L["|cFFE0E000Note:|r This sets the description only on '%s'"], data.id),
+        name = string.format(OptionsPrivate.Private.Style.Markup(L["|cFFE0E000Note:|r This sets the description only on '%s'"]), data.id),
         width = WeakAuras.doubleWidth,
         order = order,
       }
@@ -199,7 +199,7 @@ function OptionsPrivate.GetInformationOptions(data)
 
   args.tags = {
     type = "input",
-    name = sameTags and L["Tags"] or "|cFF4080FF" .. L["Tags"],
+    name = sameTags and L["Tags"] or OptionsPrivate.Private.Style.Hex("accent") .. L["Tags"],
     desc = L["Comma separated. Type #tag in the search box to list the auras with this tag."],
     width = WeakAuras.doubleWidth,
     order = order,
@@ -231,7 +231,7 @@ function OptionsPrivate.GetInformationOptions(data)
   local commonSquelch
   for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
     if child.information.squelchOnLoad then
-      desc = desc .. "|cFFE0E000"..child.id..": |r"..L["Squelched"] .. "\n"
+      desc = desc .. OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..L["Squelched"] .. "\n"
     end
     local childSquelch = child.information.squelchOnLoad and true or false
     if commonSquelch == nil then
@@ -244,7 +244,7 @@ function OptionsPrivate.GetInformationOptions(data)
   args.squelch = {
     type = "toggle",
     name = sameSquelch and L["Squelch Sounds/Actions on Load"]
-                       or "|cFF4080FF" .. L["Squelch Sounds/Actions on Load"],
+                       or OptionsPrivate.Private.Style.Hex("accent") .. L["Squelch Sounds/Actions on Load"],
     width = WeakAuras.doubleWidth,
     get = function()
       return sameSquelch and commonSquelch or false
@@ -349,7 +349,7 @@ function OptionsPrivate.GetInformationOptions(data)
             effectiveProperty = false
           end
 
-          mergedDesc[property] = (mergedDesc[property] or "") .. "|cFFE0E000" .. child.id .. ": |r"
+          mergedDesc[property] = (mergedDesc[property] or "") .. OptionsPrivate.Private.Style.Hex("primary") .. child.id .. ": |r"
           .. (effectiveProperty and "true" or "false") .. "\n"
 
           if common[property] == nil then
@@ -364,7 +364,7 @@ function OptionsPrivate.GetInformationOptions(data)
     if common[property] ~= nil then
       args["compatibility_" .. property] = {
         type = "toggle",
-        name = same[property] and propertyData.name or "|cFF4080FF" .. propertyData.name,
+        name = same[property] and propertyData.name or OptionsPrivate.Private.Style.Hex("accent") .. propertyData.name,
         width = WeakAuras.doubleWidth,
         get = function()
           if propertyData.onParent then
@@ -483,7 +483,7 @@ function OptionsPrivate.GetInformationOptions(data)
     for child in OptionsPrivate.Private.TraverseLeafsOrAura(data) do
       --- @type boolean
       local effectiveDebugLog = child.information.debugLog and true or false
-      debugLogDesc = debugLogDesc .. "|cFFE0E000"..child.id..": |r".. (effectiveDebugLog and "true" or "false") .. "\n"
+      debugLogDesc = debugLogDesc .. OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r".. (effectiveDebugLog and "true" or "false") .. "\n"
       if commonDebugLog == nil then
         commonDebugLog = effectiveDebugLog
       elseif effectiveDebugLog ~= commonDebugLog then
@@ -494,7 +494,7 @@ function OptionsPrivate.GetInformationOptions(data)
 
   args.debugLogToggle = {
     type = "toggle",
-    name = sameDebugLog and L["Enable Debug Logging"] or "|cFF4080FF" .. L["Enable Debug Logging"],
+    name = sameDebugLog and L["Enable Debug Logging"] or OptionsPrivate.Private.Style.Hex("accent") .. L["Enable Debug Logging"],
     desc = not sameDebugLog and debugLogDesc or nil,
     width = WeakAuras.doubleWidth,
     order = order,

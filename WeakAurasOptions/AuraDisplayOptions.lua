@@ -243,7 +243,7 @@ local supportedFormatSuffixes = BuildSet({
   "p_format", "p_time_format", "p_time_precision", "p_time_dynamic_threshold", "p_time_legacy_floor",
 })
 
-local unavailableNoteText = "|cff999999" .. L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."] .. "|r"
+local unavailableNoteText = L["Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why."]
 
 local textCodesDesc = L["Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported."]
 
@@ -368,7 +368,7 @@ local function RestrictGroup(groupKey, group, data)
       width = WeakAuras.doubleWidth,
       fontSize = "medium",
       order = (highestOrder or 0) + 1,
-      name = unavailableNoteText,
+      name = OptionsPrivate.Private.Style.Hex("textQuiet") .. unavailableNoteText .. "|r",
     }
     -- A Flow group arranges Modern auras only, its members keep their trigger type
     if not Display().FlowGroup(data) then
@@ -570,6 +570,6 @@ function OptionsPrivate.PrepareSecretActionOptions(data, action)
     type = "description",
     order = 0,
     width = "full",
-    name = "|cffff2020" .. L["Blizzard-controlled aura display: only supported actions are available."] .. "|r",
+    name = OptionsPrivate.Private.Style.Hex("error") .. L["Blizzard-controlled aura display: only supported actions are available."] .. "|r",
   }
 end

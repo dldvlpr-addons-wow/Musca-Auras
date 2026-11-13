@@ -1173,15 +1173,15 @@ local methods = {
     end
 
     if(hasDescription) then
-      tinsert(namestable, "|cFFFFD100\""..data.desc.."\"");
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. "\""..data.desc.."\"");
     end
 
     if (hasUrl) then
-      tinsert(namestable, "|cFFFFD100" .. data.url .. "|r");
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. data.url .. "|r");
     end
 
     if (hasVersion) then
-      tinsert(namestable, "|cFFFFD100" .. L["Version: "]  .. (data.semver or data.version) .. "|r");
+      tinsert(namestable, OptionsPrivate.Private.Style.Hex("primary") .. L["Version: "]  .. (data.semver or data.version) .. "|r");
     end
 
     -- An aura not loaded has no status square: its load state is said here.
@@ -1190,12 +1190,12 @@ local methods = {
       tinsert(namestable, self.loadTooltip);
     end
     tinsert(namestable, " ");
-    tinsert(namestable, {" ", "|cFF00FFFF"..L["Right-click for more options"]});
-    tinsert(namestable, {" ", "|cFF00FFFF"..L["Drag to move"]});
+    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Right-click for more options"]});
+    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Drag to move"]});
     if not(data.controlledChildren) then
-      tinsert(namestable, {" ", "|cFF00FFFF"..L["Control-click to select multiple displays"]});
+      tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Control-click to select multiple displays"]});
     end
-    tinsert(namestable, {" ", "|cFF00FFFF"..L["Shift-click to create chat link"]});
+    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Shift-click to create chat link"]});
     local regionData = OptionsPrivate.Private.regionOptions[data.regionType or ""]
     local displayName = regionData and regionData.displayName or "";
     if data.regionType == "group" and data.blizzardFlow then displayName = L["Modern Aura Group"] end
@@ -1959,7 +1959,7 @@ local methods = {
     end
   end,
   ["OverrideIcon"] = function(self)
-    self.icon:SetTexture("Interface\\Addons\\WeakAuras\\Media\\Textures\\icon.blp")
+    self.icon:SetTexture("Interface\\Addons\\WeakAuras\\Media\\Textures\\icon.tga")
     self.icon:Show()
     if(self.iconRegion and self.iconRegion.Hide) then
       self.iconRegion:Hide();

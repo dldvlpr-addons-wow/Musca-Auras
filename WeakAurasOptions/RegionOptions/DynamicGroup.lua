@@ -158,7 +158,7 @@ local function createOptions(id, data)
       type = "input",
       width = WeakAuras.doubleWidth,
       name = L["Run on..."],
-      desc = L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.\n\nWeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered."],
+      desc = L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.\n\nMusca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered."],
       order = 2 - 0.1,
       get = function()
         return data.growOn or ""
@@ -196,7 +196,7 @@ local function createOptions(id, data)
       type = "input",
       width = WeakAuras.doubleWidth,
       name = L["Run on..."],
-      desc = L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.\n\nWeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered."],
+      desc = L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.\n\nMusca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered."],
       order = 1.61,
       get = function()
         return data.anchorOn or ""
@@ -444,7 +444,7 @@ local function createOptions(id, data)
       type = "input",
       width = WeakAuras.doubleWidth,
       name = L["Run on..."],
-      desc = L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."],
+      desc = L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."],
       order = 21 - 0.1,
       get = function()
         return data.sortOn or ""
@@ -646,22 +646,22 @@ local function createAnimatedDefaultIcon(parent)
   local t1 = defaultIcon:CreateTexture(nil, "ARTWORK");
   t1:SetWidth(24);
   t1:SetHeight(6);
-  t1:SetColorTexture(0.8, 0, 0);
+  t1:SetColorTexture(OptionsPrivate.Private.Style.Color("error"));
   t1:SetPoint("TOP", parent, "TOP", 0, -6);
   local t2 = defaultIcon:CreateTexture(nil, "ARTWORK");
   t2:SetWidth(12);
   t2:SetHeight(12);
-  t2:SetColorTexture(0.2, 0.8, 0.2);
+  t2:SetColorTexture(OptionsPrivate.Private.Style.Color("success"));
   t2:SetPoint("TOP", t1, "BOTTOM", 0, -2);
   local t3 = defaultIcon:CreateTexture(nil, "ARTWORK");
   t3:SetWidth(30);
   t3:SetHeight(4);
-  t3:SetColorTexture(0.1, 0.25, 1);
+  t3:SetColorTexture(OptionsPrivate.Private.Style.Color("accent"));
   t3:SetPoint("TOP", t2, "BOTTOM", 0, -2);
   local t4 = defaultIcon:CreateTexture(nil, "OVERLAY");
   t4:SetWidth(1);
   t4:SetHeight(36);
-  t4:SetColorTexture(1, 1, 1);
+  t4:SetColorTexture(OptionsPrivate.Private.Style.Color("text"));
   t4:SetPoint("CENTER", parent, "CENTER");
 
   defaultIcon.t1 = t1

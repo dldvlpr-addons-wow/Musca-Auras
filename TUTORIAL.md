@@ -1,10 +1,10 @@
 # Musca Auras tutorial
 
-<!-- game: **Everything you need to learn WeakAuras on WoW Forever:** how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import.
+<!-- game: **Everything you need to learn Musca Auras on WoW Forever:** how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import.
 
 Open this guide again with the **Guide** button at the top of the **/wa** window, or with **/wa tutorial**. -->
 
-How WeakAuras works on WoW Forever, and how to build auras that keep working in combat.
+How Musca Auras works on WoW Forever, and how to build auras that keep working in combat.
 
 WoW Forever looks like Classic, but it runs on the modern 12.1 game engine. This engine hides most combat data
 from addons. This guide explains what that changes and gives step-by-step recipes.
@@ -13,9 +13,9 @@ Section 3 says what was tested in game on Forever, and what was not. When you ar
 
 ---
 
-## 1. WeakAuras in 2 minutes
+## 1. Musca Auras in 2 minutes
 
-An aura is something WeakAuras shows on your screen: an icon, a bar, a text or a texture.
+An aura is something Musca Auras shows on your screen: an icon, a bar, a text or a texture.
 Every aura has 4 parts, one per tab in the options:
 
 | Tab | What it decides |
@@ -23,7 +23,7 @@ Every aura has 4 parts, one per tab in the options:
 | **Display** | What it looks like: icon, size, colors, text. |
 | **Trigger** | When it shows: a buff, a cooldown, a cast, an item count, a game event. |
 | **Conditions** | What changes while it is shown, for example red when less than 3 seconds remain. |
-| **Load** | When WeakAuras even looks at it: class, in combat, in a group, zone. |
+| **Load** | When Musca Auras even looks at it: class, in combat, in a group, zone. |
 
 The **Actions** tab adds a sound, a chat message or a glow when the aura shows or hides.
 
@@ -48,12 +48,12 @@ quit** when you are done. Placement mode does not open during combat.
 
 ### Secret values
 
-During combat, boss encounters and PvP matches, the game gives addons "secret" values: WeakAuras receives the
+During combat, boss encounters and PvP matches, the game gives addons "secret" values: Musca Auras receives the
 data but cannot read it, compare it or do math with it. Out of combat, almost everything works like before.
 
 What that means for your auras, tested in game on Forever unless marked otherwise:
 
-- **The game draws what WeakAuras cannot read.** Cooldown swipes and numbers, timer bars, and health or power
+- **The game draws what Musca Auras cannot read.** Cooldown swipes and numbers, timer bars, and health or power
   bars keep moving in combat. A text made only of `%p` and `%t` (for example `%p` or `%p / %t`) is drawn by the
   game too, as a raw number.
 - **Buffs and debuffs are refused to addons in combat.** An aura that was showing before the pull keeps counting
@@ -192,7 +192,7 @@ Tested in game on Forever. Each mob you cast the spell on gets its own icon and 
 **Only with the default Blizzard nameplates.** Addons that replace the nameplates (EllesmereUI, ElvUI, Plater,
 Kui, etc.) hide the Blizzard health bar this aura attaches to: the icons then show nowhere, or at random places.
 The game does not let addons measure or attach to protected nameplate regions, so this cannot be fixed on the
-WeakAuras side. With a nameplate addon, use the single timer above.
+Musca Auras side. With a nameplate addon, use the single timer above.
 
 Enemy nameplates must be shown (key **V**).
 
@@ -333,7 +333,7 @@ https://github.com/dldvlpr-addons-wow/Musca-Auras/issues
 
 ## 10. Coming from ForeverAuras
 
-Export your auras from ForeverAuras, then paste the strings in the WeakAuras import window. Groups work too.\
+Export your auras from ForeverAuras, then paste the strings in the Musca Auras import window. Groups work too.\
 Musca Auras converts them on import, and lists in the chat what it could not convert.
 
 What each one becomes:

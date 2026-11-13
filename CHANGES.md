@@ -62,6 +62,93 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-13
+
+Version 1.18.0, the rebranding. Not yet tested in game.
+
+### Added
+- `WeakAuras/Style.lua`: `Style.Hex(name)` gives the `|cff` code of a token, and `Style.Markup(text)` replaces the
+  upstream colour codes written in the texts (`ffd100`, `00ccff`, `99ccff`, `ffcc00`) with the tokens. The file now
+  loads right after `Init.lua` in `WeakAuras/WeakAuras.toc`.
+- `WeakAuras/WeakAuras.lua`: a page in Options > AddOns (`Settings.RegisterCanvasLayoutCategory`, built at its first
+  `OnShow`, behind a presence test) with a button that opens `/wa`; the globals
+  `MuscaAuras_OnAddonCompartmentClick`, `MuscaAuras_OnAddonCompartmentEnter` and
+  `MuscaAuras_OnAddonCompartmentLeave`, named by the new `## AddonCompartmentFunc*` lines of `WeakAuras/WeakAuras.toc`
+  and declared in `.luacheckrc`. `LauncherClick` holds the clicks shared with the minimap button.
+- `WeakAuras/Media/Textures/icon.tga`: 64 px icon made from `logo_musca_round.tga`.
+
+### Changed
+- Displayed name: "WeakAuras" becomes "Musca Auras" in the texts shown to the player. `WeakAuras/Locales/*.lua` and
+  `WeakAurasOptions/Locales/*.lua` (11 languages, keys and values), with the matching keys in
+  `WeakAuras/ForeverTutorial.lua`, `Modernize.lua`, `Profiling.lua`, `Transmission.lua`, `Types.lua`, `WeakAuras.lua`,
+  `WeakAurasOptions/BuffTrigger2.lua`, `OptionsFrames/OptionsFrame.lua`, `OptionsFrames/Update.lua`,
+  `RegionOptions/DynamicGroup.lua`, `RegionOptions/Icon.lua`, `VersionCheck.lua` and `TUTORIAL.md`; literal texts in
+  `WeakAuras/Init.lua` (chat prefix), `WeakAuras.lua`, `GenericTrigger.lua` and
+  `WeakAurasOptions/WeakAurasOptions.lua`. The attribution to WeakAuras, its links, the saved variables, the
+  `WeakAuras.*` API, the frame names, the popup keys, the LDB id and the Edit Mode layout name are unchanged.
+- `WeakAuras/WeakAuras.lua`: the eight `/wa` help lines written in English (`tutorial`, `cdm`, `unlock`, `demo`,
+  `backups`, `restore`, `deleted`, `undelete`) go through `L[...]`. `WeakAuras/Profiling.lua`: "Time in WA" becomes
+  "Time in Musca Auras", through `L[...]`. The nine keys are in the 11 `WeakAuras/Locales/*.lua`.
+- Colours: `WeakAuras/Init.lua` (`prettyPrint` prefix), `WeakAuras/CDMSetup.lua` (three `print` now go through
+  `WeakAuras.prettyPrint`), `Transmission.lua` (tooltip titles), `Profiling.lua` (headings) and the popups
+  `WEAKAURAS_WHATS_NEW` and `WEAKAURAS_FOREVER_DISCLAIMER` of `WeakAuras.lua` read the tokens of `Style.lua`.
+- `WeakAuras/ForeverTutorial.lua`: `CreateTutorialFrame` builds the Guide window with `Style` (dark frame, title
+  band with the Musca logo left of the title, own close cross, skinned scroll bar, token colours, flat import
+  buttons).
+- Option widgets: the literal colours become tokens of `Private.Style` in `WeakAurasOptions/ColorPalette.lua`,
+  `OptionsFrames/FrameChooser.lua`, `MoverSizer.lua`, `TextEditor.lua`, and in `AceGUI-Widgets/`:
+  `AceGUIContainer-WeakAurasTreeGroup.lua`, `AceGuiWidget-WeakAurasProgressBar.lua` and the `AceGUIWidget-WeakAuras*`
+  files `AnchorButtons`, `ColorPicker`, `DropDownItemCurrency`, `Expand`, `ExpandSmall`, `IconButton`, `ImportButton`,
+  `InputWithIndentation`, `MiniTalent`, `MultiLineEditBox`, `MultiLineEditBoxWithEnter`, `NewHeaderButton`,
+  `PendingInstallButton`, `PendingUpdateButton`, `ScrollArea`, `SnippetButton`, `SpinBox`, `TextureButton`. The tooltip
+  texts of `AceGUIWidget-WeakAurasDisplayButton.lua` and `AceGUIWidget-WeakAurasPendingUpdateButton.lua` read
+  `Style.Hex`.
+- `WeakAuras/Features.lua`: the debug prefix of `Private.DebugPrint` reads "Musca Auras debug:" in the primary colour.
+- Icon: `## IconTexture` of the five TOC files, the LDB launcher of `WeakAuras/WeakAuras.lua` and
+  `AceGUIWidget-WeakAurasDisplayButton.lua` point to `icon.tga`.
+- `WeakAuras/WeakAuras.lua`: `WHATS_NEW_VERSION` is `1.18.0`. The popup `WEAKAURAS_WHATS_NEW` says what the
+  rebranding changes and what it keeps, with one OK button; the class pack notice follows it when due. Strings in
+  `WeakAuras/Locales/enUS.lua` and `frFR.lua`, where the six 1.17 strings of the popup are removed.
+- `WeakAuras/WeakAuras.toc`: new `## Notes:`. `README.md`, `DESCRIPTION.md` (heading colours) and `.github/logo.png`
+  follow the new look.
+- Version 1.18.0 in the five TOC files, `WeakAurasOptions/Changelog.lua` and `WeakAuras/CHANGELOG.md`.
+- `Tests/Scenarios/26_CDMSetup.lua`: the `print` stand-in joins its arguments, for the coloured prefix of
+  `prettyPrint`. `Tests/Scenarios/51_Lot7cBlocksContract.lua`: loads `Style.lua` for the colour palette, border
+  bound lowered to the `borderHover` token.
+
+- Written colours: the `|cff` codes written in the code read `Style.Hex`, and the translated texts that carry one go
+  through `Style.Markup`, whose table now maps every upstream code to a token. Core: `BossMods.lua`,
+  `GenericTrigger.lua`, `Profiling.lua`, `PrototypeSecretHelpers.lua`, `Prototypes.lua`, `SecretAuraSingle.lua`,
+  `Transmission.lua`, `Types.lua`, `Types_Vanilla.lua`, `WeakAuras.lua`. Options: `AuraDisplayOptions.lua`,
+  `AuthorOptions.lua`, `BuffTrigger2.lua`, `CommonOptions.lua`, `ConditionOptions.lua`, `CooldownViewerOptions.lua`,
+  `DisplayOptions.lua`, `GenericTrigger.lua`, `GroupOptions.lua`, `InformationOptions.lua`, `LoadOptions.lua`,
+  `OptionsFrames/TexturePicker.lua`, `OptionsFrames/Update.lua`, `RegionOptions/Icon.lua`, `RegionOptions/Text.lua`,
+  `SecretAuraTriggerOptions.lua`, `SubRegionOptions/Glow.lua`, `SubText.lua`, `Tick.lua`, `TriggerOptions.lua`,
+  `WeakAurasOptions.lua`. The chat link of `Transmission.lua` keeps its colour: other clients read it.
+- `WeakAurasOptions/TriggerSecretWarnings.lua`: the fields `text` and `casterText` are replaced by the function
+  `Warnings.Text()`, since the colour is read when the text is shown. `BuffTrigger2.lua` calls it.
+- `WeakAuras/WeakAuras.lua`: the minimap tooltip reads the `textSecondary` token. The random tint of the minimap icon
+  is removed (`colorFrame`, the frame "LDB Icon Recoloring", `iconR`, `iconG`, `iconB`).
+- `WeakAuras/Profiling.xml` and `Profiling.lua`: the three `<Color>` of the XML are removed; the backgrounds, the
+  line names and the alternate bars are coloured from the tokens in the `OnShow` and `Init` mixin functions.
+- `WeakAurasOptions/RegionOptions/DynamicGroup.lua` and `Group.lua`: the axis thumbnails read the tokens.
+- `WeakAuras/CDMSetup.lua`: the text of the reload popup is localized and names Musca Auras.
+- Translations: the seven new 1.18 strings are translated in the nine other files of `WeakAuras/Locales/`; the
+  translated values of `koKR`, `zhCN` and `zhTW` (core and options) that still said "WeakAuras" for a key that
+  says "Musca Auras" now say "Musca Auras". The mentions of the WeakAuras Discord are kept. The 60 strings of the
+  placement mode (`/wa unlock`, Edit Mode boxes, Unlock button) and of the Guide (`WeakAuras/ForeverTutorial.lua`),
+  and the 5 strings of the Guide button, were in enUS and frFR only: they are translated at the end of `deDE`,
+  `esES`, `esMX` (same text as `esES`), `itIT`, `koKR`, `ptBR`, `ruRU`, `zhCN` and `zhTW` in `WeakAuras/Locales/`.
+  These translations were not proofread by a native speaker.
+- `Tests/Scenarios/31_OptionsContract.lua`, `32_SecretTriggerContract.lua`, `34_OptionsFilesContract.lua`,
+  `45_SingleContract.lua` and `83_ReplaceNameDescFuncs.lua`: expected colour codes follow the tokens; 34 calls
+  `Warnings.Text()`, 83 gives `Style` to its `Private` stand-in.
+
+### Removed
+- `WeakAuras/Media/Textures/icon.blp`, the upstream WeakAuras icon, and the unused upstream logos
+  `logo_256_round.tga`, `logo_256_round_pride.tga` and `logo_64_nobg.tga` of the same folder.
+- `## X-Wago-ID` of `WeakAuras/WeakAuras.toc`: it is the Wago id of upstream WeakAuras.
+
 ## 2026-11-12
 
 Not yet tested in game.

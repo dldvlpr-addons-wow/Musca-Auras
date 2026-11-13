@@ -99,7 +99,7 @@ end
 local function refreshAlpha(force)
   if not alphaBox or (not force and alphaBox:HasFocus()) then return end
   alphaBox:SetText(formatPercent(pickerAlpha()))
-  alphaBox:SetTextColor(1, 1, 1)
+  alphaBox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
 end
 
 local function fillSwatches(swatches, list)
@@ -229,7 +229,7 @@ local function buildAlphaBox()
     if not (userInput and alphaEditable()) then return end
     local value = parsePercent(self:GetText())
     if value then
-      self:SetTextColor(1, 1, 1)
+      self:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
       setPickerAlpha(value / 100)
     else
       self:SetTextColor(INVALID_COLOR[1], INVALID_COLOR[2], INVALID_COLOR[3])
@@ -262,8 +262,8 @@ local function buildPanel()
   panel:SetPoint("TOPLEFT", picker, "TOPRIGHT", 6, 0)
   panel:SetClampedToScreen(true)
   panel:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-  panel:SetBackdropColor(0.055, 0.055, 0.065, 0.98)
-  panel:SetBackdropBorderColor(0.3, 0.3, 0.35, 1)
+  panel:SetBackdropColor(OptionsPrivate.Private.Style.Color("background"))
+  panel:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("borderHover"))
 
   createHeader(L["Class colours"], -12)
   buildClassSwatches()

@@ -100,7 +100,7 @@ Private.group_hybrid_sort_types = {
 
 ---@type table<number, string>
 Private.time_format_types = {
-  [0] = L["WeakAuras Built-In (63:42 | 3:07 | 10 | 2.4)"],
+  [0] = L["Musca Auras Built-In (63:42 | 3:07 | 10 | 2.4)"],
   [1] = L["Old Blizzard (2h | 3m | 10s | 2.4)"],
   [2] = L["Modern Blizzard (1h 3m | 3m 7s | 10s | 2.4)"],
 }
@@ -685,7 +685,7 @@ Private.format_types = {
     end
   },
   Unit = {
-    display = L["Formats |cFFFFCC00%unit|r"],
+    display = Private.Style.Markup(L["Formats |cFFFFCC00%unit|r"]),
     AddOptions = function(symbol, hidden, addOption, get, withoutColor)
       if not withoutColor then
         addOption(symbol .. "_color", {
@@ -847,7 +847,7 @@ Private.format_types = {
     end
   },
   guid = {
-    display = L["Formats Player's |cFFFFCC00%guid|r"],
+    display = Private.Style.Markup(L["Formats Player's |cFFFFCC00%guid|r"]),
     AddOptions = function(symbol, hidden, addOption, get, withoutColor)
       if not withoutColor then
         addOption(symbol .. "_color", {
@@ -1258,7 +1258,7 @@ Private.actual_unit_types_cast = Mixin({
 }, target_unit_types)
 
 ---@type string
-Private.actual_unit_types_cast_tooltip = L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n\n|cffffff00*|r Yellow Unit settings will create clones for each matching unit while this trigger is providing Dynamic Info to the Aura."]
+Private.actual_unit_types_cast_tooltip = Private.Style.Markup(L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n\n|cffffff00*|r Yellow Unit settings will create clones for each matching unit while this trigger is providing Dynamic Info to the Aura."])
 
 ---@type table<string, string>
 Private.threat_unit_types = Mixin({
@@ -1277,10 +1277,10 @@ Private.unit_types_range_check = Mixin({
 ---@type table<number, string>
 Private.unit_threat_situation_types = {
   [-1] = L["Not On Threat Table"],
-  [0] = "|cFFB0B0B0"..L["Lower Than Tank"].."|r",
-  [1] = "|cFFFFFF77"..L["Higher Than Tank"].."|r",
-  [2] = "|cFFFF9900"..L["Tanking But Not Highest"].."|r",
-  [3] = "|cFFFF0000"..L["Tanking And Highest"].."|r"
+  [0] = Private.Style.Hex("textQuiet")..L["Lower Than Tank"].."|r",
+  [1] = Private.Style.Hex("primary")..L["Higher Than Tank"].."|r",
+  [2] = Private.Style.Hex("warning")..L["Tanking But Not Highest"].."|r",
+  [3] = Private.Style.Hex("error")..L["Tanking And Highest"].."|r"
 }
 
 WeakAuras.class_types = {}
@@ -1944,8 +1944,8 @@ end
 Private.talent_extra_option_types = {
     [0] = L["Talent Known"],
     [1] = L["Talent Selected"],
-    [2] = L["Talent |cFFFF0000Not|r Known"],
-    [3] = L["Talent |cFFFF0000Not|r Selected"],
+    [2] = Private.Style.Markup(L["Talent |cFFFF0000Not|r Known"]),
+    [3] = Private.Style.Markup(L["Talent |cFFFF0000Not|r Selected"]),
 }
 
 -- GetTotemInfo() only works for the first 5 totems

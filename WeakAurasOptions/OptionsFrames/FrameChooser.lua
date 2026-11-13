@@ -49,7 +49,7 @@ function OptionsPrivate.StartFrameChooser(data, path)
       edgeSize = 12,
       insets = {left = 0, right = 0, top = 0, bottom = 0}
     });
-    frameChooserBox:SetBackdropBorderColor(0, 1, 0);
+    frameChooserBox:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("accent"));
     frameChooserBox:Hide();
   end
   local givenValue = OptionsPrivate.Private.ValueFromPath(data, path);

@@ -34,6 +34,7 @@ local bit_band, bit_lshift, bit_rshift = bit.band, bit.lshift, bit.rshift
 ---@class WeakAuras
 local WeakAuras = WeakAuras;
 local L = WeakAuras.L;
+local brandRed, brandGreen, brandBlue = Private.Style.Color("primary")
 
 local versionString = WeakAuras.versionString;
 
@@ -252,7 +253,7 @@ hooksecurefunc("SetItemRef", function(link, text)
         characterName = characterName:gsub("%.", "")
         local whisperBlock = GetWhisperBlock()
         ShowTooltip({
-          {2, "WeakAuras", displayName, 0.5, 0, 1, 1, 1, 1},
+          {2, "Musca Auras", displayName, brandRed, brandGreen, brandBlue, 1, 1, 1},
           {1, whisperBlock or L["Requesting display information from %s ..."]:format(characterName), 1, 0.82, 0}
         });
         if whisperBlock then
@@ -264,7 +265,7 @@ hooksecurefunc("SetItemRef", function(link, text)
         WeakAuras.timer:ScheduleTimer(function()
           if (tooltipLoading and not receivedData and ItemRefTooltip:IsVisible()) then
             ShowTooltip({
-              {2, "WeakAuras", displayName, 0.5, 0, 1, 1, 1, 1},
+              {2, "Musca Auras", displayName, brandRed, brandGreen, brandBlue, 1, 1, 1},
               {1, L["Error not receiving display information from %s"]:format(characterName), 1, 0, 0}
             })
           end
@@ -272,8 +273,8 @@ hooksecurefunc("SetItemRef", function(link, text)
       end
     else
       ShowTooltip({
-        {1, "WeakAuras", 0.5, 0, 1},
-        {1, L["Malformed WeakAuras link"], 1, 0, 0}
+        {1, "Musca Auras", brandRed, brandGreen, brandBlue},
+        {1, L["Malformed Musca Auras link"], 1, 0, 0}
       });
     end
   end
@@ -426,7 +427,7 @@ function StringToTable(inString, fromChat)
     -- We ignore the error message, since it's more likely not a weakaura.
     decompressed = Compresser:Decompress(decoded)
     if not(decompressed) then
-      return L["Error decompressing. This doesn't look like a WeakAuras import."]
+      return L["Error decompressing. This doesn't look like a Musca Auras import."]
     end
   end
 
@@ -603,7 +604,7 @@ function WeakAuras.Import(inData, target, callbackFunc, linkedAuras)
     if type(received) == 'string' then
       -- this is probably an error message from LibDeflate. Display it.
       ShowTooltip{
-        {1, "WeakAuras", 0.5333, 0, 1},
+        {1, "Musca Auras", brandRed, brandGreen, brandBlue},
         {1, received, 1, 0, 0, 1}
       }
       return nil, received
@@ -735,7 +736,7 @@ local function HandleProgressComm(prefix, message, distribution, sender)
     if done and total then
       if done == -1 then
         ShowTooltip({
-          {2, "WeakAuras", displayName, 0.5, 0, 1, 1, 1, 1},
+          {2, "Musca Auras", displayName, brandRed, brandGreen, brandBlue, 1, 1, 1},
           {1, L["Receiving display information"]:format(sender), 1, 0.82, 0},
           {2, L["No Progress Information available."]},
           {2, L["Receiving %s Bytes"]:format(total)}
@@ -744,9 +745,9 @@ local function HandleProgressComm(prefix, message, distribution, sender)
         local red = min(255, (1 - done / total) * 511)
         local green = min(255, (done / total) * 511)
         ShowTooltip({
-          {2, "WeakAuras", displayName, 0.5, 0, 1, 1, 1, 1},
+          {2, "Musca Auras", displayName, brandRed, brandGreen, brandBlue, 1, 1, 1},
           {1, L["Receiving display information"]:format(sender), 1, 0.82, 0},
-          {2, " ", ("|cFF%2x%2x00"):format(red, green)..done.."|cFF00FF00/"..total}
+          {2, " ", ("|cFF%2x%2x00"):format(red, green)..done..Private.Style.Hex("success") .. "/"..total}
         })
       end
     end
@@ -792,7 +793,7 @@ local function HandleComm(prefix, message, distribution, sender)
       tooltipLoading = nil;
       if not IsValidDisplayMessage(received) then
         ShowTooltip({
-          {1, "WeakAuras", 0.5333, 0, 1},
+          {1, "Musca Auras", brandRed, brandGreen, brandBlue},
           {1, L["Transmission error"], 1, 0, 0}
         });
         return
@@ -825,19 +826,19 @@ local function HandleComm(prefix, message, distribution, sender)
       tooltipLoading = nil;
       if(received.eM == "dne") then
         ShowTooltip({
-          {1, "WeakAuras", 0.5333, 0, 1},
+          {1, "Musca Auras", brandRed, brandGreen, brandBlue},
           {1, L["Requested display does not exist"], 1, 0, 0}
         });
       elseif(received.eM == "na") then
         ShowTooltip({
-          {1, "WeakAuras", 0.5333, 0, 1},
+          {1, "Musca Auras", brandRed, brandGreen, brandBlue},
           {1, L["Requested display not authorized"], 1, 0, 0}
         });
       end
     end
   elseif(ItemRefTooltip.WeakAuras_Tooltip_Thumbnail and ItemRefTooltip.WeakAuras_Tooltip_Thumbnail:IsVisible()) then
     ShowTooltip({
-      {1, "WeakAuras", 0.5333, 0, 1},
+      {1, "Musca Auras", brandRed, brandGreen, brandBlue},
       {1, L["Transmission error"], 1, 0, 0}
     });
   end

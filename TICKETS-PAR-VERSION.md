@@ -1,6 +1,6 @@
 # Tickets par version
 
-Établi le 2026-10-27. La 1.15 reprend le travail fait et non commité, plus six compléments de packs. Les 61 tickets vont de la 1.15 à la 1.22, dans l'ordre de réalisation. Aucun ticket n'est implémenté.
+Établi le 2026-10-27. La 1.15 reprend le travail fait et non commité, plus six compléments de packs. Les 70 tickets vont de la 1.15 à la 1.23, dans l'ordre de réalisation. L'avancement est dans la section « Déjà fait » de chaque version.
 
 Séries :
 - « Packs » : compléments des packs de classe (8) ;
@@ -8,7 +8,7 @@ Séries :
 - « Placement » : grille et magnétisme (15, dont 8 ajoutés le 2026-11-10) ;
 - « Rebranding » : interface de la 1.18 (9) ;
 - « Accueil » : accueil du nouveau joueur (4) ;
-- « Populaire » : demandes populaires de WeakAuras (10).
+- « Populaire » : demandes populaires de WeakAuras (11, dont les auras cliquables ajoutées le 2026-11-13).
 
 Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WOW_UI_SOURCE` pointant sur le source Forever. `luacheck` n'est pas installé sur le poste : il ne tourne qu'en CI (`.github/workflows/lint.yml`).
 
@@ -27,11 +27,12 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 | 1.15 | Packs (gros du travail fait, non commité) | Packs 2, 3, 4, 6, 8, 1 |
 | 1.16 | Stabilisation | Dette 2, 9, 10 à 23, Packs 5, 7, Dette 6, 8 |
 | 1.17 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6, puis 9, 8, 10 à 15 |
-| 1.18 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 9, 8, 4 |
-| 1.19 | Accueil et commandes | Accueil 2, 1, 3, 4, Populaire 1, 10 |
-| 1.20 | Fiabilité, chargement et import | Dette 3, 5, 4, Populaire 5, 3, 2 |
-| 1.21 | Édition d'auras | Populaire 4, 6, 7 |
-| 1.22 | Gros chantiers | Populaire 8, Placement 7, Populaire 9 |
+| 1.18 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 8, 4 (Rebranding 9 écarté) |
+| 1.19 | Auras cliquables | Dette 4, Populaire 11 |
+| 1.20 | Accueil et commandes | Accueil 2, 1, 3, 4, Populaire 1, 10 |
+| 1.21 | Fiabilité, chargement et import | Dette 3, 5, Populaire 5, 3, 2 |
+| 1.22 | Édition d'auras | Populaire 4, 6, 7 |
+| 1.23 | Gros chantiers | Populaire 8, Placement 7, Populaire 9 |
 
 ## Dépendances
 
@@ -44,7 +45,7 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 | Accueil 2 | Accueil 1 | Mêmes boutons |
 | Dette 6 | Accueil 3 | Le compteur lit les packs |
 | Packs 2 | Packs 3, 5, 7 | Les ID se tranchent dans le même passage du DB2 |
-| Dette 4 | Populaire 4, 6, 7, 8 | Nouveaux champs dans les auras |
+| Dette 4 | Populaire 11, 4, 6, 7, 8 | Nouveaux champs dans les auras |
 | Dette 18 | Populaire 6 | Même fichier, `AuthorOptions.lua` |
 | Dette 17, Populaire 4 | Populaire 9 | Animations et conditions |
 
@@ -726,7 +727,7 @@ La régénération se fait à la main, en plusieurs étapes décrites dans les e
 
 ## 1.17 : placement
 
-Dette 7 passe d'abord : les tickets de placement ajoutent des scénarios. Dette 1 corrige `MoverSizer.lua` avant qu'on le retravaille. Placement 7 passe en 1.22 : il modifie les données d'ancrage sauvegardées et dépend du moteur commun (Placement 4).
+Dette 7 passe d'abord : les tickets de placement ajoutent des scénarios. Dette 1 corrige `MoverSizer.lua` avant qu'on le retravaille. Placement 7 passe en 1.23 : il modifie les données d'ancrage sauvegardées et dépend du moteur commun (Placement 4).
 
 ### Contexte du placement
 
@@ -1204,6 +1205,26 @@ On change ce que le joueur voit : nom affiché, couleurs, icônes, cadres. On ga
 
 Aucun test headless ne couvre le rendu (couleurs, textures, titres) : chaque ticket se vérifie en jeu.
 
+### Déjà fait
+
+Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert (128 scénarios, 0 échec). Rien n'est testé en jeu. Tests en jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 14.
+
+- Rebranding 2 : « Musca Auras » dans les 11 locales, le tutoriel, le chat et les textes en dur. Attribution à
+  WeakAuras et identifiants de compatibilité inchangés.
+- Rebranding 3 : `## Notes:` du toc, `## X-Wago-ID` retiré, `README.md`, `DESCRIPTION.md`, `.github/logo.png`.
+- Rebranding 5 : page Options > AddOns et entrée du menu des addons de la minicarte.
+- Rebranding 6 : fenêtre Guide construite avec `Style`, logo Musca dans la bande de titre comme la fenêtre d'options.
+- Rebranding 7 : `Style.Hex`, `Style.Markup`, couleurs des widgets d'options et couleurs écrites (`|cff`) du cœur et
+  des options passées aux tokens, infobulle de la minicarte, `Profiling.lua` et `Profiling.xml`, axes de
+  `RegionOptions/DynamicGroup.lua` et `Group.lua`. Teinte aléatoire de l'icône de la minicarte retirée. Gardés
+  exprès : la couleur du lien de chat de `Transmission.lua` (lue par les autres clients) et les
+  `SetVertexColor(1, 1, 1)` des widgets, qui retirent une teinte.
+- Rebranding 8 : `icon.tga` dérivée du logo rond, `icon.blp` supprimée.
+- Rebranding 4 : popup 1.18, `WHATS_NEW_VERSION`, changelogs et version des toc. Écart au ticket : le popup s'ouvre
+  à la connexion, comme celui de la 1.17, et non au premier `/wa`. Il se relit par le bouton « Changelog » de la
+  fenêtre d'options.
+- Rebranding 9 : écarté le 2026-11-13, voir « Écartés ».
+
 ### Ordre
 
 1. Rebranding 1 : Charte `DESIGN.md`
@@ -1212,7 +1233,7 @@ Aucun test headless ne couvre le rendu (couleurs, textures, titres) : chaque tic
 4. Rebranding 5 : Nouveaux points d'entrée
 5. Rebranding 6 : Fenêtre Guide alignée sur la fenêtre d'options
 6. Rebranding 7 : Module de thème central
-7. Rebranding 9 : Bascule « apparence classique »
+7. Rebranding 9 : Bascule « apparence classique » (écarté)
 8. Rebranding 8 : Icônes de marque
 9. Rebranding 4 : Écran « Quoi de neuf 1.18 » au premier lancement
 
@@ -1452,7 +1473,93 @@ Aucun test headless ne couvre le rendu (couleurs, textures, titres) : chaque tic
 
 ---
 
-## 1.19 : accueil et commandes
+## 1.19 : auras cliquables
+
+Version à un seul sujet, décidée le 2026-11-13 : l'auteur classe les auras cliquables indispensables. Populaire 11 est un L. Il sort seul avec Dette 4, pour ne tester en jeu qu'un sujet. Les versions suivantes ont glissé d'un cran.
+
+Dette 4 (tests de migration) précède tous les tickets qui ajoutent des champs aux auras : Populaire 11 ici, puis ceux des 1.22 et 1.23.
+
+### Ordre
+
+1. Tests en jeu de Populaire 11 (liste « À tester en jeu avant de coder » du ticket) : un échec change la conception.
+2. Dette 4 : Tester la migration et la restauration des données
+3. Populaire 11 : Auras cliquables et raccourcis clavier
+
+---
+
+### Dette 4 : Tester la migration et la restauration des données
+
+**Pourquoi.** Plusieurs chemins qui touchent aux données sauvegardées n'ont aucun scénario :
+- `WeakAuras/BlizzardAuraDisplayMigration.lua` : `RenameVoiceSound`, `DropLegacySoundFields` (renommage des sons de la 1.14.0). Piège connu : la clé `sound_<ancien>` n'est nettoyée que si le kind est encore l'ancien et si l'aura a un trigger `secretAura`. Sinon elle reste dans les SavedVariables et dans les exports.
+- `RestoreDeletedAura` (`WeakAuras/AuraBackups.lua:141`, appelée depuis `WeakAuras.lua:297`). `ListDeletedAuras` est testée, pas la restauration.
+- `WeakAuras/BlizzardAuraDisplayValidation.lua`.
+
+**Valeur.** Aucune perte ni corruption silencieuse de données lors d'une mise à jour ou d'une restauration.
+
+**À faire.**
+- Scénario migration : données 1.14.0 avec et sans trigger `secretAura`, kind ancien et kind déjà renommé. Vérifier qu'il ne reste aucune clé `sound_*` obsolète.
+- Scénario restauration : supprimer une aura, la restaurer, comparer aux données d'origine (uid, parent, enfants).
+- Scénario validation : un cas valide et un cas invalide par règle.
+
+**Coût.** M.
+
+**Risque.** Nul : tests seulement. Un scénario qui échoue révèle un bug à traiter à part.
+
+**Fichiers.**
+- Nouveaux scénarios dans `Tests/Scenarios/`
+
+---
+
+### Populaire 11 : Auras cliquables et raccourcis clavier
+
+**Pourquoi.** Demandé par l'auteur le 2026-11-13, classé indispensable. Aucune aura n'est cliquable aujourd'hui : le seul clic est `ClickToPick` (`WeakAuras/RegionTypes/RegionPrototype.lua:1089`), actif quand `/wa` est ouvert. Lancer un sort, utiliser un objet ou retirer un buff demande un bouton sécurisé. Vérifié dans le source Forever 70862, rien en jeu : `SecureActionButtonTemplate` existe (`Blizzard_FrameXML/SecureTemplates.xml:4`) avec les types `spell`, `item`, `macro`, `target` et `cancelaura` ; `Show`, `Hide`, `SetPoint`, `SetSize`, `SetParent` et `EnableMouse` sont protégées sur un bouton sécurisé ; `RegisterStateDriver` existe ; l'environnement restreint n'a aucune API d'aura et `SecureAuraHeaderTemplate` n'est pas chargé sur Forever ; `SetOverrideBindingClick` est appelée par Blizzard (`Blizzard_GamepadSharedUtility/InputBindingStack/InputButtonBinding.lua:28`).
+
+**Valeur.** Cliquer une aura, ou appuyer sur une touche, pour lancer le sort, utiliser l'objet ou la macro qu'elle représente, cibler une unité ou retirer un buff. Les consommables des packs deviennent utilisables depuis leur icône.
+
+**Principe.** Un bouton sécurisé séparé, enfant de `UIParent`, jamais ancré à l'aura, ni l'aura à lui : une région ancrée à un cadre protégé risque de devenir protégée, et l'addon ne pourrait plus l'afficher en combat. L'addon recopie la position et la taille de l'aura sur le bouton hors combat.
+
+**À faire.**
+- Sous-région « Click action » pour `icon`, `aurabar`, `text`, `texture`, `progresstexture` et `empty`, abonnée à `PreShow` et `PreHide` de la région.
+- Réserve de boutons `SecureActionButtonTemplate` nommés, sans `:` dans le nom, avec `RegisterForClicks("AnyDown", "AnyUp")`. Création, attributs, position, taille et visibilité seulement hors combat (`InCombatLockdown()`), recalage après le combat.
+- Options par bouton de souris (gauche, droit, milieu) : lancer un sort, utiliser un objet, macro, cibler une unité, retirer un buff. Unité visée : par défaut, `player`, `target`, `mouseover`, `focus`.
+- Raccourci clavier : une touche par aura, qui déclenche l'action du clic gauche, posée par `SetOverrideBindingClick` hors combat et retirée quand l'aura est déchargée ou supprimée. Avertissement dans les options si la touche est déjà prise par le jeu ou par une autre aura.
+- Clic et raccourci en combat, trois modes : « aura visible à l'entrée en combat », « toujours », « condition de macro » (`RegisterStateDriver`, par exemple `[combat][mod:shift] show; hide`).
+- Avertissement dans les options pour les limites ci-dessous.
+- Harnais de test : gabarit sécurisé, `RegisterStateDriver` et raccourcis simulés, un scénario.
+- Section dans `GUIDE.md`, textes dans les 11 locales.
+
+**Limites du client.**
+- Groupe dynamique : la zone cliquable reste à sa position d'entrée en combat, puis se recale après le combat.
+- Clone apparu en combat : pas de clic avant la fin du combat.
+- Aura déplacée ou redimensionnée en combat (animation, condition) : la zone ne suit pas.
+- Mode « toujours » : un clic sur la zone lance l'action même quand l'aura est cachée.
+- Clic ou raccourci actif seulement quand un buff est présent, en combat : impossible, aucun accès aux auras côté sécurisé.
+
+**À tester en jeu avant de coder.**
+- `SetAttribute` sur un bouton sécurisé d'addon en combat.
+- `RegisterStateDriver` avec `[combat]` et `[mod]` sur un bouton d'addon.
+- `macrotext` et `type="item"` en combat, clic physique.
+- Raccourci `CLICK` sur un bouton caché (`Hide`).
+- `SetOverrideBindingClick` depuis l'addon, en combat puis hors combat.
+- État `IsProtected()` d'une région d'aura voisine du bouton, avant et après.
+
+**Coût.** L.
+
+**Risque.** Élevé. Une action protégée lancée en combat lève `ADDON_ACTION_BLOCKED` : tout passe par `InCombatLockdown()`. Un raccourci prioritaire masque la touche du jeu tant qu'il est posé. Nouveaux champs dans les auras, d'où Dette 4 juste avant : une sous-région inconnue d'une version plus ancienne est ignorée, à vérifier par un import croisé.
+
+**Fichiers.**
+- `WeakAuras/SubRegionTypes/ClickAction.lua` (neuf)
+- `WeakAuras/ClickButtons.lua` (neuf)
+- `WeakAurasOptions/SubRegionOptions/ClickAction.lua` (neuf)
+- `WeakAuras/Types.lua`
+- `WeakAuras/WeakAuras.toc`, `WeakAurasOptions/WeakAurasOptions.toc`
+- `Tests/Harness/Frames.lua`, `Tests/Harness/WowApi.lua`, un scénario neuf
+- `GUIDE.md`, `CHANGES.md`, `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`
+- Locales
+
+---
+
+## 1.20 : accueil et commandes
 
 L'accueil et les nouvelles commandes ajoutent des textes et des boutons : les écrire après le changement de nom et de charte de la 1.18 évite de les refaire. Accueil 3 lit les packs régénérés par Dette 6 (1.16).
 
@@ -1619,18 +1726,17 @@ Parcours actuel au premier login (lu dans le code, non testé en jeu) :
 
 ---
 
-## 1.20 : fiabilité, chargement et import
+## 1.21 : fiabilité, chargement et import
 
-Dette 4 (tests de migration) précède les tickets qui ajoutent des champs aux auras, en 1.21 et 1.22.
+Dette 4 (tests de migration) est passée en 1.19, avant les auras cliquables.
 
 ### Ordre
 
 1. Dette 3 : Un seul jeu de helpers pour les secrets
 2. Dette 5 : Durcir les lectures de secrets ouvertes dans le suivi
-3. Dette 4 : Tester la migration et la restauration des données
-4. Populaire 5 : Safe mode `/wa safemode`
-5. Populaire 3 : Alerte des médias manquants à l'import
-6. Populaire 2 : Condition de chargement « AddOn chargé »
+3. Populaire 5 : Safe mode `/wa safemode`
+4. Populaire 3 : Alerte des médias manquants à l'import
+5. Populaire 2 : Condition de chargement « AddOn chargé »
 
 ---
 
@@ -1691,29 +1797,6 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 - `WeakAuras/RegionTypes/Icon.lua`, `BuffTrigger2.lua`, `GenericTrigger.lua`, `WeakAuras.lua`
 - `WeakAuras/SecretRestrictions.lua`, `AuraEnvironment.lua`, `BuffTriggerNativeFilter.lua`
 - `SUIVI-BUGS-ET-TESTS.md`
-
----
-
-### Dette 4 : Tester la migration et la restauration des données
-
-**Pourquoi.** Plusieurs chemins qui touchent aux données sauvegardées n'ont aucun scénario :
-- `WeakAuras/BlizzardAuraDisplayMigration.lua` : `RenameVoiceSound`, `DropLegacySoundFields` (renommage des sons de la 1.14.0). Piège connu : la clé `sound_<ancien>` n'est nettoyée que si le kind est encore l'ancien et si l'aura a un trigger `secretAura`. Sinon elle reste dans les SavedVariables et dans les exports.
-- `RestoreDeletedAura` (`WeakAuras/AuraBackups.lua:141`, appelée depuis `WeakAuras.lua:297`). `ListDeletedAuras` est testée, pas la restauration.
-- `WeakAuras/BlizzardAuraDisplayValidation.lua`.
-
-**Valeur.** Aucune perte ni corruption silencieuse de données lors d'une mise à jour ou d'une restauration.
-
-**À faire.**
-- Scénario migration : données 1.14.0 avec et sans trigger `secretAura`, kind ancien et kind déjà renommé. Vérifier qu'il ne reste aucune clé `sound_*` obsolète.
-- Scénario restauration : supprimer une aura, la restaurer, comparer aux données d'origine (uid, parent, enfants).
-- Scénario validation : un cas valide et un cas invalide par règle.
-
-**Coût.** M.
-
-**Risque.** Nul : tests seulement. Un scénario qui échoue révèle un bug à traiter à part.
-
-**Fichiers.**
-- Nouveaux scénarios dans `Tests/Scenarios/`
 
 ---
 
@@ -1781,7 +1864,7 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
-## 1.21 : édition d'auras
+## 1.22 : édition d'auras
 
 ### Ordre
 
@@ -1853,9 +1936,9 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
-## 1.22 : gros chantiers
+## 1.23 : gros chantiers
 
-Tickets L ou M à L. Chacun peut sortir seul, en 1.22, 1.23 et 1.24, si la version devient trop lourde. Populaire 9 touche aux conditions comme Populaire 4 : il passe après.
+Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la version devient trop lourde. Populaire 9 touche aux conditions comme Populaire 4 : il passe après.
 
 ### Ordre
 
@@ -1939,7 +2022,7 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.22, 1.23 et 1.24, si la versi
 - `GenericTrigger.lua:3413` (`shortcut:`) : les charges sont ignorées, un sort qui a encore des charges est lu comme non prêt.
 - `AuraBackups.lua:42` (`ponytail:`) : l'archive sérialise toute la liste en une fois par jour.
 - `.luacheckrc` : environ 491 globaux déclarés en écriture (`globals`) plutôt qu'en lecture, et `Tests/**` exclu.
-- `WeakAurasOptions/PackLibrary.lua:7-18` : libellés en anglais hors `L[...]`.
+- Page Packs : textes traduits en enUS et frFR seulement. `OptionsFrame.lua:1779` passe déjà les libellés de `PackLibrary.lua:7-18` par `L[...]`, mais les 9 autres locales de `WeakAurasOptions/Locales/` n'ont aucune clé propre à Musca Auras (« Whole HUD », « Utility Packs », blocs, packs utilitaires).
 
 ### Placement
 
@@ -1970,6 +2053,8 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.22, 1.23 et 1.24, si la versi
 - Renommer les identifiants listés plus haut : casserait les imports Wago, les auras installées et les addons tiers.
 - Renommer le layout du mode édition `"WeakAuras"` : casserait les layouts déjà sauvegardés par les joueurs.
 - Refondre la disposition de la fenêtre d'options : c'est contraire à « ne pas perdre l'utilisateur ».
+- Rebranding 9, bascule « apparence classique » (écarté le 2026-11-13) : deux habillages complets à maintenir, sans
+  besoin joueur constaté.
 
 ### Accueil
 

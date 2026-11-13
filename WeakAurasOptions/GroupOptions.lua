@@ -16,7 +16,7 @@ function OptionsPrivate.GetGroupOptions(data)
   else
     regionOption = {
       [data.regionType] = {
-        __title = "|cFFFFFF00" .. data.regionType,
+        __title = OptionsPrivate.Private.Style.Hex("primary") .. data.regionType,
         __order = 1,
         unsupported = {
           type = "description",

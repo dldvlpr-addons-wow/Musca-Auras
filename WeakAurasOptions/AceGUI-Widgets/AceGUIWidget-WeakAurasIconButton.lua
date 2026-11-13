@@ -1,5 +1,6 @@
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasIconButton", 22
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -70,7 +71,7 @@ local function Constructor()
   --highlighttexture:SetTexture("Interface\\BUTTONS\\ButtonHilight-SquareQuickslot.blp");
   --highlighttexture:SetTexCoord(0.175, 0.875, 0.125, 0.825);
   highlighttexture:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight.blp");
-  highlighttexture:SetVertexColor(0.25, 0.5, 1);
+  highlighttexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover"));
   highlighttexture:SetPoint("BOTTOMLEFT", button, 4, 4);
   highlighttexture:SetPoint("TOPRIGHT", button, -4, -4);
   button:SetHighlightTexture(highlighttexture);

@@ -9,6 +9,7 @@ local Private = select(2, ...)
 ---@class WeakAuras
 local WeakAuras = WeakAuras
 local L = WeakAuras.L
+local heading = Private.Style.Hex("primary")
 local prettyPrint = WeakAuras.prettyPrint
 local LGF = LibStub("LibGetFrame-1.0")
 
@@ -38,7 +39,7 @@ table_to_string = function(tbl, depth)
         k = '"' .. k .. '"'
       end
 
-      str = (str and str .. "|cff999999,|r " or "|cff999999{|r ") .. "|cffffff99[" .. tostring(k) .. "]|r |cff999999=|r |cffffffff" .. tostring(v) .. "|r"
+      str = (str and str .. Private.Style.Hex("textQuiet") .. ",|r " or Private.Style.Hex("textQuiet") .. "{|r ") .. Private.Style.Hex("primary") .. "[" .. tostring(k) .. "]|r " .. Private.Style.Hex("textQuiet") .. "=|r " .. Private.Style.Hex("text") .. tostring(v) .. "|r"
     end
   end
   return (str or "{ ") .. " }"
@@ -51,8 +52,9 @@ function WeakAurasProfilingReportMixin:OnShow()
   end
   self.initialised = true
 
+  self.ScrollBox.messageFrame.background:SetColorTexture(Private.Style.Color("well", 0.5))
   ButtonFrameTemplate_HidePortrait(self)
-  self:SetTitle(L["WeakAuras Profiling Report"])
+  self:SetTitle(L["Musca Auras Profiling Report"])
   self:SetSize(500, 300)
 end
 
@@ -316,7 +318,7 @@ local function PrintOneProfile(popup, name, map, total)
     spikeInfo = ColoredSpike(map.spike)
   end
 
-  popup:AddText(("%s |cff999999%.2fms%s (%s)|r"):format(name, map.elapsed, percent, spikeInfo))
+  popup:AddText(("%s " .. Private.Style.Hex("textQuiet") .. "%.2fms%s (%s)|r"):format(name, map.elapsed, percent, spikeInfo))
 end
 
 local function SortProfileMap(map, sortField)
@@ -407,16 +409,16 @@ function WeakAuras.PrintProfile()
 
   popup:ClearText()
 
-  PrintOneProfile(popup, "|cff9900ffTotal time:|r", profileData.systems.time)
-  PrintOneProfile(popup, "|cff9900ffTime inside WA:|r", profileData.systems.wa)
-  popup:AddText(string.format("|cff9900ffTime spent inside WA:|r %.2f%%", 100 * profileData.systems.wa.elapsed / profileData.systems.time.elapsed))
+  PrintOneProfile(popup, heading .. "Total time:|r", profileData.systems.time)
+  PrintOneProfile(popup, heading .. "Time inside WA:|r", profileData.systems.wa)
+  popup:AddText(string.format(heading .. "Time spent inside WA:|r %.2f%%", 100 * profileData.systems.wa.elapsed / profileData.systems.time.elapsed))
 
   popup:AddText("")
   popup:AddText("Note: Not every aspect of each aura can be tracked.")
   popup:AddText("You can ask on our discord https://discord.gg/weakauras for help interpreting this output.")
 
   popup:AddText("")
-  popup:AddText("|cff9900ffAuras:|r")
+  popup:AddText(heading .. "Auras:|r")
   local total = TotalProfileTime(profileData.auras)
   popup:AddText("Total time attributed to auras: " .. floor(total) .. "ms")
   for _, k in ipairs(SortProfileMap(profileData.auras, "spike")) do
@@ -424,7 +426,7 @@ function WeakAuras.PrintProfile()
   end
 
   popup:AddText("")
-  popup:AddText("|cff9900ffSystems:|r")
+  popup:AddText(heading .. "Systems:|r")
 
   -- make a new table for system data with multiUnits grouped
   local systemRegrouped = {}
@@ -449,7 +451,7 @@ function WeakAuras.PrintProfile()
   end
 
   popup:AddText("")
-  popup:AddText("|cff9900ffLibGetFrame:|r")
+  popup:AddText(heading .. "LibGetFrame:|r")
   for id, map in pairs(LGF.GetProfileData()) do
     PrintOneProfile(popup, id, map)
   end
@@ -464,6 +466,7 @@ WeakAurasProfilingLineMixin = {
 
 function WeakAurasProfilingLineMixin:Init(e)
   -- button.pct:SetText(pct)
+  self.progressBar.name:SetTextColor(Private.Style.Color("primary"))
   self.progressBar.name:SetText(e.name)
   self.time:SetText(("%.2fms"):format(e.time))
   self.spike:SetText(ColoredSpike(e.spike))
@@ -490,9 +493,9 @@ local COLUMN_INFO = {
 
 local function ApplyAlternateState(frame, alternate)
   if alternate then
-    frame.progressBar:SetStatusBarColor(0.7, 0.7, 0.7, 0.7)
+    frame.progressBar:SetStatusBarColor(Private.Style.Color("borderHover", 0.7))
   else
-    frame.progressBar:SetStatusBarColor(0.5, 0.5, 0.5, 0.7)
+    frame.progressBar:SetStatusBarColor(Private.Style.Color("border", 0.7))
   end
 end
 
@@ -512,8 +515,9 @@ function WeakAurasProfilingMixin:OnShow()
   end
   self.initialised = true
 
+  self.ScrollBox.background:SetColorTexture(Private.Style.Color("well", 0.5))
   ButtonFrameTemplate_HidePortrait(self)
-  self:SetTitle(L["WeakAuras Profiling"])
+  self:SetTitle(L["Musca Auras Profiling"])
   self:SetSize(MinPanelWidth, MinPanelHeight)
   self.ResizeButton:Init(self, MinPanelMinimizedWidth, MinPanelMinimizedHeight)
   self:SetResizeBounds(MinPanelWidth, MinPanelHeight)
@@ -521,7 +525,7 @@ function WeakAurasProfilingMixin:OnShow()
   UIDropDownMenu_SetText(self.buttons.modeDropDown, modes[1])
 
   self.buttons.report:SetText(L["Report Summary"])
-  self.buttons.report.tooltip = L["A detailed overview of your auras and WeakAuras systems\nCopy the whole text to Weakaura's Discord if you need assistance."]
+  self.buttons.report.tooltip = L["A detailed overview of your auras and Musca Auras systems\nCopy the whole text to Weakaura's Discord if you need assistance."]
 
   local minimizeButton = CreateFrame("Button", nil, self, "MaximizeMinimizeButtonFrameTemplate")
   minimizeButton:SetPoint("RIGHT", self.CloseButton, "LEFT")
@@ -757,7 +761,7 @@ function WeakAurasProfilingMixin:RefreshBars(_, force)
   if profileData.systems.wa then
     local timespent = profileData.systems.time.elapsed or (debugprofilestop() - profileData.systems.time.start)
     self.stats:SetText(
-      ("|cFFFFFFFFTime in WA: %.2fs / %ds (%.1f%%)"):format(profileData.systems.wa.elapsed / 1000, timespent / 1000, 100 * profileData.systems.wa.elapsed / timespent)
+      (Private.Style.Hex("text") .. L["Time in Musca Auras: %.2fs / %ds (%.1f%%)"]):format(profileData.systems.wa.elapsed / 1000, timespent / 1000, 100 * profileData.systems.wa.elapsed / timespent)
     )
   end
 end

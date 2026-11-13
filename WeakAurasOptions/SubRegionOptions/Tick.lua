@@ -79,28 +79,28 @@ local function createOptions(parentData, data, index, subIndex)
       name = function()
         local lengthtext = ""
         if data.automatic_length then
-          lengthtext = L["|cFFFF0000Automatic|r length"]
+          lengthtext = OptionsPrivate.Private.Style.Markup(L["|cFFFF0000Automatic|r length"])
         else
-          lengthtext = L["Length of |cFFFF0000%s|r"]:format(data.tick_length)
+          lengthtext = OptionsPrivate.Private.Style.Markup(L["Length of |cFFFF0000%s|r"]):format(data.tick_length)
         end
 
         local texturetext = ""
         if data.use_texture then
-          local desaturatetext = data.tick_desaturate and L["|cFFFF0000desaturated|r "] or ""
+          local desaturatetext = data.tick_desaturate and OptionsPrivate.Private.Style.Markup(L["|cFFFF0000desaturated|r "]) or ""
           local blendtext = OptionsPrivate.Private.blend_types[data.tick_blend_mode]
-          local rotationtext = data.tick_rotation ~= 0 and L[" rotated |cFFFF0000%s|r degrees"]:format(data.tick_rotation) or ""
-          local mirrortext = data.tick_mirror and L[" and |cFFFF0000mirrored|r"] or ""
-          texturetext = L["%s|cFFFF0000custom|r texture with |cFFFF0000%s|r blend mode%s%s"]:format(desaturatetext, blendtext, rotationtext, mirrortext)
+          local rotationtext = data.tick_rotation ~= 0 and OptionsPrivate.Private.Style.Markup(L[" rotated |cFFFF0000%s|r degrees"]):format(data.tick_rotation) or ""
+          local mirrortext = data.tick_mirror and OptionsPrivate.Private.Style.Markup(L[" and |cFFFF0000mirrored|r"]) or ""
+          texturetext = OptionsPrivate.Private.Style.Markup(L["%s|cFFFF0000custom|r texture with |cFFFF0000%s|r blend mode%s%s"]):format(desaturatetext, blendtext, rotationtext, mirrortext)
         else
-          texturetext = L["|cFFFF0000default|r texture"]
+          texturetext = OptionsPrivate.Private.Style.Markup(L["|cFFFF0000default|r texture"])
         end
 
         local offsettext = ""
         if data.tick_xOffset ~=0 or data.tick_yOffset ~=0 then
-          offsettext = L["Offset by |cFFFF0000%s|r/|cFFFF0000%s|r"]:format(data.tick_xOffset, data.tick_yOffset)
+          offsettext = OptionsPrivate.Private.Style.Markup(L["Offset by |cFFFF0000%s|r/|cFFFF0000%s|r"]):format(data.tick_xOffset, data.tick_yOffset)
         end
 
-        local description = L["|cFFffcc00Extra:|r %s and %s %s"]:format(lengthtext, texturetext, offsettext)
+        local description = OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Extra:|r %s and %s %s"]):format(lengthtext, texturetext, offsettext)
 
         return description
       end,

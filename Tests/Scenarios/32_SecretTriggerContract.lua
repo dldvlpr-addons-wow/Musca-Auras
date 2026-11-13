@@ -151,9 +151,9 @@ return function(test)
 
   -- CastCombatStatus
   local L = WeakAuras.L
-  local worksInCombat = L["|cff33ff99Fully usable in combat.|r"]
-  local unfiltered = L["|cffff9933Other units' casts: shown in combat, never filtered.|r"]
-  local blockedFormat = L["|cffff2020Ignored in combat:|r %s |cffff9933(other units' casts are unreadable)|r"]
+  local worksInCombat = L["|cff67d283Fully usable in combat.|r"]
+  local unfiltered = L["|cfff8a052Other units' casts: shown in combat, never filtered.|r"]
+  local blockedFormat = L["|cfff66d67Ignored in combat:|r %s |cfff8a052(other units' casts are unreadable)|r"]
   local function Blocked(...) return blockedFormat:format(table.concat({ ... }, ", ")) end
   local status = private.CastCombatStatus
   Same(status(nil), worksInCombat, "status nil trigger")

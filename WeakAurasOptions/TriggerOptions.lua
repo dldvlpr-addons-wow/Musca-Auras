@@ -88,7 +88,7 @@ local function GetGlobalOptions(data)
       type = "description",
       name = function()
         local _, message = OptionsPrivate.Private.CompileTriggerExpression(data.triggers.triggerExpression, #data.triggers)
-        return "|cFFFF0000" .. (message or "") .. "|r"
+        return OptionsPrivate.Private.Style.Hex("error") .. (message or "") .. "|r"
       end,
       width = WeakAuras.doubleWidth,
       order = 2.2,
@@ -127,7 +127,7 @@ local function GetGlobalOptions(data)
       desc = function()
         local lines = { L["Trigger that supplies Dynamic Information while no aura passes the Aura (Modern) filters."] }
         if not OptionsPrivate.Private.BlizzardAuraDisplay.GetSavedTrigger(data) then
-          lines[#lines + 1] = "|cffff9900" .. L["Ignored while the progress source is not an Aura (Modern) trigger."] .. "|r"
+          lines[#lines + 1] = OptionsPrivate.Private.Style.Hex("warning") .. L["Ignored while the progress source is not an Aura (Modern) trigger."] .. "|r"
         end
         return table.concat(lines, "\n\n")
       end,
@@ -499,7 +499,7 @@ function OptionsPrivate.AddTriggerMetaFunctions(options, data, triggernum)
 
       if canDelete then
         StaticPopupDialogs["WEAKAURAS_CONFIRM_TRIGGER_DELETE"] = {
-          text = L["You are about to delete a trigger. |cFFFF0000This cannot be undone!|r Would you like to continue?"],
+          text = OptionsPrivate.Private.Style.Markup(L["You are about to delete a trigger. |cFFFF0000This cannot be undone!|r Would you like to continue?"]),
           button1 = L["Delete"],
           button2 = L["Cancel"],
           OnAccept = function()

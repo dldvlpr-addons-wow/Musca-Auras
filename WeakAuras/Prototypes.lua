@@ -159,7 +159,7 @@ local function get_zoneId_list()
   if not instanceId and not currentmap_id then
     return ("%s\n\n%s"):format(Private.get_zoneId_list(), bottomText)
   elseif not currentmap_id then
-    return ("%s|cffffd200%s|r\n%s: %d\n\n%s"):format(Private.get_zoneId_list(), L["Current Instance"], L["Instance Id"], instanceId, bottomText)
+    return ("%s" .. Private.Style.Hex("primary") .. "%s|r\n%s: %d\n\n%s"):format(Private.get_zoneId_list(), L["Current Instance"], L["Instance Id"], instanceId, bottomText)
   end
   local currentmap_info = C_Map.GetMapInfo(currentmap_id)
   local currentmap_name = currentmap_info and currentmap_info.name or ""
@@ -167,7 +167,7 @@ local function get_zoneId_list()
   local parentmap_zone_name = ""
   local mapGroupId = C_Map.GetMapGroupID(currentmap_id)
   if mapGroupId then
-    currentmap_zone_name = string.format("|cffffd200%s|r\n%s: g%d\n\n",
+    currentmap_zone_name = string.format(Private.Style.Hex("primary") .. "%s|r\n%s: g%d\n\n",
                                          L["Current Zone Group"], currentmap_name, mapGroupId)
 
     -- if map is in a group, its real name is (or should be?) found in GetMapGroupMembersInfo
@@ -181,11 +181,11 @@ local function get_zoneId_list()
   if currentmap_info and currentmap_info.parentMapID > 0  then
     local parentmap_info = C_Map.GetMapInfo(currentmap_info.parentMapID)
     local parentmap_name = parentmap_info and parentmap_info.name or ""
-    parentmap_zone_name = string.format("|cffffd200%s|r\n%s: c%d\n\n",
+    parentmap_zone_name = string.format(Private.Style.Hex("primary") .. "%s|r\n%s: c%d\n\n",
                                          L["Parent Zone"], parentmap_name, currentmap_info.parentMapID)
   end
 
-  return ("%s|cffffd200%s|r\n%s: %d\n\n%s%s|cffffd200%s|r\n%s: i%d\n\n%s"):format(
+  return ("%s" .. Private.Style.Hex("primary") .. "%s|r\n%s: %d\n\n%s%s" .. Private.Style.Hex("primary") .. "%s|r\n%s: i%d\n\n%s"):format(
     Private.get_zoneId_list(),
     L["Current Zone"],
     currentmap_name,
@@ -1497,7 +1497,7 @@ Private.load_prototype = {
     },
     {
       name = "not_spellknown",
-      display = WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Spell Known"],
+      display = WeakAuras.newFeatureString .. Private.Style.Markup(L["|cFFFF0000Not|r Spell Known"]),
       type = "spell",
       test = "not WeakAuras.IsSpellKnownForLoad(%s, %s)",
       events = {"SPELLS_CHANGED", "UNIT_PET", "PLAYER_TALENT_UPDATE"},
@@ -1532,7 +1532,7 @@ Private.load_prototype = {
     },
     {
       name = "ignoreNameRealm",
-      display = L["|cFFFF0000Not|r Player Name/Realm"],
+      display = Private.Style.Markup(L["|cFFFF0000Not|r Player Name/Realm"]),
       type = "string",
       multiline = true,
       test = "not nameRealmIgnoreChecker:Check(player, realm)",
@@ -1739,7 +1739,7 @@ Private.load_prototype = {
     },
     {
       name = "not_itemequiped",
-      display = WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Item Equipped"],
+      display = WeakAuras.newFeatureString .. Private.Style.Markup(L["|cFFFF0000Not|r Item Equipped"]),
       type = "item",
       multiEntry = {
         operator = "or"
@@ -1766,7 +1766,7 @@ Private.load_prototype = {
     },
     {
       name = "not_item_bonusid_equipped",
-      display =  WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Item Bonus Id Equipped"],
+      display =  WeakAuras.newFeatureString .. Private.Style.Markup(L["|cFFFF0000Not|r Item Bonus Id Equipped"]),
       type = "string",
       test = "not WeakAuras.CheckForItemBonusId(%q)",
       events = { "UNIT_INVENTORY_CHANGED", "PLAYER_EQUIPMENT_CHANGED"},
@@ -4544,9 +4544,9 @@ Private.event_prototypes = {
               end
             end
             if text == "" then
-              return L["|cFFffcc00Extra Options:|r None"]
+              return Private.Style.Markup(L["|cFFffcc00Extra Options:|r None"])
             end
-            return L["|cFFffcc00Extra Options:|r %s"]:format(text)
+            return Private.Style.Markup(L["|cFFffcc00Extra Options:|r %s"]):format(text)
           end
         end,
         type = "collapse",
@@ -5087,9 +5087,9 @@ Private.event_prototypes = {
               text = text .. L["Show GCD"]
             end
             if text == "" then
-              return L["|cFFffcc00Extra Options:|r None"]
+              return Private.Style.Markup(L["|cFFffcc00Extra Options:|r None"])
             end
-            return L["|cFFffcc00Extra Options:|r %s"]:format(text)
+            return Private.Style.Markup(L["|cFFffcc00Extra Options:|r %s"]):format(text)
           end
         end,
         type = "collapse",
@@ -5288,9 +5288,9 @@ Private.event_prototypes = {
               text = text .. L["Show GCD"]
             end
             if text == "" then
-              return L["|cFFffcc00Extra Options:|r None"]
+              return Private.Style.Markup(L["|cFFffcc00Extra Options:|r None"])
             end
-            return L["|cFFffcc00Extra Options:|r %s"]:format(text)
+            return Private.Style.Markup(L["|cFFffcc00Extra Options:|r %s"]):format(text)
           end
         end,
         type = "collapse",
@@ -9095,7 +9095,7 @@ Private.event_prototypes = {
       },
       {
         name = "instance_size",
-        display = L["Instance Size Type"].." "..L["|cffff0000deprecated|r"],
+        display = L["Instance Size Type"].." "..Private.Style.Markup(L["|cffff0000deprecated|r"]),
         desc = constants.instanceFilterDeprecated,
         type = "multiselect",
         values = "instance_types",
@@ -9451,7 +9451,7 @@ Private.event_prototypes = {
         name = "note",
         type = "description",
         display = "",
-        text = function() return L["Note: This trigger type estimates the range to the hitbox of a unit. The actual range of friendly players is usually 3 yards more than the estimate. Range checking capabilities depend on your current class and known abilities as well as the type of unit being checked. Some of the ranges may also not work with certain NPCs.|n|n|cFFAAFFAAFriendly Units:|r %s|n|cFFFFAAAAHarmful Units:|r %s|n|cFFAAAAFFMiscellanous Units:|r %s"]:format(RangeCacheStrings.friend or "", RangeCacheStrings.harm or "", RangeCacheStrings.misc or "") end
+        text = function() return Private.Style.Markup(L["Note: This trigger type estimates the range to the hitbox of a unit. The actual range of friendly players is usually 3 yards more than the estimate. Range checking capabilities depend on your current class and known abilities as well as the type of unit being checked. Some of the ranges may also not work with certain NPCs.|n|n|cFFAAFFAAFriendly Units:|r %s|n|cFFFFAAAAHarmful Units:|r %s|n|cFFAAAAFFMiscellanous Units:|r %s"]):format(RangeCacheStrings.friend or "", RangeCacheStrings.harm or "", RangeCacheStrings.misc or "") end
       },
       {
         name = "unit",

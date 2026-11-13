@@ -1,5 +1,6 @@
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasNewHeaderButton", 21
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -65,7 +66,7 @@ local function Constructor()
   button.background = background;
   background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
   background:SetBlendMode("ADD");
-  background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
+  background:SetVertexColor(OptionsPrivate.Private.Style.Color("textDisabled", 0.25));
   background:SetAllPoints(button);
 
   button:SetScript("OnEnter", function() Show_Tooltip(button, button:GetText():sub(2), button.description or L["Add a new display"]) end);

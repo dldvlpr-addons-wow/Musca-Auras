@@ -3,6 +3,7 @@ Button Widget for our Expand button
 -------------------------------------------------------------------------------]]
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasExpand", 6
 
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
@@ -91,11 +92,11 @@ local methods = {
 		self.disabled = disabled
 		if disabled then
 			self.frame:Disable()
-			self.label:SetTextColor(0.5, 0.5, 0.5)
-			self.image:SetVertexColor(0.5, 0.5, 0.5, 0.5)
+			self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+			self.image:SetVertexColor(OptionsPrivate.Private.Style.Color("textDisabled", 0.5))
 		else
 			self.frame:Enable()
-			self.label:SetTextColor(1, 1, 1)
+			self.label:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
 			self.image:SetVertexColor(1, 1, 1, 1)
 		end
 	end,
@@ -134,7 +135,7 @@ local function Constructor()
 	local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
 	highlight:SetAllPoints(frame)
 	highlight:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-	highlight:SetVertexColor(0.2, 0.4, 0.8, 0.2)
+	highlight:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.2))
 	highlight:SetBlendMode("ADD")
 
 	local widget = {

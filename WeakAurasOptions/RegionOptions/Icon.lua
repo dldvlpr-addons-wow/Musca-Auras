@@ -79,7 +79,7 @@ local function createOptions(id, data)
       type = "execute",
       control = "WeakAurasExpandSmall",
       name = function()
-        local line = L["|cFFffcc00Extra Options:|r"]
+        local line = OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Extra Options:|r"])
         local changed = false
         if data.alpha ~= 1 then
           line = L["%s Alpha: %d%%"]:format(line, data.alpha*100)
@@ -265,7 +265,7 @@ local function createOptions(id, data)
       width = WeakAuras.normalWidth,
       name = L["Hide Timer Text"],
       order = 11.5,
-      desc = L["A timer will automatically be displayed according to default Interface Settings (overridden by some addons).\nEnable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer"],
+      desc = L["A timer will automatically be displayed according to default Interface Settings (overridden by some addons).\nEnable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer"],
       hidden = function() return not data.cooldown end,
     },
     useCooldownModRate = {

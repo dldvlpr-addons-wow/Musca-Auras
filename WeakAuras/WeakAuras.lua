@@ -159,7 +159,7 @@ function Private.LoadOptions(msg)
     else
       local loaded, reason = C_AddOns.LoadAddOn("WeakAurasOptions");
       if not(loaded) then
-        reason = string.lower("|cffff2020" .. _G["ADDON_" .. reason] .. "|r.")
+        reason = string.lower(Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
         WeakAuras.prettyPrint(string.format(L["Options could not be loaded, the addon is %s"], reason));
         return false;
       end
@@ -183,7 +183,7 @@ function Private.StartPlacementMode()
   elseif Private.NeedToRepairDatabase() then
     StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "downgrade"})
   elseif not WeakAuras.IsLoginFinished() then
-    -- The Unlock button of the "What's new" popup can be clicked while the auras still load.
+    -- /wa unlock can be typed while the auras still load.
     prettyPrint(Private.LoginMessage())
     loginQueue[#loginQueue + 1] = Private.StartPlacementMode
   elseif Private.LoadOptions() and WeakAuras.TogglePlacementMode then
@@ -221,20 +221,20 @@ function Private.PrintHelp()
   print(L["Usage:"])
   print(L["/wa help - Show this message"])
   print(L["/wa minimap - Toggle the minimap icon"])
-  print("/wa tutorial - Guide: learn everything about WeakAuras on WoW Forever, with auras to import")
+  print(L["/wa tutorial - Guide: learn everything about Musca Auras on WoW Forever, with auras to import"])
   if C_CooldownViewer then
-    print("/wa cdm - Show or hide the Blizzard Cooldown Manager")
+    print(L["/wa cdm - Show or hide the Blizzard Cooldown Manager"])
   end
   print(L["/wa pstart - Start profiling. Optionally include a duration in seconds after which profiling automatically stops. To profile the next combat/encounter, pass a \"combat\" or \"encounter\" argument."])
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
   print(L["/wa repair - Repair tool"])
-  print("/wa unlock - Place your auras on the screen: move, resize, anchor them to each other")
-  print("/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout")
-  print("/wa backups - List the daily copies of your auras")
-  print("/wa restore <number> - Replace your auras with a daily copy and reload the UI")
-  print("/wa deleted - List the auras deleted in the last 30 days")
-  print("/wa undelete <number> - Import a deleted aura again")
+  print(L["/wa unlock - Place your auras on the screen: move, resize, anchor them to each other"])
+  print(L["/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout"])
+  print(L["/wa backups - List the daily copies of your auras"])
+  print(L["/wa restore <number> - Replace your auras with a daily copy and reload the UI"])
+  print(L["/wa deleted - List the auras deleted in the last 30 days"])
+  print(L["/wa undelete <number> - Import a deleted aura again"])
   print(L["If you require additional assistance, please open a ticket on GitHub or visit our Discord at https://discord.gg/weakauras!"])
 end
 
@@ -406,7 +406,7 @@ local db;
 
 local CLASS_PACK_VERSION = "1.17.0"
 -- Version whose new features the "What's new" popup presents once, at the first login after the update.
-local WHATS_NEW_VERSION = "1.17.0"
+local WHATS_NEW_VERSION = "1.18.0"
 
 local function ShowClassPackNotice()
   StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"].button1 = L["Update %s HUD"]:format(UnitClass("player"))
@@ -1253,6 +1253,7 @@ function Private.CountWagoUpdates()
 end
 
 local function tooltip_draw(isAddonCompartment, blizzardTooltip)
+  local red, green, blue = Private.Style.Color("textSecondary")
   local tooltip
   if isAddonCompartment then
     tooltip = blizzardTooltip
@@ -1269,30 +1270,22 @@ local function tooltip_draw(isAddonCompartment, blizzardTooltip)
     end
   end
   tooltip:AddLine(" ");
-  tooltip:AddLine(L["|cffeda55fLeft-Click|r to toggle showing the main window."], 0.2, 1, 0.2);
+  tooltip:AddLine(Private.Style.Markup(L["|cffeda55fLeft-Click|r to toggle showing the main window."]), red, green, blue);
   if not WeakAuras.IsOptionsOpen() then
     if paused then
-      tooltip:AddLine("|cFFFF0000"..L["Paused"].." - "..L["Shift-Click to resume addon execution."], 0.2, 1, 0.2);
+      tooltip:AddLine(Private.Style.Hex("error")..L["Paused"].." - "..L["Shift-Click to resume addon execution."], red, green, blue);
     else
-      tooltip:AddLine(L["|cffeda55fShift-Click|r to pause addon execution."], 0.2, 1, 0.2);
+      tooltip:AddLine(Private.Style.Markup(L["|cffeda55fShift-Click|r to pause addon execution."]), red, green, blue);
     end
   end
-  tooltip:AddLine(L["|cffeda55fRight-Click|r to toggle performance profiling window."], 0.2, 1, 0.2);
+  tooltip:AddLine(Private.Style.Markup(L["|cffeda55fRight-Click|r to toggle performance profiling window."]), red, green, blue);
   if not isAddonCompartment then
-    tooltip:AddLine(L["|cffeda55fMiddle-Click|r to toggle the minimap icon on or off."], 0.2, 1, 0.2);
+    tooltip:AddLine(Private.Style.Markup(L["|cffeda55fMiddle-Click|r to toggle the minimap icon on or off."]), red, green, blue);
   end
   tooltip:Show();
 end
 
 WeakAuras.GenerateTooltip = tooltip_draw;
-
-local colorFrame = CreateFrame("Frame");
-Private.frames["LDB Icon Recoloring"] = colorFrame;
-
-local colorElapsed = 0;
-local colorDelay = 2;
-local r, g, b = 0.8, 0, 1;
-local r2, g2, b2 = random(2)-1, random(2)-1, random(2)-1;
 
 local tooltip_update_frame = CreateFrame("Frame");
 Private.frames["LDB Tooltip Updater"] = tooltip_update_frame;
@@ -1306,39 +1299,75 @@ local function getAnchors(frame)
 	return vHalf..hHalf, frame, (vHalf == "TOP" and "BOTTOM" or "TOP")..hHalf
 end
 
+-- Click on the minimap icon or on the entry of the addon compartment: the options, the pause with Shift, the
+-- profiling window with the right button.
+local function LauncherClick(button)
+  if button ~= 'LeftButton' then
+    WeakAurasProfilingFrame:Toggle()
+  elseif IsShiftKeyDown() then
+    if not WeakAuras.IsOptionsOpen() then
+      WeakAuras.Toggle();
+    end
+  else
+    WeakAuras.OpenOptions();
+  end
+end
+
+-- Entry of the addon compartment of the minimap, named in the toc. The game calls these functions insecurely.
+function MuscaAuras_OnAddonCompartmentClick(_, button)
+  LauncherClick(button)
+end
+
+function MuscaAuras_OnAddonCompartmentEnter(_, menuButton)
+  GameTooltip:SetOwner(menuButton, "ANCHOR_LEFT")
+  tooltip_draw(true, GameTooltip)
+end
+
+function MuscaAuras_OnAddonCompartmentLeave()
+  GameTooltip:Hide()
+end
+
+-- Page of the game settings (Escape, Options, AddOns): the name, the version and a button that opens the options.
+if Settings and Settings.RegisterCanvasLayoutCategory then
+  local page = CreateFrame("Frame")
+  page:Hide()
+  page:SetScript("OnShow", function(self)
+    self:SetScript("OnShow", nil)
+    local Style = Private.Style
+    local name = Style.NewText(self, "title", "l", "primary")
+    name:SetPoint("TOPLEFT", 16, -16)
+    name:SetText("Musca Auras")
+    local version = Style.NewText(self, "number", "s", "textQuiet")
+    version:SetPoint("LEFT", name, "RIGHT", 8, 0)
+    version:SetText(C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version"))
+    local open = Style.NewButton(self, L["Open Musca Auras"], "primary", function()
+      if not InCombatLockdown() then
+        HideUIPanel(SettingsPanel)
+      end
+      WeakAuras.OpenOptions()
+    end)
+    open:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 0, -16)
+    local hint = Style.NewText(self, "text", "s", "textSecondary")
+    hint:SetPoint("TOPLEFT", open, "BOTTOMLEFT", 0, -12)
+    hint:SetText(Style.Markup(L["You can also type |cffffd100/wa|r in the chat, or click the icon of the minimap."]))
+  end)
+  Settings.RegisterAddOnCategory(Settings.RegisterCanvasLayoutCategory(page, "Musca Auras"))
+end
+
 local Broker_WeakAuras;
 Broker_WeakAuras = LDB:NewDataObject("WeakAuras", {
   type = "launcher",
-  text = "WeakAuras",
-  icon = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\icon.blp",
+  text = "Musca Auras",
+  icon = "Interface\\AddOns\\WeakAuras\\Media\\Textures\\icon.tga",
   OnClick = function(self, button)
-    if button == 'LeftButton' then
-      if(IsShiftKeyDown()) then
-        if not(WeakAuras.IsOptionsOpen()) then
-          WeakAuras.Toggle();
-        end
-      else
-        WeakAuras.OpenOptions();
-      end
-    elseif(button == 'MiddleButton') then
+    if button == 'MiddleButton' then
       WeakAuras.ToggleMinimap();
     else
-      WeakAurasProfilingFrame:Toggle()
+      LauncherClick(button)
     end
     tooltip_draw()
   end,
   OnEnter = function(self)
-    colorFrame:SetScript("OnUpdate", function(self, elaps)
-      colorElapsed = colorElapsed + elaps;
-      if(colorElapsed > colorDelay) then
-        colorElapsed = colorElapsed - colorDelay;
-        r, g, b = r2, g2, b2;
-        r2, g2, b2 = random(2)-1, random(2)-1, random(2)-1;
-      end
-      Broker_WeakAuras.iconR = r + (r2 - r) * colorElapsed / colorDelay;
-      Broker_WeakAuras.iconG = g + (g2 - g) * colorElapsed / colorDelay;
-      Broker_WeakAuras.iconB = b + (b2 - b) * colorElapsed / colorDelay;
-    end);
     local elapsed = 0;
     local delay = 1;
     tooltip_update_frame:SetScript("OnUpdate", function(self, elap)
@@ -1353,13 +1382,9 @@ Broker_WeakAuras = LDB:NewDataObject("WeakAuras", {
     tooltip_draw();
   end,
   OnLeave = function(self)
-    colorFrame:SetScript("OnUpdate", nil);
     tooltip_update_frame:SetScript("OnUpdate", nil);
     GameTooltip:Hide();
   end,
-  iconR = 0.6,
-  iconG = 0,
-  iconB = 1
 });
 
 do -- Archive stuff
@@ -1371,8 +1396,8 @@ do -- Archive stuff
       if not C_AddOns.IsAddOnLoaded("WeakAurasArchive") then
         local ok, reason = C_AddOns.LoadAddOn("WeakAurasArchive")
         if not ok then
-          reason = string.lower("|cffff2020" .. _G["ADDON_" .. reason] .. "|r.")
-          error(string.format(L["Could not load WeakAuras Archive, the addon is %s"], reason))
+          reason = string.lower(Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
+          error(string.format(L["Could not load Musca Auras Archive, the addon is %s"], reason))
         end
       end
       if type(WeakAurasArchive) ~= "table" then
@@ -1442,7 +1467,7 @@ function Private.Login(takeNewSnapshots)
     loginMessage = L["Options will open after the login process has completed."]
     for id, data in pairs(db.displays) do
       if(id ~= data.id) then
-        print("|cFF8800FFWeakAuras|r detected a corrupt entry in WeakAuras saved displays - '"..tostring(id).."' vs '"..tostring(data.id).."'" );
+        WeakAuras.prettyPrint("Detected a corrupt entry in the saved displays - '"..tostring(id).."' vs '"..tostring(data.id).."'" );
         data.id = id;
       end
 
@@ -2620,27 +2645,24 @@ StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
   hideOnEscape = true,
 }
 
+-- The class pack notice waits for this popup to close, whichever way it closes.
+local function ShowDueClassPackNotice()
+  if db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
+    ShowClassPackNotice()
+  end
+end
+
 StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
-  text = "|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
-    .. L["New: place your auras on the screen."] .. "\n\n"
-    .. L["- |cffffd100/wa unlock|r, or the |cffffd100Unlock|r button of |cffffd100/wa|r: drag your auras over a grid, set their exact position and size, and anchor them to each other."] .. "\n"
-    .. L["- Magnetism: auras snap to the grid, the screen edges and the other auras. Shift turns it off."] .. "\n"
-    .. L["- In |cffffd100/wa|r: a Grid button, arrow keys to move the selected aura, and Align Selection for several auras."] .. "\n"
-    .. L["- A new look for the |cffffd100/wa|r window."] .. "\n\n"
-    .. L["The |cffffd100Guide|r of |cffffd100/wa|r explains it all."],
-  button1 = L["Unlock"],
-  button2 = OKAY,
-  OnAccept = function()
-    Private.StartPlacementMode()
-  end,
+  text = Private.Style.Markup("|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
+    .. L["New name, new look: the addon now shows its own name, Musca Auras."] .. "\n\n"
+    .. L["- New colors and a new icon, in the |cffffd100/wa|r window, the Guide, the chat and the minimap."] .. "\n"
+    .. L["- Two more ways to open it: the addon menu of the minimap, and a page in Options > AddOns."] .. "\n\n"
+    .. L["Nothing else changes: |cffffd100/wa|r, your auras, their positions and the Wago imports work as before."]),
+  button1 = OKAY,
+  OnAccept = ShowDueClassPackNotice,
+  OnCancel = ShowDueClassPackNotice,
   OnShow = function()
     db.whatsNewSeen = WHATS_NEW_VERSION
-  end,
-  -- Unlock opens the placement mode: the class pack notice then waits for the next login.
-  OnCancel = function()
-    if db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
-      ShowClassPackNotice()
-    end
   end,
   timeout = 0,
   whileDead = true,
@@ -2648,7 +2670,7 @@ StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
 }
 
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
-  text = "|cff00ccffMusca Auras|r\n\n"
+  text = Private.Style.Markup("|cff00ccffMusca Auras|r\n\n"
     .. L["WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, so many Classic auras need changes."] .. "\n\n"
     .. L["|cffffcc00Not possible or limited:|r"] .. "\n"
     .. L["- Combat log triggers never fire: the game closes the combat log to addons."] .. "\n"
@@ -2657,8 +2679,8 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
     .. L["- Talent load options work for your own specialization only."] .. "\n"
     .. L["- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs."] .. "\n"
     .. L["- The \"Chat Message\" action may not send in instances or during combat."] .. "\n\n"
-    .. L["Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about WeakAuras here."] .. "\n\n"
-    .. L["Report other problems on the addon page."],
+    .. L["Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about Musca Auras here."] .. "\n\n"
+    .. L["Report other problems on the addon page."]),
   button1 = OKAY,
   button2 = L["Guide"],
   OnCancel = function(_, _, reason)
@@ -2708,8 +2730,8 @@ StaticPopupDialogs["WEAKAURAS_CONFIRM_REPAIR"] = {
      RepairDatabase()
   end,
   OnShow = function(self)
-    local AutomaticRepairText = L["WeakAuras has detected that it has been downgraded.\nYour saved auras may no longer work properly.\nWould you like to run the |cffff0000EXPERIMENTAL|r repair tool? This will overwrite any changes you have made since the last database upgrade.\nLast upgrade: %s\n\n|cffff0000You should BACKUP your WTF folder BEFORE pressing this button.|r"]
-    local ManualRepairText = L["Are you sure you want to run the |cffff0000EXPERIMENTAL|r repair tool?\nThis will overwrite any changes you have made since the last database upgrade.\nLast upgrade: %s"]
+    local AutomaticRepairText = Private.Style.Markup(L["Musca Auras has detected that it has been downgraded.\nYour saved auras may no longer work properly.\nWould you like to run the |cffff0000EXPERIMENTAL|r repair tool? This will overwrite any changes you have made since the last database upgrade.\nLast upgrade: %s\n\n|cffff0000You should BACKUP your WTF folder BEFORE pressing this button.|r"])
+    local ManualRepairText = Private.Style.Markup(L["Are you sure you want to run the |cffff0000EXPERIMENTAL|r repair tool?\nThis will overwrite any changes you have made since the last database upgrade.\nLast upgrade: %s"])
 
     local text = self.Text or self.text
     if self.data.reason == "user" then
@@ -2957,7 +2979,7 @@ function Private.AddMany(tbl, takeSnapshots)
     end
     if #order > 0 then
       Private.Threads:Add("snapshot", coroutine.create(function()
-        prettyPrint(L["WeakAuras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."])
+        prettyPrint(L["Musca Auras is creating a rollback snapshot of your auras. This snapshot will allow you to revert to the current state of your auras if something goes wrong. This process may cause your framerate to drop until it is complete."])
         for uid, data in pairs(copies) do
           Private.SetMigrationSnapshot(uid, data)
           coroutine.yield(200, "snapshot")
@@ -2967,7 +2989,7 @@ function Private.AddMany(tbl, takeSnapshots)
     else
       if next(WeakAuras.LoadFromArchive("Repository", "migration").stores) ~= nil then
         C_Timer.After(1, function()
-          prettyPrint(L["WeakAuras has detected empty settings. If this is unexpected, ask for assistance on https://discord.gg/weakauras."])
+          prettyPrint(L["Musca Auras has detected empty settings. If this is unexpected, ask for assistance on https://discord.gg/weakauras."])
         end)
       end
     end
@@ -2982,7 +3004,7 @@ function Private.AddMany(tbl, takeSnapshots)
       local oldSnapshot = oldSnapshots[data.uid] or nil
       local ok = xpcall(WeakAuras.PreAdd, Private.GetErrorHandlerUid(data.uid, "PreAdd"), data, oldSnapshot)
       if not ok then
-        prettyPrint(L["Unable to modernize aura '%s'. This is probably due to corrupt data or a bad migration, please report this to the WeakAuras team."]:format(data.id))
+        prettyPrint(L["Unable to modernize aura '%s'. This is probably due to corrupt data or a bad migration, please report this to the Musca Auras team."]:format(data.id))
         if data.regionType == "dynamicgroup" or data.regionType == "group" then
           prettyPrint(L["All children of this aura will also not be loaded, to minimize the chance of further corruption."])
         end
@@ -4722,7 +4744,7 @@ function WeakAuras.ProfileFrames(all)
     local FrameTime = GetFrameCPUUsage(frame);
     FrameTimes[name] = FrameTimes[name] or 0;
     if(all or FrameTime > FrameTimes[name]) then
-      print("|cFFFF0000"..name.."|r -", FrameTime, "-", FrameTime - FrameTimes[name]);
+      print(Private.Style.Hex("error")..name.."|r -", FrameTime, "-", FrameTime - FrameTimes[name]);
     end
     FrameTimes[name] = FrameTime;
   end
@@ -4736,7 +4758,7 @@ function WeakAuras.ProfileDisplays(all)
       local DisplayTime = GetFrameCPUUsage(regionData.region, true);
       DisplayTimes[id] = DisplayTimes[id] or 0;
       if(all or DisplayTime > DisplayTimes[id]) then
-        print("|cFFFF0000"..id.."|r -", DisplayTime, "-", DisplayTime - DisplayTimes[id]);
+        print(Private.Style.Hex("error")..id.."|r -", DisplayTime, "-", DisplayTime - DisplayTimes[id]);
       end
       DisplayTimes[id] = DisplayTime;
     end
@@ -6328,7 +6350,7 @@ local function ensureMouseFrame()
   label:SetJustifyH("LEFT")
   label:SetJustifyV("TOP")
   label:SetPoint("TOPLEFT", moverFrame, "BOTTOMLEFT");
-  label:SetText("WeakAuras Anchor");
+  label:SetText("Musca Auras Anchor");
 
   moverFrame:Hide();
 
@@ -6466,7 +6488,7 @@ function Private.ensurePRDFrame()
 
   local label = moverFrame:CreateFontString(nil, "BACKGROUND", "GameFontHighlight")
   label:SetPoint("CENTER", moverFrame, "CENTER");
-  label:SetText("WeakAuras Anchor");
+  label:SetText("Musca Auras Anchor");
 
   personalRessourceDisplayFrame:RegisterEvent('NAME_PLATE_UNIT_ADDED');
   personalRessourceDisplayFrame:RegisterEvent('NAME_PLATE_UNIT_REMOVED');

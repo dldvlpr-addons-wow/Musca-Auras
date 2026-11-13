@@ -63,6 +63,36 @@ function Style.Color(name, alpha)
   return color[1], color[2], color[3], alpha or color[4]
 end
 
+--- Escape sequence of a color of the table for a chat line or a text: "|cffrrggbb", closed by "|r".
+function Style.Hex(name)
+  local r, g, b = Style.Color(name)
+  return ("|cff%02x%02x%02x"):format(r * 255 + 0.5, g * 255 + 0.5, b * 255 + 0.5)
+end
+
+-- Colors written inside the translated texts, by the color of the table that replaces them when shown.
+local writtenColors = {}
+for name, list in pairs({
+  error = "ff0000 ff2020 ffaaaa",
+  success = "00ff00 33ff99 aaffaa",
+  primary = "ffd200 ffd100 e0e000 ffff00 ffff99 ffff77 eda55f 00ccff",
+  warning = "ffcc00 ff9900 ff9933",
+  textQuiet = "b0b0b0 999999 777777",
+  text = "ffffff",
+  accent = "4080ff 80a0ff 00ffff 9900ff aaaaff 99ccff",
+}) do
+  for hex in list:gmatch("%x+") do
+    writtenColors[hex] = name
+  end
+end
+
+--- text with the colors written in it replaced by the colors of the table; the other colors are kept.
+function Style.Markup(text)
+  return (text:gsub("|c[fF][fF](%x%x%x%x%x%x)", function(hex)
+    local name = writtenColors[hex:lower()]
+    return name and Style.Hex(name)
+  end))
+end
+
 local fonts = "Interface\\AddOns\\WeakAuras\\Media\\Fonts\\"
 Style.fonts = {
   text = fonts .. "FiraSans-Medium.ttf",

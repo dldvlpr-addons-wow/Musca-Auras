@@ -705,13 +705,13 @@ local function describeChildValues(intable, data, subOption, info)
               name = childOption.name;
             end
             if(tri and childOptionTable[i].get(info)) then
-              tinsert(values, "|cFFE0E000"..child.id..": |r"..name);
+              tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..name);
             elseif(tri) then
-              tinsert(values, "|cFFE0E000"..child.id..": |r"..L["Ignored"]);
+              tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..L["Ignored"]);
             elseif(childOptionTable[i].get(info)) then
-              tinsert(values, "|cFFE0E000"..child.id..": |r|cFF00FF00"..L["Enabled"].."|r");
+              tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r" .. OptionsPrivate.Private.Style.Hex("success")..L["Enabled"].."|r");
             else
-              tinsert(values, "|cFFE0E000"..child.id..": |r|cFFFF0000"..L["Disabled"].."|r");
+              tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r" .. OptionsPrivate.Private.Style.Hex("error")..L["Disabled"].."|r");
             end
           elseif(intable.type == "color") then
             local r, g, b = childOptionTable[i].get(info);
@@ -722,12 +722,12 @@ local function describeChildValues(intable, data, subOption, info)
             local key = childOptionTable[i].get(info);
             local display = key and selectValues[key] or L["None"];
             if intable.dialogControl == "LSM30_Font" then
-              tinsert(values, "|cFFE0E000"..child.id..": |r" .. key);
+              tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r" .. key);
             else
               if type(display) == "string" then
-                tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
+                tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..display);
               elseif type(display) == "table" then
-                tinsert(values, "|cFFE0E000"..child.id..": |r"..display[1].."/"..display[2] );
+                tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..display[1].."/"..display[2] );
               end
             end
           elseif(intable.type == "multiselect") then
@@ -737,7 +737,7 @@ local function describeChildValues(intable, data, subOption, info)
                 tinsert(selectedValues, tostring(v))
               end
             end
-            tinsert(values, "|cFFE0E000"..child.id..": |r"..table.concat(selectedValues, ","));
+            tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..table.concat(selectedValues, ","));
           else
             local display = childOptionTable[i].get(info) or L["None"];
             if(type(display) == "number") then
@@ -752,7 +752,7 @@ local function describeChildValues(intable, data, subOption, info)
                 display = display:sub(1, 50) .. "..."
               end
             end
-            tinsert(values, "|cFFE0E000"..child.id..": |r"..display);
+            tinsert(values, OptionsPrivate.Private.Style.Hex("primary")..child.id..": |r"..display);
           end
           break;
         end
@@ -774,7 +774,7 @@ local function replaceNameDescFuncs(intable, data, subOption)
             if(name == "") then
               return name;
             else
-              return "|cFF4080FF"..(name or "error").."|r";
+              return OptionsPrivate.Private.Style.Hex("accent")..(name or "error").."|r";
             end
           end
         end
@@ -2049,7 +2049,7 @@ local function AddCodeOptionTimeMachine(args, data, name, prefix, url, order, hi
           errorString = options.validator(loadedFunction)
         end
       end
-      return errorString and "|cFFFF0000"..errorString or "";
+      return errorString and OptionsPrivate.Private.Style.Hex("error")..errorString or "";
     end,
     width = WeakAuras.doubleWidth,
     order = order + 0.002,
@@ -2155,7 +2155,7 @@ local function AddCodeOption(args, data, name, prefix, url, order, hiddenFunc, p
           errorString = options.validator(loadedFunction)
         end
       end
-      return errorString and "|cFFFF0000"..errorString or "";
+      return errorString and OptionsPrivate.Private.Style.Hex("error")..errorString or "";
     end,
     width = WeakAuras.doubleWidth,
     order = order + 0.002,
@@ -2246,7 +2246,7 @@ local function AddCommonTriggerOptions(options, data, triggernum, doubleWidth)
     fontSize = "small",
     order = 1.12,
     hidden = function() return trigger.type ~= "aura2" and trigger.type ~= "secretAura" end,
-    name = L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. In combat, the game hides most auras and they stop updating."],
+    name = OptionsPrivate.Private.Style.Markup(L["|cffffd100Aura (Modern)|r: works in combat. Timer, stacks and glow. Text limited to %p, %s and %n, sub elements limited to Text, Texture, Border and Glow. Icon, Progress Bar, Progress Texture and Text auras only.\n|cffffd100Aura|r: out of combat or advanced conditions. In combat, the game hides most auras and they stop updating."]),
   }
 end
 

@@ -113,11 +113,11 @@ local methods = {
     self.disabled = disabled
     if disabled then
       self.frame:Disable()
-      self.label:SetTextColor(0.5, 0.5, 0.5)
-      self.image:SetVertexColor(0.5, 0.5, 0.5, 0.5)
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+      self.image:SetVertexColor(OptionsPrivate.Private.Style.Color("textDisabled", 0.5))
     else
       self.frame:Enable()
-      self.label:SetTextColor(1, 1, 1)
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
       self.image:SetVertexColor(1, 1, 1, 1)
     end
   end,
@@ -203,21 +203,21 @@ local function Constructor()
   local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
   highlight:SetAllPoints(frame)
   highlight:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  highlight:SetVertexColor(0.2, 0.4, 0.8, 0.2)
+  highlight:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.2))
   highlight:SetBlendMode("ADD")
 
   local expandedHighlight = frame:CreateTexture(nil, "BACKGROUND")
   expandedHighlight:SetPoint("TOPLEFT", frame, -2, 0)
   expandedHighlight:SetPoint("BOTTOMRIGHT", frame, 0, 0)
   expandedHighlight:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  expandedHighlight:SetVertexColor(1, 0.8, 0, 0.1)
+  expandedHighlight:SetVertexColor(OptionsPrivate.Private.Style.Color("primary", 0.1))
   expandedHighlight:SetBlendMode("ADD")
 
   local expandedBackground = frame:CreateTexture(nil, "BACKGROUND")
   expandedBackground:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", -1, -1)
   expandedBackground:SetWidth(128)
   expandedBackground:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_AlphaGradient")
-  expandedBackground:SetVertexColor(1, 0.8, 0, 0.15)
+  expandedBackground:SetVertexColor(OptionsPrivate.Private.Style.Color("primary", 0.15))
   expandedBackground:SetBlendMode("ADD")
 
   local widget = {

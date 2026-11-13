@@ -118,7 +118,7 @@ local function Constructor()
   local label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   label:SetHeight(24)
   label:SetJustifyH("LEFT")
-  label:SetTextColor(1, 1, 1)
+  label:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
   label:SetPoint("LEFT", swatch, "RIGHT", 2, 0)
   label:SetPoint("RIGHT")
 

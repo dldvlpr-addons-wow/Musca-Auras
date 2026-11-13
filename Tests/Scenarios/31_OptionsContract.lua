@@ -870,7 +870,7 @@ iconSource | name="Icon Source" order=1 type="select" values={-1="Automatic",0="
 notAnOption = "text"
 secretSwipeColor | get=<fn> hasAlpha=true hidden=fn:false name="Swipe Color" order=11.900000000 set=<fn> type="color" width=1.300000000
 secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=13.900000000 type="execute" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
 spark | desc="Aura (Modern) does not apply this effect." disabled=true name="Spark" order=4 type="toggle"
 useTooltip | desc="The Aura (Modern) display ignores the mouse, so it shows no tooltip." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
 [position]
@@ -897,7 +897,7 @@ anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
 automaticWidth | desc="The game's own aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
 secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=15 type="execute" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
 text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
 text_text_format_footer | name="Footer" order=7 type="toggle"
@@ -914,7 +914,7 @@ __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
 secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5 type="execute" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
 slanted | desc="The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
@@ -923,7 +923,7 @@ glowColor | name="Color" order=3.500000000 type="color"
 glowStartAnim | desc="The game starts this glow itself, without the start animation." disabled=true name="Start Anim" order=2 type="toggle"
 glowType | name="Glow Type" order=1 type="select" values={"ACShine"="Autocast Shine","Pixel"="Pixel Glow","Proc"="Proc Glow","buttonOverlay"="Action Button Glow"}
 secretSwitchToClassic | confirm=true confirmText="The aura stops updating in combat once the game hides it. Switch to classic mode?" desc="Changes the Aura (Modern) triggers of this aura to Aura, which unlocks the greyed out options." func=<fn> name="Switch to classic mode" order=5.500000000 type="execute" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
 [sub.4.subtext]
 __order = 5
 __title = "Detached Detached Candidate"
@@ -946,7 +946,7 @@ iconInset | desc="Aura (Modern) does not apply this effect." disabled=true name=
 iconSource | name="Icon Source" order=1 type="select" values={-1="Automatic",0="Manual"}
 notAnOption = "text"
 secretSwipeColor | get=<fn> hasAlpha=true hidden=fn:false name="Swipe Color" order=11.900000000 set=<fn> type="color" width=1.300000000
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=12.900000000 type="description" width=2.600000000
 spark | desc="Aura (Modern) does not apply this effect." disabled=true name="Spark" order=4 type="toggle"
 useTooltip | desc="The Aura (Modern) display ignores the mouse, so it shows no tooltip." disabled=true name="Tooltip on Mouseover" order=2 type="toggle"
 [position]
@@ -960,7 +960,7 @@ __title = "Text"
 anchor_area | name="Area" order=12 type="select" values={"ALL"="Whole Area"}
 anchor_point | name="Point" order=13 type="select" values={"CENTER"="Center","TOPLEFT"="Top Left"}
 automaticWidth | desc="The game's own aura layout uses a fixed text area." name="Width" order=10 type="select" values={"Fixed"="Fixed"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=14 type="description" width=2.600000000
 text_customTextUpdate | desc="The game writes this text itself: custom code cannot run on it." disabled=true name="Update" order=11 type="select"
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
 text_text_format_footer | name="Footer" order=7 type="toggle"
@@ -976,7 +976,7 @@ __order = 3
 __title = "Border"
 border_offset | name="Offset" order=2 type="range"
 border_ppscale | desc="Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border." disabled=false name="Pixel Scale" order=1 type="toggle"
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
 slanted | desc="The game fills the bar or the swipe itself and hides the progress from addons: this effect needs to read the progress." disabled=true name="Slanted" order=3 type="toggle"
 [sub.3.subglow]
 __order = 4
@@ -984,11 +984,11 @@ __title = "Glow"
 glowColor | name="Color" order=3.500000000 type="color"
 glowStartAnim | desc="The game starts this glow itself, without the start animation." disabled=true name="Start Anim" order=2 type="toggle"
 glowType | name="Glow Type" order=1 type="select" values={"ACShine"="Autocast Shine","Pixel"="Pixel Glow","Proc"="Proc Glow","buttonOverlay"="Action Button Glow"}
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4.500000000 type="description" width=2.600000000
 [sub.4.subtext]
 __order = 5
 __title = "Detached Candidate"
-secretUnavailableNote | fontSize="medium" name="|cff999999Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
+secretUnavailableNote | fontSize="medium" name="|cffa29e97Greyed out options are unavailable with Aura (Modern): the game draws this element itself. Hover an option to see why.|r" order=4 type="description" width=2.600000000
 text_text | desc="Use %p for duration, %s for stacks or %n for the aura name. Each code needs its own text element. Literal text is also supported." name="Text" order=1 type="input"
 text_text_format_s_big_number | desc="The game writes this value itself: only the time format applies." disabled=true name="Big" order=3 type="toggle"
 text_text_pChoose | name="Choose" order=2 type="toggle"
@@ -1003,7 +1003,7 @@ finish_header | name="On Hide" order=30 type="header"
 finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
-secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
+secretSoundNotice | name="|cfff66d67Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
 start_choose_glow_frame | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
 start_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
 start_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:false name="Custom" order=9 type="toggle"
@@ -1053,7 +1053,7 @@ finish_header | name="On Hide" order=30 type="header"
 finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
-secretSoundNotice | name="|cffff2020Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
+secretSoundNotice | name="|cfff66d67Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
 start_choose_glow_frame | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true hidden=true name="Frame" order=13 type="toggle"
 start_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Code" order=10 type="input"
 start_do_custom | desc="Not available in On Show/On Hide for Aura (Modern) auras. Sound files are supported; live TTS and custom callbacks are not." disabled=fn:true name="Custom" order=9 type="toggle"
@@ -1123,13 +1123,13 @@ not enabled: notice=nil message.disabled=nil
 ]==],
     ["trigger.new"] = [==[
 result keys: {1="trigger.1.secretAura"} | calls: AddCommonTriggerOptionstrue=1 AddTriggerMetaFunctions=1 AuraEditor.AddOptions=1
-alwaysActive | fontSize="medium" name="|cffffffffNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
+alwaysActive | fontSize="medium" name="|cfff1f0edNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
 auraTypeLabel | disabled=true get=<fn> name="Aura Type" order=4 type="toggle" width=1.300000000
 canApplyAura | desc="Auras Blizzard says your character can apply." get=<fn> hidden=fn:false name=fn:"Can Apply Aura" order=12 set=<fn> type="toggle" width="full"
 debuffType | desc="Buff and Debuff use your filters. Blizzard Classification also applies Blizzard's unit-frame visibility and dispel rules, so some auras may be hidden." get=<fn> name="Aura Type" order=4.010000000 set=<fn> sorting=fn:{1="HELPFUL",2="HARMFUL",3="Buff",4="Debuff",5="Dispel"} type="select" values=fn:{"Buff"="Blizzard: Buff","Debuff"="Blizzard: Debuff","Dispel"="Blizzard: Dispellable","HARMFUL"="Debuff","HELPFUL"="Buff"} width=1.300000000
 excludeDispelTypes | get=<fn> name="Exclude dispel types" order=25 set=<fn> type="multiselect" values={""="Enrage","Bleed"="Bleed","Curse"="Curse","Disease"="Disease","Magic"="Magic","Poison"="Poison"} width="full"
 filtersHeader | name="Aura Filters" order=10 type="header"
-help | fontSize="small" name=fn:"|cffff2020Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
+help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:true name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:true name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:true name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
@@ -1200,16 +1200,16 @@ trigger: {"auraspellids"={1="123"},"debuffType"="HARMFUL","processedAuraType"="a
 rankspellid1.set 5 ->  | calls: none
 ignorespellid1.set 6 ->  | calls: none
 trigger: {"auraRankSpellIDs"={1="5"},"auraspellids"={1="123"},"debuffType"="HARMFUL","excludedAuraSpellIDs"={1="6"},"processedAuraType"="any","secretUseSpellIDs"=true,"sortMethod"="Default","type"="secretAura","unit"="raid"}
-help.name -> "|cffff2020Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." | calls: none
+help.name -> "|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." | calls: none
 ]==],
     ["trigger.group"] = [==[
-alwaysActive | fontSize="medium" name="|cffffffffNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
+alwaysActive | fontSize="medium" name="|cfff1f0edNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
 auraTypeLabel | disabled=true get=<fn> name="Aura Type" order=4 type="toggle" width=1.300000000
 canApplyAura | desc="Auras Blizzard says your character can apply." get=<fn> hidden=fn:false name=fn:"Can Apply Aura" order=12 set=<fn> type="toggle" width="full"
 debuffType | desc="Buff and Debuff use your filters. Blizzard Classification also applies Blizzard's unit-frame visibility and dispel rules, so some auras may be hidden." get=<fn> name="Aura Type" order=4.010000000 set=<fn> sorting=fn:{1="HELPFUL",2="HARMFUL",3="Buff",4="Debuff",5="Dispel"} type="select" values=fn:{"Buff"="Blizzard: Buff","Debuff"="Blizzard: Debuff","Dispel"="Blizzard: Dispellable","HARMFUL"="Debuff","HELPFUL"="Buff"} width=1.300000000
 excludeDispelTypes | get=<fn> name="Exclude dispel types" order=25 set=<fn> type="multiselect" values={""="Enrage","Bleed"="Bleed","Curse"="Curse","Disease"="Disease","Magic"="Magic","Poison"="Poison"} width="full"
 filtersHeader | name="Aura Filters" order=10 type="header"
-help | fontSize="small" name=fn:"|cffff2020Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
+help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:false name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:false name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:false name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
@@ -1235,7 +1235,7 @@ nativeDISPELLABLE | desc="Dispellable regardless of your or your raid's current 
 nativeEXTERNAL_DEFENSIVE | desc="Auras Blizzard classifies as external defensives." get=<fn> hidden=fn:true name=fn:"External defensive" order=20.200000000 set=<fn> type="toggle" width="full"
 nativeIMPORTANT | desc="Blizzard's important-aura flag, including non-stealable enemy buffs shown on nameplates." get=<fn> hidden=fn:true name=fn:"Important aura" order=20.450000000 set=<fn> type="toggle" width="full"
 nativePLAYER | desc="Auras cast by you, your pet or your vehicle." get=<fn> hidden=fn:false name=fn:"Own Only" order=11 set=<fn> type="toggle" width=1.300000000
-nativeRAID | desc="Buffs you can apply, or debuffs you can dispel." get=<fn> hidden=fn:false name=fn:"|cFF00FF00Can apply / dispel|r" order=20.100000000 set=<fn> type="toggle" width="full"
+nativeRAID | desc="Buffs you can apply, or debuffs you can dispel." get=<fn> hidden=fn:false name=fn:"|cff67d283Can apply / dispel|r" order=20.100000000 set=<fn> type="toggle" width="full"
 nativeRAID_IN_COMBAT | desc="Auras flagged by Blizzard for raid-frame display in combat." get=<fn> hidden=fn:false name=fn:"Shown on raid frames in combat" order=20.300000000 set=<fn> type="toggle" width="full"
 nativeRAID_PLAYER_DISPELLABLE | desc="Includes helpful enrages on enemies." get=<fn> hidden=fn:false name=fn:"Dispellable by someone in your raid" order=20.350000000 set=<fn> type="toggle" width="full"
 rankCoverage | fontSize="small" hidden=fn:true name=fn:"Other ranks could not be found for: . Only the IDs you entered will be tracked. To track another rank, add its ID under Exact Spell ID(s)." order=5.900000000 type="description" width="full"
@@ -1297,13 +1297,13 @@ trigger: {"auraRankSpellIDs"={1="8050"},"auraspellids"={1="1",2="2",3=""},"debuf
 data: 0
 ]==],
     ["trigger.nameplate"] = [==[
-alwaysActive | fontSize="medium" name="|cffffffffNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
+alwaysActive | fontSize="medium" name="|cfff1f0edNote: Trigger Always Active|r" order=1.950000000 type="description" width="full"
 auraTypeLabel | disabled=true get=<fn> name="Aura Type" order=4 type="toggle" width=1.300000000
 canApplyAura | desc="Auras Blizzard says your character can apply." get=<fn> hidden=fn:false name=fn:"Can Apply Aura" order=12 set=<fn> type="toggle" width="full"
 debuffType | desc="Buff and Debuff use your filters. Blizzard Classification also applies Blizzard's unit-frame visibility and dispel rules, so some auras may be hidden." get=<fn> name="Aura Type" order=4.010000000 set=<fn> sorting=fn:{1="HELPFUL",2="HARMFUL",3="Buff",4="Debuff",5="Dispel"} type="select" values=fn:{"Buff"="Blizzard: Buff","Debuff"="Blizzard: Debuff","Dispel"="Blizzard: Dispellable","HARMFUL"="Debuff","HELPFUL"="Buff"} width=1.300000000
 excludeDispelTypes | get=<fn> name="Exclude dispel types" order=25 set=<fn> type="multiselect" values={""="Enrage","Bleed"="Bleed","Curse"="Curse","Disease"="Disease","Magic"="Magic","Poison"="Poison"} width="full"
 filtersHeader | name="Aura Filters" order=10 type="header"
-help | fontSize="small" name=fn:"|cffff2020Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
+help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:true name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:true name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:true name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
@@ -1326,7 +1326,7 @@ nativeCROWD_CONTROL | desc="Auras with a crowd-control effect, such as a stun or
 nativeDISPELLABLE | desc="Dispellable regardless of your or your raid's current abilities." get=<fn> hidden=fn:false name=fn:"Dispellable" order=20.500000000 set=<fn> type="toggle" width="full"
 nativeEXTERNAL_DEFENSIVE | desc="Auras Blizzard classifies as external defensives." get=<fn> hidden=fn:false name=fn:"External defensive" order=20.200000000 set=<fn> type="toggle" width="full"
 nativeIMPORTANT | desc="Blizzard's important-aura flag, including non-stealable enemy buffs shown on nameplates." get=<fn> hidden=fn:false name=fn:"Important aura" order=20.450000000 set=<fn> type="toggle" width="full"
-nativePLAYER | desc="Auras cast by you, your pet or your vehicle." get=<fn> hidden=fn:false name=fn:"|cFF00FF00Own Only|r" order=11 set=<fn> type="toggle" width=1.300000000
+nativePLAYER | desc="Auras cast by you, your pet or your vehicle." get=<fn> hidden=fn:false name=fn:"|cff67d283Own Only|r" order=11 set=<fn> type="toggle" width=1.300000000
 nativeRAID | desc="Buffs you can apply, or debuffs you can dispel." get=<fn> hidden=fn:false name=fn:"Can apply / dispel" order=20.100000000 set=<fn> type="toggle" width="full"
 nativeRAID_IN_COMBAT | desc="Auras flagged by Blizzard for raid-frame display in combat." get=<fn> hidden=fn:false name=fn:"Shown on raid frames in combat" order=20.300000000 set=<fn> type="toggle" width="full"
 nativeRAID_PLAYER_DISPELLABLE | desc="Includes helpful enrages on enemies." get=<fn> hidden=fn:false name=fn:"Dispellable by someone in your raid" order=20.350000000 set=<fn> type="toggle" width="full"
@@ -1355,11 +1355,11 @@ includeNameplateOnly.get -> true | calls: none
 includeNameplateOnly.set ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
 trigger: {"debuffType"="HELPFUL","includeNameplateOnly"=false,"nativeFilters"={"PLAYER"=true},"processedAuraType"="Buff","type"="secretAura","unit"="nameplate"}
 nativePLAYER.get -> "true" | calls: none
-nativePLAYER.name -> "|cFF00FF00Own Only|r" | calls: none
+nativePLAYER.name -> "|cff67d283Own Only|r" | calls: none
 nativePLAYER.set false ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
 nativeFilters: {"PLAYER"=false}
 nativePLAYER.get false -> "false" | calls: none
-nativePLAYER.name false -> "|cFFFF0000Not Own Only|r" | calls: none
+nativePLAYER.name false -> "|cfff66d67Not Own Only|r" | calls: none
 nativePLAYER.set false again ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
 nativeFilters: nil
 nativePLAYER.set true ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
@@ -1367,9 +1367,9 @@ nativeFilters: {"PLAYER"=true}
 isFromPlayerOrPlayerPet.get -> false | calls: none
 isFromPlayerOrPlayerPet.set true ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
 isFromPlayerOrPlayerPet.get true -> "true" | calls: none
-isFromPlayerOrPlayerPet.name true -> "|cFF00FF00Cast by a Player|r" | calls: none
+isFromPlayerOrPlayerPet.name true -> "|cff67d283Cast by a Player|r" | calls: none
 isFromPlayerOrPlayerPet.set false ->  | calls: QueueOptionsRefresh=1 SaveAuraTrigger=1
-isFromPlayerOrPlayerPet.name false -> "|cFFFF0000Not Cast by a Player|r" | calls: none
+isFromPlayerOrPlayerPet.name false -> "|cfff66d67Not Cast by a Player|r" | calls: none
 trigger: {"debuffType"="HELPFUL","includeNameplateOnly"=false,"isFromPlayerOrPlayerPet"=false,"nativeFilters"={"PLAYER"=true},"processedAuraType"="Buff","type"="secretAura","unit"="nameplate"}
 specificUnit.get -> "party1" | calls: none
 specificUnit.validate bad -> "Enter a unit such as party1, raid5, boss1 or arena2." | calls: none
@@ -1390,7 +1390,7 @@ cdmPicker_entry101 | desc="Category2" get=<fn> image=10010 imageHeight=18 imageW
 cdmPicker_entry102 | desc="Category0" get=<fn> image=10020 imageHeight=18 imageWidth=18 name="Beta (Rank 1) [1020]" order=35.007000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry103 | desc="Category1" get=<fn> image=10030 imageHeight=18 imageWidth=18 name="Beta (Rank 2) [1030]" order=35.006000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry104 | desc="Category0" get=<fn> image=10040 imageHeight=18 imageWidth=18 name="Gamma [1040]" order=35.008000000 set=<fn> type="toggle" width="full"
-cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:true image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cFFffcc00Extra Options:|r Hide GCD text" order=10.030000000 type="execute" width="full"
+cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:true image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cfff8a052Extra Options:|r Hide GCD text" order=10.030000000 type="execute" width="full"
 cdmPicker_filters | name="Blizzard CDM Filters" order=35 type="header"
 cdmPicker_help | name="Spells must be active in the CDM to be displayed. Type /cdm and add them." order=10.011000000 type="description" width="full"
 cdmPicker_hideGCDText | desc="Hides GCD countdown numbers, including %p and %t text. Spell cooldown and charge recharge text remain visible while the GCD swipe is shown." get=<fn> hidden=fn:true name="Hide global cooldown text" order=10.034000000 set=<fn> type="toggle" width="full"
@@ -1474,7 +1474,7 @@ cdmPicker_entry101 | desc="Category2" get=<fn> image=10010 imageHeight=18 imageW
 cdmPicker_entry102 | desc="Category0" get=<fn> image=10020 imageHeight=18 imageWidth=18 name="Beta (Rank 1) [1020]" order=35.007000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry103 | desc="Category1" get=<fn> image=10030 imageHeight=18 imageWidth=18 name="Beta (Rank 2) [1030]" order=35.006000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry104 | desc="Category0" get=<fn> image=10040 imageHeight=18 imageWidth=18 name="Gamma [1040]" order=35.008000000 set=<fn> type="toggle" width="full"
-cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:false image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cFFffcc00Extra Options:|r Charge recharge; Show GCD" order=10.030000000 type="execute" width="full"
+cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:false image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cfff8a052Extra Options:|r Charge recharge; Show GCD" order=10.030000000 type="execute" width="full"
 cdmPicker_filters | name="Blizzard CDM Filters" order=35 type="header"
 cdmPicker_help | name="Spells must be active in the CDM to be displayed. Type /cdm and add them." order=10.011000000 type="description" width="full"
 cdmPicker_hideGCDText | desc="Hides GCD countdown numbers, including %p and %t text. Spell cooldown and charge recharge text remain visible while the GCD swipe is shown." get=<fn> hidden=fn:true name="Hide global cooldown text" order=10.034000000 set=<fn> type="toggle" width="full"
@@ -1522,9 +1522,9 @@ includeGCD.get -> true | calls: none
 hideGCDText.get -> false | calls: none
 hideGCDText.set true ->  | calls: Add=1 ClearAndUpdateOptions=1 ScanForLoads=1 UpdateFakeStatesFor=1 UpdateThumbnail=1
 ignoreSpellKnown.set ->  | calls: Add=1 ClearAndUpdateOptions=1 ScanForLoads=1 UpdateFakeStatesFor=1 UpdateThumbnail=1
-extra before: hidden=fn:true name=fn:"|cFFffcc00Extra Options:|r Cooldown; Disable Spell Known Check; Show GCD; Hide GCD text" image=fn:"collapsed"
+extra before: hidden=fn:true name=fn:"|cfff8a052Extra Options:|r Cooldown; Disable Spell Known Check; Show GCD; Hide GCD text" image=fn:"collapsed"
 extra.func ->  | calls: ClearAndUpdateOptions=1
-extra after: hidden=fn:false name=fn:"|cFFffcc00Extra Options:|r Cooldown; Disable Spell Known Check; Show GCD; Hide GCD text" image=fn:"expanded"
+extra after: hidden=fn:false name=fn:"|cfff8a052Extra Options:|r Cooldown; Disable Spell Known Check; Show GCD; Hide GCD text" image=fn:"expanded"
 nameToggle.get -> true | calls: none
 nameToggle.set false ->  | calls: Add=1 ClearAndUpdateOptions=1 ScanForLoads=1 UpdateFakeStatesFor=1 UpdateThumbnail=1
 name1.get -> "Fireball" | calls: none
@@ -1551,7 +1551,7 @@ cdmPicker_entry101 | desc="Category2" get=<fn> image=5101 imageHeight=18 imageWi
 cdmPicker_entry102 | desc="Category0" get=<fn> image=5102 imageHeight=18 imageWidth=18 name="Entry 102 [10200]" order=35.006000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry103 | desc="Category1" get=<fn> image=5103 imageHeight=18 imageWidth=18 name="Entry 103 [10300]" order=35.007000000 set=<fn> type="toggle" width="full"
 cdmPicker_entry104 | desc="Category0" get=<fn> image=5104 imageHeight=18 imageWidth=18 name="Entry 104 [10400]" order=35.008000000 set=<fn> type="toggle" width="full"
-cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:true image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cFFffcc00Extra Options:|r Hide GCD text" order=10.030000000 type="execute" width="full"
+cdmPicker_extra | control="WeakAurasExpandSmall" func=<fn> hidden=fn:true image=fn:"collapsed" imageHeight=15 imageWidth=15 name=fn:"|cfff8a052Extra Options:|r Hide GCD text" order=10.030000000 type="execute" width="full"
 cdmPicker_filters | name="Blizzard CDM Filters" order=35 type="header"
 cdmPicker_help | name="Spells must be active in the CDM to be displayed. Type /cdm and add them." order=10.011000000 type="description" width="full"
 cdmPicker_hideGCDText | desc="Hides GCD countdown numbers, including %p and %t text. Spell cooldown and charge recharge text remain visible while the GCD swipe is shown." get=<fn> hidden=fn:true name="Hide global cooldown text" order=10.034000000 set=<fn> type="toggle" width="full"

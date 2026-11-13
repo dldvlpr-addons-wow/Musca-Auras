@@ -543,7 +543,8 @@ end
 
 ---@param ... string
 WeakAuras.prettyPrint = function(...)
-  print("|cff9900ffWeakAuras:|r ", ...)
+  local Style = Private.Style
+  print(Style and Style.Hex("primary") .. "Musca Auras:|r" or "Musca Auras:", ...)
 end
 
 -- Force enable WeakAurasCompanion and Archive because some addon managers interfere with it
@@ -593,7 +594,7 @@ end
 
 if not libsAreOk then
   C_Timer.After(1, function()
-    WeakAuras.prettyPrint("WeakAuras is missing necessary libraries. Please reinstall a proper package.")
+    WeakAuras.prettyPrint("Musca Auras is missing necessary libraries. Please reinstall a proper package.")
   end)
 end
 

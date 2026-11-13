@@ -122,7 +122,7 @@ local L = WeakAuras.L
 	L["A 64x64 pixels icon"] = "64x64像素图标"
 	L["A group that dynamically controls the positioning of its children"] = "动态控制子项目位置的群组"
 	L[ [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
-Enable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer]=] ] = "冷却文本会根据原生界面设置（可能被某些插件改动）自动显示。当你想隐藏冷却文本时，或者使用WeakAuras文本替代冷却文本时，启用此设置。"
+Enable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer]=] ] = "冷却文本会根据原生界面设置（可能被某些插件改动）自动显示。当你想隐藏冷却文本时，或者使用Musca Auras文本替代冷却文本时，启用此设置。"
 	L["A Unit ID (e.g., party1)."] = "单位 ID（如 party1）。"
 	L["Ace: Funkeh, Nevcairiel"] = "Ace: Funkeh, Nevcairiel"
 	L["Active Aura Filters and Info"] = "活跃光环过滤器与信息"
@@ -305,7 +305,7 @@ UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:S
 
 ]=]
 	L["Custom trigger status tooltip"] = [=[选择用于检查自定义触发器的事件。
-因为这一个是状态触发器, 指定的事件 可以被 WeakAuras 调用, 而不需指定参数.
+因为这一个是状态触发器, 指定的事件 可以被 Musca Auras 调用, 而不需指定参数.
 如果有多个事件,可以用逗号或空白分隔。
 
 |cFF4444FF例：|r
@@ -852,7 +852,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=] ] = [=[事件发�
 	L["The Multi Target mode requires a name or spell id filter"] = "多目标模式需要名称或法术id过滤器"
 	L["The trigger number is optional. When no trigger number is specified, the trigger selected via dynamic information will be used."] = "触发器编号为可选。当不指定触发器编号时，将使用通过动态信息选择的触发器。"
 	L["The type of trigger"] = "触发器类型"
-	L["The WeakAuras Options Addon version %s doesn't match the WeakAuras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling WeakAuras"] = "WeakAuras 选项插件版本 %s 与 WeakAuras 本体版本 %s 不匹配。如果您在游戏运行时更新了插件，请尝试重新启动《魔兽世界》。否则请尝试重新安装 WeakAuras"
+	L["The Musca Auras Options Addon version %s doesn't match the Musca Auras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling Musca Auras"] = "Musca Auras 选项插件版本 %s 与 Musca Auras 本体版本 %s 不匹配。如果您在游戏运行时更新了插件，请尝试重新启动《魔兽世界》。否则请尝试重新安装 Musca Auras"
 	L["Then "] = "然后"
 	L["There are several special codes available to make this text dynamic. Click to view a list with all dynamic text codes."] = "有几种特殊代码可用于使此文本动态化。点击查看包含所有动态文本代码的列表。"
 	L["This adds %raidMark as text replacements."] = "这将添加 %raidMark 作为文本替换。"
@@ -864,9 +864,9 @@ Make sure you can trust the person who sent it!]=] ] = "此光环包含自定义
 	L["This aura is marked as an update to auras '%s', but cannot be used to update them. This usually happens if an aura is moved out of a group."] = "此光环被标记为光环‘%s’的新版本，但无法用于更新这些光环。此问题常见于某些光环曾被移出组。"
 	L[ [=[This aura was created with a different version (%s) of World of Warcraft.
 It might not work correctly!]=] ] = "此光环在一个不同版本（%s）的魔兽世界中创建。它可能无法正常工作！"
-	L[ [=[This aura was created with a newer version of WeakAuras.
-Upgrade your version of WeakAuras or wait for next release before installing this aura.]=] ] = [=[此光环由更新版本的WeakAuras创建。
-在导入此光环前，请更新WeakAuras版本或等待下次发布。]=]
+	L[ [=[This aura was created with a newer version of Musca Auras.
+Upgrade your version of Musca Auras or wait for next release before installing this aura.]=] ] = [=[此光环由更新版本的Musca Auras创建。
+在导入此光环前，请更新Musca Auras版本或等待下次发布。]=]
 	L["This display is currently loaded"] = "此图示已载入"
 	L["This display is not currently loaded"] = "此图示未载入"
 	L["This display is on standby, it will be loaded when needed."] = "此图示已就绪，将在需要的时候载入。"
@@ -938,7 +938,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["View custom code"] = "查看自定义代码"
 	L["Voice Settings"] = "语音设置"
 	L["We thank"] = "我们感谢"
-	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WA建议使用法术id而不是法术名称。法术id会自动本地化。"
+	L["Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."] = "Musca Auras 建议使用法术id而不是法术名称。法术id会自动本地化。"
 	L["What do you want to do?"] = "你想要做什么？"
 	L["Whole Area"] = "整个区域"
 	--[[Translation missing --]]
@@ -960,19 +960,19 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 |cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r
 
 Would you like to continue?]=] ] = "您将在硬核服务器上导入带有自定义Lua代码的光环。|cFFFF0000这有风险，自定义代码可以用来直接杀死你的硬核角色！|r 你想继续吗？"
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.
 
-WeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，WeakAuras 将运行自定义锚点代码。
+Musca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，Musca Auras 将运行自定义锚点代码。
 
-如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，WeakAuras 始终会运行自定义锚点代码。]=]
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.
+如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，Musca Auras 始终会运行自定义锚点代码。]=]
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.
 
-WeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，WeakAuras 将运行自定义生长代码。
+Musca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，Musca Auras 将运行自定义生长代码。
 
-如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，WeakAuras 始终会运行自定义生长代码。]=]
-	L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，WeakAuras 将运行自定义排序代码。
+如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，Musca Auras 始终会运行自定义生长代码。]=]
+	L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = [=[你可以添加一个由英文逗号分隔的状态键列表，当它对应的值被改变时，Musca Auras 将运行自定义排序代码。
 
-如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，WeakAuras 始终会运行自定义排序代码。]=]
+如果你在此列表中包含 'changed'，或者一个框体被添加、移除、重新排序，Musca Auras 始终会运行自定义排序代码。]=]
 	L["Your Saved Snippets"] = "已保存片段"
 	L["Z Offset"] = "Z 偏移"
 	L["Z Rotation"] = "Z轴旋转"

@@ -119,7 +119,7 @@ local function compatibilityReport(auras, codes)
     for _, name in ipairs(removedFunctions) do
       if _G[name] == nil and callsFunction(code.code, name) then
         if OptionsPrivate.Private.HasRemovedFunctionReplacement(name) then
-          tinsert(lines, L["%s calls %s, which does not exist on WoW Forever. Musca-Auras replaces it."]:format(code.text, name))
+          tinsert(lines, L["%s calls %s, which does not exist on WoW Forever. Musca Auras replaces it."]:format(code.text, name))
         else
           tinsert(lines, L["%s calls %s, which does not exist on WoW Forever."]:format(code.text, name))
         end
@@ -349,7 +349,7 @@ end
 local function RecurseSerial(lines, depth, chunk)
   for k, v in pairs(chunk) do
     if v == deleted then
-      tinsert(lines, string.rep("  ", depth) .. "|cFFFF0000" .. k .. " -> deleted|r")
+      tinsert(lines, string.rep("  ", depth) .. OptionsPrivate.Private.Style.Hex("error") .. k .. " -> deleted|r")
     elseif type(v) == "table" then
       tinsert(lines, string.rep("  ", depth) .. k .. " -> {")
       RecurseSerial(lines, depth + 1, v)
@@ -1567,7 +1567,7 @@ local methods = {
         local highestVersionWarning = AceGUI:Create("Label")
         highestVersionWarning:SetFontObject(GameFontHighlight)
         highestVersionWarning:SetFullWidth(true)
-        highestVersionWarning:SetText(L["This aura was created with a newer version of WeakAuras.\nUpgrade your version of WeakAuras or wait for next release before installing this aura."])
+        highestVersionWarning:SetText(L["This aura was created with a newer version of Musca Auras.\nUpgrade your version of Musca Auras or wait for next release before installing this aura."])
         highestVersionWarning:SetColor(1, 0, 0)
         self:AddChild(highestVersionWarning)
         self.importButton:Hide()
@@ -1604,7 +1604,7 @@ local methods = {
         local oldRootId = matchInfo.oldUidMap:GetIdFor(matchInfo.oldUidMap:GetRootUID())
         local preferToUpdate = matchInfo.oldUidMap:GetRawData(matchInfo.oldUidMap:GetRootUID()).preferToUpdate
         if (data.regionType == "group" or data.regionType == "dynamicgroup") then
-          local matchInfoText = L["This is a modified version of your group: |cff9900FF%s|r"]:format(oldRootId)
+          local matchInfoText = OptionsPrivate.Private.Style.Markup(L["This is a modified version of your group: |cff9900FF%s|r"]):format(oldRootId)
           matchInfoResult:SetText(matchInfoText)
           if matchInfo.addedCount ~= 0 then
             AddAuraList(self, matchInfo.newUidMap, matchInfo.added, {},
@@ -1625,7 +1625,7 @@ local methods = {
                         L["%d |4aura:auras; deleted"]:format(matchInfo.deletedCount))
           end
         else
-          matchInfoResult:SetText(L["This is a modified version of your aura, |cff9900FF%s.|r"]:format(oldRootId))
+          matchInfoResult:SetText(OptionsPrivate.Private.Style.Markup(L["This is a modified version of your aura, |cff9900FF%s.|r"]):format(oldRootId))
         end
 
         self:AddChild(AceGUI:Create("WeakAurasSpacer"))
@@ -1671,7 +1671,7 @@ local methods = {
       self.userChoices.mode = "import"
       local matchInfoText = ""
       if (errorMessage) then
-        matchInfoText = matchInfoText .. "|cFFFF0000" .. errorMessage .. "|r\n"
+        matchInfoText = matchInfoText .. OptionsPrivate.Private.Style.Hex("error") .. errorMessage .. "|r\n"
       end
 
       -- No match, so plain import
@@ -1860,7 +1860,7 @@ local methods = {
   Import = function(self)
     if C_GameRules.IsHardcoreActive() then
       StaticPopupDialogs["WEAKAURAS_CONFIRM_IMPORT_HARDCORE"] = {
-        text = L["You are about to Import an Aura with custom Lua code on a Hardcore server.\n\n|cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r\n\nWould you like to continue?"],
+        text = OptionsPrivate.Private.Style.Markup(L["You are about to Import an Aura with custom Lua code on a Hardcore server.\n\n|cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r\n\nWould you like to continue?"]),
         button1 = L["Import"],
         button2 = L["Cancel"],
         OnShow = function(self)

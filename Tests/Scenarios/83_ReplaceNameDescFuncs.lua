@@ -20,6 +20,7 @@ return function(test)
   -- Children are plain tables { id, regionType, options }, walked in order.
   optionsPrivate.Private = {
     regionOptions = { icon = true },
+    Style = private.Style,
     TraverseLeafs = function(data)
       local index = 0
       return function()
@@ -48,15 +49,15 @@ return function(test)
   local option = Replace("toggle", { type = "toggle", name = "Toggle" },
     { toggle = { type = "toggle", name = "Toggle", get = function() return true end } },
     { toggle = { type = "toggle", name = "Toggle", get = function() return false end } })
-  Same(option.name(Info("toggle")), "|cFF4080FFToggle|r", "toggle name when values differ")
-  Same(option.desc(Info("toggle")), "|cFFE0E000A: |r|cFF00FF00" .. L["Enabled"] .. "|r\n|cFFE0E000B: |r|cFFFF0000" .. L["Disabled"] .. "|r", "toggle desc")
+  Same(option.name(Info("toggle")), "|cff66caffToggle|r", "toggle name when values differ")
+  Same(option.desc(Info("toggle")), "|cffe8b543A: |r|cff67d283" .. L["Enabled"] .. "|r\n|cffe8b543B: |r|cfff66d67" .. L["Disabled"] .. "|r", "toggle desc")
 
   -- toggle with a function name (tri-state): the name or Ignored
   option = Replace("tristate", { type = "toggle", name = "Tri" },
     { tristate = { type = "toggle", name = function() return "Tri A" end, get = function() return true end } },
     { tristate = { type = "toggle", name = function() return "Tri B" end, get = function() return false end } })
-  Same(option.name(Info("tristate")), "|cFF4080FFTri A / Tri B|r", "tristate combined name")
-  Same(option.desc(Info("tristate")), "|cFFE0E000A: |rTri A\n|cFFE0E000B: |r" .. L["Ignored"], "tristate desc")
+  Same(option.name(Info("tristate")), "|cff66caffTri A / Tri B|r", "tristate combined name")
+  Same(option.desc(Info("tristate")), "|cffe8b543A: |rTri A\n|cffe8b543B: |r" .. L["Ignored"], "tristate desc")
 
   -- same values: plain name and the common description
   option = Replace("same", { type = "toggle", name = "Same" },
@@ -88,32 +89,32 @@ return function(test)
   option = Replace("select", { type = "select", name = "Select", values = selectValues },
     { select = { type = "select", name = "Select", get = function() return "one" end } },
     { select = { type = "select", name = "Select", get = function() return "two" end } })
-  Same(option.desc(Info("select")), "|cFFE0E000A: |rFirst\n|cFFE0E000B: |rLeft/Right", "select desc")
+  Same(option.desc(Info("select")), "|cffe8b543A: |rFirst\n|cffe8b543B: |rLeft/Right", "select desc")
   option = Replace("none", { type = "select", name = "None", values = function() return selectValues end },
     { none = { type = "select", name = "None", get = function() return "one" end } },
     { none = { type = "select", name = "None", get = function() return nil end } })
-  Same(option.desc(Info("none")), "|cFFE0E000A: |rFirst\n|cFFE0E000B: |r" .. L["None"], "select desc, nil key and function values")
+  Same(option.desc(Info("none")), "|cffe8b543A: |rFirst\n|cffe8b543B: |r" .. L["None"], "select desc, nil key and function values")
   option = Replace("font", { type = "select", name = "Font", values = { f = "F" }, dialogControl = "LSM30_Font" },
     { font = { type = "select", name = "Font", get = function() return "f1" end } },
     { font = { type = "select", name = "Font", get = function() return "f2" end } })
-  Same(option.desc(Info("font")), "|cFFE0E000A: |rf1\n|cFFE0E000B: |rf2", "font select desc")
+  Same(option.desc(Info("font")), "|cffe8b543A: |rf1\n|cffe8b543B: |rf2", "font select desc")
 
   -- multiselect: the selected values of each child, the keys being merged over the children
   option = Replace("multi", { type = "multiselect", name = "Multi" },
     { multi = { type = "multiselect", name = "Multi", values = { a = "Alpha" }, get = function(_, k) return k == "a" end } },
     { multi = { type = "multiselect", name = "Multi", values = function() return { a = "Alpha" } end, get = function() return false end } })
-  Same(option.desc(Info("multi")), "|cFFE0E000A: |rAlpha\n|cFFE0E000B: |r", "multiselect desc")
-  Same(option.name(Info("multi")), "|cFF4080FFMulti|r", "multiselect name when values differ")
+  Same(option.desc(Info("multi")), "|cffe8b543A: |rAlpha\n|cffe8b543B: |r", "multiselect desc")
+  Same(option.name(Info("multi")), "|cff66caffMulti|r", "multiselect name when values differ")
 
   -- other types: numbers rounded, strings cut at a null byte and at 50 characters, nil shown as None
   option = Replace("number", { type = "range", name = "Number" },
     { number = { type = "range", name = "Number", get = function() return 1.23456 end } },
     { number = { type = "range", name = "Number", get = function() return nil end } })
-  Same(option.desc(Info("number")), "|cFFE0E000A: |r1.23\n|cFFE0E000B: |r" .. L["None"], "number desc")
+  Same(option.desc(Info("number")), "|cffe8b543A: |r1.23\n|cffe8b543B: |r" .. L["None"], "number desc")
   option = Replace("text", { type = "input", name = "Text" },
     { text = { type = "input", name = "Text", get = function() return "short\0hidden" end } },
     { text = { type = "input", name = "Text", get = function() return string.rep("x", 60) end } })
-  Same(option.desc(Info("text")), "|cFFE0E000A: |rshort\n|cFFE0E000B: |r" .. string.rep("x", 50) .. "...", "text desc")
+  Same(option.desc(Info("text")), "|cffe8b543A: |rshort\n|cffe8b543B: |r" .. string.rep("x", 50) .. "...", "text desc")
 
   -- options prefixed by a region type only compare the children of that type
   option = Replace("icon.width", { type = "range", name = "Width" },
@@ -125,7 +126,7 @@ return function(test)
   option = Replace("hidden", { type = "toggle", name = "Hidden" },
     { hidden = { type = "toggle", name = "Hidden", get = function() return true end } },
     { hidden = { type = "toggle", name = "Hidden", hidden = true, get = function() return false end } })
-  Same(option.desc(Info("hidden")), "|cFFE0E000A: |r|cFF00FF00" .. L["Enabled"] .. "|r", "hidden child skipped")
+  Same(option.desc(Info("hidden")), "|cffe8b543A: |r|cff67d283" .. L["Enabled"] .. "|r", "hidden child skipped")
 
   -- nested groups are walked, and the "values" tables are left alone
   local group = { type = "group", args = { inner = { type = "toggle", name = "Inner" } }, values = { name = "kept" } }

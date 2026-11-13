@@ -1,3 +1,34 @@
+# Musca Auras 1.18.0 (2026-11-13)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Changed
+
+- Name: the windows, the chat messages, the tooltips, the in-game guide and the 11 translations say Musca Auras. The
+  credit to WeakAuras and the links to its wiki and Discord stay.
+- Colors: chat messages, the popups, the Guide window and the option widgets (edit boxes, spin boxes, tree, expand
+  arrows, color palette, update rows) use the brass and dark palette of the `/wa` window.
+- Guide window (`/wa tutorial`): dark frame, title bar, thin scroll bar and flat import buttons, like the `/wa` window.
+- Icon: the addon list, the minimap button and the `/wa` window show the Musca Auras emblem.
+- Translations: the placement mode (`/wa unlock`) and the Guide are translated in German, Spanish, Italian, Korean,
+  Portuguese, Russian and Chinese. They were in English and French only.
+- At the first login after the update, a window says what changed and what did not.
+
+## New
+
+- Options > AddOns has a Musca Auras page, with a button that opens `/wa`.
+- The addon menu of the minimap has a Musca Auras entry: left click opens `/wa`, Shift click pauses the auras, right
+  click opens the profiling window.
+
+## Removed
+
+- The `X-Wago-ID` line of the TOC file, inherited from WeakAuras: an updater could offer WeakAuras in place of Musca
+  Auras.
+
+## After the update
+
+- Nothing to do: `/wa`, your auras, their positions and the Wago imports work as before.
+
 # Musca Auras 1.17.0 (2026-11-12)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

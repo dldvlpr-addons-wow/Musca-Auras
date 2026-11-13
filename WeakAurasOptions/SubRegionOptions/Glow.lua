@@ -46,7 +46,7 @@ local function createOptions(parentData, data, index, subIndex)
       type = "execute",
       control = "WeakAurasExpandSmall",
       name = function()
-        local line = L["|cFFffcc00Extra Options:|r"]
+        local line = OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Extra Options:|r"])
         local color = L["Default Color"]
         if data.useGlowColor then
           color = L["|c%02x%02x%02x%02xCustom Color|r"]:format(

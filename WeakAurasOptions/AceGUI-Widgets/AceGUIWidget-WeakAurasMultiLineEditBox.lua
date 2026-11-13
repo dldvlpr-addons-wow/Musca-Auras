@@ -230,14 +230,14 @@ local methods = {
     if disabled then
       editBox:ClearFocus()
       editBox:EnableMouse(false)
-      editBox:SetTextColor(0.5, 0.5, 0.5)
-      self.label:SetTextColor(0.5, 0.5, 0.5)
+      editBox:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
       self.scrollFrame:EnableMouse(false)
       self.button:Disable()
     else
       editBox:EnableMouse(true)
-      editBox:SetTextColor(1, 1, 1)
-      self.label:SetTextColor(1, 0.82, 0)
+      editBox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
       self.scrollFrame:EnableMouse(true)
     end
   end,
@@ -347,8 +347,8 @@ local function Constructor()
 
   local scrollBG = CreateFrame("Frame", nil, frame, "BackdropTemplate")
   scrollBG:SetBackdrop(backdrop)
-  scrollBG:SetBackdropColor(0, 0, 0)
-  scrollBG:SetBackdropBorderColor(0.4, 0.4, 0.4)
+  scrollBG:SetBackdropColor(OptionsPrivate.Private.Style.Color("well"))
+  scrollBG:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("borderField"))
 
   local scrollFrame = CreateFrame("ScrollFrame", ("%s%dScrollFrame"):format(Type, widgetNum),
                                   frame, "UIPanelScrollFrameTemplate")

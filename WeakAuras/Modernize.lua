@@ -1383,7 +1383,7 @@ Repair(49, function(data)
     end
   end
   if broken then
-    WeakAuras.prettyPrint(L["Trying to repair broken conditions in %s likely caused by a WeakAuras bug."]:format(data.id))
+    WeakAuras.prettyPrint(L["Trying to repair broken conditions in %s likely caused by a Musca Auras bug."]:format(data.id))
   end
 end)
 

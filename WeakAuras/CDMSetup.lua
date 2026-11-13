@@ -19,7 +19,7 @@ local function ReloadNow() ReloadUI() end
 local state = { phase = "idle", timer = nil, attempts = 0 }
 
 StaticPopupDialogs[POPUP_NAME] = {
-  text = "The Cooldown Manager configuration was updated by WeakAuras. Reload the UI to finish.",
+  text = WeakAuras.L["The Cooldown Manager configuration was updated by Musca Auras. Reload the UI to finish."],
   button1 = RELOADUI,
   button2 = LATER,
   OnAccept = ReloadNow,
@@ -306,7 +306,7 @@ local function Configure()
     if step.verify and not step.verify() then error(step.failure, 0) end
   end
 
-  print(("WeakAuras: CDM ready after a reload, %d buffs and %d spell cooldowns added."):format(plan.buffs, plan.spells))
+  WeakAuras.prettyPrint(("CDM ready after a reload, %d buffs and %d spell cooldowns added."):format(plan.buffs, plan.spells))
   ShowReloadPopup()
   return true
 end
@@ -317,13 +317,13 @@ local function Settle(succeeded, result)
   local notReady = succeeded and not result
   if notReady and state.attempts >= MAX_ATTEMPTS then
     state.phase = "idle"
-    print("WeakAuras: gave up, the CDM is still waiting for saved layouts. Close its settings and Edit Mode, then reload.")
+    WeakAuras.prettyPrint("Gave up, the CDM is still waiting for saved layouts. Close its settings and Edit Mode, then reload.")
   elseif notReady then
     Schedule(RETRY_DELAY)
   elseif succeeded then
     if state.phase == "active" then state.phase = "idle" end
   else
-    print("WeakAuras: CDM setup stopped: " .. tostring(result))
+    WeakAuras.prettyPrint("CDM setup stopped: " .. tostring(result))
     if state.phase == "locked" then ShowReloadPopup() else state.phase = "idle" end
   end
 end

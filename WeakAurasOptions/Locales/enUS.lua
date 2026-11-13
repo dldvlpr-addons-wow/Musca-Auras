@@ -182,8 +182,8 @@ local L = WeakAuras.L
 	L["Join the Musca Auras Discord server."] = "Join the Musca Auras Discord server."
 	L["Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border."] = "Keep border thickness and offset in screen pixels, regardless of UI or parent scale. Use a size of 1 for a one-pixel border."
 	L["Keep this trigger active while there is no such unit. Otherwise it is inactive then, so other triggers can supply the display."] = "Keep this trigger active while there is no such unit. Otherwise it is inactive then, so other triggers can supply the display."
-	L["Learn everything about WeakAuras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."] = "Learn everything about WeakAuras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."
-	L["learn WeakAuras"] = "learn WeakAuras"
+	L["Learn everything about Musca Auras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."] = "Learn everything about Musca Auras on WoW Forever: how an aura works, what changed in combat, what works and what does not, step-by-step recipes and ready-made auras to import."
+	L["learn Musca Auras"] = "learn Musca Auras"
 	L["Legacy Auras rarely function in combat as most are Blizzard-controlled."] = "Legacy Auras rarely function in combat as most are Blizzard-controlled."
 	L["Maximum auras"] = "Maximum auras"
 	L["Maximum auras per unit. Drag up to 40, or type a larger number."] = "Maximum auras per unit. Drag up to 40, or type a larger number."
@@ -334,8 +334,8 @@ local L = WeakAuras.L
 	L["A 64x64 pixels icon"] = "A 64x64 pixels icon"
 	L["A group that dynamically controls the positioning of its children"] = "A group that dynamically controls the positioning of its children"
 	L[ [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
-Enable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer]=] ] = [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
-Enable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer]=]
+Enable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer]=] ] = [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
+Enable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer]=]
 	L["A Unit ID (e.g., party1)."] = "A Unit ID (e.g., party1)."
 	L["Ace: Funkeh, Nevcairiel"] = "Ace: Funkeh, Nevcairiel"
 	L["Active Aura Filters and Info"] = "Active Aura Filters and Info"
@@ -520,7 +520,7 @@ UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:S
 • "CLEU" can be used instead of COMBAT_LOG_EVENT_UNFILTERED and colons can be used to separate specific "subEvents" you want to receive.
 • The keyword "TRIGGER" can be used, with colons separating trigger numbers, to have the custom trigger get updated when the specified trigger(s) update.
 
-Since this is a status-type trigger, the specified events may be called by WeakAuras without the expected arguments.
+Since this is a status-type trigger, the specified events may be called by Musca Auras without the expected arguments.
 
 |cFF4444FFFor example:|r
 UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:SPELL_CAST_SUCCESS TRIGGER:3:1
@@ -1163,7 +1163,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=]
 	L["The Multi Target mode requires a name or spell id filter"] = "The Multi Target mode requires a name or spell id filter"
 	L["The trigger number is optional. When no trigger number is specified, the trigger selected via dynamic information will be used."] = "The trigger number is optional. When no trigger number is specified, the trigger selected via dynamic information will be used."
 	L["The type of trigger"] = "The type of trigger"
-	L["The WeakAuras Options Addon version %s doesn't match the WeakAuras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling WeakAuras"] = "The WeakAuras Options Addon version %s doesn't match the WeakAuras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling WeakAuras"
+	L["The Musca Auras Options Addon version %s doesn't match the Musca Auras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling Musca Auras"] = "The Musca Auras Options Addon version %s doesn't match the Musca Auras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling Musca Auras"
 	L["Then "] = "Then "
 	L["There are several special codes available to make this text dynamic. Click to view a list with all dynamic text codes."] = "There are several special codes available to make this text dynamic. Click to view a list with all dynamic text codes."
 	L["This adds %raidMark as text replacements."] = "This adds %raidMark as text replacements."
@@ -1177,9 +1177,9 @@ Make sure you can trust the person who sent it!]=]
 	L[ [=[This aura was created with a different version (%s) of World of Warcraft.
 It might not work correctly!]=] ] = [=[This aura was created with a different version (%s) of World of Warcraft.
 It might not work correctly!]=]
-	L[ [=[This aura was created with a newer version of WeakAuras.
-Upgrade your version of WeakAuras or wait for next release before installing this aura.]=] ] = [=[This aura was created with a newer version of WeakAuras.
-Upgrade your version of WeakAuras or wait for next release before installing this aura.]=]
+	L[ [=[This aura was created with a newer version of Musca Auras.
+Upgrade your version of Musca Auras or wait for next release before installing this aura.]=] ] = [=[This aura was created with a newer version of Musca Auras.
+Upgrade your version of Musca Auras or wait for next release before installing this aura.]=]
 	L["This display is currently loaded"] = "This display is currently loaded"
 	L["This display is not currently loaded"] = "This display is not currently loaded"
 	L["This display is on standby, it will be loaded when needed."] = "This display is on standby, it will be loaded when needed."
@@ -1256,7 +1256,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["Voice Settings"] = "Voice Settings"
 	L["We thank"] = "We thank"
 	L["Musca Auras %s on WoW %s"] = "Musca Auras %s on WoW %s"
-	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."
+	L["Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."] = "Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."
 	L["What do you want to do?"] = "What do you want to do?"
 	L["Whole Area"] = "Whole Area"
 	L["Width |cFFFF0000%s|r and %s"] = "Width |cFFFF0000%s|r and %s"
@@ -1282,17 +1282,17 @@ Would you like to continue?]=] ] = [=[You are about to Import an Aura with custo
 |cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r
 
 Would you like to continue?]=]
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.
 
-WeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.
+Musca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.
 
-WeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=]
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.
+Musca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=]
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.
 
-WeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.
+Musca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.
 
-WeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=]
-	L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."
+Musca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=]
+	L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."
 	L["Your Saved Snippets"] = "Your Saved Snippets"
 	L["Z Offset"] = "Z Offset"
 	L["Z Rotation"] = "Z Rotation"

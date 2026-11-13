@@ -4,12 +4,14 @@
 ## Author: The WeakAuras Team, dldvlpr (WoW Forever port)
 ## X-License: GPL-2.0
 ## X-Website: https://muscalab.com/addons/musca-auras
-## X-Wago-ID: bGoYzp60
-## Version: 1.17.0
-## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.blp
+## Version: 1.18.0
+## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.tga
 ## X-Flavor: Vanilla
-## Notes: A powerful, comprehensive utility for displaying graphics and information based on buffs, debuffs, and other triggers.
+## Notes: Auras for WoW Forever: icons, bars and texts for your buffs, debuffs and cooldowns, with a ready-made HUD for your class. Based on WeakAuras.
 ## X-Category: Interface Enhancements
+## AddonCompartmentFunc: MuscaAuras_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: MuscaAuras_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: MuscaAuras_OnAddonCompartmentLeave
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## SavedVariables: WeakAurasSaved
@@ -19,6 +21,7 @@
 embeds.xml
 
 Init.lua
+Style.lua
 SecretRestrictions.lua
 Compatibility.lua
 locales.xml
@@ -59,7 +62,6 @@ TriggerExpression.lua
 UnusedAuras.lua
 ReplaceValues.lua
 AuraSets.lua
-Style.lua
 PlacementSnap.lua
 AnchorLinks.lua
 EditModePlacement.lua

@@ -8,8 +8,16 @@ local Warnings = {}
 OptionsPrivate.TriggerSecretWarnings = Warnings
 
 Warnings.message = L["In combat, the game hides some values of this trigger. The aura can display them but cannot compare them, so some features may not work in combat."]
-Warnings.text = "|cffff0000" .. Warnings.message .. "|r"
-Warnings.casterText = "|cffff0000" .. L["The game hides the spells cast by units other than you or your pet, in or out of combat. This trigger cannot read them."] .. "|r"
+local casterMessage = L["The game hides the spells cast by units other than you or your pet, in or out of combat. This trigger cannot read them."]
+
+local function Red(text)
+  return OptionsPrivate.Private.Style.Hex("error") .. text .. "|r"
+end
+
+-- the warning of the trigger tab, in the error color
+function Warnings.Text()
+  return Red(Warnings.message)
+end
 
 local function IsSecret(value)
   return issecretvalue ~= nil and issecretvalue(value) == true
@@ -290,8 +298,8 @@ end
 
 function Warnings.GetText(data, triggernum)
   local scope = Warnings.GetScope(data, triggernum)
-  if scope == L["Caster unit checks:"] then return Warnings.casterText end
-  return scope ~= nil and Warnings.text or ""
+  if scope == L["Caster unit checks:"] then return Red(casterMessage) end
+  return scope ~= nil and Warnings.Text() or ""
 end
 
 local function TriggerUsesSecrets(data, triggernum, trigger)

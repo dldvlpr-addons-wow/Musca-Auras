@@ -178,9 +178,9 @@ local function createOptions(id, data)
             wordWarp = L["eliding"]
           end
           if text == "" then
-            text = L["Width |cFFFF0000%s|r and %s"]:format(data.fixedWidth, wordWarp)
+            text = OptionsPrivate.Private.Style.Markup(L["Width |cFFFF0000%s|r and %s"]):format(data.fixedWidth, wordWarp)
           else
-            text = text .. " " .. L["and with width |cFFFF0000%s|r and %s"]:format(data.fixedWidth, wordWarp)
+            text = text .. " " .. OptionsPrivate.Private.Style.Markup(L["and with width |cFFFF0000%s|r and %s"]):format(data.fixedWidth, wordWarp)
           end
         end
 
@@ -194,18 +194,18 @@ local function createOptions(id, data)
 
         if not hideShadow then
           if text == "" then
-            text = text .. " " .. L["Shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"]
+            text = text .. " " .. OptionsPrivate.Private.Style.Markup(L["Shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"])
                                   :format(color, data.shadowXOffset, data.shadowYOffset)
           else
-            text = text .. " " .. L["and shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"]
+            text = text .. " " .. OptionsPrivate.Private.Style.Markup(L["and shadow |c%sColor|r with offset |cFFFF0000%s/%s|r"])
                                   :format(color, data.shadowXOffset, data.shadowYOffset)
           end
         end
 
         if text == "" then
-          return L["|cFFffcc00Font Flags:|r none"]
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Font Flags:|r none"])
         else
-          return L["|cFFffcc00Font Flags:|r"] .. " " .. text
+          return OptionsPrivate.Private.Style.Markup(L["|cFFffcc00Font Flags:|r"]) .. " " .. text
         end
       end,
       func = function(info, button)

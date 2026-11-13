@@ -116,9 +116,9 @@ local L = WeakAuras.L
 	L["A 64x64 pixels icon"] = "Иконка 64х64 пикселей"
 	L["A group that dynamically controls the positioning of its children"] = "Группа, динамически изменяющая позиции своих индикаций"
 	L[ [=[A timer will automatically be displayed according to default Interface Settings (overridden by some addons).
-Enable this setting if you want this timer to be hidden, or when using a WeakAuras text to display the timer]=] ] = [=[Отсчет времени будет отображаться в соответствии с настройками интерфейса (переопределено некоторыми аддонами).
+Enable this setting if you want this timer to be hidden, or when using a Musca Auras text to display the timer]=] ] = [=[Отсчет времени будет отображаться в соответствии с настройками интерфейса (переопределено некоторыми аддонами).
 
-Включите этот параметр, если вы хотите скрыть этот отсчет или использовать текст WeakAuras для его отображения.]=]
+Включите этот параметр, если вы хотите скрыть этот отсчет или использовать текст Musca Auras для его отображения.]=]
 	L["A Unit ID (e.g., party1)."] = [=[Введите идентификатор единицы (UID, Unit ID).
 Например: party4, raid7, arena3, boss2, nameplate6, target, focus, pet и др.]=]
 	L["Ace: Funkeh, Nevcairiel"] = "Ace: Funkeh, Nevcairiel"
@@ -307,7 +307,7 @@ Off Screen]=] ] = [=[Индикация за
 |cFF4444FFПример:|r
 UNIT_POWER  UNIT_AURA, PLAYER_TARGET_CHANGED]=]
 	L["Custom trigger status tooltip"] = [=[Напишите события, которые будут вызывать проверку вашего триггера. Несколько событий должны быть разделены запятыми или пробелами.
-Поскольку это триггер статуса, указанные события могут быть переданы WeakAuras без ожидаемых аргументов.
+Поскольку это триггер статуса, указанные события могут быть переданы Musca Auras без ожидаемых аргументов.
 
 |cFF4444FFПример:|r
 UNIT_POWER  UNIT_AURA, PLAYER_TARGET_CHANGED]=]
@@ -584,7 +584,7 @@ Can use \ to escape -.]=] ] = [=[Формат записи: Имя, Имя-Иг�
 	L["Model %s"] = "Модель %s"
 	L["Model Picker"] = "Средство выбора модели"
 	L["Model Settings"] = "Настройки модели"
-	L["ModelPaths could not be loaded, the addon is %s"] = "Не удалось загрузить WeakAuras Model Paths. Причина - %s"
+	L["ModelPaths could not be loaded, the addon is %s"] = "Не удалось загрузить Musca Auras Model Paths. Причина - %s"
 	L["Move Above Group"] = "Переместить выше группы"
 	L["Move Below Group"] = "Переместить ниже группы"
 	L["Move Down"] = "Переместить вниз"
@@ -847,7 +847,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=] ] = "Время �
 	L["Subevent"] = "Подсобытие"
 	L["Subevent Suffix"] = "Суффикс подсобытия"
 	L["Swipe Overlay Settings"] = "Настройки восстановления (наложение)"
-	L["Templates could not be loaded, the addon is %s"] = "Не удалось загрузить WeakAuras Templates. Причина - %s"
+	L["Templates could not be loaded, the addon is %s"] = "Не удалось загрузить Musca Auras Templates. Причина - %s"
 	L["Temporary Group"] = "Временная группа"
 	L["Text %s"] = "Текст %s"
 	L["Text Color"] = "Цвет текста"
@@ -874,7 +874,7 @@ every 3 events starting from 2nd and ending at 11th: 2-11/3]=] ] = "Время �
 	L["The Multi Target mode requires a name or spell id filter"] = "The Multi Target mode requires a name or spell id filter"
 	L["The trigger number is optional. When no trigger number is specified, the trigger selected via dynamic information will be used."] = "Номер триггера является необязательным. Если номер триггера не указан, будет использоваться триггер, выбранный через динамическую информацию."
 	L["The type of trigger"] = "Тип триггера"
-	L["The WeakAuras Options Addon version %s doesn't match the WeakAuras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling WeakAuras"] = "Версия %s дополнения WeakAuras Options не соответствует версии %s WeakAuras. Если вы обновили дополнение во время игры, попробуйте перезапустить World of Warcraft. В противном случае попробуйте переустановить WeakAuras"
+	L["The Musca Auras Options Addon version %s doesn't match the Musca Auras version %s. If you updated the addon while the game was running, try restarting World of Warcraft. Otherwise try reinstalling Musca Auras"] = "Версия %s дополнения Musca Auras Options не соответствует версии %s Musca Auras. Если вы обновили дополнение во время игры, попробуйте перезапустить World of Warcraft. В противном случае попробуйте переустановить Musca Auras"
 	L["Then "] = "Тогда "
 	L["There are several special codes available to make this text dynamic. Click to view a list with all dynamic text codes."] = "Существует несколько специальных кодов для динамического текста. Нажмите, чтобы просмотреть список всех кодов динамического текста."
 	L["This adds %raidMark as text replacements."] = "Добавляет строку %raidMark в качестве шаблона замены текста."
@@ -888,9 +888,9 @@ Make sure you can trust the person who sent it!]=] ] = [=[Индикация с�
 	L[ [=[This aura was created with a different version (%s) of World of Warcraft.
 It might not work correctly!]=] ] = [=[Индикация была создана в другой версии World of Warcraft (%s).
 Она может работать неправильно!]=]
-	L[ [=[This aura was created with a newer version of WeakAuras.
-Upgrade your version of WeakAuras or wait for next release before installing this aura.]=] ] = [=[Индикация была создана в новой версии WeakAuras.
-Прежде чем импортировать её, обновите вашу версию аддона или дождитесь следующего релиза WeakAuras.]=]
+	L[ [=[This aura was created with a newer version of Musca Auras.
+Upgrade your version of Musca Auras or wait for next release before installing this aura.]=] ] = [=[Индикация была создана в новой версии Musca Auras.
+Прежде чем импортировать её, обновите вашу версию аддона или дождитесь следующего релиза Musca Auras.]=]
 	L["This display is currently loaded"] = "Эта индикация загружена"
 	L["This display is not currently loaded"] = "Эта индикация не загружена"
 	L["This display is on standby, it will be loaded when needed."] = "Эта индикация находится в режиме ожидания, она будет загружена при необходимости."
@@ -968,7 +968,7 @@ Upgrade your version of WeakAuras or wait for next release before installing thi
 	L["Voice Settings"] = "Voice Settings"
 	L["We thank"] = "Мы благодарим"
 	--[[Translation missing --]]
-	L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."] = "WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."
+	L["Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."] = "Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."
 	L["What do you want to do?"] = "Что вы хотите сделать?"
 	L["Whole Area"] = "Вся область"
 	--[[Translation missing --]]
@@ -997,13 +997,13 @@ Would you like to continue?]=] ] = [=[You are about to Import an Aura with custo
 |cFFFF0000There is a risk the custom code could be used to kill your hardcore character!|r
 
 Would you like to continue?]=]
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Anchor Code on.
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Anchor Code on.
 
-WeakAuras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых WeakAuras также выполнит код привязки. WeakAuras всегда выполнит пользовательский код привязки, если вы включите 'изменен' в этот список, или когда регион будет добавлен, удален или переупорядочен."
-	L[ [=[You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the Grow Code on.
+Musca Auras will always run custom anchor code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых Musca Auras также выполнит код привязки. Musca Auras всегда выполнит пользовательский код привязки, если вы включите 'изменен' в этот список, или когда регион будет добавлен, удален или переупорядочен."
+	L[ [=[You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the Grow Code on.
 
-WeakAuras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых WeakAuras также выполнит код увеличения. WeakAuras всегда выполнит пользовательский код увеличения, если вы включите 'изменен' в этот список, или когда регион будет добавлен, удален или переупорядочен."
-	L["You can add a comma-separated list of state values here that (when changed) WeakAuras should also run the sort code on.WeakAuras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых WeakAuras также выполнит код сортировки. WeakAuras всегда выполнит пользовательский код сортировки, если вы включите 'изменен' в этот список, или когда регион будет добавлен или удален."
+Musca Auras will always run custom grow code if you include 'changed' in this list, or when a region is added, removed, or re-ordered.]=] ] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых Musca Auras также выполнит код увеличения. Musca Auras всегда выполнит пользовательский код увеличения, если вы включите 'изменен' в этот список, или когда регион будет добавлен, удален или переупорядочен."
+	L["You can add a comma-separated list of state values here that (when changed) Musca Auras should also run the sort code on.Musca Auras will always run custom sort code if you include 'changed' in this list, or when a region is added, removed."] = "Вы можете добавить сюда список значений состояния, разделенных запятыми, при изменении которых Musca Auras также выполнит код сортировки. Musca Auras всегда выполнит пользовательский код сортировки, если вы включите 'изменен' в этот список, или когда регион будет добавлен или удален."
 	L["Your Saved Snippets"] = "Ваши фрагменты кода"
 	L["Z Offset"] = "Смещение по Z"
 	L["Z Rotation"] = "Поворот по Z"

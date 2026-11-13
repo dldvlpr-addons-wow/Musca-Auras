@@ -3,6 +3,7 @@ if not WeakAuras.IsLibsOK() then return end
 Progress Bar Widget
 A simple progress bar
 -------------------------------------------------------------------------------]]
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasProgressBar", 2
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -34,7 +35,7 @@ local function Constructor()
   local background = frame:CreateTexture(nil, "ARTWORK")
   foreground:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
   background:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  background:SetVertexColor(0.5, 0.5, 0.5)
+  background:SetVertexColor(OptionsPrivate.Private.Style.Color("border"))
   foreground:SetDrawLayer("ARTWORK", 0);
   background:SetDrawLayer("ARTWORK", -1);
 

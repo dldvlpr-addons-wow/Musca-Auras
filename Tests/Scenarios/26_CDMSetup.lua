@@ -97,7 +97,8 @@ return function(test)
   CooldownViewerLayoutManagerMixin = { Init = function() end, SwitchToBestLayoutForSpec = function() end, SetShouldCheckAddLayoutStatus = function() end }
   CooldownViewerDataStoreSerializationMixin = { Init = function() end, SerializeLayouts = function() return "staged-layout" end }
 
-  print = function(text) messages[#messages + 1] = text end
+  -- The chat lines come as a colored prefix followed by the message.
+  print = function(...) messages[#messages + 1] = table.concat({ ... }, " ") end
   StaticPopup_Show = function(name) if name == "WEAKAURAS_CDM_SETUP_RELOAD" then popups = popups + 1 end end
   private.ApplyCDMBackground = function() backgrounds = backgrounds + 1 end
 

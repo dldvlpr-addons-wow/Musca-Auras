@@ -78,9 +78,9 @@ local function getAuraMatchesList(name, showSpellIdRecommendation)
     end
 
     if showSpellIdRecommendation then
-      local tip = L["WeakAuras recommends using spell ids instead of names. Spell ids are automatically localized."]
+      local tip = L["Musca Auras recommends using spell ids instead of names. Spell ids are automatically localized."]
       if bestSuggestion then
-        tip = tip .. "\n" .. "|cffffd200" .. L["Click to replace the name with %s."]:format(bestSuggestion) .. "|r"
+        tip = tip .. "\n" .. OptionsPrivate.Private.Style.Hex("primary") .. L["Click to replace the name with %s."]:format(bestSuggestion) .. "|r"
       end
       descText = descText .. "\n\n" .. tip
     end
@@ -334,7 +334,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       values = function()
         return OptionsPrivate.Private.unit_types_bufftrigger_2
       end,
-      desc = L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n• |cffffff00Multi-target|r attempts to use the Combat Log events, rather than unitID, to track affected units.\n|cffff0000Note|r: Without a direct relationship to actual unitIDs, results may vary.\n\n|cffffff00*|r Yellow Unit settings can match multiple units and will default to being active even while no affected units are found without a Unit Count or Match Count setting."],
+      desc = OptionsPrivate.Private.Style.Markup(L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n• |cffffff00Multi-target|r attempts to use the Combat Log events, rather than unitID, to track affected units.\n|cffff0000Note|r: Without a direct relationship to actual unitIDs, results may vary.\n\n|cffffff00*|r Yellow Unit settings can match multiple units and will default to being active even while no affected units are found without a Unit Count or Match Count setting."]),
     },
     multiWarning = {
       type = "description",
@@ -366,7 +366,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       type = "description",
       width = WeakAuras.doubleWidth,
       name = function()
-        return L["|cFFFF0000Note:|r The unit '%s' is not a trackable unit."]:format(trigger.specificUnit or "")
+        return OptionsPrivate.Private.Style.Markup(L["|cFFFF0000Note:|r The unit '%s' is not a trackable unit."]):format(trigger.specificUnit or "")
       end,
       order = 10.4,
       hidden = function() return not (trigger.type == "aura2" and trigger.unit == "member" and WeakAuras.UntrackableUnit(trigger.specificUnit)) end
@@ -375,7 +375,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       type = "description",
       width = WeakAuras.doubleWidth,
       name = function()
-        return L["|cFFFF0000Note:|r The unit '%s' requires soft target cvars to be enabled."]:format(trigger.unit or "")
+        return OptionsPrivate.Private.Style.Markup(L["|cFFFF0000Note:|r The unit '%s' requires soft target cvars to be enabled."]):format(trigger.unit or "")
       end,
       order = 10.4,
       hidden = function() return not WeakAuras.IsUntrackableSoftTarget(trigger.unit) end
@@ -489,7 +489,7 @@ local function GetBuffTriggerOptions(data, triggernum)
     },
     secretSpellWarning = {
       type = "description",
-      name = OptionsPrivate.TriggerSecretWarnings.text,
+      name = OptionsPrivate.TriggerSecretWarnings.Text(),
       fontSize = "small",
       width = "full",
       order = 1.4,
@@ -710,8 +710,8 @@ local function GetBuffTriggerOptions(data, triggernum)
       name = function(input)
         local value = trigger.use_stealable
         if value == nil then return L["Is Stealable"]
-        elseif value == false then return "|cFFFF0000 " .. L["Negator"] .. " " .. L["Is Stealable"] .. "|r"
-        else return "|cFF00FF00" .. L["Is Stealable"] .. "|r" end
+        elseif value == false then return OptionsPrivate.Private.Style.Hex("error") .. " " .. L["Negator"] .. " " .. L["Is Stealable"] .. "|r"
+        else return OptionsPrivate.Private.Style.Hex("success") .. L["Is Stealable"] .. "|r" end
       end,
       width = WeakAuras.doubleWidth,
       order = 64,
@@ -738,8 +738,8 @@ local function GetBuffTriggerOptions(data, triggernum)
       name = function(input)
         local value = trigger.use_isBossDebuff
         if value == nil then return L["Is Boss Debuff"]
-        elseif value == false then return "|cFFFF0000 " .. L["Negator"] .. " " .. L["Is Boss Debuff"] .. "|r"
-        else return "|cFF00FF00" .. L["Is Boss Debuff"] .. "|r" end
+        elseif value == false then return OptionsPrivate.Private.Style.Hex("error") .. " " .. L["Negator"] .. " " .. L["Is Boss Debuff"] .. "|r"
+        else return OptionsPrivate.Private.Style.Hex("success") .. L["Is Boss Debuff"] .. "|r" end
       end,
       width = WeakAuras.doubleWidth,
       order = 64.1,
@@ -766,8 +766,8 @@ local function GetBuffTriggerOptions(data, triggernum)
       name = function()
         local value = trigger.use_castByPlayer
         if value == nil then return L["Cast by a Player Character"]
-        elseif value == false then return "|cFFFF0000 "..L["Negator"].." "..L["Cast by a Player Character"]
-        else return "|cFF00FF00"..L["Cast by a Player Character"] end
+        elseif value == false then return OptionsPrivate.Private.Style.Hex("error") .. " "..L["Negator"].." "..L["Cast by a Player Character"]
+        else return OptionsPrivate.Private.Style.Hex("success")..L["Cast by a Player Character"] end
       end,
       desc = L["Only Match auras cast by a player (not an npc)"],
       width = WeakAuras.doubleWidth,
@@ -796,8 +796,8 @@ local function GetBuffTriggerOptions(data, triggernum)
       name = function()
         local value = trigger.ownOnly
         if value == nil then return L["Own Only"]
-        elseif value == false then return "|cFFFF0000 " .. L["Negator"] .. " " .. L["Own Only"] .. "|r"
-        else return "|cFF00FF00" .. L["Own Only"] .. "|r" end
+        elseif value == false then return OptionsPrivate.Private.Style.Hex("error") .. " " .. L["Negator"] .. " " .. L["Own Only"] .. "|r"
+        else return OptionsPrivate.Private.Style.Hex("success") .. L["Own Only"] .. "|r" end
       end,
       desc = function()
         local value = trigger.ownOnly
@@ -1186,7 +1186,7 @@ local function GetBuffTriggerOptions(data, triggernum)
       order = 69.92,
       width = WeakAuras.doubleWidth,
       hidden = function() return not (trigger.type == "aura2" and IsGroupTrigger(trigger)) end,
-      name = L["|cff999999Triggers tracking multiple units will default to being active even while no affected units are found without a Unit Count or Match Count setting applied.|r"],
+      name = OptionsPrivate.Private.Style.Markup(L["|cff999999Triggers tracking multiple units will default to being active even while no affected units are found without a Unit Count or Match Count setting applied.|r"]),
     },
     useGroup_count = {
       type = "toggle",
@@ -1209,7 +1209,7 @@ local function GetBuffTriggerOptions(data, triggernum)
         if (trigger.unit == "multi") then
           return L["Compare against the number of units affected."]
         else
-          local groupType = OptionsPrivate.Private.unit_types_bufftrigger_2[trigger.unit or "group"] or "|cFFFF0000Error|r"
+          local groupType = OptionsPrivate.Private.unit_types_bufftrigger_2[trigger.unit or "group"] or OptionsPrivate.Private.Style.Hex("error") .. "Error|r"
           return L["Group aura count description"]:format(groupType, groupType, groupType, groupType, groupType, groupType, groupType)
         end
       end,
@@ -1226,7 +1226,7 @@ local function GetBuffTriggerOptions(data, triggernum)
         if (trigger.unit == "multi") then
           return L["Compare against the number of units affected."]
         else
-          local groupType = OptionsPrivate.Private.unit_types_bufftrigger_2[trigger.unit or "group"] or "|cFFFF0000Error|r"
+          local groupType = OptionsPrivate.Private.unit_types_bufftrigger_2[trigger.unit or "group"] or OptionsPrivate.Private.Style.Hex("error") .. "Error|r"
           return L["Group aura count description"]:format(groupType, groupType, groupType, groupType, groupType, groupType, groupType)
         end
       end,

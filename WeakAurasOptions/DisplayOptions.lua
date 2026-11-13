@@ -281,7 +281,7 @@ function OptionsPrivate.GetDisplayOptions(data)
     else
       regionOption = {
         [data.regionType] = {
-          __title = "|cFFFFFF00" .. data.regionType,
+          __title = OptionsPrivate.Private.Style.Hex("primary") .. data.regionType,
           __order = 1,
           unsupported = {
             type = "description",
@@ -371,7 +371,7 @@ function OptionsPrivate.GetDisplayOptions(data)
         else
           unsupportedCount = unsupportedCount + 1
           allOptions["__unsupported" .. unsupportedCount] =  {
-            __title = "|cFFFFFF00" .. child.regionType,
+            __title = OptionsPrivate.Private.Style.Hex("primary") .. child.regionType,
             __order = 1,
             warning = {
               type = "description",

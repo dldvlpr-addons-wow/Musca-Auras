@@ -1,5 +1,6 @@
 if not WeakAuras.IsLibsOK() then return end
 
+local OptionsPrivate = select(2, ...)
 local Type, Version = "WeakAurasInputWithIndentation", 2
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
@@ -143,12 +144,12 @@ local methods = {
     if disabled then
       self.editbox:EnableMouse(false)
       self.editbox:ClearFocus()
-      self.editbox:SetTextColor(0.5,0.5,0.5)
-      self.label:SetTextColor(0.5,0.5,0.5)
+      self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
     else
       self.editbox:EnableMouse(true)
-      self.editbox:SetTextColor(1,1,1)
-      self.label:SetTextColor(1,.82,0)
+      self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
     end
   end,
 

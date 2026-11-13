@@ -486,7 +486,7 @@ return function(test)
   ---------------------------------------------------------------------------------------------------------------
   local Warnings = optionsPrivate.TriggerSecretWarnings
   Same(Warnings.message, "In combat, the game hides some values of this trigger. The aura can display them but cannot compare them, so some features may not work in combat.", "warning message")
-  Same(Warnings.text, "|cffff0000" .. Warnings.message .. "|r", "warning text")
+  Same(Warnings.Text(), private.Style.Hex("error") .. Warnings.message .. "|r", "warning text")
 
   local realSecrets = C_Secrets
   local answers, askedWith = {}, {}
@@ -541,7 +541,7 @@ return function(test)
     Same(Scope(health), nil, "no restrictions, no scope")
     Ask({ HasSecretRestrictions = true })
     Same(Scope(health), "Health value checks and calculations:", "health scope")
-    Same(Warnings.GetText({ id = "x", triggers = { { trigger = health } } }, 1), Warnings.text, "GetText with scope")
+    Same(Warnings.GetText({ id = "x", triggers = { { trigger = health } } }, 1), Warnings.Text(), "GetText with scope")
     Same(Warnings.GetText({ id = "x", triggers = { { trigger = { type = "unit", event = "Nowhere" } } } }, 1), "", "GetText without scope")
     Same(Scope({ type = "unit", event = "Health", unit = "player", use_health = true, health = "50" }), nil, "health filtered by threshold")
     Same(Scope({ type = "unit", event = "Health", unit = "player", use_health = true }), "Health value checks and calculations:", "threshold without value")
@@ -583,9 +583,9 @@ return function(test)
     Same(Scope({ type = "event", event = "Spell Cast Succeeded", unit = "pet" }), nil, "caster unit pet")
     Same(Scope({ type = "event", event = "Spell Cast Succeeded", unit = "PET" }), nil, "caster unit typed in upper case")
     Same(Scope({ type = "event", event = "Spell Cast Succeeded" }), "Caster unit checks:", "caster unit any")
-    Same(Warnings.GetText({ id = "x", triggers = { { trigger = { type = "event", event = "Spell Cast Succeeded", unit = "target" } } } }, 1),
-      Warnings.casterText, "caster unit text")
-    Same(Warnings.casterText:find("in or out of combat", 1, true) ~= nil, true, "caster unit text says out of combat")
+    local casterText = Warnings.GetText({ id = "x", triggers = { { trigger = { type = "event", event = "Spell Cast Succeeded", unit = "target" } } } }, 1)
+    Same(casterText:sub(1, 10), private.Style.Hex("error"), "caster unit text is in the error color")
+    Same(casterText:find("in or out of combat", 1, true) ~= nil, true, "caster unit text says out of combat")
     Ask({ HasSecretRestrictions = true, ShouldUnitSpellCastingBeSecret = false })
     Same(Scope({ type = "unit", event = "Cast", unit = "target", use_remaining = true }), nil, "cast readable")
 

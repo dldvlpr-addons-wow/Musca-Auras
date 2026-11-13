@@ -1461,9 +1461,9 @@ end
 
 local ActiveBossModText
 if Private.ExecEnv.BossMods.BigWigs.isInstalled then
-  ActiveBossModText = L["Active boss mod addon: |cFFffcc00BigWigs|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
+  ActiveBossModText = Private.Style.Markup(L["Active boss mod addon: |cFFffcc00BigWigs|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."])
 elseif Private.ExecEnv.BossMods.DBM.isInstalled then
-  ActiveBossModText = L["Active boss mod addon: |cFFffcc00DBM|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
+  ActiveBossModText = Private.Style.Markup(L["Active boss mod addon: |cFFffcc00DBM|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."])
 else
   ActiveBossModText = L["No active boss mod addon detected.\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
 end

@@ -31,13 +31,13 @@ local function PaintTalent(button)
   button.crossA:SetShown(value == false)
   button.crossB:SetShown(value == false)
   if value == true then
-    button.halo:SetVertexColor(1, 1, 0, 1)
+    button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
     icon:SetVertexColor(1, 1, 1)
   elseif value == false then
-    button.halo:SetVertexColor(1, 0, 0, 1)
-    icon:SetVertexColor(1, 0, 0)
+    button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
+    icon:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
   else
-    icon:SetVertexColor(0.3, 0.3, 0.3)
+    icon:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
   end
 end
 
@@ -84,7 +84,7 @@ local CROSS_INSET = 3
 
 local function CreateCrossLine(button, fromPoint, fromX, toPoint, toX)
   local line = button:CreateLine(nil, "OVERLAY")
-  line:SetColorTexture(1, 0, 0, 1)
+  line:SetColorTexture(OptionsPrivate.Private.Style.Color("error"))
   line:SetThickness(2)
   line:SetBlendMode("ADD")
   line:SetStartPoint(fromPoint, button, fromX * CROSS_INSET, -CROSS_INSET)
@@ -181,7 +181,7 @@ local function LayoutOpen(self)
         local target = self.talentsById[talentId]
         if target and target.x then
           local line = self.linePool:Acquire()
-          line:SetColorTexture(1, 1, 1, 0.2)
+          line:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
           line:SetThickness(1)
           line:SetStartPoint(source.anchor, source)
           line:SetEndPoint("CENTER", target)
@@ -293,7 +293,7 @@ local function Constructor()
   toggle.icon:SetSize(28, 58)
   toggle.icon:SetScale(0.6)
   toggle.icon:SetPoint("LEFT", toggle.frame, "LEFT", 0, 10)
-  toggle.text:SetVertexColor(1, 1, 1)
+  toggle.text:SetVertexColor(OptionsPrivate.Private.Style.Color("text"))
   toggle:SetCallback("OnClick", function() widget:SetOpen(not widget.open) end)
   widget.toggle = toggle
 
