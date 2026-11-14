@@ -78,6 +78,10 @@ Version 1.18.0, the rebranding. Tested in game on 2026-11-13. Headless test benc
 - `WeakAuras/Media/Textures/icon.tga`: 64 px icon made from `logo_musca_round.tga`.
 
 ### Changed
+- `WeakAurasOptions/OptionsFrames/PlacementMode.lua`: the `WEAKAURAS_PLACEMENT_LEAVE` popup no longer sets
+  `preferredIndex = STATICPOPUP_NUMDIALOGS`; the global is absent on WoW Forever and the field is no longer read.
+  `.luacheckrc` declares `GameTooltip_Hide`, `IsAltKeyDown`, `StaticPopup_Hide` and `StaticPopup_Visible`, used by
+  the placement mode.
 - Displayed name: "WeakAuras" becomes "Musca Auras" in the texts shown to the player. `WeakAuras/Locales/*.lua` and
   `WeakAurasOptions/Locales/*.lua` (11 languages, keys and values), with the matching keys in
   `WeakAuras/ForeverTutorial.lua`, `Modernize.lua`, `Profiling.lua`, `Transmission.lua`, `Types.lua`, `WeakAuras.lua`,

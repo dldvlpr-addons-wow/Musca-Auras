@@ -149,7 +149,6 @@ StaticPopupDialogs["WEAKAURAS_PLACEMENT_LEAVE"] = {
   timeout = 0,
   whileDead = true,
   hideOnEscape = true,
-  preferredIndex = STATICPOPUP_NUMDIALOGS,
 }
 
 local function OnEscape()
