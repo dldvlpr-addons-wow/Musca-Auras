@@ -28,10 +28,6 @@ New:
 - Options > AddOns has a Musca Auras page, with a button that opens /wa
 - The addon menu of the minimap has a Musca Auras entry: left click opens /wa, Shift click pauses the auras, right click opens the profiling window
 
-Removed:
-
-- The X-Wago-ID line of the TOC file, inherited from WeakAuras: an updater could offer WeakAuras in place of Musca Auras
-
 1.17.0 (2026-11-12):
 
 New:

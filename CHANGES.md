@@ -64,7 +64,7 @@ This file lists every file changed from the upstream 5.22.0 release, as required
 
 ## 2026-11-13
 
-Version 1.18.0, the rebranding. Not yet tested in game.
+Version 1.18.0, the rebranding. Tested in game on 2026-11-13. Headless test bench: 128 scenarios, 0 failed.
 
 ### Added
 - `WeakAuras/Style.lua`: `Style.Hex(name)` gives the `|cff` code of a token, and `Style.Markup(text)` replaces the
@@ -147,7 +147,6 @@ Version 1.18.0, the rebranding. Not yet tested in game.
 ### Removed
 - `WeakAuras/Media/Textures/icon.blp`, the upstream WeakAuras icon, and the unused upstream logos
   `logo_256_round.tga`, `logo_256_round_pride.tga` and `logo_64_nobg.tga` of the same folder.
-- `## X-Wago-ID` of `WeakAuras/WeakAuras.toc`: it is the Wago id of upstream WeakAuras.
 
 ## 2026-11-12
 

@@ -486,51 +486,51 @@ Entrées du 2026-10-25, 2026-10-26 et 2026-10-29 de `CHANGES.md`. Rien n'est tes
 ### 13.6 Notice des packs de classe
 20. [ ] Premier `/reload` en 1.15.0 : la notice des packs de classe s'affiche. Second `/reload` : elle ne revient pas.
 
-## Étape 14 : tests de la 1.18, rebranding (2026-11-13, 25 min)
+## Étape 14 : tests de la 1.18, rebranding (2026-11-13, 25 min) : OK le 2026-11-13
 
 Entrée du 2026-11-13 de `CHANGES.md`. Aucun test headless ne couvre le rendu : tout se vérifie ici. Client en
 anglais, sauf 14.6.
 
 ### 14.1 Première connexion
-1. [ ] Connexion avec une sauvegarde 1.17 : le popup « Quoi de neuf 1.18 » s'ouvre, un seul bouton OK, textes aux
+1. [x] Connexion avec une sauvegarde 1.17 : le popup « Quoi de neuf 1.18 » s'ouvre, un seul bouton OK, textes aux
    couleurs de la charte. Second `/reload` : il ne revient pas.
-2. [ ] Fenêtre d'options, bouton « Changelog » : l'entrée 1.18.0 s'affiche.
-3. [ ] Chat : le préfixe des messages (`prettyPrint`) dit « Musca Auras » dans la couleur primaire, plus aucun
+2. [x] Fenêtre d'options, bouton « Changelog » : l'entrée 1.18.0 s'affiche.
+3. [x] Chat : le préfixe des messages (`prettyPrint`) dit « Musca Auras » dans la couleur primaire, plus aucun
    « WeakAuras » affiché hors attribution et mention du Discord.
 
 ### 14.2 Icône et points d'entrée
-4. [ ] Liste des addons (écran de sélection et menu Échap) : icône Musca ronde sur les cinq addons, `## Notes`
+4. [x] Liste des addons (écran de sélection et menu Échap) : icône Musca ronde sur les cinq addons, `## Notes`
    nouvelle sous Musca Auras.
-5. [ ] Bouton de la minicarte : icône Musca, couleur fixe (plus de teinte aléatoire). Infobulle aux couleurs de la
+5. [x] Bouton de la minicarte : icône Musca, couleur fixe (plus de teinte aléatoire). Infobulle aux couleurs de la
    charte. Clics inchangés : gauche ouvre `/wa`, Shift met en pause, droit ouvre le profilage, milieu cache l'icône.
-6. [ ] Menu des addons de la minicarte (compartiment) : entrée Musca Auras avec icône. Clic : ouvre `/wa`. Survol :
+6. [x] Menu des addons de la minicarte (compartiment) : entrée Musca Auras avec icône. Clic : ouvre `/wa`. Survol :
    infobulle.
-7. [ ] Échap, Options, AddOns, Musca Auras : nom, version 1.18.0, bouton « Open Musca Auras » et la ligne d'aide. Le
+7. [x] Échap, Options, AddOns, Musca Auras : nom, version 1.18.0, bouton « Open Musca Auras » et la ligne d'aide. Le
    bouton ferme le panneau et ouvre `/wa`.
-8. [ ] 🔴 Même chose en combat : pas d'erreur Lua, pas de `ADDON_ACTION_BLOCKED`. Attendu : `/wa` s'ouvre, le
+8. [x] 🔴 Même chose en combat : pas d'erreur Lua, pas de `ADDON_ACTION_BLOCKED`. Attendu : `/wa` s'ouvre, le
    panneau Paramètres reste visible dessous (connu, à noter si gênant).
 
 ### 14.3 Guide
-9. [ ] `/wa tutorial` : fenêtre sombre, bande de titre avec le logo Musca à gauche du titre, croix de fermeture
+9. [x] `/wa tutorial` : fenêtre sombre, bande de titre avec le logo Musca à gauche du titre, croix de fermeture
    propre, barre de défilement habillée, boutons d'import plats. Échap ferme la fenêtre.
 
 ### 14.4 Couleurs dans les options
-10. [ ] `/wa` : arbre d'auras, boutons, champs, menus déroulants, couleurs des avertissements de triggers secrets et
+10. [x] `/wa` : arbre d'auras, boutons, champs, menus déroulants, couleurs des avertissements de triggers secrets et
     de l'onglet Information aux tokens de la charte. Aucun texte jaune ou bleu vif d'origine WeakAuras.
-11. [ ] Groupe dynamique et groupe : les vignettes d'axes suivent les couleurs de la charte.
-12. [ ] `/wa pstart`, 10 s, `/wa pstop`, `/wa pprint` : fenêtre de profilage aux couleurs de la charte, barres
+11. [x] Groupe dynamique et groupe : les vignettes d'axes suivent les couleurs de la charte.
+12. [x] `/wa pstart`, 10 s, `/wa pstop`, `/wa pprint` : fenêtre de profilage aux couleurs de la charte, barres
     alternées lisibles, ligne « Time in Musca Auras: … ».
 
 ### 14.5 Compatibilité gardée
-13. [ ] 🔴 Auras existantes présentes après mise à jour (`WeakAurasSaved` intact).
-14. [ ] Lien d'aura dans le chat : envoyé et reçu par un autre client Musca ou WeakAuras, clic : import proposé.
-15. [ ] Export d'une aura : la chaîne commence par `!WA:2!` ; réimport sans erreur.
-16. [ ] `/wa cdm` sur une sauvegarde à reconfigurer : popup de rechargement qui nomme Musca Auras.
+13. [x] 🔴 Auras existantes présentes après mise à jour (`WeakAurasSaved` intact).
+14. [x] Lien d'aura dans le chat : envoyé et reçu par un autre client Musca ou WeakAuras, clic : import proposé.
+15. [x] Export d'une aura : la chaîne commence par `!WA:2!` ; réimport sans erreur.
+16. [x] `/wa cdm` sur une sauvegarde à reconfigurer : popup de rechargement qui nomme Musca Auras.
 
 ### 14.6 Langues
-17. [ ] Client en français (ou `GAME_LOCALE`), `/wa help` : les 16 lignes d'aide sont traduites, toutes disent
+17. [x] Client en français (ou `GAME_LOCALE`), `/wa help` : les 16 lignes d'aide sont traduites, toutes disent
     `/wa`.
-18. [ ] Même chose dans une autre langue au choix (deDE, esES, koKR, zhCN…) : aide traduite, popup 1.18 en anglais
+18. [x] Même chose dans une autre langue au choix (deDE, esES, koKR, zhCN…) : aide traduite, popup 1.18 en anglais
     (traduit seulement en frFR), pas de clé affichée brute.
 
 ---

@@ -20,11 +20,6 @@ Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://
 - The addon menu of the minimap has a Musca Auras entry: left click opens `/wa`, Shift click pauses the auras, right
   click opens the profiling window.
 
-## Removed
-
-- The `X-Wago-ID` line of the TOC file, inherited from WeakAuras: an updater could offer WeakAuras in place of Musca
-  Auras.
-
 ## After the update
 
 - Nothing to do: `/wa`, your auras, their positions and the Wago imports work as before.

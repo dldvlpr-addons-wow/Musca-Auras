@@ -5,6 +5,7 @@
 ## X-License: GPL-2.0
 ## X-Website: https://muscalab.com/addons/musca-auras
 ## Version: 1.18.0
+## X-Wago-ID: bGoYzp60
 ## IconTexture: Interface\AddOns\WeakAuras\Media\Textures\icon.tga
 ## X-Flavor: Vanilla
 ## Notes: Auras for WoW Forever: icons, bars and texts for your buffs, debuffs and cooldowns, with a ready-made HUD for your class. Based on WeakAuras.
