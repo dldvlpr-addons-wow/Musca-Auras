@@ -4,15 +4,22 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.18.0',
-  dateString = '2026-11-13',
+  versionString = '1.18.1',
+  dateString = '2026-11-15',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
+- Fix: in combat, Judgement and other spells outside the global cooldown no longer show as ready during their cooldown
 - The addon shows its own name everywhere: Musca Auras
 - Brass and dark colors in the Guide, the chat, the tooltips and the option widgets
 - New icon, a page in Options > AddOns and an entry in the addon menu of the minimap
 - /wa, your auras, their positions and the Wago imports work as before
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.18.0 (2026-11-13):
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.18.1 (2026-11-15):
+
+Fixed:
+
+- Cooldown trigger: in combat, a spell outside the global cooldown (Judgement, Bloodrage) no longer shows as ready during its cooldown
+
+1.18.0 (2026-11-13):
 
 Changed:
 

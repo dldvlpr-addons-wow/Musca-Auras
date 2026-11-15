@@ -1,3 +1,12 @@
+# Musca Auras 1.18.1 (2026-11-15)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixed
+
+- Cooldown trigger: in combat, a spell outside the global cooldown (Judgement, Bloodrage) no longer shows as ready
+  during its cooldown.
+
 # Musca Auras 1.18.0 (2026-11-13)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

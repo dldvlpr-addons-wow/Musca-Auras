@@ -62,6 +62,20 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-15
+
+Version 1.18.1. Headless test bench: 128 scenarios, 0 failed.
+
+### Changed
+- Version 1.18.1 in the five TOC files, `WeakAurasOptions/Changelog.lua` and `WeakAuras/CHANGELOG.md`.
+  `WHATS_NEW_VERSION` stays `1.18.0`: the patch does not reopen the "What's new" popup.
+
+### Fixed
+- `WeakAuras/SecretSpellCooldown.lua`: in combat, a spell outside the global cooldown (Judgement, Bloodrage) is no
+  longer shown as ready during its cooldown. The client omits `isOnGCD` for these spells, and the missing flag was
+  read as "unknown" instead of "not on the global cooldown". Test case in
+  `Tests/Scenarios/32_SecretTriggerContract.lua`. Tested in game on 2026-11-15 with Bloodrage.
+
 ## 2026-11-13
 
 Version 1.18.0, the rebranding. Tested in game on 2026-11-13. Headless test bench: 128 scenarios, 0 failed.

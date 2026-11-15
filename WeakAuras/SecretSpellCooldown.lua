@@ -65,7 +65,9 @@ local function ReadReadiness(spellID)
     end
   end
   -- No readable timer: only the GCD flag recorded on the last cooldown event.
-  return (State.GetGCDFlag(spellID)), true
+  -- A spell outside the GCD (Judgement, Bloodrage) has no isOnGCD at all: its
+  -- active cooldown is a real one.
+  return State.GetGCDFlag(spellID) == true, true
 end
 
 function Private.CreateSecretSpellCooldown(SpellDetails, GetRuneDuration)

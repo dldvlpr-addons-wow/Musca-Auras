@@ -637,6 +637,11 @@ return function(test)
   C_Spell.GetSpellCooldownDuration = function() return nil end
   details:UpdateSecretReady(POLL)
   Same(details.data[POLL].secretReady, false, "no duration: not ready")
+  -- Spell outside the GCD: isOnGCD is missing from the cooldown info.
+  infos[POLL] = { isActive = true, isEnabled = true }
+  handler(true, "SPELL_UPDATE_COOLDOWN", POLL)
+  details:UpdateSecretReady(POLL)
+  Same(details.data[POLL].secretReady, false, "no GCD flag: not ready")
   infos[POLL] = { isActive = true, isEnabled = true, isOnGCD = true }
   handler(true, "SPELL_UPDATE_COOLDOWN", POLL)
   details:UpdateSecretReady(POLL)
