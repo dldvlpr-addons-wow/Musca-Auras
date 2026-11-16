@@ -1,3 +1,13 @@
+# Musca Auras 1.18.2 (2026-11-16)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixed
+
+- Cooldown trigger: "Hide GCD Text" also hides a `%p` or `%t` text while only the global cooldown runs, and works in
+  combat.
+- Cooldown trigger: the "On Global Cooldown" condition works in combat.
+
 # Musca Auras 1.18.1 (2026-11-15)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

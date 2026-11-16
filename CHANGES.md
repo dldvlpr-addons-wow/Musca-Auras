@@ -62,6 +62,28 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-16
+
+Version 1.18.2. Headless test bench: 129 scenarios, 0 failed.
+
+### Changed
+- Version 1.18.2 in the five TOC files, `WeakAurasOptions/Changelog.lua` and `WeakAuras/CHANGELOG.md`.
+  `WHATS_NEW_VERSION` stays `1.18.0`: the patch does not reopen the "What's new" popup.
+
+### Fixed
+- `WeakAuras/SubRegionTypes/SubTextNative.lua`: "Hide GCD Text" now also applies to a `%p` text. The text is empty
+  while only the global cooldown runs, and otherwise follows the cooldown without the GCD. Before, only the icon's
+  countdown numbers were hidden. The state read is the progress source's, as for the countdown numbers. Test cases in
+  `Tests/Scenarios/100_PercentTextHideGCD.lua`.
+- `WeakAuras/Prototypes.lua`: the same rule applies to `%p` inside a longer text (`%p s`, `%1.p`), to `%t`, and to
+  the progress and duration text arguments of a custom text function: no remaining time and no total while only the
+  global cooldown runs.
+- `WeakAuras/GenericTrigger.lua`: in combat, a ready spell under the global cooldown is again seen as "On Global
+  Cooldown" when "Show GCD" is checked. The GCD is secret in combat and only its duration object says it runs; the
+  check read its start time only. The "On Global Cooldown" condition and "Hide GCD Text" now work in combat. Test
+  case in `Tests/Scenarios/85_CustomCodeCooldownAndLoadFlag.lua`. Tested in game in combat on 2026-11-16 with
+  Sunder Armor.
+
 ## 2026-11-15
 
 Version 1.18.1. Headless test bench: 129 scenarios, 0 failed.
@@ -75,18 +97,6 @@ Version 1.18.1. Headless test bench: 129 scenarios, 0 failed.
   longer shown as ready during its cooldown. The client omits `isOnGCD` for these spells, and the missing flag was
   read as "unknown" instead of "not on the global cooldown". Test case in
   `Tests/Scenarios/32_SecretTriggerContract.lua`. Tested in game on 2026-11-15 with Bloodrage.
-- `WeakAuras/SubRegionTypes/SubTextNative.lua`: "Hide GCD Text" now also applies to a `%p` text. The text is empty
-  while only the global cooldown runs, and otherwise follows the cooldown without the GCD. Before, only the icon's
-  countdown numbers were hidden. The state read is the progress source's, as for the countdown numbers. Test cases in
-  `Tests/Scenarios/100_PercentTextHideGCD.lua`.
-- `WeakAuras/Prototypes.lua`: the same rule applies to `%p` inside a longer text (`%p s`, `%1.p`), to `%t`, and to
-  the progress and duration text arguments of a custom text function: no remaining time and no total while only the
-  global cooldown runs.
-- `WeakAuras/GenericTrigger.lua`: in combat, a ready spell under the global cooldown is again seen as "On Global
-  Cooldown" when "Show GCD" is checked. The GCD is secret in combat and only its duration object says it runs; the
-  check read its start time only. The "On Global Cooldown" condition and "Hide GCD Text" now work in combat. Test
-  case in `Tests/Scenarios/85_CustomCodeCooldownAndLoadFlag.lua`. Tested in game in combat on 2026-11-16 with
-  Sunder Armor.
 
 ## 2026-11-13
 
