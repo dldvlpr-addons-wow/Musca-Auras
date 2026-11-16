@@ -4571,7 +4571,7 @@ Private.event_prototypes = {
       {
         name = "hidegcdtext",
         display = L["Hide GCD Text"],
-        desc = L["Hides the countdown numbers while only the global cooldown runs. The swipe still shows it."],
+        desc = L["Hides the countdown numbers and the %p and %t texts while only the global cooldown runs. The swipe still shows it."],
         type = "toggle",
         test = "true",
         enable = function(trigger) return trigger.use_showgcd == true end,
@@ -9711,6 +9711,8 @@ Private.dynamic_texts = {
   ["p"] = {
     get = function(state)
       if not state then return nil end
+      -- Hide GCD Text: no remaining time while only the GCD runs, in composite texts too ("%p s", "%1.p").
+      if Private.ShouldHideDurationText(state) then return nil end
       if state.progressType == "static" then
         return state.value or nil
       end
@@ -9764,6 +9766,8 @@ Private.dynamic_texts = {
   ["t"] = {
     get = function(state)
       if not state then return "" end
+      -- Hide GCD Text: no total while only the GCD runs, as for %p.
+      if Private.ShouldHideDurationText(state) then return nil end
       if state.progressType == "static" then
         return state.total, false
       end

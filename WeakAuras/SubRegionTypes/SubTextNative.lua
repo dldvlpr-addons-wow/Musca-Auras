@@ -45,10 +45,25 @@ local secretValuePlaceholders = {
 }
 
 local function UpdateNativeText(holder, parent, textStr, formatters)
-  if textStr == "%p" and canBindDurationText and holder.durationTextBinding ~= false and parent.durationObject
-     and pcall(BindDurationText, holder, parent.durationObject)
-  then
-    return true
+  if textStr == "%p" then
+    -- The state that feeds parent.durationObject, as in Icon:SetHideCountdownNumbers.
+    local state = parent.cdmProgressState or parent.state
+    -- Hide GCD Text applies to %p like to the countdown numbers: empty while only the GCD runs.
+    if Private.ShouldHideDurationText(state) then
+      UnbindDurationText(holder)
+      holder.text:SetText("")
+      return true
+    end
+    local durationObject = parent.durationObject
+    if durationObject and state and state.cdmHideGCDText and not state.cdmTextPreview
+       and state.cdmTextDurationObject then
+      durationObject = state.cdmTextDurationObject
+    end
+    if canBindDurationText and holder.durationTextBinding ~= false and durationObject
+       and pcall(BindDurationText, holder, durationObject)
+    then
+      return true
+    end
   end
   UnbindDurationText(holder)
   local secretStacks = textStr == "%s" and parent.state and parent.state.secretStacks

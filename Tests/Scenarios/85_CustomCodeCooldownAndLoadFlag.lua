@@ -98,4 +98,23 @@ return function(test)
   test.Frames.Fire("SPELL_UPDATE_COOLDOWN")
   test.Environment.Advance(0.1)
   assert(WeakAuras.IsSpellReady(SPELL) == nil, "unsettled secret cooldown answered")
+
+  -- In combat the GCD is secret: a ready spell still reads as on the GCD ("On Global Cooldown", Hide GCD Text).
+  local GCD = 29515
+  local gcdInfo = { startTime = Secret.Wrap(GetTime()), duration = Secret.Wrap(1.5), isEnabled = true, modRate = 1,
+    isActive = true }
+  local gcdDuration = Units.NewDuration()
+  gcdDuration:SetTimeFromStart(Secret.Wrap(GetTime()), 1.5)
+  cooldown = idle
+  C_Spell.GetSpellCooldown = function(spell)
+    if spell == GCD then return gcdInfo end
+    return spell == SPELL and cooldown or idle
+  end
+  C_Spell.GetSpellCooldownDuration = function(spell) return spell == GCD and gcdDuration or nil end
+  test.Frames.Fire("SPELL_UPDATE_COOLDOWN")
+  test.Environment.Advance(0.05)
+  local _, _, gcdCooldown = WeakAuras.GetSpellCooldown(SPELL, nil, true)
+  assert(gcdCooldown == true, "secret GCD not seen as the GCD of a ready spell")
+  _, _, gcdCooldown = WeakAuras.GetSpellCooldown(SPELL, nil, false)
+  assert(not gcdCooldown, "GCD reported without Show GCD")
 end

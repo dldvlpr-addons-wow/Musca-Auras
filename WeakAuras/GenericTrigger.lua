@@ -3084,6 +3084,9 @@ do
           startTime = gcdStart;
           duration = gcdDuration;
           modRate = gcdModrate
+        elseif gcdDurationObject and startTime == 0 then
+          -- In combat the GCD is secret: only its duration object says it runs.
+          gcdCooldown = true
         end
       end
 
