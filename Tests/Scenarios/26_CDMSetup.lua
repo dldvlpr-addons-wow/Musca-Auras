@@ -138,6 +138,7 @@ return function(test)
 
   Reset()
   C_CVar.SetCVar("cooldownViewerEnabled", "1")
+  backgrounds = 0 -- the CVAR_UPDATE of the line above refreshes the background
   private.db.cdmHideBlizzard = true
   sets = {}
   editLayouts = { activeLayout = 2, layouts = { { layoutName = "Mine", layoutType = characterType, systems = {

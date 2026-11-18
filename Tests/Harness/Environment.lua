@@ -92,6 +92,7 @@ function Environment.Setup()
   end, function(message)
     Environment.forbidden[#Environment.forbidden + 1] = message
   end)
+  WowApi.fireEvent = Frames.Fire
   Units.Install(_G, Frames.Fire, WowApi)
   _G.C_ClassColor = { GetClassColor = function(className)
     local color = _G.RAID_CLASS_COLORS and rawget(_G.RAID_CLASS_COLORS, className)

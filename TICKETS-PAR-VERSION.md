@@ -1490,7 +1490,7 @@ Dette 4 (tests de migration) précède tous les tickets qui ajoutent des champs 
 ### Dette 4 : Tester la migration et la restauration des données
 
 **Pourquoi.** Plusieurs chemins qui touchent aux données sauvegardées n'ont aucun scénario :
-- `WeakAuras/BlizzardAuraDisplayMigration.lua` : `RenameVoiceSound`, `DropLegacySoundFields` (renommage des sons de la 1.14.0). Piège connu : la clé `sound_<ancien>` n'est nettoyée que si le kind est encore l'ancien et si l'aura a un trigger `secretAura`. Sinon elle reste dans les SavedVariables et dans les exports.
+- `WeakAuras/BlizzardAuraDisplayMigration.lua` : `DropVoiceSound`, `DropLegacySoundFields` (retrait des sons de la 1.14.0). Le nettoyage s'applique avec ou sans trigger `secretAura`, et quel que soit le kind choisi depuis : aucune clé `sound_<ancien>` ne reste dans les SavedVariables ni dans les exports (scénario 102).
 - `RestoreDeletedAura` (`WeakAuras/AuraBackups.lua:141`, appelée depuis `WeakAuras.lua:297`). `ListDeletedAuras` est testée, pas la restauration.
 - `WeakAuras/BlizzardAuraDisplayValidation.lua`.
 

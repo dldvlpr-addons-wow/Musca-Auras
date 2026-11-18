@@ -1476,3 +1476,4 @@ L["/wa restore <number> - Replace your auras with a daily copy and reload the UI
 L["/wa deleted - List the auras deleted in the last 30 days"] = "/wa deleted - 최근 30일 동안 삭제된 오라 목록을 표시합니다"
 L["/wa undelete <number> - Import a deleted aura again"] = "/wa undelete <번호> - 삭제된 오라를 다시 가져옵니다"
 L["Time in Musca Auras: %.2fs / %ds (%.1f%%)"] = "Musca Auras 사용 시간: %.2fs / %ds (%.1f%%)"
+L["Click Action"] = "클릭 동작"

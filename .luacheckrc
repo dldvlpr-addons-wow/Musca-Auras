@@ -63,7 +63,7 @@ globals = {
   "GetTexCoordsByGrid",
   "GetText", "GetTime", "GetTotemDuration", "GetUnitName", "GetUnitSpeed", 
   "GetWeaponEnchantInfo", "gsub", "HANDSSLOT", "HEADSLOT", "HEALER", "HideUIPanel",
-  "HOLY_POWER", "hooksecurefunc", "ICON_LIST", "ICON_TAG_LIST", "InCombatLockdown", "IndentationLib", "INVSLOT_AMMO", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED",
+  "HOLY_POWER", "hooksecurefunc", "ICON_LIST", "ICON_TAG_LIST", "InCombatLockdown", "IndentationLib", "ClearOverrideBindings", "GetBindingAction", "RegisterStateDriver", "SetOverrideBindingClick", "UnregisterStateDriver", "INVSLOT_AMMO", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED",
   "INLINE_DAMAGER_ICON", "INLINE_HEALER_ICON", "INLINE_TANK_ICON", "ipairs_reverse", 
   "IsAltKeyDown", "IsControlKeyDown", "IsGuildMember", "IsInGroup", "IsInInstance", "IsInRaid", "IsMounted", "IsMouseButtonDown",
   "IsPlayerMoving", "IsPlayerSpell", "issecretvalue", "IsShiftKeyDown", "IsSpellKnown", "Item",

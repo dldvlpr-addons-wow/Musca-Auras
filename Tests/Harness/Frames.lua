@@ -86,7 +86,27 @@ function Frames.CreateFrame(frameType, name, parent, template)
   end
   local frame = NewObject(frameType or "Frame", name, parent)
   State[frame].template = template
+  -- A secure template makes the frame protected, as in game: changing it in combat is blocked.
+  if type(template) == "string" and template:find("Secure", 1, true) then
+    State[frame].protected = true
+    State[frame].secure = true
+  end
   return frame
+end
+
+--- True when frame was made from a secure template.
+function Frames.IsSecure(frame)
+  return State[frame].secure == true
+end
+
+--- Shows or hides a secure frame as the state driver of the game does, allowed in combat.
+function Frames.DriverSetShown(frame, shown)
+  local wasVisible = frame:IsVisible()
+  State[frame].shown = shown
+  if wasVisible ~= frame:IsVisible() then
+    local handler = State[frame].scripts[shown and "OnShow" or "OnHide"]
+    if handler then handler(frame) end
+  end
 end
 
 function Frames.Fire(event, ...)
@@ -134,6 +154,12 @@ local function Blocked(object, method)
   return true
 end
 
+-- Calls blocked in combat on a frame made from a secure template only, so other protected frames keep their behavior.
+local function BlockedSecure(object, method)
+  if not State[object].secure then return false end
+  return Blocked(object, method)
+end
+
 function Frames.SetProtected(object, protected)
   State[object].protected = protected
 end
@@ -164,6 +190,7 @@ function Methods:GetRegions() return unpack(State[self].regions) end
 function Methods:GetNumRegions() return #State[self].regions end
 
 function Methods:Show()
+  if BlockedSecure(self, "Show") then return end
   if not State[self].shown then
     State[self].shown = true
     if self:IsVisible() then
@@ -172,6 +199,7 @@ function Methods:Show()
   end
 end
 function Methods:Hide()
+  if BlockedSecure(self, "Hide") then return end
   if State[self].shown then
     local wasVisible = self:IsVisible()
     State[self].shown = false
@@ -388,10 +416,16 @@ function Methods:SetPoint(point, relativeTo, relativePoint, x, y)
 end
 function Methods:SetAllPoints(relativeTo)
   if Blocked(self, "SetAllPoints") then return end
+  local target = relativeTo or State[self].parent
   State[self].points = {
-    { "TOPLEFT", relativeTo or State[self].parent, "TOPLEFT", 0, 0 },
-    { "BOTTOMRIGHT", relativeTo or State[self].parent, "BOTTOMRIGHT", 0, 0 },
+    { "TOPLEFT", target, "TOPLEFT", 0, 0 },
+    { "BOTTOMRIGHT", target, "BOTTOMRIGHT", 0, 0 },
   }
+  -- As in the client, the frame takes the size of its target, not the one it had before.
+  local targetState = target and State[target]
+  if targetState and targetState.width then
+    State[self].width, State[self].height = targetState.width, targetState.height
+  end
 end
 function Methods:ClearAllPoints()
   if Blocked(self, "ClearAllPoints") then return end
@@ -413,6 +447,7 @@ function Methods:GetPointByName(name)
   end
 end
 function Methods:SetSize(width, height)
+  if BlockedSecure(self, "SetSize") then return end
   State[self].width, State[self].height = width, height or width
   RunScript(self, "OnSizeChanged", State[self].width, State[self].height)
 end
@@ -435,9 +470,15 @@ function Methods:GetEffectiveAlpha() return State[self].alpha end
 function Methods:SetScale(scale) State[self].scale = scale end
 function Methods:GetScale() return State[self].scale end
 function Methods:GetEffectiveScale() return State[self].scale end
-function Methods:SetFrameLevel(level) State[self].frameLevel = level end
+function Methods:SetFrameLevel(level)
+  if BlockedSecure(self, "SetFrameLevel") then return end
+  State[self].frameLevel = level
+end
 function Methods:GetFrameLevel() return State[self].frameLevel end
-function Methods:SetFrameStrata(strata) State[self].strata = strata end
+function Methods:SetFrameStrata(strata)
+  if BlockedSecure(self, "SetFrameStrata") then return end
+  State[self].strata = strata
+end
 function Methods:GetFrameStrata() return State[self].strata end
 function Methods:SetDrawLayer(layer, subLevel) State[self].layer, State[self].subLevel = layer, subLevel end
 function Methods:GetDrawLayer() return State[self].layer or "ARTWORK", State[self].subLevel or 0 end
@@ -452,8 +493,15 @@ end
 function Methods:GetID() return State[self].id or 0 end
 function Methods:SetID(id) State[self].id = id end
 function Methods:IsMouseOver() return false end
-function Methods:IsMouseEnabled() return State[self].mouseEnabled end
-function Methods:EnableMouse(enabled) State[self].mouseEnabled = enabled end
+function Methods:EnableMouse(enabled)
+  if BlockedSecure(self, "EnableMouse") then return end
+  State[self].mouseEnabled = enabled
+end
+function Methods:IsMouseEnabled() return State[self].mouseEnabled == true end
+function Methods:RegisterForClicks(...)
+  if BlockedSecure(self, "RegisterForClicks") then return end
+  State[self].clicks = { ... }
+end
 -- Protected for any frame of an addon in combat (IsProtectedFunction), restricted for the propagation.
 local function KeyboardBlocked(method)
   if rawget(_G, "InCombatLockdown") and _G.InCombatLockdown() then
@@ -556,6 +604,7 @@ end
 function Methods:Clear() State[self].cooldown = nil end
 
 function Methods:SetAttribute(key, value)
+  if BlockedSecure(self, "SetAttribute") then return end
   State[self].attributes = State[self].attributes or {}
   State[self].attributes[key] = value
   local handler = State[self].scripts.OnAttributeChanged
@@ -563,7 +612,22 @@ function Methods:SetAttribute(key, value)
     handler(self, key, value)
   end
 end
-function Methods:GetAttribute(key) return State[self].attributes and State[self].attributes[key] end
+-- With three arguments, the modified attribute lookup of the game, the one a secure button runs on a click.
+-- "type1" is not tried while a modifier is held: only "*type1" answers both.
+function Methods:GetAttribute(key, name, suffix)
+  local attributes = State[self].attributes or {}
+  if name == nil then
+    return attributes[key]
+  end
+  local prefix = key
+  suffix = suffix or ""
+  for _, candidate in ipairs({ prefix .. name .. suffix, "*" .. name .. suffix, prefix .. name .. "*", "*" .. name .. "*",
+                               prefix .. name, "*" .. name, name }) do
+    if attributes[candidate] ~= nil then
+      return attributes[candidate]
+    end
+  end
+end
 
 function Methods:AddMessage(message)
   Frames.onPrint(message)

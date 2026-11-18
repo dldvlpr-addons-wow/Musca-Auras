@@ -255,6 +255,25 @@ In the **Display** tab, **Add** adds elements on top of an aura:
 | **Tick** | A mark on a bar, for example at 30% or at a cast time. |
 | **Model** | A 3D model. |
 | **Background**, **Stop Motion**, **Circular / Linear Progress Texture** | Advanced visuals. |
+| **Click Action** | Makes the aura clickable: casts a spell, uses an item, runs a macro, targets a unit or removes a buff. |
+
+### Click Action
+
+Each mouse button (left, right, middle) gets its own action. **Key** binds a key to the left click action while the
+aura is clickable; the options warn when the game or another aura already uses that key. **Clickable in Combat**:
+
+- **Aura visible when combat starts**: the aura is clickable while it shows.
+- **When the aura shows, and the whole combat**: out of combat, clickable while the aura shows; from the combat start
+  to its end, clickable even while the aura is hidden, at its place of the combat start. For an aura that appears in
+  combat, such as a missing buff or a proc. In a dynamic group, the hidden aura's area stays over the aura that takes
+  its place.
+- **Always, while the aura is loaded**: clickable even while the aura is hidden.
+- **Macro Condition**: clickable when a macro condition is true, for example `[combat][mod:shift] show; hide`. This
+  mode has no key.
+
+The game forbids changing a clickable area in combat. In combat the area stays as it was when the combat started:
+an aura that appears or hides, moves or resizes is followed again when the combat ends. The click does nothing while
+the options are open.
 
 ### Text placeholders
 

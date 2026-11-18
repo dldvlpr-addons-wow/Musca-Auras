@@ -1536,3 +1536,4 @@ L["/wa restore <number> - Replace your auras with a daily copy and reload the UI
 L["/wa deleted - List the auras deleted in the last 30 days"] = "/wa deleted - Список аур, удалённых за последние 30 дней"
 L["/wa undelete <number> - Import a deleted aura again"] = "/wa undelete <номер> - Снова импортировать удалённую ауру"
 L["Time in Musca Auras: %.2fs / %ds (%.1f%%)"] = "Время в Musca Auras: %.2fs / %ds (%.1f%%)"
+L["Click Action"] = "Действие по клику"

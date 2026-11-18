@@ -1477,3 +1477,4 @@ L["/wa restore <number> - Replace your auras with a daily copy and reload the UI
 L["/wa deleted - List the auras deleted in the last 30 days"] = "/wa deleted - 列出最近 30 天内删除的光环"
 L["/wa undelete <number> - Import a deleted aura again"] = "/wa undelete <编号> - 重新导入已删除的光环"
 L["Time in Musca Auras: %.2fs / %ds (%.1f%%)"] = "Musca Auras 耗时：%.2fs / %ds (%.1f%%)"
+L["Click Action"] = "点击动作"

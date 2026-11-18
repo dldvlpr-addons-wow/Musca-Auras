@@ -301,6 +301,11 @@ local function convertToProgress(rprogress, additionalProgress, adjustMin, total
   local startProgress = 0;
   local endProgress = 0;
 
+  -- A secret width cannot be turned into a progress: the overlay stays hidden.
+  if Private.IsSecret(additionalProgress.width) then
+    return startProgress, endProgress
+  end
+
   if (additionalProgress.min and additionalProgress.max) then
     if (totalWidth ~= 0) then
       startProgress = (additionalProgress.min - adjustMin) / totalWidth;

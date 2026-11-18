@@ -4,17 +4,23 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.18.2',
-  dateString = '2026-11-16',
+  versionString = '1.19.0',
+  dateString = '2026-11-18',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- Fix: "Hide GCD Text" also hides a %p text, and works in combat with the "On Global Cooldown" condition
-- Fix: in combat, Judgement and other spells outside the global cooldown no longer show as ready during their cooldown
-- The addon shows its own name everywhere: Musca Auras
-- Brass and dark colors in the Guide, the chat, the tooltips and the option widgets
-- New icon, a page in Options > AddOns and an entry in the addon menu of the minimap
-- /wa, your auras, their positions and the Wago imports work as before
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.18.2 (2026-11-16):
+- New: Click Action, an element that makes an aura clickable. Left, right and middle click each cast a spell, use an item, run a macro, target a unit or remove a buff
+- New: a key per aura, which does the action of the left click
+- Choose when the aura stays clickable in combat: while it shows at the combat start, the whole combat, always, or on a macro condition
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.19.0 (2026-11-18):
+
+New:
+
+- Click Action element for Icon, Progress Bar, Text, Texture, Progress Texture and Empty auras. Left, right and middle click each cast a spell, use an item, run a macro, target a unit (player, target, mouseover, focus) or remove a buff
+- Key: a key per aura does the action of the left click. The options warn when the game or another aura already uses that key
+- Clickable in Combat: while the aura shows at the combat start, the whole combat, always while the aura is loaded, or on a macro condition. In combat the clickable area stays where it was when the combat started
+- Health trigger: with "Show Absorb", a Progress Bar draws the shield as an overlay after the health, in combat too. Its color is set in the overlay colors of the bar
+
+1.18.2 (2026-11-16):
 
 Fixed:
 

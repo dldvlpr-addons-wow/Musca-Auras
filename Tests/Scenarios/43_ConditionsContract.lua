@@ -760,6 +760,25 @@ return function(test)
     true, "later foreign condition")
   local first = V({ Rule("faAuraRemaining", "==", 10, {}), { check = { trigger = 7, variable = "x" } } })
   assert(first == messages["time operator"], "first problem returned")
+  -- The exact text the player reads for each rule.
+  local texts = {
+    ["foreign missing"] = "This check reads a trigger whose values conditions cannot use. Point it at another trigger or at a global variable.",
+    grouping = "Aura (Modern) conditions cannot be combined with AND, OR or Else If.",
+    ["time operator"] = "In Aura (Modern) conditions, time checks only accept < (less than) and >= (at least).",
+    ["type operator"] = "In Aura (Modern) conditions, kind and dispel checks only accept == (is) and ~= (is not).",
+    ["missing region"] = "Aura Missing works on Icon, Bar, Progress Texture and Text displays.",
+    ["missing show on"] = "Aura Missing needs the trigger's Show On set to Aura(s) Missing or Always.",
+    ["remaining glow operator"] = "To light a glow from the seconds left, compare with < and set the glow to on.",
+    ["elapsed glow operator"] = "To light a glow from the seconds elapsed, compare with < and set the glow to on.",
+    ["pandemic glow off"] = "A glow driven by the pandemic window has to switch the glow on.",
+    ["late glow remaining"] = "Only one source may drive a given glow: either seconds left or seconds elapsed, or else the pandemic window.",
+    ["time basis"] = "A countdown text follows one time basis only: seconds left, share left, elapsed, total, start or end.",
+    property = "Choose a supported property for this Aura (Modern) condition.",
+  }
+  for label, problem in pairs(messages) do
+    Same(problem, texts[label], "text of " .. label)
+  end
+  for label in pairs(texts) do assert(messages[label], label .. ": text not checked") end
   assert(V({ { check = { trigger = 7, variable = "x" } }, Rule("faAuraRemaining", "==", 10, {}) }) == messages["foreign missing"],
     "condition order")
   local header = V({ Rule("faAuraRemaining", "==", 10, { Change("sub.1.glow", true) }) })

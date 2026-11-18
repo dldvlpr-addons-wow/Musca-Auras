@@ -169,7 +169,8 @@ local function IsSecretGeometry(additionalBar)
 end
 
 function barFuncs:UsesNativeAdditionalBars()
-  if self.nativeBar then
+  -- A secret scale can stay after the native bar hides: the plain path does arithmetic on it.
+  if self.nativeBar or Private.IsSecret(self.additionalBarsMin, self.additionalBarsMax) then
     return true
   end
   for _, additionalBar in ipairs(self.additionalBars) do

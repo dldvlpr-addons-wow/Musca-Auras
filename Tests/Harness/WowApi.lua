@@ -263,6 +263,34 @@ function WowApi.Install(target)
   target.GetRealmName = function() return "TestRealm" end
   target.GetBuildInfo = function() return "1.60.1", "70124", "Sep 30 2026", 16001, "", "", 16001 end
   target.InCombatLockdown = function() return WowApi.inCombat == true end
+  -- Secure state driver and override bindings: recorded for the scenarios, refused in combat like protected calls.
+  WowApi.stateDrivers, WowApi.overrideBindings, WowApi.gameBindings = {}, {}, {}
+  local function RefusedInCombat(name)
+    if WowApi.inCombat then
+      WowApi.blockedCalls = (WowApi.blockedCalls or 0) + 1
+      error("ADDON_ACTION_BLOCKED: " .. name .. "()", 3)
+    end
+  end
+  target.RegisterStateDriver = function(frame, state, values)
+    RefusedInCombat("RegisterStateDriver")
+    WowApi.stateDrivers[frame] = WowApi.stateDrivers[frame] or {}
+    WowApi.stateDrivers[frame][state] = values
+  end
+  target.UnregisterStateDriver = function(frame, state)
+    RefusedInCombat("UnregisterStateDriver")
+    if WowApi.stateDrivers[frame] then WowApi.stateDrivers[frame][state] = nil end
+  end
+  target.SetOverrideBindingClick = function(owner, isPriority, key, buttonName, mouseClick)
+    RefusedInCombat("SetOverrideBindingClick")
+    WowApi.overrideBindings[key] = { owner = owner, priority = isPriority, button = buttonName, mouseClick = mouseClick }
+  end
+  target.ClearOverrideBindings = function(owner)
+    RefusedInCombat("ClearOverrideBindings")
+    for key, binding in pairs(WowApi.overrideBindings) do
+      if binding.owner == owner then WowApi.overrideBindings[key] = nil end
+    end
+  end
+  target.GetBindingAction = function(key) return WowApi.gameBindings[key] or "" end
   target.IsLoggedIn = function() return WowApi.loggedIn == true end
   target.GetFramerate = function() return 60 end
   target.GetScreenWidth = function() return 1920 end
@@ -284,7 +312,14 @@ function WowApi.Install(target)
     GetCVar = target.GetCVar,
     GetCVarBool = target.GetCVarBool,
     GetCVarDefault = target.GetCVar,
-    SetCVar = function(name, value) WowApi.cvars[name] = value ~= nil and tostring(value) or nil return true end,
+    -- The client delivers CVAR_UPDATE inside SetCVar. The old value is still read during the
+    -- event here: deduced from an in-game stack overflow, not read in the client source.
+    SetCVar = function(name, value)
+      local stored = value ~= nil and tostring(value) or nil
+      if WowApi.fireEvent and stored ~= WowApi.cvars[name] then WowApi.fireEvent("CVAR_UPDATE", name, stored) end
+      WowApi.cvars[name] = stored
+      return true
+    end,
     RegisterCVar = function(name, value) WowApi.cvars[name] = WowApi.cvars[name] or (value ~= nil and tostring(value) or nil) end,
   }
   target.SetCVar = function() return true end

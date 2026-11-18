@@ -169,7 +169,7 @@ return function(test)
       local other = private.GetPlacementBox(id)
       if other and id == "Free" then
         other.GetLeft, other.GetRight, other.GetCenter, other.GetBottom, other.GetTop = nil, nil, nil, nil, nil
-        -- The harness SetAllPoints keeps the size of the recycled box: the size of the icon.
+        -- Size of the recycled box: the size of the icon.
         other:SetSize(64, 64)
       elseif other then
         local left = id == "Pack" and 708 or 100

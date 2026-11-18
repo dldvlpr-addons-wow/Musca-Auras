@@ -552,7 +552,11 @@ local barPrototype = {
     self.additionalBarsColors = colors;
     self.additionalBarsTextures = textures;
     self.additionalBarsMin = min or 0;
-    self.additionalBarsMax = max or 0;
+    -- A secret max is a number: it is kept as is for the native overlays.
+    if type(max) ~= "number" then
+      max = 0
+    end
+    self.additionalBarsMax = max;
     self.additionalBarsInverse = inverse;
     self.additionalBarsClip = overlayclip;
     self:UpdateAdditionalBars();
@@ -1435,6 +1439,10 @@ local function modify(parent, region, data)
 
   function region:SetAdditionalProgress(additionalProgress, currentMin, currentMax, inverse)
     local effectiveInverse = (inverse and not region.inverseDirection) or (not inverse and region.inverseDirection);
+    -- Secret progress leaves maxProgress at 0: the native overlays need the real total.
+    if region.bar.nativeBar and type(region.secretTotal) == "number" then
+      currentMax = region.secretTotal
+    end
     region.bar:SetAdditionalBars(additionalProgress, region.overlays, region.overlaysTexture, currentMin, currentMax, effectiveInverse, region.overlayclip);
   end
 

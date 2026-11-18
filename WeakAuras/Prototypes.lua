@@ -3076,6 +3076,15 @@ Private.event_prototypes = {
         enable = function(trigger)
           return trigger.use_showIncomingHeal;
         end
+      },
+      {
+        name = L["Absorb"],
+        func = function(trigger, state)
+          return "forward", state.absorb;
+        end,
+        enable = function(trigger)
+          return trigger.use_showAbsorb;
+        end
       }
     },
     automaticrequired = true

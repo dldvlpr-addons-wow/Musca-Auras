@@ -62,6 +62,75 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-18
+
+Version 1.19.0, clickable auras. Headless test bench: 133 scenarios, 0 failed. Left click spell and right click buff removal tested in game
+on a Warrior aura (Battle Shout), in and out of combat.
+
+### Added
+- `WeakAuras/ClickButtons.lua`: `Private.ClickButtons`, a pool of `SecureActionButtonTemplate` buttons named
+  `MuscaAurasClickButton<n>`, children of `UIParent`, never anchored to the aura nor the aura to them. Out of combat
+  each button copies the place, size, strata and level of its aura (followed every 0.2 s), and gets the attributes of
+  the left, right and middle click (`spell`, `item`, `macro`, `target`, `cancelaura`, and the unit). A key per aura is
+  bound by `SetOverrideBindingClick` to the left click. Clickable in Combat: while the aura shows at the combat start, the whole combat
+  (at the aura's place of the combat start), always while the aura is loaded, or on a macro condition through
+  `RegisterStateDriver`. Changes asked in combat wait for `PLAYER_REGEN_ENABLED`. The click does nothing while the
+  options are open.
+- `WeakAuras/SubRegionTypes/ClickAction.lua`: `subclickaction` element for Icon, Progress Bar, Text, Texture,
+  Progress Texture and Empty auras. It draws nothing and hands its aura to `Private.ClickButtons` on show, hide and
+  release.
+- `WeakAurasOptions/SubRegionOptions/ClickAction.lua`: options of the element: action, unit, name or ID, and macro
+  text per mouse button, key, Clickable in Combat, macro condition and the limits. A warning shows when the game or
+  another aura already uses the key.
+- `Tests/Scenarios/101_ClickAction.lua`: attributes per mouse button, button and key that follow the aura, no
+  forbidden call in combat, the "whole combat" mode, region type change and element removal.
+- `Tests/Scenarios/102_SoundMigrationOnLoad.lua`: sounds saved by 1.14.0, loaded from the SavedVariables, with and
+  without an Aura (Modern) trigger: the recorded voice kind loses its sound, no obsolete `sound_` field stays in the
+  saved aura or its export, the fields of a sound file stay.
+- `Tests/Scenarios/103_RestoreDeletedGroup.lua`: a deleted flat or nested group, restored from the archive with or
+  without tags, reaches the import window with the uid, the parent and the order of the children of the original.
+- `Tests/Scenarios/104_DisplayValidationMessages.lua`: exact text of each `Display.Validate` rule.
+
+### Changed
+- Version 1.19.0 in the five TOC files, `WeakAurasOptions/Changelog.lua` and `WeakAuras/CHANGELOG.md`.
+  `WHATS_NEW_VERSION` stays `1.18.0`: the "What's new" popup is about the rebranding.
+- `WeakAuras/WeakAuras.toc`: `ClickButtons.lua` and `SubRegionTypes\ClickAction.lua`.
+  `WeakAurasOptions/WeakAurasOptions.toc`: `SubRegionOptions\ClickAction.lua`.
+- `WeakAuras/Locales/*.lua` (11 files): "Click Action". `WeakAurasOptions/Locales/*.lua` (11 files): 27 texts of the
+  Click Action options.
+- `GUIDE.md`: Click Action row in the element table and a Click Action section (modes, key, limits).
+- `.luacheckrc`: `ClearOverrideBindings`, `GetBindingAction`, `RegisterStateDriver`, `SetOverrideBindingClick`,
+  `UnregisterStateDriver`.
+- `Tests/Harness/Frames.lua`: a frame made from a `Secure` template is protected; in combat its `Show`, `Hide`,
+  `SetSize`, `EnableMouse`, `SetAttribute`, `SetFrameStrata`,
+  `SetFrameLevel` and `RegisterForClicks` are blocked; `Frames.IsSecure` and `Frames.DriverSetShown`.
+  `SetAllPoints` now gives the frame the size of its target, as the client does: scenario 68 failed about once in
+  ten runs because the placement mode boxes kept a stale size.
+  `Tests/Scenarios/68_EditModePlacement.lua`: comment on the recycled box size updated.
+- `WeakAuras/ClickButtons.lua`: the key clash warning of the options no longer counts the auras in macro condition
+  mode, which bind no key.
+- `Tests/Scenarios/101_ClickAction.lua`: the combat end is checked before any follow tick; "Always" mode, options
+  open, macro condition mode (state driver, then changed in place without `WeakAuras.Add`: condition change, options
+  open, empty condition, back to another mode), key released with a freed button, key clash warning of the options
+  (game binding, other auras sorted by id, macro mode, empty key).
+- Translations of the Click Action options reviewed: koKR, ruRU, zhCN and zhTW fixed.
+- `Tests/Harness/WowApi.lua`: `RegisterStateDriver`, `UnregisterStateDriver`, `SetOverrideBindingClick` and
+  `ClearOverrideBindings`, refused in combat, and `GetBindingAction`.
+- `Tests/Scenarios/43_ConditionsContract.lua`: exact text of each Aura (Modern) condition message.
+  `Tests/Scenarios/45_SingleContract.lua`: full text of the unit frame anchor message.
+- Health trigger, "Show Absorb": the absorb is now drawn on a Progress Bar as an overlay after the health fill, in
+  combat too (this replaces the 1.13.0 note "The absorb overlay on the health bar is not provided").
+  `WeakAuras/Prototypes.lua`: "Absorb" overlay of the Health trigger, enabled by "Show Absorb".
+  `WeakAuras/GenericTrigger.lua` (`RunOverlayFuncs`): a secret overlay width is kept instead of dropped; any other
+  secret return is still dropped. `WeakAuras/RegionTypes/AuraBar.lua`: the native overlays are scaled on the secret
+  total, and `SetAdditionalBars` keeps a secret maximum. `WeakAuras/RegionTypes/AuraBarNative.lua`
+  (`UsesNativeAdditionalBars`): a secret scale left on the bar keeps the native overlays, because the plain path
+  does arithmetic on it. Side effect: any trigger overlay with a secret width is now drawn the same way (custom
+  overlay functions; "Spell Cost" of the Power trigger if the game hides the cost).
+  `WeakAuras/RegionTypes/ProgressTexture.lua`: an overlay with a secret width stays hidden (no arithmetic possible).
+  New `Tests/Scenarios/106_HealthAbsorbOverlay.lua`. Headless test bench: 135 scenarios, 0 failed. Not tested in
+  game yet.
+
 ## 2026-11-16
 
 Version 1.18.2. Headless test bench: 129 scenarios, 0 failed.

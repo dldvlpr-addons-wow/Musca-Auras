@@ -66,11 +66,19 @@ local function Track(frame)
   end
 end
 
+-- SetCVar fires CVAR_UPDATE before it returns, and the CVar still reads false inside that
+-- event: without the guard, the CVAR_UPDATE handler below sets it again, endlessly.
+local enabling = false
+
 local function EnsureViewerEnabled()
+  if enabling then return end
   local readBool = C_CVar and C_CVar.GetCVarBool
   if not readBool then return end
   if readBool(CVAR_NAME) then return end
-  C_CVar.SetCVar(CVAR_NAME, "1")
+  enabling = true
+  local ok, err = pcall(C_CVar.SetCVar, CVAR_NAME, "1")
+  enabling = false
+  if not ok then error(err, 0) end
 end
 
 local function RefreshViewers()

@@ -488,7 +488,9 @@ local function RunOverlayFuncs(event, state, id, errorHandler)
     state.additionalProgress[i] = state.additionalProgress[i] or {};
     local additionalProgress = state.additionalProgress[i];
     local ok, a, b, c = xpcall(overlayFunc, errorHandler or Private.GetErrorHandlerId(id, L["Overlay %s"]:format(i)), event.trigger, state);
-    if ok and Private.IsSecret(a, b, c) then
+    -- A secret width is kept: the bar draws it natively. Any other secret return is dropped.
+    local secretWidth = ok and type(a) == "string" and not Private.IsSecret(a, c) and Private.IsSecret(b)
+    if ok and not secretWidth and Private.IsSecret(a, b, c) then
       ok = false
     end
     if (not ok) then
@@ -502,7 +504,7 @@ local function RunOverlayFuncs(event, state, id, errorHandler)
         additionalProgress.direction = a;
         changed = true;
       end
-      if (additionalProgress.width ~= b) then
+      if (secretWidth or Private.IsSecret(additionalProgress.width) or additionalProgress.width ~= b) then
         additionalProgress.width = b;
         changed = true;
       end

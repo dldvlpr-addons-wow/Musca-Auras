@@ -1613,6 +1613,8 @@ L["/wa restore <number> - Replace your auras with a daily copy and reload the UI
 L["/wa deleted - List the auras deleted in the last 30 days"] = "/wa deleted - List the auras deleted in the last 30 days"
 L["/wa undelete <number> - Import a deleted aura again"] = "/wa undelete <number> - Import a deleted aura again"
 L["Time in Musca Auras: %.2fs / %ds (%.1f%%)"] = "Time in Musca Auras: %.2fs / %ds (%.1f%%)"
+L["Click Action"] = "Click Action"
+
 setmetatable(WeakAuras.L, {__index = function(self, key)
   self[key] = (key or "")
   return key
