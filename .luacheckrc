@@ -12,7 +12,8 @@ exclude_files = { "**/Libs/**", ".claude/**", "**/.claude/**", "Tests/**" }
 
 -- Every global the addons read or write, sorted
 globals = {
-  "AnchorUtil", "AuraContainerSortDirection", "AuraContainerSortMethod", "C_AuraContainerUtil", "C_EditMode",
+  "AnchorUtil", "ClearOverrideBindings", "GetBindingAction", "RegisterStateDriver", "SetOverrideBindingClick",
+  "UnregisterStateDriver", "AuraContainerSortDirection", "AuraContainerSortMethod", "C_AuraContainerUtil", "C_EditMode",
   "ColorPickerFrame", "CooldownViewerDataProvider", "CooldownViewerDataStoreSerializationMixin", "WeakAurasFrame",
   "CooldownViewerLayoutManagerMixin",
   "CooldownViewerSettings", "CooldownViewerSettingsDataProviderMixin", "CustomAuraContainerAuraProcessingPolicy",
@@ -50,7 +51,7 @@ globals = {
   "GetCombatRatingBonus", "GetCritChance", "GetCurrentKeyBoardFocus",
   "GetCurrentRegion", "GetCursorInfo", "GetCursorPosition", "GetCVar", "GetDifficultyInfo", "geterrorhandler",
   "GetFactionInfo", "GetFileIDFromPath", "GetFrameCPUUsage", 
-  "GetGuildInfo", "GetHaste", "GetRangedHaste", "GetHitModifier", "GetInstanceInfo", "GetInventoryItemDurability", "GetInventoryItemCooldown", "GetInventoryItemID",
+  "GetGuildInfo", "GetHaste", "GetRangedHaste", "GetHitModifier", "GetRangedHitModifier", "GetInstanceInfo", "GetInventoryItemDurability", "GetInventoryItemCooldown", "GetInventoryItemID",
   "GetInventoryItemLink", "GetInventoryItemTexture", "GetInventorySlotInfo", "GetLocale", "GetMacroInfo",
   "GetMinimapZoneText", "GetMoney", "GetMouseFoci", "GetNumClasses", "GetNumFactions",
   "GetNumGroupMembers", "GetNumShapeshiftForms", "GetNumSpecializationsForClassID", "GetNumSubgroupMembers",
@@ -63,7 +64,7 @@ globals = {
   "GetTexCoordsByGrid",
   "GetText", "GetTime", "GetTotemDuration", "GetUnitName", "GetUnitSpeed", 
   "GetWeaponEnchantInfo", "gsub", "HANDSSLOT", "HEADSLOT", "HEALER", "HideUIPanel",
-  "HOLY_POWER", "hooksecurefunc", "ICON_LIST", "ICON_TAG_LIST", "InCombatLockdown", "IndentationLib", "ClearOverrideBindings", "GetBindingAction", "RegisterStateDriver", "SetOverrideBindingClick", "UnregisterStateDriver", "INVSLOT_AMMO", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED",
+  "HOLY_POWER", "hooksecurefunc", "ICON_LIST", "ICON_TAG_LIST", "InCombatLockdown", "IndentationLib", "INVSLOT_AMMO", "INVSLOT_FIRST_EQUIPPED", "INVSLOT_LAST_EQUIPPED",
   "INLINE_DAMAGER_ICON", "INLINE_HEALER_ICON", "INLINE_TANK_ICON", "ipairs_reverse", 
   "IsAltKeyDown", "IsControlKeyDown", "IsGuildMember", "IsInGroup", "IsInInstance", "IsInRaid", "IsMounted", "IsMouseButtonDown",
   "IsPlayerMoving", "IsPlayerSpell", "issecretvalue", "IsShiftKeyDown", "IsSpellKnown", "Item",
@@ -107,7 +108,7 @@ globals = {
   "UnitCastingDuration", "UnitCastingInfo", "UnitChannelDuration", "UnitChannelInfo", "UnitClass", "UnitDetailedThreatSituation", 
   "UnitExists", "UnitFactionGroup", "UnitFullName", "UnitGroupRolesAssigned", "UnitGUID", "UnitHasVehicleUI",
   "UnitInBattleground", "UnitInParty", "UnitInRaid", "UnitInRange", "UnitInSubgroup", "UnitInVehicle",
-  "UnitIsConnected", "UnitIsDeadOrGhost", "UnitIsGroupAssistant", "UnitIsGroupLeader", "UnitIsPVP",
+  "UnitIsConnected", "UnitIsDeadOrGhost", "UnitIsGroupAssistant", "UnitIsGroupLeader", "UnitIsPVP", "UnitIsPlayer",
   "UnitIsPVPFreeForAll", "UnitIsUnit", "UnitIsVisible", "UnitLevel", "UnitName", "UnitOnTaxi", "UnitPartialPower",
   "UnitHealthPercent", "UnitPower", "UnitPowerMax", "UnitPowerPercent", "UnitRace", "UnitRangedAttackPower", "UnitRangedDamage", "UnitReaction", "UnitSex", "UnitStagger",
   "UpdateAddOnCPUUsage", "UPPER_LEFT_VERTEX", "UPPER_RIGHT_VERTEX", "Vector2DMixin", "Vector3DMixin",

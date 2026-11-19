@@ -81,7 +81,7 @@ return function(test)
   assert(WeakAuras.GetSpellCooldownDurationNoGCD(OTHER_RANK) == cooldownDuration, "other rank duration")
   private.ExecEnv.GetEffectiveSpellId = GetEffectiveSpellId
 
-  -- Custom code reaches the helpers through ForeverAuras, as imported packs call them.
+  -- Custom code also reaches the helpers through the ForeverAuras alias.
   local func = assert(WeakAuras.LoadFunction("return function(spell) local state = {} "
     .. "ForeverAuras.SetSpellCooldownState(state, spell, true) ForeverAuras.SetLoadFlag('Wand', false) "
     .. "return ForeverAuras.IsSpellReady(spell), ForeverAuras.GetSpellCooldownDurationNoGCD(spell), state.onCooldown end",
@@ -117,4 +117,13 @@ return function(test)
   assert(gcdCooldown == true, "secret GCD not seen as the GCD of a ready spell")
   _, _, gcdCooldown = WeakAuras.GetSpellCooldown(SPELL, nil, false)
   assert(not gcdCooldown, "GCD reported without Show GCD")
+  -- Load switches and spell sets: a bad switch is ignored, a bare list is a set.
+  WeakAuras.SetLoadSwitch("Switch", true)
+  assert(WeakAuras.IsLoadSwitchOn("Switch") == true, "switch not on")
+  WeakAuras.SetLoadSwitches({ Switch = false })
+  assert(WeakAuras.IsLoadSwitchOn("Switch") == false, "switch not off")
+  assert(pcall(WeakAuras.SetLoadSwitch, "", true), "empty switch name raised")
+  assert(pcall(WeakAuras.SetLoadSwitches, 42), "bad switch table raised")
+  assert(pcall(WeakAuras.SetAuraSpellSet, "Set", { spellIDs = { 774, "8936" } }), "spell set refused")
+  assert(pcall(WeakAuras.SetAuraSpellSet, "List", { 774 }), "bare spell list refused")
 end

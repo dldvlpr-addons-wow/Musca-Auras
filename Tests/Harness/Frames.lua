@@ -153,7 +153,6 @@ local function Blocked(object, method)
   Frames.onForbidden("ADDON_ACTION_BLOCKED: Frame:" .. method .. "()")
   return true
 end
-
 -- Calls blocked in combat on a frame made from a secure template only, so other protected frames keep their behavior.
 local function BlockedSecure(object, method)
   if not State[object].secure then return false end
@@ -483,6 +482,7 @@ function Methods:GetFrameStrata() return State[self].strata end
 function Methods:SetDrawLayer(layer, subLevel) State[self].layer, State[self].subLevel = layer, subLevel end
 function Methods:GetDrawLayer() return State[self].layer or "ARTWORK", State[self].subLevel or 0 end
 function Methods:IsForbidden() return false end
+function Methods:IsAnchoringRestricted() return State[self].anchoringRestricted == true end
 function Methods:IsProtected()
   if State[self].protected then return true end
   for _, child in ipairs(State[self].children or {}) do

@@ -762,7 +762,7 @@ Private.format_types = {
         colorFunc = function(unit, text)
           if unit and Private.UnitPlayerControlledFixed(unit) then
             local classFilename = select(2, UnitClass(unit))
-            if classFilename then
+            if classFilename and not Private.IsSecret(classFilename) then
               return WrapTextInColorCode(text, WA_GetClassColor(classFilename))
             end
           end

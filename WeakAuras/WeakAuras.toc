@@ -90,6 +90,7 @@ BlizzardAuraDisplayEvents.lua
 SecretAuraPreview.lua
 DispelTypeDisplay.lua
 CDMAuraProgress.lua
+AuraOverlay.lua
 SecretAuraAppearance.lua
 SecretAuraConditions.lua
 SecretAuraSingle.lua
@@ -99,6 +100,7 @@ SecretAuraSingleGates.lua
 SecretAuraSingleGateDisplay.lua
 SecretAuraSingleStatus.lua
 SecretAuraSingleFollow.lua
+AuraStatusReport.lua
 SecretAuraSingleMissing.lua
 SecretAuraSingleRemaining.lua
 SecretAuraGlow.lua

@@ -255,6 +255,12 @@ local funcs = {
   end,
   OnSizeChanged = function(self)
     local w, h = self:GetSize()
+    -- Secret when anchored to a frame with secret geometry: a secret cannot be passed to SetWidth.
+    -- Fall back to the configured size.
+    if Private.IsSecret(w, h) then
+      w, h = self.configuredWidth, self.configuredHeight
+      if not (w and h) then return end
+    end
     self.circularTexture:SetWidth(w)
     self.circularTexture:SetHeight(h)
     self.circularTexture:UpdateTextures()
@@ -292,6 +298,11 @@ local function modify(parent, region, parentData, data, first)
   region.parent = parent
   region:SetParent(parent)
   region.scale = data.scale or 1
+  if data.anchor_mode == "point" then
+    region.configuredWidth, region.configuredHeight = data.width, data.height
+  else
+    region.configuredWidth, region.configuredHeight = parentData.width, parentData.height
+  end
   region.Anchor = nil
 
   local arg1 = data.anchor_mode == "point" and data.anchor_point or data.anchor_area

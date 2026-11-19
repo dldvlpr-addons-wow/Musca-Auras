@@ -231,6 +231,10 @@ local function create(parent, data)
       iconWidth = region:GetWidth()
       iconHeight = region:GetHeight()
     end
+    -- Secret when anchored to a frame with secret geometry: use the configured size.
+    if Private.IsSecret(iconWidth, iconHeight) then
+      iconWidth, iconHeight = width, height
+    end
 
     if region.inner then
       region.inner:SetSize(iconWidth - 0.2 * width, iconHeight - 0.2 * height)
@@ -832,8 +836,11 @@ local function modify(parent, region, data)
   --- WORKAROUND
   -- This fixes a issue with barmodels not appearing on icons if the
   -- icon is shown delayed
-  region:SetWidth(region:GetWidth())
-  region:SetHeight(region:GetHeight())
+  local currentWidth, currentHeight = region:GetWidth(), region:GetHeight()
+  if not Private.IsSecret(currentWidth, currentHeight) then
+    region:SetWidth(currentWidth)
+    region:SetHeight(currentHeight)
+  end
 end
 
 local function validate(data)

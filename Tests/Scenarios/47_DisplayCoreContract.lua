@@ -8,9 +8,14 @@ return function(test)
   local savedStringUtil = C_StringUtil
   local savedValidFilter = AuraUtil and AuraUtil.IsValidFilterString
   CustomAuraContainerAuraProcessingPolicy = { None = 0 }
-  local containerAddonLoaded, loadCause = true, nil
+  -- Most cases below need an apply that waits for the end of the restriction: under restriction the container
+  -- addon reads as not loaded, unless a case sets containerLoadedInCombat.
+  local containerAddonLoaded, containerLoadedInCombat, loadCause = true, false, nil
+  local restricted
   C_AddOns.IsAddOnLoaded = function(name)
-    if name == "Blizzard_AuraContainer" then return containerAddonLoaded end
+    if name == "Blizzard_AuraContainer" then
+      return containerAddonLoaded and (not restricted or containerLoadedInCombat)
+    end
     return savedIsLoaded(name)
   end
   C_AddOns.LoadAddOn = function(name)
@@ -91,7 +96,8 @@ return function(test)
   local function Truthy(value, message) assert(value, message) end
 
   -- Switches.
-  local restricted, optionsOpen, loginFinished = false, false, true
+  local optionsOpen, loginFinished
+  restricted, optionsOpen, loginFinished = false, false, true
   local originals = {
     IsRestricted = WeakAuras.IsRestricted, IsOptionsOpen = WeakAuras.IsOptionsOpen, GetData = WeakAuras.GetData,
     IsLoginFinished = WeakAuras.IsLoginFinished, UpdateWarning = private.AuraWarnings.UpdateWarning,
@@ -262,7 +268,18 @@ return function(test)
     Same(Warning("InDyn", "blizzard_aura_dynamicgroup"), nil, "dynamic group warning cleared")
   end
 
-  -- Restriction: nothing built, text posted, applied once the restriction ends.
+  -- Restriction: an aura loaded in combat is built right away.
+  do
+    local region = NewRegion("ApplyInCombat")
+    restricted, containerLoadedInCombat = true, true
+    Display.Apply(region, Data("ApplyInCombat"))
+    containerLoadedInCombat = false
+    assert(region.blizzardAuraDisplay and region.blizzardAuraDisplay.active, "aura not built under restriction")
+    Same(Warning("ApplyInCombat", "blizzard_aura_display"), nil, "no restriction text when built")
+    restricted = false
+  end
+
+  -- Restriction, container addon not loaded: nothing built, text posted, applied once the restriction ends.
   do
     local data = Data("ApplyLater")
     local region = NewRegion("ApplyLater")
@@ -673,12 +690,25 @@ return function(test)
     end
     Same(fromTarget, 0, "target display does not refresh its sounds on a roster event")
 
+    -- Under restriction the registration is tried right away, with the throttle.
     local before = #added
     restricted = true
     data.actions.start.sound = "Sound\\Ninth.ogg"
     test.Frames.Fire("GROUP_ROSTER_UPDATE")
     restricted = false
-    Same(#added, before, "no registration under restriction")
+    assert(#added > before, "no registration tried under restriction")
+    Same(added[#added].info.throttleSeconds, 0.5, "sound throttle")
+    -- A registration the client refuses under restriction waits for the next event.
+    local accepting = C_UnitAuras.AddAuraSound
+    C_UnitAuras.AddAuraSound = function() return nil end
+    before = #added
+    restricted = true
+    data.actions.start.sound = "Sound\\Tenth.ogg"
+    test.Frames.Fire("GROUP_ROSTER_UPDATE")
+    restricted = false
+    C_UnitAuras.AddAuraSound = accepting
+    Same(#added, before, "refused registration not counted")
+    Same(Warning("SoundParty", "blizzard_aura_sound"), nil, "no warning for a refusal under restriction")
     test.Frames.Fire("PLAYER_TARGET_CHANGED")
     assert(#added > before, "queued sound synchronisation not flushed by the next event")
     local flushed = #added

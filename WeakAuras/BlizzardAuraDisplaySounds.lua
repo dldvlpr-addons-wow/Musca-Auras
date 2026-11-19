@@ -24,7 +24,13 @@ local function SoundFileOf(action)
 end
 
 local SOUND_FIELDS = { "do_sound", "sound", "sound_path", "sound_channel" }
-local SOUND_SLOTS = { { "start", "Added", "added" }, { "finish", "Removed", "removed" } }
+local SOUND_SLOTS = {
+  { "start", "Added", "added" },
+  { "finish", "Removed", "removed" },
+  { "increase", "ApplicationsIncreased", "stack increase" },
+}
+-- Same sound from several units or spells within this delay plays once: no burst on a group-wide buff.
+local SOUND_THROTTLE_SECONDS = 0.5
 
 local function ActionFingerprint(action)
   local pieces = {}
@@ -36,6 +42,7 @@ local function SoundFingerprint(trigger, actions)
   return table.concat({
     ActionFingerprint(actions.start or {}),
     ActionFingerprint(actions.finish or {}),
+    ActionFingerprint(actions.increase or {}),
     Join(Display.UnitTokens(trigger)),
     Join(Display.GetSpellIDs(trigger, true)),
     Join(Listed(trigger.excludedAuraSpellIDs)),
@@ -75,11 +82,13 @@ end
 
 local queuedSoundSyncs = {}
 
+-- The client may refuse sound changes while restricted: a refused call keeps the region queued for the end of
+-- the restriction. A secret sound ID is never kept.
+local function RemoveSound(soundID)
+  return pcall(C_UnitAuras.RemoveAuraSound, soundID)
+end
+
 local function UpdateSounds(region)
-  if WeakAuras.IsRestricted() then
-    queuedSoundSyncs[region] = true
-    return
-  end
   queuedSoundSyncs[region] = nil
   local state = region.blizzardAuraDisplay
   if not state then return end
@@ -92,13 +101,24 @@ local function UpdateSounds(region)
   if fingerprint and fingerprint == state.soundSignature then return end
   state.soundSignature = fingerprint
 
-  for _, soundID in ipairs(state.soundIDs or {}) do C_UnitAuras.RemoveAuraSound(soundID) end
-  state.soundIDs = {}
+  local kept = {}
+  for _, soundID in ipairs(state.soundIDs or {}) do
+    if not RemoveSound(soundID) then kept[#kept + 1] = soundID end
+  end
+  state.soundIDs = kept
+  if #kept > 0 then
+    -- Removal refused (restricted): try again at the end of the restriction.
+    state.soundSignature = nil
+    queuedSoundSyncs[region] = true
+    return
+  end
   PostSoundWarning(data and data.uid)
   if not live then return end
 
   local startAction, finishAction = actions.start, actions.finish
-  if not ((startAction and startAction.do_sound) or (finishAction and finishAction.do_sound)) then return end
+  local stackAction = actions.increase
+  if not ((startAction and startAction.do_sound) or (finishAction and finishAction.do_sound)
+    or (stackAction and stackAction.do_sound)) then return end
   if not SoundRegistrationAvailable() then
     return PostSoundWarning(data and data.uid, L["This client does not provide aura sound registration."])
   end
@@ -107,30 +127,41 @@ local function UpdateSounds(region)
     return PostSoundWarning(data and data.uid, "Enable Spell ID(s) or Exact Spell ID(s) in Trigger and enter an ID that is not ignored to use aura sounds.")
   end
 
-  local tokens, failure = Display.UnitTokens(current), nil
+  local tokens, failure, refused = Display.UnitTokens(current), nil, false
   for _, slot in ipairs(SOUND_SLOTS) do
     local action = actions[slot[1]]
-    if action and action.do_sound then
+    local kind = Enum.UnitAuraSoundTrigger[slot[2]]
+    if action and action.do_sound and not kind then
+      failure = L["This client has no sound trigger for stacks gained."]
+    elseif action and action.do_sound then
       local file, problem = SoundFileOf(action)
       if not file then
         failure = problem
       else
-        local kind = Enum.UnitAuraSoundTrigger[slot[2]]
         for _, token in ipairs(tokens) do
           for _, spellID in ipairs(spells) do
-            local info = { unitToken = token, spellID = spellID, outputChannel = action.sound_channel or "Master" }
+            local info = { unitToken = token, spellID = spellID, outputChannel = action.sound_channel or "Master",
+              throttleSeconds = SOUND_THROTTLE_SECONDS }
             if type(file) == "string" then info.soundFileName = file end
             if type(file) == "number" then info.soundFileID = file end
             local ok, soundID = pcall(C_UnitAuras.AddAuraSound, kind, info)
-            if ok and soundID then
+            if ok and soundID and not Private.IsSecret(soundID) then
               state.soundIDs[#state.soundIDs + 1] = soundID
+            elseif WeakAuras.IsRestricted() then
+              refused = true
             else
               failure = "The client refused the " .. slot[3] .. " sound for spell " .. spellID .. "."
+              if not ok then failure = failure .. " " .. tostring(soundID) end
             end
           end
         end
       end
     end
+  end
+  if refused then
+    -- Registration refused while restricted: registered again at the end of the restriction.
+    state.soundSignature = nil
+    queuedSoundSyncs[region] = true
   end
   PostSoundWarning(data and data.uid, failure)
 end
@@ -161,7 +192,10 @@ end
 local SyncSounds = UpdateSounds
 
 local function FlushPendingSounds()
-  for auraRegion in pairs(queuedSoundSyncs) do UpdateSounds(auraRegion) end
+  -- UpdateSounds may queue a region again, so walk a copy of the queue.
+  local regions = {}
+  for auraRegion in pairs(queuedSoundSyncs) do regions[#regions + 1] = auraRegion end
+  for _, auraRegion in ipairs(regions) do UpdateSounds(auraRegion) end
 end
 
 Shared.FlushPendingSounds = FlushPendingSounds

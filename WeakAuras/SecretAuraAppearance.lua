@@ -653,6 +653,28 @@ local function StyleBar(pass)
   background:Show()
 end
 
+-- The native button shows the picked texture with the region's own texture settings.
+local function StyleTexture(pass)
+  local native, data = pass.native, pass.data
+  local textureBase = native.textureBase
+  if not textureBase then
+    textureBase = Private.TextureBase.create(pass.base)
+    native.textureBase = textureBase
+  end
+  Private.TextureBase.modify(textureBase, {
+    canRotate = data.rotate,
+    desaturate = data.desaturate,
+    blendMode = data.blendMode,
+    mirror = data.mirror,
+    rotation = data.rotation,
+    textureWrapMode = data.textureWrapMode,
+  })
+  textureBase:SetTexture(data.texture)
+  textureBase.texture:SetVertexColor(ColorValues(data.color, WHITE))
+  FillOn(textureBase.texture, pass.base)
+  textureBase.texture:Show()
+end
+
 local function StyleMainText(pass)
   local native, data = pass.native, pass.data
   local text = native.mainText
@@ -922,6 +944,7 @@ local function ResetNative(native, width, height)
   if native.progressTexture then Hide(native.progressTexture.bar) end
   Hide(native.progressBackground)
   Hide(native.mainText)
+  if native.textureBase then native.textureBase.texture:Hide() end
   native.bar = nil
 
   native.sharedElements = native.sharedElements or {}
@@ -944,6 +967,7 @@ local function StyleRegion(pass)
   if regionType == "icon" and data.cooldown ~= false then StyleCooldown(pass) end
   if regionType == "aurabar" then StyleBar(pass) end
   if regionType == "text" then StyleMainText(pass) end
+  if regionType == "texture" then StyleTexture(pass) end
 end
 
 local function StyleElements(pass, resolveElement)
@@ -965,6 +989,60 @@ local function StyleElements(pass, resolveElement)
       styler(pass, entry, element, index)
     end
   end
+end
+
+local NEW_AURA_FADE_IN, NEW_AURA_FADE_OUT = 0.1, 0.3
+
+local function DropNewAura(native)
+  local newAura = native.newAura
+  if not newAura then return end
+  native.button:RemoveAuraAssignedAnimation(newAura.group)
+  newAura.group:Stop()
+  for _, frame in ipairs(newAura.frames) do frame:SetAlpha(1) end
+  native.newAura = nil
+end
+
+-- One fade in, hold, fade out on the frames that hold everything drawn on the button: the clip
+-- frame (picture, elements, condition overlay), the border and the overlay. The game plays the group
+-- each time it puts an aura on the button; the frames rest at alpha 0 between two plays.
+local function StyleNewAura(pass)
+  local native, button = pass.native, pass.button
+  local seconds = Display.NewAuraSeconds(Display.GetTrigger(pass.data))
+  if seconds <= 0 or native.preview or not button.AddAuraAssignedAnimation then
+    DropNewAura(native)
+    return
+  end
+  local newAura = native.newAura
+  if not newAura then
+    local frames, holds = {}, {}
+    for _, frame in ipairs({ native.gateClip, native.border, native.overlay }) do frames[#frames + 1] = frame end
+    -- The game forbids adding animations once the group is registered, so build it whole.
+    local group = button:CreateAnimationGroup()
+    for _, frame in ipairs(frames) do
+      local fadeIn, hold, fadeOut = group:CreateAnimation("Alpha"), group:CreateAnimation("Alpha"), group:CreateAnimation("Alpha")
+      fadeIn:SetTarget(frame)
+      fadeIn:SetOrder(1)
+      fadeIn:SetFromAlpha(0)
+      fadeIn:SetToAlpha(1)
+      fadeIn:SetDuration(NEW_AURA_FADE_IN)
+      hold:SetTarget(frame)
+      hold:SetOrder(2)
+      hold:SetFromAlpha(1)
+      hold:SetToAlpha(1)
+      fadeOut:SetTarget(frame)
+      fadeOut:SetOrder(3)
+      fadeOut:SetFromAlpha(1)
+      fadeOut:SetToAlpha(0)
+      fadeOut:SetDuration(NEW_AURA_FADE_OUT)
+      holds[#holds + 1] = hold
+    end
+    group:SetToFinalAlpha(true)
+    button:AddAuraAssignedAnimation(group)
+    newAura = { group = group, frames = frames, holds = holds }
+    native.newAura = newAura
+  end
+  for _, hold in ipairs(newAura.holds) do hold:SetDuration(seconds) end
+  for _, frame in ipairs(newAura.frames) do frame:SetAlpha(0) end
 end
 
 function Display.StyleAppearance(native, data, resolveElement, styleText)
@@ -993,4 +1071,5 @@ function Display.StyleAppearance(native, data, resolveElement, styleText)
   if Display.StyleRemainingList then Display.StyleRemainingList(native, data) end
   Display.StyleMasque(native, data)
   if Display.StyleDurationGate then Display.StyleDurationGate(native, data) end
+  StyleNewAura(pass)
 end

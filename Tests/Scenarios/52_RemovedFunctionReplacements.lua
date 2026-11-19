@@ -26,6 +26,13 @@ return function(test)
   end
   GetSpellTexture = nil
   IsUsableSpell = nil
+  C_Item = C_Item or {}
+  C_Item.GetItemCount = function(item) if item == 6948 then return 1 end return 0 end
+  GetItemCount = nil
+  C_AddOns = C_AddOns or {}
+  local savedAddOnLoaded = C_AddOns.IsAddOnLoaded
+  local savedGlobalAddOnLoaded = IsAddOnLoaded
+  IsAddOnLoaded = nil
 
   local private = test.Loader.LoadAddon(test.tocPath, "WeakAuras", {})
   test.Environment.Advance(1)
@@ -87,4 +94,9 @@ return function(test)
   Same(Run("return UnitBuff('player', 1)"), { "game" }, "UnitBuff defined by the game")
   assert(not private.HasRemovedFunctionReplacement("UnitBuff"), "UnitBuff reported as replaced while defined")
   UnitBuff = nil
+
+  Same(Run("return GetItemCount(6948)"), { 1 }, "GetItemCount through C_Item")
+  assert(private.HasRemovedFunctionReplacement("IsAddOnLoaded"), "IsAddOnLoaded not reported as replaced")
+  assert(Run("return IsAddOnLoaded")[1] == savedAddOnLoaded, "IsAddOnLoaded not routed to C_AddOns")
+  IsAddOnLoaded = savedGlobalAddOnLoaded
 end

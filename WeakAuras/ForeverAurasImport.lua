@@ -7,6 +7,11 @@ local Private = select(2, ...)
 local addonsPathPrefix = "[Aa][Dd][Dd][Oo][Nn][Ss][\\/]+"
 local apiReferencePattern = "ForeverAuras([%.:%[])"
 local frameReferenceKeys = { anchorFrameFrame = true, glow_frame = true }
+-- Their custom code functions that Musca has under its own names.
+local renamedFunctions = {
+  SetLoadFlag = "SetLoadSwitch", SetLoadFlags = "SetLoadSwitches", LoadFlag = "IsLoadSwitchOn",
+  SetAuraSpellList = "SetAuraSpellSet", SetAuraSpellLists = "SetAuraSpellSets",
+}
 
 if ForeverAuras == nil then
   ForeverAuras = WeakAuras
@@ -47,8 +52,25 @@ local function IsForeverAurasDispelSubRegion(subRegion)
     or (subRegion.type == "subcdmdispel" and subRegion.dispelStyle ~= nil and subRegion.dispelStyle ~= "Icon")
 end
 
+-- Their field names for features Musca has under its own names.
+local renamedTriggerFields = {
+  secretSpellList = "secretSpellSet", secretGained = "secretNewAura", secretGainedSeconds = "secretNewAuraSeconds",
+  unitClass = "memberClasses", useUnitClass = "useMemberClasses",
+}
+local renamedLoadFields = { loadFlag = "loadSwitch", use_loadFlag = "use_loadSwitch" }
+local renamedActionFields = { stack = "increase" }
+
+local function HasAnyField(tbl, names)
+  if type(tbl) ~= "table" then return false end
+  for theirs in pairs(names) do
+    if tbl[theirs] ~= nil then return true end
+  end
+  return false
+end
+
 local function HasForeverAurasContent(data)
-  if data.cdmDispelIndicator or data.blizzardAuraDisplay then
+  if data.cdmDispelIndicator or data.blizzardAuraDisplay or HasAnyField(data.load, renamedLoadFields)
+     or HasAnyField(data.actions, renamedActionFields) then
     return true
   end
   for _, triggerData in ipairs(type(data.triggers) == "table" and data.triggers or {}) do
@@ -56,7 +78,7 @@ local function HasForeverAurasContent(data)
     if type(trigger) == "table" and (trigger.type == "cdm" or trigger.type == "secretAura"
        or trigger.swingType ~= nil or trigger.trackingType ~= nil or trigger.trackingShow ~= nil
        or trigger.ammoItemIDs ~= nil or trigger.use_totalSlots ~= nil or trigger.use_freePercent ~= nil
-       or trigger.use_formID ~= nil
+       or trigger.use_formID ~= nil or HasAnyField(trigger, renamedTriggerFields)
        or unsupportedEvents[trigger.event]) then
       return true
     end
@@ -73,6 +95,17 @@ local function IsForeverAurasData(data)
   return type(data) == "table" and HasForeverAurasContent(data)
 end
 
+local function HasAuraOverlayCall(tbl)
+  for key, value in pairs(tbl) do
+    if type(value) == "string" then
+      if IsCodeField(tbl, key) and value:find("ForeverAuras[%.:]AuraOverlay") then return true end
+    elseif type(value) == "table" and HasAuraOverlayCall(value) then
+      return true
+    end
+  end
+  return false
+end
+
 local function RenameReferences(tbl)
   local renamed = false
   for key, value in pairs(tbl) do
@@ -80,6 +113,12 @@ local function RenameReferences(tbl)
       local count, codeCount
       value, count = value:gsub("(" .. addonsPathPrefix .. ")ForeverAuras", "%1WeakAuras")
       if IsCodeField(tbl, key) then
+        for theirs, ours in pairs(renamedFunctions) do
+          value, codeCount = value:gsub("ForeverAuras([%.:])" .. theirs .. "%f[^%w_]", "WeakAuras%1" .. ours)
+          count = count + codeCount
+          value, codeCount = value:gsub("ForeverAuras%[([\"'])" .. theirs .. "%1%]", "WeakAuras[%1" .. ours .. "%1]")
+          count = count + codeCount
+        end
         value, codeCount = value:gsub(apiReferencePattern, "WeakAuras%1")
         count = count + codeCount
       end
@@ -179,13 +218,35 @@ local function ConvertTrigger(trigger, warn)
   return false
 end
 
+local function RenameFields(tbl, names, warn)
+  local changed = false
+  if type(tbl) ~= "table" then return false end
+  for theirs, ours in pairs(names) do
+    if tbl[theirs] ~= nil then
+      if tbl[ours] == nil then
+        tbl[ours] = tbl[theirs]
+      elseif tbl[ours] ~= tbl[theirs] and not (type(tbl[ours]) == "table" and type(tbl[theirs]) == "table") then
+        warn(("%s and %s both set, %s kept"):format(theirs, ours, ours))
+      end
+      tbl[theirs] = nil
+      changed = true
+    end
+  end
+  return changed
+end
+
 local function ConvertAura(data, warnings)
   local warningCount = #warnings
   local function warn(message)
     tinsert(warnings, ("%s: %s"):format(data.id or "?", message))
   end
 
+  if HasAuraOverlayCall(data) then
+    warn("ForeverAuras.AuraOverlay is not converted, rewrite it with WeakAuras.CreateAuraSlot")
+  end
   local changed = RenameReferences(data)
+  changed = RenameFields(data.load, renamedLoadFields, warn) or changed
+  changed = RenameFields(data.actions, renamedActionFields, warn) or changed
   data.information = data.information or {}
   if data.information.showNilIsFalse ~= true then
     data.information.showNilIsFalse = true
@@ -197,6 +258,7 @@ local function ConvertAura(data, warnings)
     for index, triggerData in ipairs(data.triggers) do
       if type(triggerData.trigger) == "table" then
         formTriggers[index] = triggerData.trigger.event == "Stance/Form/Aura" and triggerData.trigger.use_formID ~= nil
+        changed = RenameFields(triggerData.trigger, renamedTriggerFields, warn) or changed
         changed = ConvertTrigger(triggerData.trigger, warn) or changed
       end
     end

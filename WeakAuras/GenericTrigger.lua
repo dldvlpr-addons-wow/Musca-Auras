@@ -5563,6 +5563,15 @@ end
 do
   -- Based on Code by DejaCharacterStats. Ugly code to figure out the GCD
   local class = select(2, UnitClass("player"))
+  -- GetHaste is secret while unit stats are restricted: the last readable value is used instead.
+  local lastHaste = 0
+  local function GetHaste()
+    local haste = _G.GetHaste()
+    if not Private.IsSecret(haste) and type(haste) == "number" then
+      lastHaste = haste
+    end
+    return lastHaste
+  end
   if class == "DEMONHUNTER"
     or class == "HUNTER" or class == "SHAMAN"
     or class == "MAGE" or class == "PRIEST" or class == "WARLOCK"
@@ -5681,11 +5690,8 @@ WeakAuras.GetCritChance = function()
   if Private.IsRestricted("unitStats") then
     return nil
   end
-  local spellCrit = 0
-  for i = 2, MAX_SPELL_SCHOOLS or 7 do -- WORKAROUND: MAX_SPELL_SCHOOLS is nil on classic_era
-    spellCrit = max(spellCrit, GetSpellCritChance(i))
-  end
-  return max(spellCrit, GetRangedCritChance(), GetCritChance())
+  -- GetSpellCritChance takes no school on Forever: one call gives the spell crit.
+  return max(GetSpellCritChance() or 0, GetRangedCritChance(), GetCritChance())
 end
 
 ---@return number? hitChance
@@ -5694,7 +5700,7 @@ WeakAuras.GetHitChance = function()
     return nil
   end
   local melee = (GetCombatRatingBonus(CR_HIT_MELEE) or 0) + (GetHitModifier() or 0)
-  local ranged = (GetCombatRatingBonus(CR_HIT_RANGED) or 0) + (GetHitModifier() or 0)
+  local ranged = (GetCombatRatingBonus(CR_HIT_RANGED) or 0) + (GetRangedHitModifier() or 0)
   local spell = (GetCombatRatingBonus(CR_HIT_SPELL) or 0) + (GetSpellHitModifier() or 0)
   return max(melee, ranged, spell)
 end

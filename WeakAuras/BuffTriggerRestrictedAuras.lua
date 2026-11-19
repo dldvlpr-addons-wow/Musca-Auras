@@ -60,6 +60,9 @@ function Private.CreateAddReadableRestrictedAuras(matchData, ScanUnit, MarkResca
       local ok, auraInstanceIDs
       if HasScanFuncs(unit, filter) then
         ok, auraInstanceIDs = pcall(C_UnitAuras.GetUnitAuraInstanceIDs, unit, filter)
+        if not ok then
+          MarkRescanPending()
+        end
       end
       if ok and type(auraInstanceIDs) == "table" and not Private.IsSecret(auraInstanceIDs) then
         local known = matchData[unit] and matchData[unit][filter]
@@ -138,6 +141,9 @@ function Private.CreateRestrictedAuraRefresh(matchData, matchDataByTrigger, matc
         local ok, durationObject
         if next(data.auras) then
           ok, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
+          if not ok then
+            MarkRescanPending()
+          end
         end
         if ok then
           if durationObject == nil then
@@ -196,7 +202,15 @@ function Private.RegisterRestrictionChangedRescan(frame, restrictedRefreshUnits,
       restricted = isRestricted
     end
     SetAurasRestricted(restricted)
-    if not restricted then
+    if restricted then
+      -- Auras read before the restriction can be stale: each unit is read again through the restricted path,
+      -- so a buff still present is not shown as missing until its next UNIT_AURA.
+      for _, unit in ipairs({"player", "pet", "target", "focus", "party1", "party2", "party3", "party4"}) do
+        if UnitExists(unit) then
+          restrictedRefreshUnits[unit] = true
+        end
+      end
+    else
       wipe(restrictedRefreshUnits)
     end
     if not restricted and ConsumeRescanPending() then

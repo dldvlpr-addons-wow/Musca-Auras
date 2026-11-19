@@ -126,10 +126,33 @@ function Display.StopSampleAnimations(sample)
   end
 end
 
+-- A sample anchored to a protected Blizzard container becomes protected: hiding it in combat is blocked
+-- (ADDON_ACTION_BLOCKED). Such samples are hidden at the end of combat.
+local samplesHiddenAfterCombat = {}
+local combatEndFrame
+
+local function HideAfterCombat(button)
+  samplesHiddenAfterCombat[button] = true
+  if not combatEndFrame then
+    combatEndFrame = CreateFrame("Frame")
+    combatEndFrame:SetScript("OnEvent", function()
+      for pending in pairs(samplesHiddenAfterCombat) do
+        samplesHiddenAfterCombat[pending] = nil
+        pending:Hide()
+      end
+    end)
+    combatEndFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+  end
+end
+
 function Display.HidePreview(region)
   region.secretAuraSamplesActive = false
   for _, sample in ipairs(region.secretAuraSamples or {}) do
-    sample.button:Hide()
+    if InCombatLockdown() and sample.button:IsProtected() then
+      HideAfterCombat(sample.button)
+    else
+      sample.button:Hide()
+    end
     Display.StopSampleAnimations(sample)
   end
 end
@@ -231,6 +254,7 @@ function Display.ShowPreview(region, data, StyleSample)
     button.staticSample = missing
     Display.FillSampleBindings(button, missing and Display.SingleIcon(data) or sample.iconID, sample.name, data, not missing)
     if missing then Display.StyleMissingIcon(sample, data) end
+    samplesHiddenAfterCombat[button] = nil
     button:Show()
   end
 end

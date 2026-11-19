@@ -582,8 +582,11 @@ local function fallbackmodify(parent, region, data)
   text:ClearAllPoints();
   text:SetPoint("CENTER", region, "CENTER");
 
-  region:SetWidth(text:GetWidth());
-  region:SetHeight(text:GetStringHeight());
+  local textWidth, textHeight = text:GetWidth(), text:GetStringHeight()
+  if not Private.IsSecret(textWidth, textHeight) then
+    region:SetWidth(textWidth);
+    region:SetHeight(textHeight);
+  end
 
   region.Update = function() end
 

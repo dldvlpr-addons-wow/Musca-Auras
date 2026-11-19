@@ -1001,6 +1001,11 @@ finish_do_message | desc="Blizzard controls aura visibility. Use a condition fro
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
 finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+increase_do_sound | desc="Play each time one of the trigger's exact spell IDs gains a stack on the selected unit. The client plays it on every stack gained, without a Stack Count filter." name="Play Sound" order=40.100000000 type="toggle" width=1.300000000
+increase_header | name="On Stack Increase" order=40 type="header"
+increase_sound | disabled=fn:true itemControl="WeakAurasMediaSound" name="Sound" order=40.200000000 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"} width=1.300000000
+increase_sound_channel | disabled=fn:true get=<fn> name="Sound Channel" order=40.300000000 type="select" values={"Ambience"="ENABLE_AMBIENCE","Dialog"="ENABLE_DIALOG","Master"="Master","Music"="ENABLE_MUSIC","SFX"="ENABLE_SOUNDFX"} width=1.300000000
+increase_sound_path | disabled=fn:true hidden=fn:true name="Sound File Path" order=40.400000000 type="input" width=2.600000000
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cfff66d67Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
@@ -1051,6 +1056,11 @@ finish_do_message | desc="Blizzard controls aura visibility. Use a condition fro
 finish_do_sound | desc="Play when one of the trigger's exact spell IDs is removed. Works even if Blizzard cannot display the aura. Uses the selected unit and exact spell IDs, excluding ignored IDs; other display filters do not affect sounds." name="Play Sound" order=32 type="toggle"
 finish_header | name="On Hide" order=30 type="header"
 finish_sound | name="Sound" order=33 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"}
+increase_do_sound | desc="Play each time one of the trigger's exact spell IDs gains a stack on the selected unit. The client plays it on every stack gained, without a Stack Count filter." name="Play Sound" order=40.100000000 type="toggle" width=1.300000000
+increase_header | name="On Stack Increase" order=40 type="header"
+increase_sound | disabled=fn:true itemControl="WeakAurasMediaSound" name="Sound" order=40.200000000 sorting={1=" custom",2=554003,3=1} type="select" values={" custom"=" Custom",1="None",554003="Lich King Apocalypse"} width=1.300000000
+increase_sound_channel | disabled=fn:true get=<fn> name="Sound Channel" order=40.300000000 type="select" values={"Ambience"="ENABLE_AMBIENCE","Dialog"="ENABLE_DIALOG","Master"="Master","Music"="ENABLE_MUSIC","SFX"="ENABLE_SOUNDFX"} width=1.300000000
+increase_sound_path | disabled=fn:true hidden=fn:true name="Sound File Path" order=40.400000000 type="input" width=2.600000000
 init_do_custom | name="Init" order=40 type="toggle"
 other | name="Other" order=41 type="toggle"
 secretSoundNotice | name="|cfff66d67Blizzard-controlled aura display: only supported actions are available.|r" order=0 type="description" width="full"
@@ -1132,6 +1142,8 @@ filtersHeader | name="Aura Filters" order=10 type="header"
 help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:true name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:true name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
+ignoreInvisible | desc="Hide this member's auras while it is too far away for the game to report it." get=<fn> hidden=fn:true name="Ignore out of checking range" order=4.430000000 set=<fn> type="toggle" width=1.300000000
+ignoreSelf | desc="Leave your own character out of the tracked members." get=<fn> hidden=fn:true name="Ignore Self" order=4.470000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:true name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
 ignorespellidDisabledSpace | hidden=fn:false name="" order=7.001000000 type="description" width=1.500000000
 ignorespellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=7.010200000 type="execute" width=0.200000000
@@ -1144,6 +1156,7 @@ isFromPlayerOrPlayerPet | desc="Auras cast by any player or player pet, not only
 isPriorityAura | desc="Debuffs Blizzard marks as high priority." get=<fn> hidden=fn:true name=fn:"Priority debuff" order=17 set=<fn> type="toggle" width="full"
 isRoleAura | desc="Auras Blizzard marks as relevant to your role." get=<fn> hidden=fn:true name=fn:"Role aura" order=15 set=<fn> type="toggle" width="full"
 isStealable | desc="Buffs that can be stolen with abilities such as Spellsteal." get=<fn> hidden=fn:false name=fn:"Is Stealable" order=13 set=<fn> type="toggle" width="full"
+memberClasses | get=<fn> hidden=fn:true name="Class" order=4.460000000 set=<fn> type="multiselect" values={} width="full"
 nameplateShowAll | desc="Only match auras Blizzard marks for display on all nameplates. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:true name=fn:"Marked for all nameplates" order=18 set=<fn> type="toggle" width="full"
 nameplateShowPersonal | desc="Only match auras marked for Blizzard's personal-debuff display on nameplates. This does not refer to your personal resource bar. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:true name=fn:"Marked for personal debuff display" order=19 set=<fn> type="toggle" width="full"
 nativeBIG_DEFENSIVE | desc="Auras Blizzard classifies as big defensives." get=<fn> hidden=fn:false name=fn:"Big defensive" order=20.400000000 set=<fn> type="toggle" width="full"
@@ -1160,6 +1173,7 @@ rankCoverage | fontSize="small" hidden=fn:true name=fn:"Other ranks could not be
 rankspellid1 | get=<fn> hidden=fn:true name="Spell ID or Name" order=4.960300000 set=<fn> type="input" validate=<fn>
 rankspellidDisabledSpace | hidden=fn:false name="" order=4.951000000 type="description" width=1.500000000
 rankspellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=4.960200000 type="execute" width=0.200000000
+secretSpellSet | desc="Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above." get=<fn> name="Spell Set" order=7.900000000 set=<fn> type="input" width="full"
 specificUnit | desc="party1-4, partypet1-4, raid1-40, raidpet1-40, boss1-8 or arena1-5." get=<fn> hidden=fn:true name="Specific Unit" order=3.030000000 set=<fn> type="input" validate=<fn> width=1.300000000
 specificUnitSpace | hidden=fn:true name="" order=3.020000000 type="description" width=1.300000000
 spellSelectionHeader | name="Spell Selection Filters" order=4.700000000 type="header"
@@ -1172,6 +1186,7 @@ unitNames | desc="Enter character names separated by commas. Include both the fi
 unitRoles | desc="Uses Blizzard's assigned group role. Members without a role assigned match Unassigned." get=<fn> hidden=fn:true name="Group Roles" order=4.400000000 set=<fn> type="multiselect" values={"DAMAGER"="Damage","HEALER"="Healer","NONE"="Unassigned","TANK"="Tank"} width="full"
 useExcludedSpellIDs | get=<fn> name="Ignored Exact Spell ID(s)" order=7 set=<fn> type="toggle" width=1.100000000
 useIncludePets | desc="Also track the pets of the group members." get=<fn> hidden=fn:true name="Include Pets" order=4.500000000 set=<fn> type="toggle" width=1.300000000
+useMemberClasses | desc="Only track members of the selected classes." get=<fn> hidden=fn:true name="Class" order=4.450000000 set=<fn> type="toggle" width=1.300000000
 useRankSpellIDs | desc="Enter a Spell ID or a spell name to track all ranks of that spell. A name is replaced by the IDs of all its ranks." get=<fn> name="Spell ID(s) (All Ranks)" order=4.950000000 set=<fn> type="toggle" width=1.100000000
 useSpellIDs | get=<fn> name="Exact Spell ID(s)" order=6 set=<fn> type="toggle" width=1.100000000
 useUnitNames | desc="Only track these group members. This also limits which units can play configured aura sounds." get=<fn> hidden=fn:true name="Player Name(s)" order=4.100000000 set=<fn> type="toggle" width=1.300000000
@@ -1212,6 +1227,8 @@ filtersHeader | name="Aura Filters" order=10 type="header"
 help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:false name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:false name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
+ignoreInvisible | desc="Hide this member's auras while it is too far away for the game to report it." get=<fn> hidden=fn:false name="Ignore out of checking range" order=4.430000000 set=<fn> type="toggle" width=1.300000000
+ignoreSelf | desc="Leave your own character out of the tracked members." get=<fn> hidden=fn:false name="Ignore Self" order=4.470000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:false name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
 ignorespellid2 | get=<fn> hidden=fn:false name="Ignored Spell ID or Name" order=7.020300000 set=<fn> type="input" validate=<fn>
 ignorespellidDisabledSpace | hidden=fn:true name="" order=7.001000000 type="description" width=1.500000000
@@ -1226,6 +1243,7 @@ isFromPlayerOrPlayerPet | desc="Auras cast by any player or player pet, not only
 isPriorityAura | desc="Debuffs Blizzard marks as high priority." get=<fn> hidden=fn:false name=fn:"Priority debuff" order=17 set=<fn> type="toggle" width="full"
 isRoleAura | desc="Auras Blizzard marks as relevant to your role." get=<fn> hidden=fn:false name=fn:"Role aura" order=15 set=<fn> type="toggle" width="full"
 isStealable | desc="Buffs that can be stolen with abilities such as Spellsteal." get=<fn> hidden=fn:true name=fn:"Is Stealable" order=13 set=<fn> type="toggle" width="full"
+memberClasses | get=<fn> hidden=fn:true name="Class" order=4.460000000 set=<fn> type="multiselect" values={} width="full"
 nameplateShowAll | desc="Only match auras Blizzard marks for display on all nameplates. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:true name=fn:"Marked for all nameplates" order=18 set=<fn> type="toggle" width="full"
 nameplateShowPersonal | desc="Only match auras marked for Blizzard's personal-debuff display on nameplates. This does not refer to your personal resource bar. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:true name=fn:"Marked for personal debuff display" order=19 set=<fn> type="toggle" width="full"
 nativeBIG_DEFENSIVE | desc="Auras Blizzard classifies as big defensives." get=<fn> hidden=fn:true name=fn:"Big defensive" order=20.400000000 set=<fn> type="toggle" width="full"
@@ -1244,6 +1262,7 @@ rankspellid2 | get=<fn> hidden=fn:true name="Spell ID or Name" order=4.970300000
 rankspellidDisabledSpace | hidden=fn:false name="" order=4.951000000 type="description" width=1.500000000
 rankspellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=4.960200000 type="execute" width=0.200000000
 rankspellidicon2 | control="WeakAurasIcon" hidden=fn:true name="" order=4.970200000 type="execute" width=0.200000000
+secretSpellSet | desc="Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above." get=<fn> name="Spell Set" order=7.900000000 set=<fn> type="input" width="full"
 specificUnit | desc="party1-4, partypet1-4, raid1-40, raidpet1-40, boss1-8 or arena1-5." get=<fn> hidden=fn:true name="Specific Unit" order=3.030000000 set=<fn> type="input" validate=<fn> width=1.300000000
 specificUnitSpace | hidden=fn:true name="" order=3.020000000 type="description" width=1.300000000
 spellSelectionHeader | name="Spell Selection Filters" order=4.700000000 type="header"
@@ -1260,6 +1279,7 @@ unitNames | desc="Enter character names separated by commas. Include both the fi
 unitRoles | desc="Uses Blizzard's assigned group role. Members without a role assigned match Unassigned." get=<fn> hidden=fn:false name="Group Roles" order=4.400000000 set=<fn> type="multiselect" values={"DAMAGER"="Damage","HEALER"="Healer","NONE"="Unassigned","TANK"="Tank"} width="full"
 useExcludedSpellIDs | get=<fn> name="Ignored Exact Spell ID(s)" order=7 set=<fn> type="toggle" width=1.100000000
 useIncludePets | desc="Also track the pets of the group members." get=<fn> hidden=fn:false name="Include Pets" order=4.500000000 set=<fn> type="toggle" width=1.300000000
+useMemberClasses | desc="Only track members of the selected classes." get=<fn> hidden=fn:false name="Class" order=4.450000000 set=<fn> type="toggle" width=1.300000000
 useRankSpellIDs | desc="Enter a Spell ID or a spell name to track all ranks of that spell. A name is replaced by the IDs of all its ranks." get=<fn> name="Spell ID(s) (All Ranks)" order=4.950000000 set=<fn> type="toggle" width=1.100000000
 useSpellIDs | get=<fn> name="Exact Spell ID(s)" order=6 set=<fn> type="toggle" width=1.100000000
 useUnitNames | desc="Only track these group members. This also limits which units can play configured aura sounds." get=<fn> hidden=fn:false name="Player Name(s)" order=4.100000000 set=<fn> type="toggle" width=1.300000000
@@ -1306,6 +1326,8 @@ filtersHeader | name="Aura Filters" order=10 type="header"
 help | fontSize="small" name=fn:"|cfff66d67Won't work:|r Select an Aura (Modern) trigger as the progress source of an Icon, Progress Bar, Progress Texture or Text." order=2 type="description" width="full"
 ignoreDead | desc="Hide this member's auras while it is dead or a ghost." get=<fn> hidden=fn:true name="Ignore Dead" order=4.410000000 set=<fn> type="toggle" width=1.300000000
 ignoreDisconnected | desc="Hide this member's auras while it is offline." get=<fn> hidden=fn:true name="Ignore Disconnected" order=4.420000000 set=<fn> type="toggle" width=1.300000000
+ignoreInvisible | desc="Hide this member's auras while it is too far away for the game to report it." get=<fn> hidden=fn:true name="Ignore out of checking range" order=4.430000000 set=<fn> type="toggle" width=1.300000000
+ignoreSelf | desc="Leave your own character out of the tracked members." get=<fn> hidden=fn:true name="Ignore Self" order=4.470000000 set=<fn> type="toggle" width=1.300000000
 ignorespellid1 | get=<fn> hidden=fn:true name="Ignored Spell ID or Name" order=7.010300000 set=<fn> type="input" validate=<fn>
 ignorespellidDisabledSpace | hidden=fn:false name="" order=7.001000000 type="description" width=1.500000000
 ignorespellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=7.010200000 type="execute" width=0.200000000
@@ -1318,6 +1340,7 @@ isFromPlayerOrPlayerPet | desc="Auras cast by any player or player pet, not only
 isPriorityAura | desc="Debuffs Blizzard marks as high priority." get=<fn> hidden=fn:true name=fn:"Priority debuff" order=17 set=<fn> type="toggle" width="full"
 isRoleAura | desc="Auras Blizzard marks as relevant to your role." get=<fn> hidden=fn:true name=fn:"Role aura" order=15 set=<fn> type="toggle" width="full"
 isStealable | desc="Buffs that can be stolen with abilities such as Spellsteal." get=<fn> hidden=fn:false name=fn:"Is Stealable" order=13 set=<fn> type="toggle" width="full"
+memberClasses | get=<fn> hidden=fn:true name="Class" order=4.460000000 set=<fn> type="multiselect" values={} width="full"
 nameplateShowAll | desc="Only match auras Blizzard marks for display on all nameplates. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:false name=fn:"Marked for all nameplates" order=18 set=<fn> type="toggle" width="full"
 nameplateShowPersonal | desc="Only match auras marked for Blizzard's personal-debuff display on nameplates. This does not refer to your personal resource bar. This checks Blizzard's nameplate flag. It does not change where the icon appears or who cast the aura." get=<fn> hidden=fn:false name=fn:"Marked for personal debuff display" order=19 set=<fn> type="toggle" width="full"
 nativeBIG_DEFENSIVE | desc="Auras Blizzard classifies as big defensives." get=<fn> hidden=fn:false name=fn:"Big defensive" order=20.400000000 set=<fn> type="toggle" width="full"
@@ -1334,6 +1357,7 @@ rankCoverage | fontSize="small" hidden=fn:true name=fn:"Other ranks could not be
 rankspellid1 | get=<fn> hidden=fn:true name="Spell ID or Name" order=4.960300000 set=<fn> type="input" validate=<fn>
 rankspellidDisabledSpace | hidden=fn:false name="" order=4.951000000 type="description" width=1.500000000
 rankspellidicon1 | control="WeakAurasIcon" hidden=fn:true name="" order=4.960200000 type="execute" width=0.200000000
+secretSpellSet | desc="Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above." get=<fn> name="Spell Set" order=7.900000000 set=<fn> type="input" width="full"
 specificUnit | desc="party1-4, partypet1-4, raid1-40, raidpet1-40, boss1-8 or arena1-5." get=<fn> hidden=fn:true name="Specific Unit" order=3.030000000 set=<fn> type="input" validate=<fn> width=1.300000000
 specificUnitSpace | hidden=fn:true name="" order=3.020000000 type="description" width=1.300000000
 spellSelectionHeader | name="Spell Selection Filters" order=4.700000000 type="header"
@@ -1346,6 +1370,7 @@ unitNames | desc="Enter character names separated by commas. Include both the fi
 unitRoles | desc="Uses Blizzard's assigned group role. Members without a role assigned match Unassigned." get=<fn> hidden=fn:true name="Group Roles" order=4.400000000 set=<fn> type="multiselect" values={"DAMAGER"="Damage","HEALER"="Healer","NONE"="Unassigned","TANK"="Tank"} width="full"
 useExcludedSpellIDs | get=<fn> name="Ignored Exact Spell ID(s)" order=7 set=<fn> type="toggle" width=1.100000000
 useIncludePets | desc="Also track the pets of the group members." get=<fn> hidden=fn:true name="Include Pets" order=4.500000000 set=<fn> type="toggle" width=1.300000000
+useMemberClasses | desc="Only track members of the selected classes." get=<fn> hidden=fn:true name="Class" order=4.450000000 set=<fn> type="toggle" width=1.300000000
 useRankSpellIDs | desc="Enter a Spell ID or a spell name to track all ranks of that spell. A name is replaced by the IDs of all its ranks." get=<fn> name="Spell ID(s) (All Ranks)" order=4.950000000 set=<fn> type="toggle" width=1.100000000
 useSpellIDs | get=<fn> name="Exact Spell ID(s)" order=6 set=<fn> type="toggle" width=1.100000000
 useUnitNames | desc="Only track these group members. This also limits which units can play configured aura sounds." get=<fn> hidden=fn:true name="Player Name(s)" order=4.100000000 set=<fn> type="toggle" width=1.300000000

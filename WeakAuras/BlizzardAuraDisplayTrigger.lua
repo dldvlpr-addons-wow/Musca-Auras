@@ -26,6 +26,58 @@ Display.UsesRankSpellIDs = function(trigger)
   return true == trigger.secretUseRankSpellIDs
 end
 
+-- Spell sets given by custom code: WeakAuras.SetAuraSpellSet(key, { spellIDs = { ... } }).
+-- A trigger names its set in secretSpellSet. While the set is absent, the trigger uses only its own spell IDs.
+local spellSets = {}
+
+Display.UsesSpellSet = function(trigger)
+  return type(trigger.secretSpellSet) == "string" and trigger.secretSpellSet ~= ""
+end
+
+local function SpellSetIDs(trigger)
+  local set = Display.UsesSpellSet(trigger) and spellSets[trigger.secretSpellSet]
+  local ids = set and (set.spellIDs or set)
+  return type(ids) == "table" and ids or {}
+end
+
+local changedSpellSets = {}
+
+local function ReapplyChangedSpellSets()
+  local changed = changedSpellSets
+  changedSpellSets = {}
+  for id, loaded in pairs(Private.loaded) do
+    local data = loaded and WeakAuras.GetData(id)
+    local trigger = data and Display.GetTrigger(data)
+    local entry = Private.regions[id]
+    if trigger and changed[trigger.secretSpellSet] and entry and entry.region then
+      Display.Apply(entry.region, data)
+    end
+  end
+end
+
+local function StoreSpellSet(key, set)
+  if type(key) ~= "string" or key == "" then
+    error("WeakAuras.SetAuraSpellSet: the key must be a non-empty string.", 3)
+  end
+  if set ~= nil and (type(set) ~= "table" or (set.spellIDs ~= nil and type(set.spellIDs) ~= "table")) then
+    error("WeakAuras.SetAuraSpellSet: the set must be nil, a list of spell IDs or a table with a spellIDs table.", 3)
+  end
+  spellSets[key] = set
+  if next(changedSpellSets) == nil then C_Timer.After(0, ReapplyChangedSpellSets) end
+  changedSpellSets[key] = true
+end
+
+function WeakAuras.SetAuraSpellSet(key, set)
+  StoreSpellSet(key, set)
+end
+
+function WeakAuras.SetAuraSpellSets(sets)
+  if type(sets) ~= "table" then
+    error("WeakAuras.SetAuraSpellSets: expects a table of key = set.", 2)
+  end
+  for key, set in pairs(sets) do StoreSpellSet(key, set) end
+end
+
 local SPELL_ID_CEILING = 2147483647
 
 Display.GetSpellIDs = function(trigger, withRanks)
@@ -51,6 +103,7 @@ Display.GetSpellIDs = function(trigger, withRanks)
   if usesIDs then
     for _, value in ipairs(trigger.auraspellids or {}) do Take(value) end
   end
+  for _, value in ipairs(SpellSetIDs(trigger)) do Take(value) end
   return ids
 end
 
@@ -132,7 +185,7 @@ Display.HasTrigger = function(data)
   return false
 end
 
-local REGION_TYPES = { icon = true, aurabar = true, text = true, progresstexture = true }
+local REGION_TYPES = { icon = true, aurabar = true, text = true, progresstexture = true, texture = true }
 
 Display.SupportsRegionType = function(regionType)
   return REGION_TYPES[regionType] == true

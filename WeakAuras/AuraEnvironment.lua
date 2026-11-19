@@ -604,6 +604,14 @@ local removedFunctionReplacements = {
       return info.currentCharges, info.maxCharges, info.cooldownStartTime, info.cooldownDuration, info.chargeModRate
     end
   end,
+  -- Globals the Forever client moved to a namespace, for imported aura code that still calls them.
+  GetItemInfo = C_Item and C_Item.GetItemInfo,
+  GetItemCount = C_Item and C_Item.GetItemCount,
+  IsUsableItem = C_Item and C_Item.IsUsableItem,
+  GetItemCooldown = C_Item and C_Item.GetItemCooldown,
+  IsAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded,
+  GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata,
+  GetSpellLink = C_Spell and C_Spell.GetSpellLink,
 }
 
 function Private.HasRemovedFunctionReplacement(name)

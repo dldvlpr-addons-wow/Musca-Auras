@@ -139,7 +139,7 @@ function AuraEditor.AddOptions(options, data, triggernum)
       defaultOperator = "<",
       operators = Display.remOperators, sorting = { "<", "<=", ">", ">=" },
       -- Remaining time only makes sense while the aura is shown because it is found.
-      blocked = function() return Display.RawShowOn(trigger) ~= "showOnActive" end,
+      blocked = function() return Display.RawShowOn(trigger) ~= "showOnActive" or trigger.secretNewAura == true end,
       onEnable = function()
         if tonumber(trigger.secretRem) == nil then trigger.secretRem = "5" end
       end,
@@ -151,6 +151,8 @@ function AuraEditor.AddOptions(options, data, triggernum)
       orders = { 10.05, 10.06, 10.07, 10.08 },
       title = L["Total Duration"],
       flag = "secretUseTotal", operator = "secretTotalOperator", value = "secretTotal",
+      -- New Aura(s) hides the button between two gains, so it cannot filter on a shown value.
+      blocked = function() return trigger.secretNewAura == true end,
       defaultOperator = "=",
       operators = Display.totalOperators, sorting = { "=", "<=", ">=" },
       validate = SecondsValidator(true, L["Enter a number of seconds above 0."]),
@@ -161,6 +163,8 @@ function AuraEditor.AddOptions(options, data, triggernum)
       orders = { 10.085, 10.086, 10.087, 10.088 },
       title = L["Stack Count"],
       flag = "secretUseStacks", operator = "secretStacksOperator", value = "secretStacks",
+      -- New Aura(s) hides the button between two gains, so it cannot filter on a shown value.
+      blocked = function() return trigger.secretNewAura == true end,
       defaultOperator = ">=",
       operators = Display.stackOperators, sorting = { "=", ">=", ">", "<=", "<" },
       validate = function(_, value)
@@ -246,13 +250,44 @@ function AuraEditor.AddOptions(options, data, triggernum)
   }
   options.matchesShowOn = {
     type = "select", name = L["Show On"], order = 71.1, width = WeakAuras.normalWidth,
-    values = Display.showOnValues, sorting = { "showOnActive", "showOnMissing", "showAlways" },
-    get = function() return Display.RawShowOn(trigger) end,
+    values = function()
+      local values = CopyTable(Display.showOnValues)
+      values.showOnNewAura = L["New Aura(s)"]
+      return values
+    end,
+    sorting = { "showOnActive", "showOnNewAura", "showOnMissing", "showAlways" },
+    get = function()
+      local value = Display.RawShowOn(trigger)
+      if value == "showOnActive" and trigger.secretNewAura then return "showOnNewAura" end
+      return value
+    end,
     set = function(_, value)
+      -- New Aura(s) is a Found list with a flag.
+      local newAura = value == "showOnNewAura"
+      if newAura then value = "showOnActive" end
       if not Display.showOnValues[value] then return end
+      trigger.secretNewAura = newAura or nil
+      if newAura then
+        trigger.secretUseRem, trigger.secretUseTotal, trigger.secretUseStacks = nil, nil, nil
+        trigger.secretNewAuraSeconds = trigger.secretNewAuraSeconds or Display.NEW_AURA_DEFAULT_SECONDS
+      end
       -- Found is the default and is not stored.
       if value == "showOnActive" then value = nil end
       trigger.secretShowOn = value
+      save()
+    end,
+  }
+  options.newAuraSeconds = {
+    type = "input", name = L["Display Time (seconds)"], order = 71.2, width = WeakAuras.normalWidth,
+    desc = L["Shows for up to this many seconds when the aura is gained. On a target or nameplate, changing unit can show an aura that was already there."],
+    hidden = function() return not (trigger.secretNewAura and Display.RawShowOn(trigger) == "showOnActive") end,
+    validate = function(_, text)
+      local seconds = tonumber(text)
+      return (seconds and seconds > 0) or L["Enter a number of seconds above 0."]
+    end,
+    get = function() return tostring(trigger.secretNewAuraSeconds or Display.NEW_AURA_DEFAULT_SECONDS) end,
+    set = function(_, text)
+      trigger.secretNewAuraSeconds = tonumber(text)
       save()
     end,
   }

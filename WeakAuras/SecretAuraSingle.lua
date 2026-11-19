@@ -90,7 +90,7 @@ end
 
 AuraDisplay.singleUnits = KeySet({ "player", "target", "focus", "pet", "targettarget", "focustarget" })
 AuraDisplay.approximateUnits = KeySet({ "player", "pet", "group", "party", "raid" })
-AuraDisplay.missingTypes = KeySet({ "icon", "aurabar", "progresstexture", "text" })
+AuraDisplay.missingTypes = KeySet({ "icon", "aurabar", "progresstexture", "text", "texture" })
 AuraDisplay.remOperators = KeySet({ "<", "<=", ">", ">=" }, true)
 AuraDisplay.totalOperators = KeySet({ "=", "<=", ">=" }, true)
 AuraDisplay.stackOperators = KeySet({ "=", ">=", ">", "<=", "<" }, true)
@@ -128,6 +128,19 @@ function AuraDisplay.RemainingWindow(auraTrigger)
   if not AuraDisplay.remOperators[operator] then return end
   local seconds = ToFinite(auraTrigger.secretRem)
   if seconds and seconds >= 0 then return operator, seconds end
+end
+
+-- "New Aura(s)": a Found list whose buttons show for a few seconds when the game puts an aura
+-- on them, then fade out. Nothing reads the aura, so it stays usable in combat. A remaining-time,
+-- total-time or stack filter needs the button shown all along, so it turns this off.
+AuraDisplay.NEW_AURA_DEFAULT_SECONDS = 1.5
+
+function AuraDisplay.NewAuraSeconds(auraTrigger)
+  if not IsTable(auraTrigger) or not auraTrigger.secretNewAura then return 0 end
+  if AuraDisplay.RawShowOn(auraTrigger) ~= "showOnActive" then return 0 end
+  if auraTrigger.secretUseRem or auraTrigger.secretUseTotal or auraTrigger.secretUseStacks then return 0 end
+  local seconds = ToFinite(auraTrigger.secretNewAuraSeconds) or AuraDisplay.NEW_AURA_DEFAULT_SECONDS
+  return seconds > 0 and seconds or 0
 end
 
 local function HasWindow(auraData)

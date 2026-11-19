@@ -104,15 +104,19 @@ do
   local currentErrorHandlerUid
   local currentErrorHandlerContext
   local function waErrorHandler(errorMessage)
-    if type(errorMessage) == "string" and errorMessage:find("a secret %a* ?value") then
-      return
-    end
     local juicedMessage = {}
     local data
     if currentErrorHandlerId then
       data = WeakAuras.GetData(currentErrorHandlerId)
     elseif currentErrorHandlerUid then
       data = Private.GetDataByUID(currentErrorHandlerUid)
+    end
+    -- A secret value read by custom code is a game rule, not a bug: the aura shows a plain note instead
+    -- of a Lua error, and nothing is sent to the error frame. Outside an aura, the error goes on as a Lua error.
+    if data and type(errorMessage) == "string" and errorMessage:find("a secret %a* ?value") then
+      Private.AuraWarnings.UpdateWarning(data.uid, "SecretValueRead", "warning",
+        L["This aura's custom code used a value the game keeps secret during combat, so that code stopped. Check values with issecretvalue() before using them."])
+      return
     end
     if data then
       Private.AuraWarnings.UpdateWarning(data.uid, "LuaError", "error",
@@ -228,6 +232,11 @@ function Private.PrintHelp()
   print(L["/wa pstart - Start profiling. Optionally include a duration in seconds after which profiling automatically stops. To profile the next combat/encounter, pass a \"combat\" or \"encounter\" argument."])
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
+  print(L["/wa paura <aura name> - Show the cost of one aura in the most recent profiling"])
+  print(L["/wa pslow [ms] - Report every frame slower than ms (30 by default), with the auras that ran in it. Type it again to stop"])
+  print(L["/wa loadcost - Time a full load scan and the memory it uses"])
+  print(L["/wa modern [aura name] - List the auras with an Aura Modern trigger, or show what one tracks"])
+  print(L["/wa cdm <aura name> - Show what the Cooldown Manager trigger of an aura tracks"])
   print(L["/wa repair - Repair tool"])
   print(L["/wa unlock - Place your auras on the screen: move, resize, anchor them to each other"])
   print(L["/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout"])
@@ -264,8 +273,33 @@ function SlashCmdList.WEAKAURAS(input)
     Private.ShowForeverTutorial()
   elseif msg == "minimap" then
     WeakAuras.ToggleMinimap();
+  elseif msg == "cdm" and input:match("^%s*%S+%s+%S") then
+    -- The aura name keeps its case, unlike args.
+    Private.PrintCooldownManagerTriggerStatus(input:match("^%s*%S+%s+(.-)%s*$"))
   elseif msg == "cdm" and C_CooldownViewer and Private.ToggleCooldownManager then
     Private.ToggleCooldownManager()
+  elseif msg == "pslow" then
+    Private.ToggleSlowFrameWatch(args[1])
+  elseif msg == "paura" then
+    local id = input:match("^%s*%S+%s+(.-)%s*$")
+    if id and id ~= "" then
+      Private.PrintProfileAura(id)
+    else
+      Private.PrintHelp()
+    end
+  elseif msg == "modern" then
+    local id = input:match("^%s*%S+%s+(.-)%s*$")
+    Private.PrintModernStatus(id ~= "" and id or nil)
+  elseif msg == "loadcost" then
+    if InCombatLockdown() then
+      prettyPrint(L["Type /wa loadcost again after combat."])
+    else
+      -- A full scan only: event scans read event arguments (PLAYER_LEVEL_UP sets the level from arg1).
+      collectgarbage("collect")
+      local memory, start = collectgarbage("count"), debugprofilestop()
+      Private.ScanForLoads(nil, "SCAN_ALL")
+      prettyPrint(L["Load scan: %.1fms, %.0f KB of memory."]:format(debugprofilestop() - start, collectgarbage("count") - memory))
+    end
   elseif msg == "help" then
     Private.PrintHelp();
   elseif msg == "unlock" then
@@ -1785,10 +1819,13 @@ function Private.ExecEnv.GroupType()
   return "solo";
 end
 
+-- A raid's size comes from its player cap: Forever raids share difficulty indexes across sizes.
+local raidSizeByMaxPlayers = { [10] = "ten", [20] = "twenty", [25] = "twentyfive", [40] = "fortyman" }
+
 local function GetInstanceTypeAndSize()
   local size, difficulty
   local inInstance, Type = IsInInstance()
-  local _, instanceType, difficultyIndex, _, _, _, _, instanceId = GetInstanceInfo()
+  local _, instanceType, difficultyIndex, _, maxPlayers, _, _, instanceId = GetInstanceInfo()
   if inInstance or instanceType ~= "none" then
     size = Type
     -- WORKAROUND Tol'Viron arena returning a difficulty index of 1
@@ -1798,6 +1835,9 @@ local function GetInstanceTypeAndSize()
     local difficultyInfo = Private.difficulty_info[difficultyIndex]
     if difficultyInfo then
       size, difficulty = difficultyInfo.size, difficultyInfo.difficulty
+    end
+    if instanceType == "raid" and raidSizeByMaxPlayers[maxPlayers] then
+      size = raidSizeByMaxPlayers[maxPlayers]
     end
     return size, difficulty, instanceType, instanceId, difficultyIndex
   end
@@ -2019,6 +2059,55 @@ local function ScanLoadFlags()
   Private.ScanForLoads(toCheck)
 end
 
+-- Switches of the "Load Switch" load option, turned on by custom code, on until the next /reload.
+local loadSwitches = {}
+local loadSwitchScanQueued = false
+
+local function ScanLoadSwitches()
+  loadSwitchScanQueued = false
+  if not WeakAuras.IsLoginFinished() then
+    loadSwitchScanQueued = true
+    C_Timer.After(0, ScanLoadSwitches)
+    return
+  end
+  Private.ScanForLoads(nil, "WA_LOAD_SWITCH")
+end
+
+-- Turns the named switch of the "Load Switch" load option on or off, until the next /reload.
+-- The scan waits for the next frame, as the caller can run inside a scan.
+---@param name string
+---@param on boolean
+function WeakAuras.SetLoadSwitch(name, on)
+  if type(name) ~= "string" or name == "" then
+    return
+  end
+  local value = on and true or nil
+  if loadSwitches[name] == value then
+    return
+  end
+  loadSwitches[name] = value
+  if not loadSwitchScanQueued then
+    loadSwitchScanQueued = true
+    C_Timer.After(0, ScanLoadSwitches)
+  end
+end
+
+-- Sets several switches with one scan: { name = true or false, ... }.
+function WeakAuras.SetLoadSwitches(switches)
+  if type(switches) ~= "table" then
+    return
+  end
+  for name, on in pairs(switches) do
+    WeakAuras.SetLoadSwitch(name, on)
+  end
+end
+
+---@param name string
+---@return boolean
+function WeakAuras.IsLoadSwitchOn(name)
+  return loadSwitches[name] == true
+end
+
 -- Lets custom code keep an aura unloaded (loaded false) or give it back to its load options (loaded true).
 -- The flag lives until the next /reload. The scan waits for the next frame, as the caller can run inside a scan.
 ---@param id string
@@ -2072,11 +2161,21 @@ loadFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 loadFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
 
 
+-- The end of combat fires PLAYER_REGEN_ENABLED and several restriction changes in the same frame:
+-- the restriction scan runs once, on the next frame, instead of stacking full scans on one frame.
+local restrictionScanPending = false
 Private.callbacks:RegisterCallback("RestrictionChanged", function()
-  Private.StartProfileSystem("load");
-  Private.ScanForLoads(nil, "WA_RESTRICTION_CHANGED")
-  Private.PrepareContainerSpares()
-  Private.StopProfileSystem("load");
+  if restrictionScanPending then
+    return
+  end
+  restrictionScanPending = true
+  C_Timer.After(0, function()
+    restrictionScanPending = false
+    Private.StartProfileSystem("load");
+    Private.ScanForLoads(nil, "WA_RESTRICTION_CHANGED")
+    Private.PrepareContainerSpares()
+    Private.StopProfileSystem("load");
+  end)
 end)
 
 Private.callbacks:RegisterCallback("WA_BIGWIGS_ENCOUNTER_MODULES_CHANGED", function()
@@ -3337,7 +3436,8 @@ function Private.UpdateSoundIcon(data)
   local soundCondition, ttsCondition = testConditions()
 
   -- sound
-  if data.actions.start.do_sound or data.actions.finish.do_sound then
+  if data.actions.start.do_sound or data.actions.finish.do_sound
+     or (data.actions.increase and data.actions.increase.do_sound) then
     Private.AuraWarnings.UpdateWarning(data.uid, "sound_action", "sound", L["This aura plays a sound via an action."])
   else
     Private.AuraWarnings.UpdateWarning(data.uid, "sound_action")
@@ -3385,9 +3485,11 @@ function Private.ClearSounds(uid, severity)
       end
     end
 
-    if severity == "sound" and (child.actions.start.do_sound or child.actions.finish.do_sound) then
+    if severity == "sound" and (child.actions.start.do_sound or child.actions.finish.do_sound
+       or (child.actions.increase and child.actions.increase.do_sound)) then
       child.actions.start.do_sound = false
       child.actions.finish.do_sound = false
+      if child.actions.increase then child.actions.increase.do_sound = false end
       changed = true
     elseif severity == "tts" then
       if child.actions.start.do_message and child.actions.start.message_type == "TTS" then
@@ -7042,6 +7144,8 @@ end
 --- @return boolean?
 function Private.UnitPlayerControlledFixed(unit)
   local guid = UnitGUID(unit)
+  -- The GUID is secret when the unit identity is restricted: fall back to UnitIsPlayer.
+  if Private.IsSecret(guid) then return UnitIsPlayer(unit) end
   return guid and guid:sub(1, 6) == "Player"
 end
 

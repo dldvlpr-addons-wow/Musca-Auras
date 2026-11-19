@@ -622,8 +622,16 @@ return function(test)
     for _, keepName in ipairs(KEEP_EVENTS) do
       assert(#Picked(trigger, keepName) == 0, keepName .. " must keep the cached catalogue")
     end
+    test.Environment.Advance(0.1)
     assert(#Picked(trigger, eventName) == 1, eventName .. " must reload the catalogue")
   end
+  -- A second SPELLS_CHANGED in the same frame keeps the catalogue it just loaded.
+  nextEntry = nextEntry + 1
+  AddEntry(nextEntry, CATEGORY.Essential, 5000 + nextEntry)
+  local burstTrigger = { type = "cdm", event = COOLDOWN, cdmSpells = { multi = { [nextEntry] = true } } }
+  assert(#Picked(burstTrigger, "SPELLS_CHANGED") == 0, "SPELLS_CHANGED burst must keep the catalogue of this frame")
+  test.Environment.Advance(0.1)
+  assert(#Picked(burstTrigger, "SPELLS_CHANGED") == 1, "SPELLS_CHANGED reloads on the next frame")
   -- OPTIONS reloads unless the catalogue was already loaded at the same instant.
   nextEntry = nextEntry + 1
   AddEntry(nextEntry, CATEGORY.Essential, 5000 + nextEntry)

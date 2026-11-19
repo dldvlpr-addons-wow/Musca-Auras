@@ -12,6 +12,7 @@ local CVAR_NAME = "cooldownViewerEnabled"
 local VIEWER_KEYS = { "Essential", "Utility", "BuffIcon", "BuffBar" }
 local BUFF_SOURCES = { "TrackedBuff", "TrackedBar", "EquipSlotTracked", "SpecAgnosticTracked" }
 local SPELL_SOURCES = { "Essential", "Utility" }
+local ELLESMERE_CDM_ADDON = "EllesmereUICooldownManager"
 
 local function DoNothing() end
 local function ReloadNow() ReloadUI() end
@@ -346,6 +347,11 @@ end
 function WeakAuras.SetupClassPackCDM(requested)
   local ownClass = select(2, UnitClass("player"))
   if not ownClass or requested ~= ownClass then return false end
+  -- EllesmereUI's Cooldown Manager module lays out the viewers itself: a second layout would fight it.
+  if C_AddOns.IsAddOnLoaded(ELLESMERE_CDM_ADDON) then
+    WeakAuras.prettyPrint(WeakAuras.L["EllesmereUI controls the Cooldown Manager: Musca Auras leaves its configuration as it is."])
+    return false
+  end
 
   if state.phase == "idle" then
     state.attempts = 0
