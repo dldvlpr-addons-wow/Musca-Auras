@@ -169,4 +169,3 @@ SubRegionTypes\CircularProgressTexture.lua
 SubRegionTypes\LinearProgressTexture.lua
 
 #Misc
-DiscordList.lua

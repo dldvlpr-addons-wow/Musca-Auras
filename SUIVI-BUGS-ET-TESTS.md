@@ -533,6 +533,115 @@ anglais, sauf 14.6.
 18. [x] Même chose dans une autre langue au choix (deDE, esES, koKR, zhCN…) : aide traduite, popup 1.18 en anglais
     (traduit seulement en frFR), pas de clé affichée brute.
 
+## Étape 15 : tests de la 1.19, auras cliquables (2026-11-19, 60 min)
+
+Auras de test Guerrier prêtes à importer : `Tests/Packs/Guerrier/PackTestGuerrier119.txt`. Le nom de chaque aura
+commence par le numéro du test qu'elle sert (3, 4, 9, 12, 13, 14, 18, 19, 20, 21, 22, 24, 25, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 40, 45). Les auras 29, 35
+et 40 contiennent du code personnalisé.
+
+Entrées du 2026-11-18 et du 2026-11-19 de `CHANGES.md`. Banc headless du 2026-11-19 : 136 scénarios, 0 échec.
+Déjà testé en jeu le 2026-11-18 : clic gauche sort et clic droit retrait de buff sur une aura de Guerrier (Cri de
+guerre), en combat et hors combat. Tout le reste est à faire ici. Erreurs Lua affichées (`/console scriptErrors 1`).
+Un seul 🔴 en échec bloque la mise en production.
+
+### 15.1 Mise à jour
+1. [ ] 🔴 Connexion avec la sauvegarde 1.18.2 : aucune erreur Lua, toutes les auras présentes, pas de popup « Quoi de
+   neuf » (il reste sur la 1.18).
+2. [ ] Liste des addons : version 1.19.0 sur les cinq addons. `/wa`, bouton « Changelog » : entrée 1.19.0.
+
+### 15.2 Click Action, hors combat
+Aura Icon neuve, élément « Click Action » ajouté dans l'onglet Display.
+3. [ ] 🔴 Clic gauche « sort » : le sort part. Clic droit « retirer un buff » : le buff part. Clic milieu « macro »
+   (`/say test`) : la macro s'exécute.
+4. [ ] Action « objet » (potion ou pierre de foyer) : l'objet est utilisé. Action « cibler une unité » (`player`) :
+   le joueur est ciblé.
+5. [ ] Key : une touche libre déclenche l'action du clic gauche. Aura cachée ou déchargée : la touche retrouve son
+   action du jeu.
+6. [ ] Key déjà prise par le jeu, puis par une autre aura : l'avertissement s'affiche dans les options, dans les
+   deux cas.
+7. [ ] Fenêtre `/wa` ouverte : le clic sur l'aura ne lance rien. Fenêtre fermée : il relance.
+8. [ ] Aura déplacée et redimensionnée hors combat : la zone cliquable suit (moins d'une seconde).
+9. [ ] Même élément sur Progress Bar, Text, Texture, Progress Texture et Empty : le clic marche sur chacun.
+10. [ ] Élément retiré, puis type de région changé (Icon vers Text) : plus de zone cliquable fantôme, pas d'erreur.
+
+### 15.3 Click Action, en combat
+11. [ ] 🔴 Mode « Aura visible when combat starts » : aura visible à l'entrée en combat, clic et touche marchent tout
+    le combat, aucun `ADDON_ACTION_BLOCKED`.
+12. [ ] 🔴 Mode « When the aura shows, and the whole combat » sur un buff manquant : l'aura apparaît en combat, le
+    clic à sa place relance le buff. Si l'aura n'apparaît pas en combat, c'est le trigger d'aura qui est en cause,
+    pas le Click Action : le noter à part.
+13. [ ] Mode « Always, while the aura is loaded » : le clic marche même aura cachée, en combat et hors combat
+    (aura du pack : cachée tant que Bloodrage est prêt).
+14. [ ] Mode « Macro Condition » `[combat,mod:shift] show; hide` : cliquable seulement en combat avec Maj. Le champ
+    Key n'est pas proposé.
+15. [ ] 🔴 Options modifiées en combat (action, touche, mode) : pas d'erreur, pas de `ADDON_ACTION_BLOCKED`, le
+    changement s'applique à la sortie du combat.
+16. [ ] Aura dans un groupe dynamique : en combat la zone reste à sa place d'entrée en combat, elle se recale à la
+    sortie.
+17. [ ] 🔴 `/reload` en combat avec une aura cliquable chargée : pas d'erreur, le clic revient au plus tard à la
+    sortie du combat.
+
+### 15.4 Aura (Modern)
+18. [ ] Son « On Stack Increase » : joué quand une charge s'ajoute, pas à l'application ni au rafraîchissement.
+19. [ ] Mode « New Aura(s) » avec « Display Time (seconds) » à 3 : l'aura s'affiche 3 s à chaque nouveau buff, puis
+    se cache.
+20. [ ] Filtres d'unité sur un groupe : classe, « ignore self », hors de portée. Chaque filtre retire les bonnes
+    unités.
+21. [ ] Type d'affichage Texture : la texture s'affiche et se cache avec l'aura suivie.
+22. [ ] 🔴 Aura (Modern) chargée en combat (changement de cible ou de forme) : elle s'affiche tout de suite, sans
+    erreur. Aura du pack : en combat, `/run WeakAuras.SetLoadSwitch("combat", true)`.
+23. [ ] 🔴 Aperçu d'une Aura (Modern) ouvert dans `/wa`, entrée en combat : pas d'erreur, l'aperçu se cache au plus
+    tard à la sortie du combat.
+24. [ ] Entrée en combat avec un buff suivi actif : pas de faux « manquant » affiché au début du combat.
+25. [ ] Aura (Modern) ancrée à une barre de nom ennemie : elle se place sur la barre de vie.
+26. [ ] `/wa modern` : liste des auras à trigger Aura (Modern). `/wa modern <aura>` : ce qu'elle suit maintenant.
+
+### 15.5 Load Switch et Spell Set
+27. [ ] Aura avec l'option de chargement « Load Switch » nommée `test` : cachée. `/run
+    WeakAuras.SetLoadSwitch("test", true)` : elle se charge. Avec `false` : elle se décharge.
+28. [ ] Aura (Modern) avec le « Spell Set » `test` : `/run WeakAuras.SetAuraSpellSet("test", { spellIDs = { <id d'un
+    buff actif> } })` : le buff s'affiche à la frame suivante. Autre id : il disparaît. Aura du pack : Bloodrage
+    inactif, car elle garde aussi son propre id 29131.
+29. [ ] `WeakAuras.CreateAuraSlot(frame, { helpful = { ... }, unit = "player" })` depuis un code personnalisé : le
+    slot se dessine sur le cadre.
+
+### 15.6 Valeurs secrètes (donjon ou champ de bataille si possible)
+30. [ ] 🔴 Aura ancrée à un cadre à géométrie secrète (barre de nom ou cadre de groupe en combat), en Icon, Text,
+    Progress Texture, Stop Motion et Model : pas d'erreur, la taille configurée est utilisée.
+31. [ ] Texte `%n` avec couleur de classe sur une unité à identité restreinte : nom affiché, coloré ou non, sans
+    erreur. Aura du pack : texte `n=[%n] unit=[%unit]`, les deux au format Unit. `%n` reste vide hors groupe
+    (le format Unit attend une unité), `%unit` porte le nom et la couleur.
+32. [ ] 🔴 Trigger Crowd Controlled, être contrôlé en combat : pas d'erreur. Avec « Specific Type » : l'aura reste
+    cachée (affichée si Inverse).
+33. [ ] 🔴 Message ou lien d'aura reçu dans le chat en combat de groupe : pas d'erreur dans le filtre de chat.
+34. [ ] Texte `%p` avec « Hide GCD Text » et trigger de GCD en combat : pas d'erreur (hâte secrète).
+35. [ ] Code personnalisé qui lit une valeur secrète : avertissement sur l'aura dans `/wa`, pas d'erreur Lua brute.
+
+### 15.7 Vie et absorption
+36. [ ] Trigger Health avec « Show Absorb » sur une Progress Bar, bouclier actif (Mot de pouvoir : Bouclier) :
+    l'absorption se dessine après le remplissage de vie, hors combat et en combat.
+37. [ ] Même trigger sur une Progress Texture en combat : l'overlay reste caché, pas d'erreur.
+
+### 15.8 Import, Cooldown Manager, commandes
+38. [ ] Import d'une aura ForeverAuras qui utilise Load Flag, Spell List, Aura(s) Gained ou On Stack Gain : importée,
+    réglages retrouvés sous Load Switch, Spell Set, New Aura(s) et On Stack Increase.
+39. [ ] Fenêtre d'import d'une aura avec Click Action en macro : la macro est listée avec le code personnalisé.
+40. [ ] Aura importée dont le code appelle `GetItemInfo`, `GetItemCount` ou `IsAddOnLoaded` : pas d'erreur.
+41. [ ] Pack de classe installé avec EllesmereUICooldownManager chargé : le Cooldown Manager n'est pas modifié.
+42. [ ] `/wa cdm <aura>` sur une aura à trigger Cooldown Manager : ce qu'elle suit s'affiche dans le chat.
+43. [ ] `/wa pstart`, 10 s de combat, `/wa pstop`, puis `/wa paura <aura>` : coût de l'aura. `/wa pslow` : frames
+    lentes signalées, la même commande arrête. `/wa loadcost` hors combat : durée et mémoire d'un scan.
+44. [ ] Changement de spécialisation ou d'équipement en rafale avec un trigger Cooldown Manager : pas de gel.
+45. [ ] Chargement « taille d'instance » : aura chargée dans un donjon Forever, déchargée dehors. Trigger de boss :
+    la liste contient les boss des donjons Forever.
+
+### 15.9 Non-régression
+46. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
+47. [ ] 🔴 Dix minutes en donjon ou en groupe avec les auras habituelles : aucune erreur Lua, aucun
+    `ADDON_ACTION_BLOCKED`.
+48. [ ] Aura supprimée puis restaurée depuis l'archive : elle revient avec son groupe et l'ordre des enfants.
+49. [ ] Export d'une aura avec Click Action, suppression, réimport : actions, touche et mode conservés.
+
 ---
 
 # 4. Résultats reçus et prompt de fin

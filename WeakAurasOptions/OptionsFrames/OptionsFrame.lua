@@ -594,44 +594,7 @@ function OptionsPrivate.CreateFrame()
     return button.frame
   end
 
-  local function lineWrapDiscordList(list)
-    local patreonLines = {}
-    local lineLength = 0
-    local currentLine = {}
-    for _, patreon in ipairs(list) do
-      if lineLength + #patreon + 2 > 130 then
-        tinsert(patreonLines, table.concat(currentLine, ", ") .. ", ")
-        currentLine = {}
-        tinsert(currentLine, patreon)
-        lineLength = #patreon + 2
-      else
-        lineLength = lineLength + #patreon + 2
-        tinsert(currentLine, patreon)
-      end
-    end
-    if #currentLine > 0 then
-      tinsert(patreonLines, table.concat(currentLine, ", "))
-    end
-    return table.concat(patreonLines, "\n")
-  end
-
-  local thanksList = L["Musca Auras: WoW Forever 1.60 port by dldvlpr, based on WeakAuras by The WeakAuras Team."] .. "\n\n"
-                     .. L["We thank"] .. "\n"
-                     .. L["All maintainers of the libraries we use, especially:"] .. "\n"
-                     .. "• " .. L["Ace: Funkeh, Nevcairiel"] .. "\n"
-                     .. "• " .. L["LibCompress: Galmok"]  .. "\n"
-                     .. "• " .. L["LibCustomGlow: Dooez"] .. "\n"
-                     .. "• " .. L["LibDeflate: Yoursafety"] .. "\n"
-                     .. "• " .. L["LibSerialize: Sanjo"] .. "\n"
-                     .. "• " .. L["Our translators (too many to name)"] .. "\n"
-                     .. "• " .. L["And our Patreons, Discord Regulars and Subscribers, and Friends of the Addon:"] .. "\n"
-
-  thanksList = thanksList .. lineWrapDiscordList(OptionsPrivate.Private.DiscordList)
-
   local footerSpacing = 4
-  local thanksListCJ = lineWrapDiscordList(OptionsPrivate.Private.DiscordListCJ)
-  local thanksListK = lineWrapDiscordList(OptionsPrivate.Private.DiscordListK)
-
   local discordButton = addFooter(L["Discord"], [[Interface\AddOns\WeakAuras\Media\Textures\discord.tga]], "https://discord.gg/EyYpyMq2km",
             L["Join the Musca Auras Discord server."])
   discordButton:SetParent(tipFrame)
@@ -641,11 +604,6 @@ function OptionsPrivate.CreateFrame()
             L["Check out our wiki for a large collection of examples and snippets."])
   documentationButton:SetParent(tipFrame)
   documentationButton:SetPoint("LEFT", discordButton, "RIGHT", footerSpacing, 0)
-
-  local thanksButton = addFooter(L["Thanks"], [[Interface\AddOns\WeakAuras\Media\Textures\waheart.tga]],
-                                 "https://www.patreon.com/WeakAuras", thanksList, thanksListCJ, thanksListK, nil, 800)
-  thanksButton:SetParent(tipFrame)
-  thanksButton:SetPoint("LEFT", documentationButton, "RIGHT", footerSpacing, 0)
 
   if OptionsPrivate.changelog then
     local changelog
@@ -658,26 +616,13 @@ function OptionsPrivate.CreateFrame()
     local changelogButton = addFooter(L["Changelog"], "", OptionsPrivate.changelog.fullChangeLogUrl,
                                       changelog, nil, nil, false, 800)
     changelogButton:SetParent(tipFrame)
-    changelogButton:SetPoint("LEFT", thanksButton, "RIGHT", footerSpacing, 0)
+    changelogButton:SetPoint("LEFT", documentationButton, "RIGHT", footerSpacing, 0)
   end
 
   local reportbugButton = addFooter(L["Found a Bug?"], [[Interface\AddOns\WeakAuras\Media\Textures\bug_report.tga]], "https://github.com/dldvlpr-addons-wow/Musca-Auras/issues/new",
             L["Report bugs on our issue tracker."], nil, nil, true)
   reportbugButton:SetParent(tipFrame)
   reportbugButton:SetPoint("RIGHT", tipFrame, "RIGHT")
-
-  local wagoButton = addFooter(L["Find Auras"], [[Interface\AddOns\WeakAuras\Media\Textures\wago.tga]], "https://wago.io",
-            L["Browse Wago, the largest collection of auras."], nil, nil, true)
-  wagoButton:SetParent(tipFrame)
-  wagoButton:SetPoint("RIGHT", reportbugButton, "LEFT", -footerSpacing, 0)
-
-  local companionButton
-  if not OptionsPrivate.Private.CompanionData.slugs then
-    companionButton = addFooter(L["Update Auras"], [[Interface\AddOns\WeakAuras\Media\Textures\wagoupdate_refresh.tga]], "https://weakauras.wtf",
-            L["Keep your Wago imports up to date with the Companion App."])
-    companionButton:SetParent(tipFrame)
-    companionButton:SetPoint("RIGHT", wagoButton, "LEFT", -footerSpacing, 0)
-  end
 
   frame.ShowTip = function(self)
     self.tipFrame:Show()

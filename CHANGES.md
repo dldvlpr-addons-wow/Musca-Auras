@@ -128,6 +128,13 @@ Test `Tests/Scenarios/107_SecretGeometryAndIdentity.lua`. Not tested in game yet
   custom code.
 - `GUIDE.md`: new "Functions for custom code" section and debug commands.
 
+### Removed
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the "Find Auras" and "Update Auras" buttons of the options
+  window.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the "Thanks" button of the options window and its tooltip.
+  `WeakAuras/DiscordList.lua` deleted and removed from `WeakAuras/WeakAuras.toc`. The credits stay in `README.md`,
+  `DESCRIPTION.md` and this file.
+
 ## 2026-11-18
 
 Version 1.19.0, clickable auras. Headless test bench: 133 scenarios, 0 failed. Left click spell and right click buff removal tested in game
