@@ -187,6 +187,8 @@ end
 local function ColorRoot(native, data, value)
   if data.regionType == "text" then
     if native.mainText then native.mainText:SetTextColor(unpack(value)) end
+  elseif data.regionType == "texture" then
+    if native.textureBase then native.textureBase.texture:SetVertexColor(unpack(value)) end
   elseif native.icon then
     native.icon:SetVertexColor(unpack(value))
   end
@@ -206,7 +208,11 @@ local ROOT_APPLIERS = {
   desaturateForeground = Driver(ProgressTexture, "SetDesaturated"),
   backgroundColor = BackgroundRoot,
   barColor = Driver(Field("bar"), "SetStatusBarColor", true),
-  desaturate = Driver(Field("icon"), "SetDesaturated"),
+  desaturate = function(native, data, value)
+    local picture = native.icon
+    if data.regionType == "texture" then picture = native.textureBase and native.textureBase.texture end
+    if picture then picture:SetDesaturated(value) end
+  end,
   icon_color = Driver(Field("icon"), "SetVertexColor", true),
   zoom = function(native, data, value) AuraDisplay.StyleIconTexCoords(native, data, value) end,
   inverse = Driver(Field("cooldown"), "SetReverse"),
@@ -226,6 +232,7 @@ local ROOT_PROPERTIES = {
   aurabar = { barColor = "color", backgroundColor = "color", icon_color = "color", desaturate = "bool" },
   text = { color = "color", fontSize = "number", displayText = "string" },
   progresstexture = { foregroundColor = "color", backgroundColor = "color", desaturateForeground = "bool" },
+  texture = { color = "color", desaturate = "bool" },
 }
 
 local MISSING_ROOT_NAMES = {
@@ -233,6 +240,7 @@ local MISSING_ROOT_NAMES = {
   aurabar = { "barColor", "backgroundColor", "icon_color", "desaturate" },
   progresstexture = { "foregroundColor", "backgroundColor", "desaturateForeground" },
   text = { "color" },
+  texture = { "color", "desaturate" },
 }
 
 local missingRoot = {}

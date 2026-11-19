@@ -206,8 +206,13 @@ function Catalog:Invalidate()
   self.entries = nil
 end
 
+-- SPELLS_CHANGED and PLAYER_EQUIPMENT_CHANGED come in bursts: one reload per frame is enough.
+local burstEvents = { SPELLS_CHANGED = true, PLAYER_EQUIPMENT_CHANGED = true }
+
 function Catalog:Get(event)
-  if reloadEvents[event] then
+  if burstEvents[event] and self.entries ~= nil and self.loadedAt == GetTime() then
+    return self.entries
+  elseif reloadEvents[event] then
     local batch = Private.cdmScanBatch
     if not (batch and batch.cdmCatalogReloaded) then
       if batch then batch.cdmCatalogReloaded = true end

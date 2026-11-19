@@ -432,7 +432,16 @@ return function(test)
   Fields(native.show_settings_header, { type = "header", name = "Show and Clone Settings", order = 69.91 }, "show_settings_header")
   Fields(native.use_matchesShowOn, { type = "toggle", name = "Show On", order = 71, width = normal, disabled = true }, "use_matchesShowOn")
   Same(native.use_matchesShowOn.get(), true, "use_matchesShowOn get")
-  Fields(native.matchesShowOn, { type = "select", name = "Show On", order = 71.1, width = normal, values = Display.showOnValues }, "matchesShowOn")
+  Fields(native.matchesShowOn, { type = "select", name = "Show On", order = 71.1, width = normal }, "matchesShowOn")
+  do
+    local values = native.matchesShowOn.values()
+    for key, label in pairs(Display.showOnValues) do
+      Same(values[key], label, "matchesShowOn value " .. key)
+    end
+    Same(values.showOnNewAura, "New Aura(s)", "matchesShowOn new aura value")
+    Same(table.concat(native.matchesShowOn.sorting, ","), "showOnActive,showOnNewAura,showOnMissing,showAlways",
+      "matchesShowOn sorting")
+  end
   Fields(native.unitExists, { type = "toggle", name = "Show If Unit Does Not Exist", order = 71.3, width = double }, "unitExists")
   Fields(native.showClones, { type = "toggle", name = "Auto-Clone (Show All Matches)", order = 72, width = "full", disabled = true }, "showClones")
   Same(native.showClones.get(), false, "showClones get")

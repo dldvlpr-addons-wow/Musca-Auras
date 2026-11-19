@@ -45,6 +45,7 @@ SubRegionOptions\CDMDispel.lua
 SubRegionOptions\CDMDispelBorder.lua
 SubRegionOptions\CircularProgressTexture.lua
 SubRegionOptions\LinearProgressTexture.lua
+SubRegionOptions\ClickAction.lua
 
 Cache.lua
 TriggerSecretWarnings.lua

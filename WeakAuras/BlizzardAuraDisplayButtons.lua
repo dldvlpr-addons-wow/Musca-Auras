@@ -67,6 +67,7 @@ function Parts.Targets(auraRegion)
     for _, target in ipairs(list or {}) do Take(target) end
   end
   for _, fieldName in ipairs(HIDDEN_FIELDS) do Take(auraRegion[fieldName]) end
+  if auraRegion.regionType == "texture" then Take(auraRegion.texture and auraRegion.texture.texture) end
   if auraRegion.regionType == "progresstexture" then
     Take(auraRegion.foreground and auraRegion.foreground.texture)
     Take(auraRegion.background and auraRegion.background.texture)
@@ -292,7 +293,7 @@ function Display.CandidateFilters(auraData)
     candidateList.maxDuration = seconds + 0.5
   end
 
-  if Display.UsesSpellIDs(triggerConfig) or Display.UsesRankSpellIDs(triggerConfig) then
+  if Display.UsesSpellIDs(triggerConfig) or Display.UsesRankSpellIDs(triggerConfig) or Display.UsesSpellSet(triggerConfig) then
     candidateList.includeSpellIDs = IdSet(Display.GetSpellIDs(triggerConfig, true))
   end
   if Display.UsesExcludedSpellIDs(triggerConfig) then

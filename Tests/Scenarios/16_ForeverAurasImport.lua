@@ -96,6 +96,38 @@ return function(test)
   local named = Aura("Named", { type = "aura2" }, { anchorFrameFrame = "MyForeverAuras:Frame" })
   assert(convert(named) == false and named.anchorFrameFrame == "MyForeverAuras:Frame", "frame name without the prefix converted")
 
+  -- their field names for our features take Musca's names
+  local renamed = Aura("Renamed", { type = "aura2", secretSpellList = "Set", secretGained = true,
+    secretGainedSeconds = 4, useUnitClass = true, unitClass = { MAGE = true } },
+    { load = { use_loadFlag = true, loadFlag = "Switch" }, actions = { stack = { do_sound = true } } })
+  assert(convert(renamed) == true, "renamed fields not detected")
+  local renamedTrigger = renamed.triggers[1].trigger
+  assert(renamedTrigger.secretSpellSet == "Set" and renamedTrigger.secretSpellList == nil, "spell set")
+  assert(renamedTrigger.secretNewAura == true and renamedTrigger.secretNewAuraSeconds == 4, "new aura")
+  assert(renamedTrigger.useMemberClasses == true and renamedTrigger.memberClasses.MAGE, "member classes")
+  assert(renamed.load.use_loadSwitch == true and renamed.load.loadSwitch == "Switch" and renamed.load.loadFlag == nil,
+    "load switch")
+  assert(renamed.actions.increase.do_sound == true and renamed.actions.stack == nil, "stack increase sound")
+  local calls = Aura("Calls", { type = "custom", custom = "function() ForeverAuras.SetLoadFlags({ a = true })"
+    .. " ForeverAuras.SetLoadFlag('b', true) ForeverAuras.SetAuraSpellList('c', {}) return ForeverAuras.LoadFlag('a') end" })
+  assert(convert(calls) == true, "renamed functions not detected")
+  assert(calls.triggers[1].trigger.custom == "function() WeakAuras.SetLoadSwitches({ a = true })"
+    .. " WeakAuras.SetLoadSwitch('b', true) WeakAuras.SetAuraSpellSet('c', {}) return WeakAuras.IsLoadSwitchOn('a') end",
+    "renamed functions: " .. calls.triggers[1].trigger.custom)
+  local otherCalls = Aura("OtherCalls", { type = "custom", custom = "ForeverAuras:SetLoadFlag('a', true)"
+    .. " ForeverAuras[\"SetAuraSpellLists\"]({})" })
+  assert(convert(otherCalls) == true, "other call forms not detected")
+  assert(otherCalls.triggers[1].trigger.custom == "WeakAuras:SetLoadSwitch('a', true) WeakAuras[\"SetAuraSpellSets\"]({})",
+    "other call forms: " .. otherCalls.triggers[1].trigger.custom)
+  printed = {}
+  local both = Aura("Both", { type = "aura2", secretSpellList = "Old", secretSpellSet = "New" })
+  assert(convert(both) == true and both.triggers[1].trigger.secretSpellSet == "New", "both names")
+  assert(Printed("Both: secretSpellList and secretSpellSet both set"), "both names warning")
+  printed = {}
+  local overlay = Aura("Overlay", { type = "custom", custom = "function() ForeverAuras.AuraOverlay(UIParent, {}) end" })
+  convert(overlay)
+  assert(Printed("Overlay: ForeverAuras.AuraOverlay is not converted"), "AuraOverlay warning")
+
   -- global alias, only when ForeverAuras is not loaded
   assert(ForeverAuras == WeakAuras, "ForeverAuras alias missing")
   local sandboxed = WeakAuras.LoadFunction("return function() return ForeverAuras, WeakAuras end")

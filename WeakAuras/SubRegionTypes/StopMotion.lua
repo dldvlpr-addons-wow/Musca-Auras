@@ -83,6 +83,11 @@ local properties = {
 local funcs = {
   OnSizeChanged = function(self)
     local w, h = self:GetSize()
+    -- Secret when anchored to a frame with secret geometry: fall back to the configured size.
+    if Private.IsSecret(w, h) then
+      w, h = self.configuredWidth, self.configuredHeight
+      if not (w and h) then return end
+    end
     self.stopMotion:SetSize(w * self.scale, h * self.scale)
   end,
   SetDesaturated = function(self, b)
@@ -200,6 +205,11 @@ local function modify(parent, region, parentData, data, first)
   region.parent = parent
   region:SetParent(parent)
   region.scale = data.scale or 1
+  if data.anchor_mode == "point" then
+    region.configuredWidth, region.configuredHeight = data.width, data.height
+  else
+    region.configuredWidth, region.configuredHeight = parentData.width, parentData.height
+  end
   region.Anchor = nil
 
   if parentData.regionType == "aurabar"

@@ -87,11 +87,13 @@ function Environment.Setup()
     RecordError(debug.traceback(tostring(message), 2))
   end
   WowApi.Install(_G)
+  local function onForbidden(message)
+    Environment.forbidden[#Environment.forbidden + 1] = message
+  end
+  WowApi.onForbidden = onForbidden
   Frames.Install(_G, Environment.Protect, function(message)
     WowApi.printed[#WowApi.printed + 1] = tostring(Secret.Reveal(message))
-  end, function(message)
-    Environment.forbidden[#Environment.forbidden + 1] = message
-  end)
+  end, onForbidden)
   Units.Install(_G, Frames.Fire, WowApi)
   _G.C_ClassColor = { GetClassColor = function(className)
     local color = _G.RAID_CLASS_COLORS and rawget(_G.RAID_CLASS_COLORS, className)

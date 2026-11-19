@@ -536,6 +536,47 @@ local function BindUnitGlow(args, data)
   end
 end
 
+-- "On Stack Increase": a third sound slot saved in data.actions.increase, read and written by the Actions tab get/set
+-- through the "increase_" key prefix.
+local function AddStackGainSound(args, data, soundValues, soundSorting)
+  local function Off() return not ActionValues(data, "increase").do_sound end
+  args.increase_header = { type = "header", name = L["On Stack Increase"], order = 40 }
+  args.increase_do_sound = {
+    type = "toggle",
+    width = WeakAuras.normalWidth,
+    name = L["Play Sound"],
+    order = 40.1,
+    desc = L["Play each time one of the trigger's exact spell IDs gains a stack on the selected unit. The client plays it on every stack gained, without a Stack Count filter."],
+  }
+  args.increase_sound = {
+    type = "select",
+    width = WeakAuras.normalWidth,
+    name = L["Sound"],
+    order = 40.2,
+    itemControl = "WeakAurasMediaSound",
+    values = soundValues,
+    sorting = soundSorting,
+    disabled = Off,
+  }
+  args.increase_sound_channel = {
+    type = "select",
+    width = WeakAuras.normalWidth,
+    name = L["Sound Channel"],
+    order = 40.3,
+    values = OptionsPrivate.Private.sound_channel_types,
+    disabled = Off,
+    get = function() return ActionValues(data, "increase").sound_channel or "Master" end,
+  }
+  args.increase_sound_path = {
+    type = "input",
+    width = WeakAuras.doubleWidth,
+    name = L["Sound File Path"],
+    order = 40.4,
+    hidden = function() return ActionValues(data, "increase").sound ~= " custom" end,
+    disabled = Off,
+  }
+end
+
 local function PrepareGroupActions(data, args)
   for child in OptionsPrivate.Private.TraverseLeafs(data) do
     if Display().Enabled(child) then
@@ -565,6 +606,7 @@ function OptionsPrivate.PrepareSecretActionOptions(data, action)
   end
 
   BindUnitGlow(args, data)
+  AddStackGainSound(args, data, soundValues, soundSorting)
 
   args.secretSoundNotice = {
     type = "description",

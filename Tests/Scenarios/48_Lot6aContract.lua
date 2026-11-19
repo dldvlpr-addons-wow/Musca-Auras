@@ -592,10 +592,10 @@ return function(test)
       Same(Display.UsesNameplates(AuraTable({ Secret1() }, { anchorFrameType = "NAMEPLATE" })), true, "nameplate anchor")
       Same(Display.UsesNameplates(AuraTable({ Secret1() }, { anchorFrameType = "SCREEN" })) and true or false, false, "no nameplate")
 
-      for _, regionType in ipairs({ "icon", "aurabar", "text", "progresstexture" }) do
+      for _, regionType in ipairs({ "icon", "aurabar", "text", "progresstexture", "texture" }) do
         Same(Display.SupportsRegionType(regionType), true, "supports " .. regionType)
       end
-      for _, regionType in ipairs({ "model", "texture", "group", "dynamicgroup", "stopmotion", "", "ICON" }) do
+      for _, regionType in ipairs({ "model", "group", "dynamicgroup", "stopmotion", "", "ICON" }) do
         Same(Display.SupportsRegionType(regionType), false, "does not support " .. regionType)
       end
       Same(Display.SupportsRegionType(nil), false, "nil region type")
@@ -1356,14 +1356,16 @@ return function(test)
       Resync(data)
       assert(#added > previewAdds, "leaving the preview registers again")
       Reset()
-      restricted = true
+      -- Under restriction the registration is tried; one the client refuses waits for the next event.
+      restricted, addResult = true, "none"
       data.actions.start.sound = "b.ogg"
       Resync(data)
-      Same(#added, 0, "restricted: nothing registered")
-      Same(#removed, 0, "restricted: nothing removed")
-      restricted = false
+      assert(#added > 0, "restricted: registration tried")
+      Same(SoundWarning("SoundPreview"), nil, "restricted refusal: no warning")
+      restricted, addResult = false, nil
+      Reset()
       test.Frames.Fire("PLAYER_TARGET_CHANGED")
-      assert(#added > 0, "restricted sync replayed by the next event")
+      assert(#added > 0, "refused sync replayed by the next event")
       Reset()
       Resync(data)
       Same(#added, 0, "replayed once")

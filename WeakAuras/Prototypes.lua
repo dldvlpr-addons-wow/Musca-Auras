@@ -1504,6 +1504,15 @@ Private.load_prototype = {
       showExactOption = true
     },
     {
+      name = "loadSwitch",
+      display = WeakAuras.newFeatureString .. L["Load Switch"],
+      type = "string",
+      width = WeakAuras.doubleWidth,
+      test = "WeakAuras.IsLoadSwitchOn(%q)",
+      events = {"WA_LOAD_SWITCH"},
+      desc = L["Loads while custom code has turned this switch on with WeakAuras.SetLoadSwitch(name, true). For example, a group's main aura picks which auras to load from its custom options. Switches last until the next /reload."],
+    },
+    {
       name = "player",
       init = "arg",
       enable = false,
@@ -7823,18 +7832,25 @@ Private.event_prototypes = {
           local duration, expirationTime, spellName, icon, spellName, spellId, locType, lockoutSchool, name, _
           for i = 1, C_LossOfControl.GetActiveLossOfControlDataCount() do
             local data = C_LossOfControl.GetActiveLossOfControlData(i)
-            if data then
+            -- Fields are secret while loss of control is restricted: a secret is never compared or added.
+            local isSecret = Private.ExecEnv.IsSecret
+            if not isSecret(data) and data then
+              local readableType = not isSecret(data.locType)
               if (not use_controlType)
-              or (data.locType == controlType and (controlType ~= "SCHOOL_INTERRUPT" or ((not use_interruptSchool) or bit.band(data.lockoutSchool, interruptSchool) > 0)))
+              or (readableType and data.locType == controlType and (controlType ~= "SCHOOL_INTERRUPT" or ((not use_interruptSchool) or (not isSecret(data.lockoutSchool) and bit.band(data.lockoutSchool, interruptSchool) > 0))))
               then
-                spellId = data.spellID
-                spellName, _, icon = Private.ExecEnv.GetSpellInfo(data.spellID)
-                duration = data.duration
-                if data.startTime and data.duration then
-                  expirationTime = data.startTime + data.duration
+                spellId = not isSecret(data.spellID) and data.spellID or nil
+                if spellId then
+                  spellName, _, icon = Private.ExecEnv.GetSpellInfo(spellId)
                 end
-                locType = data.locType
-                lockoutSchool = data.lockoutSchool
+                if not isSecret(data.startTime, data.duration) then
+                  duration = data.duration
+                  if data.startTime and data.duration then
+                    expirationTime = data.startTime + data.duration
+                  end
+                end
+                locType = readableType and data.locType or nil
+                lockoutSchool = not isSecret(data.lockoutSchool) and data.lockoutSchool or nil
                 name = data.displayText
                 show = true
                 break

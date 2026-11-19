@@ -109,7 +109,8 @@ function Anchor.Find(mode, unit, droppedUnit)
   if mode == UNITFRAME then
     hostFrame = WeakAuras.GetUnitFrame(unit)
   elseif mode == NAMEPLATE and not (droppedUnit ~= nil and unit == droppedUnit) then
-    hostFrame = C_NamePlate.GetNamePlateForUnit(unit)
+    -- The visible health bar, as dynamic groups use: the nameplate frame behind it is wider.
+    hostFrame = LibStub("LibGetFrame-1.0").GetUnitNameplate(unit)
   end
   if hostFrame and hostFrame.IsForbidden and hostFrame:IsForbidden() then return nil end
   return hostFrame

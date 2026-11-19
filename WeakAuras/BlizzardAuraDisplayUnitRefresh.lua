@@ -22,6 +22,11 @@ local lockedRegions = Shared.lockedRegions
 
 function Units.Status(triggerConfig, unitId)
   if unitId == nil or not GROUP_UNITS[triggerConfig.unit] then return false end
+  if triggerConfig.ignoreInvisible then
+    -- Out of the client's checking range: the member is not visible. An unreadable answer keeps it shown.
+    local ok, visible = pcall(UnitIsVisible, unitId)
+    if ok and not issecretvalue(visible) and not visible then return true end
+  end
   local connectedFlag, hasConnected
   if triggerConfig.ignoreDisconnected then
     local connected = UnitIsConnected(unitId)
@@ -159,7 +164,8 @@ function Units.OnStatusChange(unit)
   for auraRegion in pairs(liveRegions) do
     local state = auraRegion.blizzardAuraDisplay
     local triggerConfig = Display.GetTrigger(state.data)
-    if triggerConfig and (triggerConfig.ignoreDead or triggerConfig.ignoreDisconnected) then
+    if triggerConfig and (triggerConfig.ignoreDead or triggerConfig.ignoreDisconnected
+      or triggerConfig.ignoreInvisible) then
       if state.gridMember then
         local ignored = Units.Status(triggerConfig, unit)
         local gridIgnored = state.gridIgnored

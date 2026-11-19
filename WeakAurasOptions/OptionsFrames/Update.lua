@@ -155,6 +155,20 @@ local function scamCheck(codes, data)
     end
   end
 
+  -- A click macro runs on a click or on its key binding: shown like custom code.
+  -- Each label names its click action: two equal labels would show the same code twice in the review.
+  local clickIndex = 0
+  for _, subRegion in ipairs(data.subRegions or {}) do
+    if subRegion.type == "subclickaction" then
+      clickIndex = clickIndex + 1
+      for _, button in ipairs({ { "Left", L["Left Click"] }, { "Right", L["Right Click"] }, { "Middle", L["Middle Click"] } }) do
+        local where = L["Click Action %s"]:format(clickIndex) .. ", " .. button[2]
+        addCode(codes, L["%s - Click Macro (%s)"]:format(data.id, where), subRegion["click" .. button[1] .. "Value"],
+                subRegion["click" .. button[1] .. "Type"] == "macro")
+      end
+    end
+  end
+
   if (data.animation) then
     checkAnimation(codes, L["%s - Start"]:format(data.id), data.animation.start);
     checkAnimation(codes, L["%s - Main"]:format(data.id), data.animation.main);

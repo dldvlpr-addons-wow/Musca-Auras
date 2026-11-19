@@ -86,6 +86,11 @@ function Frames.CreateFrame(frameType, name, parent, template)
   end
   local frame = NewObject(frameType or "Frame", name, parent)
   State[frame].template = template
+  -- A secure template makes the frame protected, as in the game.
+  if type(template) == "string" and template:find("Secure", 1, true) then
+    State[frame].protected = true
+    State[frame].secure = true
+  end
   return frame
 end
 
@@ -133,6 +138,11 @@ local function Blocked(object, method)
   Frames.onForbidden("ADDON_ACTION_BLOCKED: Frame:" .. method .. "()")
   return true
 end
+-- Show, Hide and SetSize are blocked in combat on a secure frame only: a frame protected
+-- by its anchors keeps them, as in the game.
+local function SecureBlocked(object, method)
+  return State[object].secure and Blocked(object, method)
+end
 
 function Frames.SetProtected(object, protected)
   State[object].protected = protected
@@ -164,6 +174,7 @@ function Methods:GetRegions() return unpack(State[self].regions) end
 function Methods:GetNumRegions() return #State[self].regions end
 
 function Methods:Show()
+  if SecureBlocked(self, "Show") then return end
   if not State[self].shown then
     State[self].shown = true
     if self:IsVisible() then
@@ -172,6 +183,7 @@ function Methods:Show()
   end
 end
 function Methods:Hide()
+  if SecureBlocked(self, "Hide") then return end
   if State[self].shown then
     local wasVisible = self:IsVisible()
     State[self].shown = false
@@ -413,6 +425,7 @@ function Methods:GetPointByName(name)
   end
 end
 function Methods:SetSize(width, height)
+  if SecureBlocked(self, "SetSize") then return end
   State[self].width, State[self].height = width, height or width
   RunScript(self, "OnSizeChanged", State[self].width, State[self].height)
 end
@@ -442,6 +455,7 @@ function Methods:GetFrameStrata() return State[self].strata end
 function Methods:SetDrawLayer(layer, subLevel) State[self].layer, State[self].subLevel = layer, subLevel end
 function Methods:GetDrawLayer() return State[self].layer or "ARTWORK", State[self].subLevel or 0 end
 function Methods:IsForbidden() return false end
+function Methods:IsAnchoringRestricted() return State[self].anchoringRestricted == true end
 function Methods:IsProtected()
   if State[self].protected then return true end
   for _, child in ipairs(State[self].children or {}) do
@@ -563,6 +577,7 @@ function Methods:SetAttribute(key, value)
     handler(self, key, value)
   end
 end
+function Methods:RegisterForClicks(...) State[self].clicks = { ... } end
 function Methods:GetAttribute(key) return State[self].attributes and State[self].attributes[key] end
 
 function Methods:AddMessage(message)

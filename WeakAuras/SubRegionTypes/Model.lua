@@ -187,7 +187,16 @@ local funcs = {
   end,
   OnSizeChanged = function(self)
     -- WORKAROUND clipping being broken on the SL beta with some setups with bars of zero width
-    if self:GetWidth() < 1 or self:GetHeight() < 1 then
+    local width, height = self:GetWidth(), self:GetHeight()
+    -- Secret when anchored to a frame with secret geometry: show the model rather than keep a stale hidden state.
+    if Private.IsSecret(width, height) then
+      if self.toosmall then
+        self.toosmall = false
+        self:UpdateVisible()
+      end
+      return
+    end
+    if width < 1 or height < 1 then
       self.toosmall = true
     else
       self.toosmall = false

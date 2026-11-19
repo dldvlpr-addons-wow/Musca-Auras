@@ -253,6 +253,22 @@ local function AddGroupOptions(context)
       context.Save("unitRoles", roles)
     end,
   }
+  options.useMemberClasses = Toggle(context, "useMemberClasses", L["Class"], 4.45,
+    L["Only track members of the selected classes."], NotGroup)
+  options.memberClasses = {
+    type = "multiselect", name = L["Class"], order = 4.46, width = "full", hidden = HiddenUnless("useMemberClasses"),
+    values = WeakAuras.class_types,
+    get = function(_, class) return (trigger.memberClasses and trigger.memberClasses[class]) == true end,
+    set = function(_, class, checked)
+      local classes = trigger.memberClasses or {}
+      classes[class] = checked or nil
+      context.Save("memberClasses", classes)
+    end,
+  }
+  options.ignoreSelf = Toggle(context, "ignoreSelf", L["Ignore Self"], 4.47,
+    L["Leave your own character out of the tracked members."], NotGroup)
+  options.ignoreInvisible = Toggle(context, "ignoreInvisible", L["Ignore out of checking range"], 4.43,
+    L["Hide this member's auras while it is too far away for the game to report it."], NotGroup, true)
   options.ignoreDead = Toggle(context, "ignoreDead", L["Ignore Dead"], 4.41,
     L["Hide this member's auras while it is dead or a ghost."], NotGroup, true)
   options.ignoreDisconnected = Toggle(context, "ignoreDisconnected", L["Ignore Disconnected"], 4.42,
@@ -310,6 +326,15 @@ local function AddSpellLists(context)
       }
     end
   end
+  options.secretSpellSet = {
+    type = "input", name = L["Spell Set"], order = 7.9, width = "full",
+    desc = L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."],
+    get = function() return trigger.secretSpellSet or "" end,
+    set = function(_, text)
+      text = Trim(text or "")
+      context.Save("secretSpellSet", text ~= "" and text or nil)
+    end,
+  }
 end
 
 local function TriState(caption, desc, order, read, write, hidden)

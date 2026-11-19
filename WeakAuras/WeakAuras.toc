@@ -89,6 +89,7 @@ BlizzardAuraDisplayEvents.lua
 SecretAuraPreview.lua
 DispelTypeDisplay.lua
 CDMAuraProgress.lua
+AuraOverlay.lua
 SecretAuraAppearance.lua
 SecretAuraConditions.lua
 SecretAuraSingle.lua
@@ -98,6 +99,7 @@ SecretAuraSingleGates.lua
 SecretAuraSingleGateDisplay.lua
 SecretAuraSingleStatus.lua
 SecretAuraSingleFollow.lua
+AuraStatusReport.lua
 SecretAuraSingleMissing.lua
 SecretAuraSingleRemaining.lua
 SecretAuraGlow.lua
@@ -163,6 +165,7 @@ SubRegionTypes\CDMDispel.lua
 SubRegionTypes\CDMDispelBorder.lua
 SubRegionTypes\CircularProgressTexture.lua
 SubRegionTypes\LinearProgressTexture.lua
+SubRegionTypes\ClickAction.lua
 
 #Misc
 DiscordList.lua

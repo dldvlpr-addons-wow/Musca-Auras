@@ -62,6 +62,103 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-19
+
+Not tested in game yet.
+
+### Added
+- `WeakAuras/AuraOverlay.lua`: `WeakAuras.CreateAuraSlot(frame, options)`, a native aura slot drawn over any frame
+  for custom code.
+- `WeakAuras/AuraStatusReport.lua`: chat reports of `/wa modern [aura]` and `/wa cdm <aura>`.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/Profiling.lua`: debug commands `/wa paura <aura>`, `/wa pslow [ms]`,
+  `/wa loadcost`, `/wa modern [aura]`, `/wa cdm <aura>`.
+- `WeakAuras/Prototypes.lua`, `WeakAuras/WeakAuras.lua`: "Load Switch" load option (`loadSwitch`), turned on and off
+  by custom code with `WeakAuras.SetLoadSwitch(name, on)` or `WeakAuras.SetLoadSwitches`, read with
+  `WeakAuras.IsLoadSwitchOn`. `WeakAuras.SetLoadFlag(id, loaded)` keeps its per-aura behaviour.
+- `WeakAuras/BlizzardAuraDisplayTrigger.lua`, `WeakAuras/BlizzardAuraDisplayButtons.lua`,
+  `WeakAurasOptions/SecretAuraTriggerOptions.lua`: "Spell Set" of an Aura (Modern) trigger
+  (`secretSpellSet`), filled by `WeakAuras.SetAuraSpellSet(name, { spellIDs = {...} })` or
+  `WeakAuras.SetAuraSpellSets`. The loaded auras that use a changed set are applied again on the next frame.
+- `WeakAuras/BlizzardAuraDisplaySounds.lua`, `WeakAuras/BlizzardAuraDisplayUnits.lua`,
+  `WeakAuras/BlizzardAuraDisplayUnitRefresh.lua`, `WeakAuras/SecretAuraSingle.lua`,
+  `WeakAurasOptions/AuraDisplayOptions.lua`, `WeakAurasOptions/AuraTriggerOptions.lua`: Aura (Modern) "On Stack Increase"
+  sound, "New Aura(s)" mode with "Display Time (seconds)", unit filters (class, ignore self, out of checking range)
+  and the Texture display type.
+- `WeakAuras/AuraEnvironment.lua`: replacements of `GetItemInfo`, `GetItemCount`, `IsAddOnLoaded`,
+  `GetAddOnMetadata`, `GetSpellLink`, `IsUsableItem` and `GetItemCooldown` for the code of imported auras.
+- `WeakAuras/ForeverAurasImport.lua`: imported auras that use other names for these settings and custom code
+  functions get the names above.
+- `WeakAuras/CDMSetup.lua`: the class pack leaves the Cooldown Manager as it is when EllesmereUI's Cooldown
+  Manager addon is loaded.
+
+### Fixed
+- `WeakAuras/Transmission.lua`: a chat message or a link with a secret value no longer errors in the chat filter and
+  the link hook; the secret line is skipped.
+- `WeakAuras/RegionTypes/Icon.lua`, `WeakAuras/RegionTypes/Text.lua`, `WeakAuras/SubRegionTypes/CircularProgressTexture.lua`,
+  `WeakAuras/SubRegionTypes/LinearProgressTexture.lua`, `WeakAuras/SubRegionTypes/StopMotion.lua`,
+  `WeakAuras/SubRegionTypes/Model.lua`: an aura anchored to a frame with secret geometry no longer errors: the
+  size read back is secret and cannot be passed to `SetWidth`/`SetSize` nor computed. The configured size is used
+  instead (icon inner and outer anchors, progress textures, stop motion); a model is shown; the text and icon
+  resizes that copy the size read back are skipped.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/Types.lua`: class colour of a text (`%n` with class colour) on a unit
+  whose identity is restricted: a secret GUID falls back to `UnitIsPlayer`, a secret class gives the text without
+  colour.
+- `WeakAuras/Prototypes.lua`, `WeakAuras/GenericTrigger.lua`, `WeakAuras/BlizzardAuraDisplaySounds.lua`,
+  `WeakAuras/WeakAuras.lua`: Lua errors on secret values: Crowd Controlled (`lockoutSchool`, start and duration), the computed GCD
+  (`GetHaste`), Aura (Modern) sounds (secret sound id, protected removal). A clear message replaces the raw Lua
+  error when the code of an aura reads a secret value. A Crowd Controlled trigger with "Specific Type" stays
+  hidden (shown when Inverse is checked) while the client keeps the control type secret: the type cannot be
+  compared.
+- `WeakAuras/SecretAuraPreview.lua`, `WeakAuras/BlizzardAuraDisplayLifecycle.lua`, `WeakAuras/WeakAuras.lua`:
+  combat: hiding the Aura (Modern) preview in combat no longer errors (a sample anchored to a protected frame is
+  hidden when combat ends); an Aura (Modern) loaded in combat shows at
+  once; aura sounds registered in combat (protected try, queued otherwise) with `throttleSeconds`; no false
+  "missing" shown at the start of the restriction (`WeakAuras/BuffTriggerRestrictedAuras.lua`); at the end of
+  combat, the restriction changes give one load scan on the next frame instead of several on the same frame.
+- `WeakAuras/GenericTrigger.lua`, `WeakAuras/WeakAuras.lua`: triggers and loading: ranged hit (`GetRangedHitModifier`), a single `GetSpellCritChance` call, instance size load
+  with `maxPlayers`, the boss list of the Forever dungeons (`WeakAuras/Types_Vanilla.lua`).
+- `WeakAuras/SecretAuraAnchor.lua`: an Aura (Modern) on a nameplate anchors on the health bar.
+- `WeakAuras/AuraWarnings.lua`: the `protected_frame` warning of a child no longer goes up to its groups.
+- `WeakAuras/CooldownViewerSelection.lua`: one catalog reload per frame for a burst of `SPELLS_CHANGED` and
+  `PLAYER_EQUIPMENT_CHANGED`.
+- `WeakAuras/SecretAuraSingleLearning.lua`: durations are also learned from the focus and from nameplates (out of combat,
+  as before). A nameplate
+  teaches debuffs only: an enemy's own buffs can last longer or shorter than the player's.
+- `GUIDE.md`: an aura loaded "Not In Combat" with a Click Action stays clickable in combat; the macro condition
+  `[nocombat] show; hide` avoids it. New "Functions for custom code" section and debug commands.
+
+## 2026-11-17
+
+Headless test bench: 133 scenarios, 0 failed. Not tested in game yet.
+
+### Added
+- `WeakAuras/SubRegionTypes/ClickAction.lua`: "Click Action" display element. A `SecureActionButtonTemplate` button,
+  child of `UIParent` and never anchored to the aura, takes the aura's rectangle, strata and visibility out of combat.
+  Left, right and middle click each cast a spell, use an item, run a macro, target a unit or cancel a buff. An
+  optional key binding (`SetOverrideBindingClick`) does the left click action. Nothing is changed in combat: the
+  button is synced on show, hide, resize, load, delete, when the options or the placement mode open, and at the end
+  of combat. Out of combat, the rectangle of a shown aura is read again every 0.25 s, so the button follows a
+  dynamic group that sorts or animates its children. Click attributes use the `*` prefix, so a click with Shift, Ctrl or Alt does the same action. Combat modes: aura shown when combat
+  starts, always while the aura is loaded, or a macro condition handled by `RegisterStateDriver`. An aura loaded "In
+  Combat" is shown in combat: it is not clickable before the end of that combat. A sub element whose region was replaced (display type changed) gives its button back. An error in one
+  aura does not stop the sync of the others. A Cancel Buff action with an unknown spell ID sets no action.
+- `WeakAurasOptions/SubRegionOptions/ClickAction.lua`: its options, with a warning when the key is used by another
+  aura (the same aura included) or bound in the game (override bindings included).
+- `WeakAurasOptions/OptionsFrames/Update.lua`: the import window lists click macros with the custom code.
+- `WeakAuras/Types.lua`: `click_action_types`, `click_action_units`, `click_combat_modes`.
+- `WeakAuras/WeakAuras.toc`, `WeakAurasOptions/WeakAurasOptions.toc`: the two new files.
+- Translations: the new strings in the 11 core and 11 options locale files.
+- `GUIDE.md`: "Click Action" section.
+- `.luacheckrc`: the binding and state driver globals.
+- Tests: `Tests/Scenarios/101_ClickAction.lua`. The harness makes secure template frames protected, blocks their
+  `Show`, `Hide` and `SetSize` in combat, and adds the override binding and state driver functions
+  (`Tests/Harness/Frames.lua`, `Tests/Harness/WowApi.lua`, `Tests/Harness/Environment.lua`).
+- Tests: `Tests/Scenarios/102_SoundMigration.lua` (1.14.0 sound data migrated on load, with and without an Aura
+  (Modern) trigger, no obsolete `sound_` field kept in the saved data or the export),
+  `Tests/Scenarios/103_RestoreDeletedAura.lua` (a deleted group restored from the archive keeps its uid, parent,
+  children order, tags and settings up to the update window, with and without tags), `Tests/Scenarios/104_DisplayValidation.lua` (one valid
+  and one invalid case for each Aura (Modern) validation rule).
+
 ## 2026-11-16
 
 Version 1.18.2. Headless test bench: 129 scenarios, 0 failed.

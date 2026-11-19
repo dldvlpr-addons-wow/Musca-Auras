@@ -25,7 +25,7 @@ local function IsNeverSecret(spellId)
   if frameLevel == nil or not (C_Secrets and C_Secrets.GetSpellAuraSecrecy) then return false end
   local ok, result = pcall(C_Secrets.GetSpellAuraSecrecy, spellId)
   local verdict = ok and not IsSecret(result) and result == frameLevel
-  neverSecretVerdicts[spellId] = verdict
+  if ok then neverSecretVerdicts[spellId] = verdict end
   return verdict
 end
 
@@ -409,15 +409,23 @@ end
 
 local function LearnFromUpdate(unitToken, info, filterTable)
   if not IsTable(info) or info.isFullUpdate then
+    -- A full update on a nameplate comes with every plate shown: the new auras of the
+    -- incremental updates are enough, a full scan of each plate would cost more than it learns.
+    if unitToken:find("^nameplate%d") then return end
     ScanUnit(unitToken, filterTable)
     return
   end
+  -- A nameplate teaches debuffs only: an enemy's own buffs can last longer or shorter than the player's.
+  local debuffsOnly = unitToken:find("^nameplate%d") ~= nil
+  local function Learnable(aura)
+    return IsTable(aura) and not IsSecret(aura.isHarmful) and (aura.isHarmful == true or not debuffsOnly)
+  end
   for _, aura in ipairs(info.addedAuras or {}) do
-    if IsTable(aura) and not IsSecret(aura.isHarmful) then LearnAura(aura, unitToken, aura.isHarmful == true) end
+    if Learnable(aura) then LearnAura(aura, unitToken, aura.isHarmful == true) end
   end
   for _, instanceId in ipairs(info.updatedAuraInstanceIDs or {}) do
     local ok, aura = pcall(C_UnitAuras.GetAuraDataByAuraInstanceID, unitToken, instanceId)
-    if ok and IsTable(aura) and not IsSecret(aura.isHarmful) then LearnAura(aura, unitToken, aura.isHarmful == true) end
+    if ok and Learnable(aura) then LearnAura(aura, unitToken, aura.isHarmful == true) end
   end
 end
 
@@ -444,7 +452,8 @@ local function OnLearningEvent(_, incomingEvent, unitToken, info)
   Clear(changedIds)
   local filterTable = next(watchedGlowIds) and { "HELPFUL", "HARMFUL" } or { "HARMFUL" }
   if incomingEvent == "UNIT_AURA" then
-    if unitToken == "target" or unitToken == "focus" or IsFriendlyToken(unitToken) then LearnFromUpdate(unitToken, info, filterTable) end
+    if unitToken == "target" or unitToken == "focus" or unitToken:find("^nameplate%d")
+      or IsFriendlyToken(unitToken) then LearnFromUpdate(unitToken, info, filterTable) end
   elseif incomingEvent == "PLAYER_TARGET_CHANGED" then
     ScanUnit("target", filterTable)
   else

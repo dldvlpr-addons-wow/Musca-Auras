@@ -762,7 +762,7 @@ Private.format_types = {
         colorFunc = function(unit, text)
           if unit and Private.UnitPlayerControlledFixed(unit) then
             local classFilename = select(2, UnitClass(unit))
-            if classFilename then
+            if classFilename and not Private.IsSecret(classFilename) then
               return WrapTextInColorCode(text, WA_GetClassColor(classFilename))
             end
           end
@@ -1408,6 +1408,33 @@ form_frame:SetScript("OnEvent", update_forms);
 Private.blend_types = {
   ADD = L["Glow"],
   BLEND = L["Opaque"]
+}
+
+-- Action types of the secure button of a click action, by attribute value of SecureActionButtonTemplate.
+---@type table<string, string>
+Private.click_action_types = {
+  none = L["None"],
+  spell = L["Cast Spell"],
+  item = L["Use Item"],
+  macro = L["Macro"],
+  target = L["Target Unit"],
+  cancelaura = L["Cancel Buff"],
+}
+
+---@type table<string, string>
+Private.click_action_units = {
+  [""] = L["Default"],
+  player = L["Player"],
+  target = L["Target"],
+  mouseover = L["Mouseover"],
+  focus = L["Focus"],
+}
+
+---@type table<string, string>
+Private.click_combat_modes = {
+  visible = L["Aura shown when combat starts"],
+  always = L["Always, while the aura is loaded"],
+  macro = L["Macro condition"],
 }
 
 ---@type table<string, string>

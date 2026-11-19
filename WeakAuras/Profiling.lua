@@ -96,6 +96,9 @@ local function StartProfiling(map, id)
   end
 end
 
+-- Time spent by each system and aura since the last frame, while /wa pslow runs, or nil.
+local slowFrameCosts
+
 local function StopProfiling(map, id)
   map[id].count = map[id].count - 1
   if map[id].count == 0 then
@@ -103,6 +106,10 @@ local function StopProfiling(map, id)
     map[id].elapsed = map[id].elapsed + elapsed
     if elapsed > map[id].spike then
       map[id].spike = elapsed
+    end
+    if slowFrameCosts then
+      local costs = map == profileData.auras and slowFrameCosts.auras or slowFrameCosts.systems
+      costs[id] = (costs[id] or 0) + elapsed
     end
   end
 end
@@ -258,6 +265,7 @@ function WeakAuras.StopProfile()
   Private.StopProfileAura = doNothing
   Private.StopProfileUID = doNothing
   LGF.StopProfile()
+  Private.StopSlowFrameWatch(true)
 
   currentProfileState = nil
   if WeakAurasProfilingFrame then
@@ -270,6 +278,89 @@ function WeakAuras.StopProfile()
     ProfilingTimer = nil
   end
   Private.callbacks:Fire("ProfileCostsUpdated")
+end
+
+-- /wa pslow: report each frame slower than the threshold, with the systems and auras that ran in it.
+local slowFrame, slowThreshold, slowLast, slowStartedProfile
+
+local function HeaviestCosts(costs)
+  local ids = {}
+  for id in pairs(costs) do
+    if id ~= "wa" then
+      ids[#ids + 1] = id
+    end
+  end
+  sort(ids, function(a, b) return costs[a] > costs[b] end)
+  local parts = {}
+  for i = 1, math.min(3, #ids) do
+    parts[i] = ("%s %.1fms"):format(tostring(ids[i]), costs[ids[i]])
+  end
+  return table.concat(parts, ", ")
+end
+
+local function OnSlowFrameUpdate()
+  local now = debugprofilestop()
+  local frameTime = now - slowLast
+  slowLast = now
+  if frameTime > slowThreshold then
+    prettyPrint(L["Slow frame: %.0fms, %.1fms inside Musca Auras."]:format(frameTime, slowFrameCosts.systems.wa or 0))
+    if next(slowFrameCosts.auras) then
+      print("  " .. L["Auras:"] .. " " .. HeaviestCosts(slowFrameCosts.auras))
+    end
+    local systems = HeaviestCosts(slowFrameCosts.systems)
+    if systems ~= "" then
+      print("  " .. L["Systems:"] .. " " .. systems)
+    end
+  end
+  wipe(slowFrameCosts.systems)
+  wipe(slowFrameCosts.auras)
+end
+
+function Private.StopSlowFrameWatch(fromStopProfile)
+  if not slowFrameCosts then
+    return
+  end
+  slowFrameCosts = nil
+  slowFrame:SetScript("OnUpdate", nil)
+  prettyPrint(L["Slow frame watch stopped."])
+  if slowStartedProfile and not fromStopProfile and currentProfileState == "profiling" then
+    slowStartedProfile = nil
+    WeakAuras.StopProfile()
+  end
+  slowStartedProfile = nil
+end
+
+function Private.ToggleSlowFrameWatch(threshold)
+  if slowFrameCosts then
+    Private.StopSlowFrameWatch()
+    return
+  end
+  if currentProfileState ~= nil and currentProfileState ~= "profiling" then
+    prettyPrint(L["A profiling is scheduled. Type /wa pcancel first."])
+    return
+  end
+  if currentProfileState ~= "profiling" then
+    WeakAuras.StartProfile()
+    slowStartedProfile = true
+  end
+  slowThreshold = tonumber(threshold) or 30
+  slowFrameCosts = { systems = {}, auras = {} }
+  slowFrame = slowFrame or CreateFrame("Frame")
+  slowLast = debugprofilestop()
+  slowFrame:SetScript("OnUpdate", OnSlowFrameUpdate)
+  prettyPrint(L["Watching frames slower than %dms. Type /wa pslow again to stop."]:format(slowThreshold))
+end
+
+-- /wa paura: the cost of one aura in the current or last profiling.
+function Private.PrintProfileAura(id)
+  local cost = profileData.auras and profileData.auras[id]
+  if not cost then
+    prettyPrint(L["No profiling data for %q. Start a profiling with /wa pstart first."]:format(tostring(id)))
+    return
+  end
+  local inside = profileData.systems.wa and profileData.systems.wa.elapsed or 0
+  local share = inside > 0 and 100 * cost.elapsed / inside or 0
+  prettyPrint(L["%s: %.2fms, %.1f%% of the time inside Musca Auras, slowest run %.2fms."]:format(id, cost.elapsed, share, cost.spike))
 end
 
 function WeakAuras.ToggleProfile()

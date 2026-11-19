@@ -255,6 +255,27 @@ In the **Display** tab, **Add** adds elements on top of an aura:
 | **Tick** | A mark on a bar, for example at 30% or at a cast time. |
 | **Model** | A 3D model. |
 | **Background**, **Stop Motion**, **Circular / Linear Progress Texture** | Advanced visuals. |
+| **Click Action** | Makes the aura clickable: cast a spell, use an item, run a macro, target a unit or cancel a buff, with a different action for the left, right and middle click. An optional key does the left click action. |
+
+### Click Action
+
+The clickable area is a secure button laid over the aura. The game lets an addon change it out of combat only, so:
+
+- The area takes the position, size and visibility of the aura out of combat. In combat it keeps them: it does not
+  follow an aura moved, resized or shown in combat, nor a dynamic group.
+- **Clickable in Combat** sets what happens in combat. **Aura shown when combat starts**: the area stays as it was.
+  **Always, while the aura is loaded**: the area stays clickable even while the aura is hidden. **Macro condition**:
+  a macro condition such as `[combat][mod:shift] show; hide` shows and hides the area, in combat too.
+- A clone shown in combat is not clickable before the end of combat, nor an aura loaded **In Combat** (Load tab).
+- An aura loaded **Not In Combat** (Load tab) is unloaded when combat starts, but its area cannot be hidden in
+  combat: it stays clickable until combat ends. To make it unclickable in combat, use **Macro condition** with
+  `[nocombat] show; hide`.
+- The secure side cannot read buffs: a click active only while a buff is present is not possible in combat.
+- The **Key Binding** is set out of combat while the area is clickable, and removed when the aura is unloaded or
+  deleted. A warning shows when the key is already used by another aura or by the game.
+- A click with Shift, Ctrl or Alt held does the same action. **Target Unit** needs a unit; **Cancel Buff** takes a
+  buff name or spell ID.
+- While the options window or the placement mode is open, no aura is clickable.
 
 ### Text placeholders
 
@@ -535,6 +556,27 @@ Ready-made example (Immolate rank 1). Copy, then `/wa`, **Import**:
 !WA:2!fsvqVTTnu4LEybqDOa1hkYrcVSIeuJGUS0GHb4drXYjgWDnq2EOddfUuIpjraksbskNKnSDWNAVMFc(8ozGUFa76Uiu0Fb7Nq)fmsk7SQKmmDq8P3337XhFFpQn63kVfPf5npCbnwWhjkLXWgVhxQZeYxuOPcUYBHesngJVSa8TSK4yhWHHknwQ9IsOCQkZZ3SO9MRL00uqQEWJLRm)dFTj2O4sLwKVSEzQ11stc0qzbX8oeMbCD0PaMPZ8lnPkQGHVeKZvfaJnGO8ICuuf7p57hmE6OZcgo84JgzSMC8Xbb9c69D1rGoB4r)yq40XhfEsW4P9ge0lKJZbL3FRkRtYOYKe6flNwhVH44RHotcgOqx6R(IlU3FLuYDh4DWmMRGvDqoMDq2YSdkgR0NmzqVoO6sT3UEiZdnPMgQBxu7)RsUnsNbCh)vXqvkiwc6zywjGWCstp7SEpCbImUlLCucMPaeWjFAMwXe9BDrFZbF7)d)RpC)u72Vc1f9lxJyFuzIZno1YsOtdG4mmpfi3jwHuKkbLYo5yi0wtZbs7MCiLsST5AW)6N1ecUOGwdo2eOHWjG2ATZUONClYMrwXPucCRc5xV2A1r3c78bMwqdn62Jn3qDyIymd5AtM9PrhRrF3rWQCoR9CnVgjY1s)xSU16XDa3S92GWnpoUJ0kbD96NQ2EgNliqKzY3kiYtdgEw)jdVQKV6AQxXdT3SNbJR)(5cc87F2hPCni5y2pyUtB0I3DfMtZDYYHvFE)3VwaDxOLMbvbNOQUVpxWH)eWkyKwc8uD2MZTFz36QT9ZXuE)Q2vFz19R2U6R2S6XMLnVPN2usXwdYZfmBd1o(ir70xinsMC3WZPeDgEjLNiK1fK3(LuYhtMToeZupghzQOeAQ3cBLrR)LwugqtZ04LeQY(pJbgSTUxR3opwiyeX58x7Zeys)inMzMoEuyEjtt98n3OIFu1bEHXmSszT8v0FgSgTurpBV93FVN2A2hE5)8d
 ```
 
+### Functions for custom code
+
+- `WeakAuras.SetLoadSwitch(name, true)` turns on a switch that the **Load Switch** load option (Load tab) waits
+  for; `WeakAuras.SetLoadSwitch(name, false)` turns it off. `WeakAuras.SetLoadSwitches({ name = true, ... })` sets
+  several at once, and `WeakAuras.IsLoadSwitchOn(name)` reads one. Switches last until the next `/reload`.
+- `WeakAuras.SetLoadFlag(id, false)` keeps the aura `id` unloaded, and `WeakAuras.SetLoadFlag(id, true)` gives it back
+  to its load options.
+- `WeakAuras.SetAuraSpellSet(name, { spellIDs = { 774, 8936 } })` fills the **Spell Set** of an Aura (Modern)
+  trigger that has this name. Its spell IDs are added to the trigger's own. While no set with this name is given,
+  the trigger uses only its own spell IDs, and matches nothing if it has none.
+  A bare list, `{ 774, 8936 }`, works too. `WeakAuras.SetAuraSpellSets({ name = { spellIDs = { ... } }, ... })` sets
+  several.
+- `WeakAuras.CreateAuraSlot(frame, { helpful = { ... }, unit = "target" })` draws a native aura slot over any frame:
+  the game shows it while one of the auras is on the unit, with its timer, in combat too. Options: `harmful`,
+  `filter`, `icon`, `texture`, `texCoord`, `timer`, `swipe`, `reverse`, `timerText`, `timerFont`, `timerFontSize`,
+  `timerFontFlags`, `timerPoint`, `timerX`, `timerY`, `timerColor`, `stacks`, `stackFontSize`, `border`,
+  `borderSize`, `levelAbove`, `enabled`. The slot has `SetSpells`, `SetUnit`, `SetEnabled`, `SetBorderColor`,
+  `SetTexture`, `GetSlotButton` and `Release`. Create it out of combat: in combat the game can refuse it, and the
+  function returns nil and a message.
+- `ForeverAuras.` works as `WeakAuras.` in the custom code of auras imported from ForeverAuras.
+
 ### Tools
 
 - `/dump <expression>` prints a value, secret values included.
@@ -567,7 +609,13 @@ on import, and the chat lists anything that could not be converted.
 | Dispel type icon / border | Dispel Type Icon / Border colored by dispel type |
 | Swing Timer, Ammo, Role, Tracking, Equipment Durability, Bag Space | Same triggers |
 
-Not converted: TimelineParser triggers. Never run both addons at the same time.
+Their Load Flag, Spell List, Aura(s) Gained, On Stack Gain and unit class settings become Load Switch, Spell Set,
+New Aura(s), On Stack Increase and the Class unit filter. In custom code, `ForeverAuras.SetLoadFlag(s)`,
+`ForeverAuras.LoadFlag` and `ForeverAuras.SetAuraSpellList(s)` become `WeakAuras.SetLoadSwitch(es)`,
+`WeakAuras.IsLoadSwitchOn` and `WeakAuras.SetAuraSpellSet(s)`.
+
+Not converted: TimelineParser triggers, `ForeverAuras.AuraOverlay` calls (rewrite them with
+`WeakAuras.CreateAuraSlot`). Never run both addons at the same time.
 
 ---
 
@@ -581,6 +629,11 @@ Not converted: TimelineParser triggers. Never run both addons at the same time.
 | `/wa cdm` | Shows or hides the Blizzard Cooldown Manager (out of combat). |
 | `/wa minimap` | Shows or hides the minimap button. |
 | `/wa pstart`, `/wa pstop`, `/wa pprint` | Profiling: find which aura costs the most. `/wa pstart combat` profiles the next combat. |
+| `/wa paura <aura>` | The cost of one aura in the last profiling. |
+| `/wa pslow [ms]` | Reports every frame slower than `ms` (30 by default), with the auras that ran in it. Type it again to stop. |
+| `/wa loadcost` | Times a full load scan and the memory it uses (out of combat). |
+| `/wa modern [aura]` | Lists the auras with an Aura (Modern) trigger, or shows what one tracks right now. |
+| `/wa cdm <aura>` | Shows what the Cooldown Manager trigger of an aura tracks right now. |
 | `/wa repair` | Repairs a broken saved variables file. |
 
 **My aura does not show.**

@@ -258,6 +258,40 @@ function WowApi.Install(target)
   target.GetShapeshiftFormInfo = function() return nil end
   target.SecureButton_GetUnit = function(button) return button and button.unit end
 
+  -- Override bindings and state drivers, refused in combat like any protected call of an addon.
+  WowApi.overrideBindings = {}
+  WowApi.stateDrivers = {}
+  local function blockedInCombat(name)
+    if WowApi.inCombat then
+      WowApi.onForbidden("ADDON_ACTION_BLOCKED: " .. name .. "()")
+      return true
+    end
+  end
+  target.SetOverrideBindingClick = function(owner, isPriority, key, buttonName, mouseButton)
+    if blockedInCombat("SetOverrideBindingClick") then return end
+    WowApi.overrideBindings[key] = { owner = owner, action = "CLICK " .. buttonName .. ":" .. (mouseButton or "LeftButton") }
+  end
+  target.ClearOverrideBindings = function(owner)
+    if blockedInCombat("ClearOverrideBindings") then return end
+    for key, binding in pairs(WowApi.overrideBindings) do
+      if binding.owner == owner then
+        WowApi.overrideBindings[key] = nil
+      end
+    end
+  end
+  target.GetBindingAction = function(key, checkOverride)
+    local binding = checkOverride and WowApi.overrideBindings[key]
+    return binding and binding.action or ""
+  end
+  target.RegisterStateDriver = function(frame, state, condition)
+    if blockedInCombat("RegisterStateDriver") then return end
+    WowApi.stateDrivers[frame] = { state = state, condition = condition }
+  end
+  target.UnregisterStateDriver = function(frame, state)
+    if blockedInCombat("UnregisterStateDriver") then return end
+    WowApi.stateDrivers[frame] = nil
+  end
+
   target.GetLocale = function() return "enUS" end
   target.GetCurrentRegion = function() return 3 end
   target.GetRealmName = function() return "TestRealm" end

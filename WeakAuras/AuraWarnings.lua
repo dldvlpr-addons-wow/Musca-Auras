@@ -170,7 +170,8 @@ function Private.AuraWarnings.GetAllWarnings(uid)
       local childWarnings = warnings[child.uid]
       if childWarnings then
         for key, warning in pairs(childWarnings) do
-          if not thisWarnings[key] then
+          -- A secure frame note belongs to that display alone: groups above it are not marked.
+          if key ~= "protected_frame" and not thisWarnings[key] then
             thisWarnings[key] = {
               severity = warning.severity,
               message = warning.message,

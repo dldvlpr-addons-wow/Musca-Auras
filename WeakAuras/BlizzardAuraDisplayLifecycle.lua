@@ -93,10 +93,21 @@ function Display.Apply(auraRegion, auraData)
   end
 
   if WeakAuras.IsRestricted() then
-    queuedApplies[auraRegion] = auraData
-    Warn(auraData, "blizzard_aura_display", PENDING_TEXT)
+    -- An aura loaded in combat is built right away: the aura containers are addon frames, not protected ones.
+    -- A build that fails while restricted is done again at the end of the restriction.
+    -- The container addon is not loaded in combat: an aura that needs it waits for the end of the restriction.
+    local ok = C_AddOns.IsAddOnLoaded("Blizzard_AuraContainer")
+      and pcall(Display.ApplyNow, auraRegion, auraData, previewing)
+    if not ok then
+      queuedApplies[auraRegion] = auraData
+      Warn(auraData, "blizzard_aura_display", PENDING_TEXT)
+    end
     return
   end
+  Display.ApplyNow(auraRegion, auraData, previewing)
+end
+
+function Display.ApplyNow(auraRegion, auraData, previewing)
   if not C_AddOns.IsAddOnLoaded("Blizzard_AuraContainer") then
     local addonLoaded, failReason = C_AddOns.LoadAddOn("Blizzard_AuraContainer")
     if not addonLoaded then

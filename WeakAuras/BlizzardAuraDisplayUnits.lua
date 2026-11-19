@@ -122,6 +122,17 @@ local function PassesMemberFilters(trigger, token)
     local role = UnitGroupRolesAssigned(token)
     if issecretvalue(role) or not (trigger.unitRoles or {})[role] then return false end
   end
+  if trigger.useMemberClasses then
+    -- An unreadable class matches nothing, like an unreadable name.
+    local _, class = UnitClass(token)
+    if issecretvalue(class) or not (trigger.memberClasses or {})[class] then return false end
+  end
+  if trigger.ignoreSelf and token ~= "player" then
+    local ok, isSelf = pcall(UnitIsUnit, "player", token)
+    if ok and not issecretvalue(isSelf) and isSelf then return false end
+  elseif trigger.ignoreSelf then
+    return false
+  end
   return true
 end
 
@@ -136,7 +147,7 @@ Display.UnitTokens = function(trigger)
   if isMember then return { (Display.SpecificUnit(trigger)) } end
   local tokens = BaseTokens(trigger)
   if not PET_UNITS[trigger.unit] then return tokens end
-  if trigger.useUnitNames or trigger.useUnitRoles then
+  if trigger.useUnitNames or trigger.useUnitRoles or trigger.useMemberClasses or trigger.ignoreSelf then
     local kept = {}
     for _, token in ipairs(tokens) do
       if PassesMemberFilters(trigger, token) then kept[#kept + 1] = token end
