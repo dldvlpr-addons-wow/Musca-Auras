@@ -1043,6 +1043,32 @@ function OptionsPrivate.CreateFrame()
   auraSetButton.frame:Show()
   auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", 4, 0)
 
+  -- /wa mute from the toolbar. The state is read again at each show: the slash command changes it too.
+  local muteToggle
+  local function ReadMute()
+    muteToggle:SetChecked(OptionsPrivate.Private.db.soundsMuted == true)
+  end
+  muteToggle = Style.NewCheck(toolbarContainer, L["Mute"], function()
+    WeakAuras.ToggleSoundsMuted()
+  end)
+  -- Every toggle, /wa mute typed while the window is open included, sets the box.
+  hooksecurefunc(WeakAuras, "ToggleSoundsMuted", ReadMute)
+  muteToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 4, 0)
+  ReadMute()
+  muteToggle:HookScript("OnShow", function(check)
+    ReadMute()
+    Style.FitCheck(check)
+  end)
+  muteToggle:HookScript("OnEnter", function(check)
+    GameTooltip:SetOwner(check, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L["Mute"])
+    GameTooltip:AddLine(L["No aura plays a sound or speaks while this is checked. The auras are not changed."], 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  muteToggle:HookScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
+
   if C_CooldownViewer then
     local hideCDMLabel = L["Hide Blizzard's CDM"]
     -- The toolbar has no room for the whole name: the acronym, the name in the tooltip.
@@ -1053,7 +1079,8 @@ function OptionsPrivate.CreateFrame()
     local function ReadHideCDM()
       hideCDMToggle:SetChecked(OptionsPrivate.Private.db.cdmHideBlizzard == true)
     end
-    hideCDMToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 4, 0)
+    -- After the label of the Mute box, whose length depends on the language.
+    hideCDMToggle:SetPoint("LEFT", muteToggle.label, "RIGHT", 12, 0)
     ReadHideCDM()
     hideCDMToggle:HookScript("OnShow", function(check)
       ReadHideCDM()
@@ -1098,6 +1125,37 @@ function OptionsPrivate.CreateFrame()
     buttonsScroll:DoLayout()
   end
   frame.buttonsScroll = buttonsScroll
+
+  -- No aura at all: the list says what to do next. A search without result is another case: auras exist then.
+  local emptyList = CreateFrame("Frame", nil, buttonsScroll.frame)
+  emptyList:SetPoint("LEFT", buttonsScroll.frame, "LEFT", 16, 0)
+  emptyList:SetPoint("RIGHT", buttonsScroll.frame, "RIGHT", -16, 0)
+  emptyList:SetHeight(120)
+  emptyList:Hide()
+  local emptyListText = Style.NewText(emptyList, "text", "s", "textSecondary")
+  emptyListText:SetPoint("TOPLEFT")
+  emptyListText:SetPoint("TOPRIGHT")
+  emptyListText:SetJustifyH("CENTER")
+  emptyListText:SetText(L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."])
+  local emptyListGuide = Style.NewButton(emptyList, L["Guide"], "secondary", function()
+    OptionsPrivate.Private.ShowForeverTutorial()
+  end)
+  emptyListGuide:SetPoint("TOP", emptyListText, "BOTTOM", 0, -12)
+  local emptyListPacks = Style.NewButton(emptyList, L["Packs"], "secondary", function()
+    frame:OpenPacks()
+  end)
+  emptyListPacks:SetPoint("RIGHT", emptyListGuide, "LEFT", -8, 0)
+  local emptyListImport = Style.NewButton(emptyList, L["Import"], "secondary", OptionsPrivate.ImportFromString)
+  emptyListImport:SetPoint("LEFT", emptyListGuide, "RIGHT", 8, 0)
+  emptyList:SetScript("OnShow", function()
+    Style.FitButton(emptyListGuide)
+    Style.FitButton(emptyListPacks)
+    Style.FitButton(emptyListImport)
+  end)
+  -- Called at the end of each rebuild of the list: add, import, delete and restore all pass there.
+  frame.UpdateEmptyList = function()
+    emptyList:SetShown(next(WeakAurasSaved.displays) == nil)
+  end
 
   function buttonsScroll:GetScrollPos()
     local status = self.status or self.localstatus
@@ -1696,8 +1754,12 @@ function OptionsPrivate.CreateFrame()
       containerScroll:AddChild(label)
     end
 
-    local function AddPackButton(title, description, icon, onClick)
+    -- auraCount: number of auras the import adds, shown after the title. Nil when the pack cannot be read.
+    local function AddPackButton(title, description, icon, onClick, auraCount)
       local button = AceGUI:Create("WeakAurasNewButton")
+      if auraCount then
+        title = (auraCount == 1 and L["%s (1 aura)"] or L["%s (%d auras)"]):format(title, auraCount)
+      end
       button:SetTitle(title)
       button:SetDescription(description)
       button:SetIcon(icon)
@@ -1714,12 +1776,15 @@ function OptionsPrivate.CreateFrame()
       intro:SetText(L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."])
       intro:SetFullWidth(true)
       containerScroll:AddChild(intro)
+      -- No aura sits outside a block: the whole HUD counts the sum of its blocks.
+      local blocks, hudAuraCount = OptionsPrivate.GetClassPackBlocks(classPack), 0
+      for _, block in ipairs(blocks) do hudAuraCount = hudAuraCount + block.auraCount end
       AddPackButton(L["Whole HUD"], L["Full UI pack for your class: rotation, cooldowns, buffs and resources, ready to play"],
         classIcon, function()
           OptionsPrivate.PreferClassPackUpdate(classPack)
           WeakAuras.Import(classPack)
-        end)
-      for _, block in ipairs(OptionsPrivate.GetClassPackBlocks(classPack)) do
+        end, #blocks > 0 and hudAuraCount or nil)
+      for _, block in ipairs(blocks) do
         local texts = OptionsPrivate.classPackBlockTexts[block.label]
         AddPackButton(texts and L[texts[1]] or block.label, texts and L[texts[2]] or "", classIcon, function()
           local importData = OptionsPrivate.BuildClassPackBlockImport(classPack, block.label)
@@ -1727,7 +1792,7 @@ function OptionsPrivate.CreateFrame()
             OptionsPrivate.PreferClassPackUpdate(classPack)
             WeakAuras.Import(importData)
           end
-        end)
+        end, block.auraCount)
       end
     end
 
@@ -1740,7 +1805,7 @@ function OptionsPrivate.CreateFrame()
       end
       AddPackButton(L[utilityPack.name], L[utilityPack.description], utilityPack.icon, function()
         WeakAuras.Import(utilityPack.data)
-      end)
+      end, OptionsPrivate.CountPackAuras(utilityPack.data))
     end
   end
 

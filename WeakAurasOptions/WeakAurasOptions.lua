@@ -1690,6 +1690,7 @@ function OptionsPrivate.SortDisplayButtons(filter, overrideReset, id)
   end
 
   frame.buttonsScroll:DoLayout();
+  frame.UpdateEmptyList()
   if(recenter) then
     frame:CenterOnPicked();
   end

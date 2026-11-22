@@ -53,7 +53,7 @@ lua Tests/Packs/AuraTool.lua . encode Tests/Packs/Paladin/PackPaladin.lua > Test
 - Buffs sur le joueur : plus de filtre « lancé par le joueur », un buff reçu d'un autre joueur s'affiche.
 - Nouvelle icône Defensives (toutes classes, reprise des packs Fojji, GPL-2) : Blessing of Protection, Freedom, Sacrifice, Power Word: Shield, Pain Suppression et potions défensives, de tout lanceur.
 - Templar's Bulwark 1311015 : simple recharge, comme Fojji ; bouclier actif dans l'icône Defensives. Voice of Truth 1310897 : buff actif ou recharge ; Swift Judgement 1310994 en recharge.
-- Bénédictions : Light (19977 à 19979), Salvation 1038, Greater Light 25890, Greater Salvation 25895 comptent pour le rappel.
+- Bénédictions : Light (19977 à 19979, 25890) et Salvation (1038, 25895) retirées, absentes du build 1.60.1.71037 (vérifié en jeu pour 19977 et 1038).
 - Auras : résistances Ombre, Givre, Feu (3 rangs chacune) et Sanctity 20218 comptent pour le rappel.
 - Debuffs cible ajoutés : Seal of Justice (étourdissement 20170), Repentance 20066, Turn Undead (2878, 5627, 10326).
 - Proc Infusion of Light : 53672 et 437063, les deux auras visibles de 15 s à 1 charge du DB2 (pas dans les packs Fojji).

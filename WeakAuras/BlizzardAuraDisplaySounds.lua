@@ -96,7 +96,7 @@ local function UpdateSounds(region)
   local data = state.data
   local current = Display.GetTrigger(data)
   local actions = data and data.actions or {}
-  local live = current ~= nil and state.active and region:IsShown() and not InPreview()
+  local live = current ~= nil and state.active and region:IsShown() and not InPreview() and not Private.db.soundsMuted
   local fingerprint = live and SoundFingerprint(current, actions) or nil
   if fingerprint and fingerprint == state.soundSignature then return end
   state.soundSignature = fingerprint
@@ -196,6 +196,20 @@ local function FlushPendingSounds()
   local regions = {}
   for auraRegion in pairs(queuedSoundSyncs) do regions[#regions + 1] = auraRegion end
   for _, auraRegion in ipairs(regions) do UpdateSounds(auraRegion) end
+end
+
+-- /wa mute: the sounds registered with the game are removed, and registered again when the mute ends.
+function Private.SyncAuraSoundsWithMute()
+  local refused = false
+  for _, regionData in pairs(Private.regions) do
+    local region = regionData.region
+    if region and region.blizzardAuraDisplay then
+      UpdateSounds(region)
+      refused = refused or queuedSoundSyncs[region] == true
+    end
+  end
+  -- True when the game refused one of these changes (restricted): it is done at the end of the restriction.
+  return refused
 end
 
 Shared.FlushPendingSounds = FlushPendingSounds

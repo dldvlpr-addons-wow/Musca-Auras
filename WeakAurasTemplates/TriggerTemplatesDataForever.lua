@@ -60,9 +60,8 @@ local fixes = {
     remove = { [BUFFS] = { [14149] = true } },
     add = {
       [ABILITIES] = {
-        Ability(1310707, { requiresTarget = true }),
+        Ability(399956, { requiresTarget = true }),
         Ability(1310703, { requiresTarget = true }),
-        Ability(1310709, { requiresTarget = true }),
         Ability(438040),
       },
     },

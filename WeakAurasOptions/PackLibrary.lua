@@ -27,6 +27,29 @@ local standalonePositions = {
 
 local decodedPacks = {}
 
+-- Auras of a list of import data, groups left out.
+local function CountAuras(list)
+  local count = 0
+  for _, data in ipairs(list) do
+    if not data.controlledChildren then count = count + 1 end
+  end
+  return count
+end
+
+local auraCounts = {}
+
+-- Number of auras the import of a pack string adds, groups left out. Decoded once per string.
+function OptionsPrivate.CountPackAuras(importString)
+  if not auraCounts[importString] then
+    local received = OptionsPrivate.Private.StringToTable(importString, true)
+    if type(received) ~= "table" or type(received.d) ~= "table" then
+      return nil
+    end
+    auraCounts[importString] = CountAuras(received.c or {}) + CountAuras({ received.d })
+  end
+  return auraCounts[importString]
+end
+
 local function LabelOf(id)
   return id:match(" %- (.+)$")
 end
@@ -51,6 +74,9 @@ local function Decode(classPack)
       blockOf[child.id] = blockOf[child.parent]
       tinsert(blockOf[child.parent].members, child)
     end
+  end
+  for _, block in ipairs(pack.blocks) do
+    block.auraCount = CountAuras(block.members) + CountAuras({ block.data })
   end
   decodedPacks[classPack] = pack
   return pack

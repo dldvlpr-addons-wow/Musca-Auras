@@ -18,3 +18,4 @@ REPRISE-*.md
 PLAN-*.md
 NOTES-INTERNES.md
 SUIVI-*.md
+__pycache__/

@@ -17,7 +17,7 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 ## 🚀 Quick start
 
 1. **Install** Musca Auras and start the game.
-2. On the welcome popup, click **Install &lt;your class&gt; HUD**. Missed it? Type **/wa**, click **New Aura**, then **Packs**, then **Whole HUD**.
+2. On the welcome window, click **Install the full HUD**, or **Choose blocks** to take only a part of it. Missed it? Type **/wa welcome**.
 3. **Place your auras:** type **/wa unlock**, drag the boxes, then click **Save and quit**.
 4. **Make it yours:** type **/wa** to change any aura. New to auras? Click **Guide** at the top of the `/wa` window.
 
@@ -25,16 +25,16 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 ***
 
-## 🆕 New in 1.17 and 1.18
+## 🆕 New in 1.19
 
-- **Placement mode** (`/wa unlock`): the screen darkens under a grid, and every aura gets a box to drag, loaded or not. Type an exact position and size, anchor an aura to another one, set the growth of a dynamic group.
-- **Magnetism:** in `/wa` and in Edit Mode, auras snap to screen edges, grid lines and other auras, and repeat the same spacing. Ctrl aligns centers only, Shift turns the snap off.
-- **Align Selection:** align or spread several auras selected in `/wa`, in one undo step.
-- **Arrow keys** move the selected aura by 1 unit, 10 with Shift.
-- **New look** for the `/wa` window, the Guide and the popups, with the Musca Auras name and icon.
-- **Options > AddOns** and the minimap addon menu have a Musca Auras entry.
+- **Click Action:** a new element makes an Icon, Progress Bar, Text, Texture, Progress Texture or Empty aura clickable. Left, right and middle click each cast a spell, use an item, run a macro, target a unit (player, target, mouseover, focus) or remove a buff.
+- **Key:** a key per aura does the action of the left click. The options warn when the game or another aura already uses that key.
+- **Clickable in Combat:** choose when the aura stays clickable: while it shows at the combat start, the whole combat, always while the aura is loaded, or on a macro condition. In combat the clickable area stays where it was when the combat started.
+- **Shield overlay:** with **Show Absorb** on the Health trigger, a Progress Bar draws the shield after the health, in combat too.
 
-**After the update:** re-import the Mage pack for the new Arcane Blast segments. Nothing else to do.
+**Also since 1.17:** Placement mode (`/wa unlock`) with a grid and a box to drag for every aura, magnetism on screen edges, grid lines and other auras, Align Selection, arrow keys to move an aura, and a new look for the `/wa` window.
+
+**After the update:** nothing to do.
 
 Full list in the **Files** tab.
 

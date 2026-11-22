@@ -7,6 +7,8 @@ end
 local L = WeakAuras.L
 
 -- WeakAuras/Options
+	L["%s (%d auras)"] = "%s (%d auras)"
+	L["%s (1 aura)"] = "%s (1 aura)"
 	L["%s number(s) left out: a number is only replaced by a number."] = "%s number(s) left out: a number is only replaced by a number."
 	L[" and |cFFFF0000mirrored|r"] = " and |cFFFF0000mirrored|r"
 	L["%s (%s filter)"] = "%s (%s filter)"
@@ -105,8 +107,11 @@ local L = WeakAuras.L
 	L["Bottom Edges"] = "Bottom Edges"
 	L["Centers on a Column"] = "Centers on a Column"
 	L["Centers on a Row"] = "Centers on a Row"
+	L["Guide"] = "Guide"
 	L["Left Edges"] = "Left Edges"
+	L["Mute"] = "Mute"
 	L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."] = "Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."
+	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "No aura plays a sound or speaks while this is checked. The auras are not changed."
 	L["Out of the aura set of this character: %s"] = "Out of the aura set of this character: %s"
 	L["Aura set of this character: the tag of the auras it loads. Empty: all auras."] = "Aura set of this character: the tag of the auras it loads. Empty: all auras."
 	L["Aura spacing"] = "Aura spacing"
@@ -290,6 +295,7 @@ local L = WeakAuras.L
 	L["Values to replace, listed above:"] = "Values to replace, listed above:"
 	L["When Aura (Modern) Filters Are Not Met, Use"] = "When Aura (Modern) Filters Are Not Met, Use"
 	L["You cannot control clones with an Aura (Modern). Use the Aura (Modern) Settings under Display."] = "You cannot control clones with an Aura (Modern). Use the Aura (Modern) Settings under Display."
+	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "You have no aura yet. Install a ready-made pack, read the guide, or import a string."
 	L["|c%02x%02x%02x%02xCustom Color|r"] = "|c%02x%02x%02x%02xCustom Color|r"
 	L["|cff999999Triggers tracking multiple units will default to being active even while no affected units are found without a Unit Count or Match Count setting applied.|r"] = "|cff999999Triggers tracking multiple units will default to being active even while no affected units are found without a Unit Count or Match Count setting applied.|r"
 	L["|cFFE0E000Note:|r This sets the description only on '%s'"] = "|cFFE0E000Note:|r This sets the description only on '%s'"

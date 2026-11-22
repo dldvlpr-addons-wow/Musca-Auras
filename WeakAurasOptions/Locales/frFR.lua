@@ -7,6 +7,8 @@ end
 local L = WeakAuras.L
 
 -- WeakAuras/Options
+	L["%s (%d auras)"] = "%s (%d auras)"
+	L["%s (1 aura)"] = "%s (1 aura)"
 	L["%s number(s) left out: a number is only replaced by a number."] = "%s nombre(s) écarté(s) : un nombre n'est remplacé que par un nombre."
 	L[" and |cFFFF0000mirrored|r"] = "et  |cFFFF0000mirrored|r"
 	L["%s (%s filter)"] = "%s (filtre %s)"
@@ -106,8 +108,11 @@ local L = WeakAuras.L
 	L["Bottom Edges"] = "Bords bas"
 	L["Centers on a Column"] = "Centres en colonne"
 	L["Centers on a Row"] = "Centres en ligne"
+	L["Guide"] = "Guide"
 	L["Left Edges"] = "Bords gauches"
+	L["Mute"] = "Muet"
 	L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."] = "Demande au moins deux auras de même point d'ancrage sur l'écran, un cadre ou la souris, ni groupes ni dans un groupe qui place ses enfants."
+	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Aucune aura ne joue de son ni ne parle tant que cette case est cochée. Les auras ne sont pas modifiées."
 	L["Out of the aura set of this character: %s"] = "Hors du jeu d'auras de ce personnage : %s"
 	L["Aura set of this character: the tag of the auras it loads. Empty: all auras."] = "Jeu d'auras de ce personnage : le tag des auras qu'il charge. Vide : toutes les auras."
 	L["Aura spacing"] = "Espacement des auras"
@@ -291,6 +296,7 @@ local L = WeakAuras.L
 	L["Values to replace, listed above:"] = "Valeurs à remplacer, listées ci-dessus :"
 	L["When Aura (Modern) Filters Are Not Met, Use"] = "Quand les filtres d'Aura (moderne) ne sont pas remplis, utiliser"
 	L["You cannot control clones with an Aura (Modern). Use the Aura (Modern) Settings under Display."] = "Vous ne pouvez pas contrôler les clones avec une Aura (moderne). Utilisez les paramètres d'Aura (moderne) sous Affichage."
+	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "Vous n'avez encore aucune aura. Installez un pack prêt à l'emploi, lisez le guide, ou importez une chaîne."
 	L["|c%02x%02x%02x%02xCustom Color|r"] = "|c%02x%02x%02x%02xCouleur personnalisée|r"
 	L["|cff999999Triggers tracking multiple units will default to being active even while no affected units are found without a Unit Count or Match Count setting applied.|r"] = "|cff999999Les déclencheurs suivant plusieurs unités seront actifs par défaut même si aucune unité affectée n’est trouvée, sauf si un paramètre de nombre d’unités ou de correspondances est appliqué.|r"
 	L["|cFFE0E000Note:|r This sets the description only on '%s'"] = "|cFFE0E000Note:|r Ceci définit la description uniquement sur '%s'"

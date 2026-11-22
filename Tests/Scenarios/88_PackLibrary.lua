@@ -59,6 +59,7 @@ return function(test)
   end
   LoadOptionsFile("WeakAurasOptions/ClassPacks.lua", env, OptionsPrivate)
   LoadOptionsFile("WeakAurasOptions/PackLibrary.lua", env, OptionsPrivate)
+  LoadOptionsFile("WeakAurasOptions/UtilityPacks.lua", env, OptionsPrivate)
   local enUS = ReadFile("WeakAurasOptions/Locales/enUS.lua")
   local frFR = ReadFile("WeakAurasOptions/Locales/frFR.lua")
   local problems = {}
@@ -77,10 +78,17 @@ return function(test)
       if child.parent == pack.d.id then expected[#expected + 1] = child end
     end
     local blocks = OptionsPrivate.GetClassPackBlocks(classPack)
+    local blockAuras = 0
     if #blocks ~= #expected then Problem(class .. ": " .. #blocks .. " blocks, " .. #expected .. " expected") end
     for index, block in ipairs(blocks) do
       if block.data.id ~= (expected[index] and expected[index].id) then Problem(class .. ": block " .. block.data.id) end
       if #block.members ~= #block.data.controlledChildren then Problem(block.data.id .. ": members missing") end
+      local leaves = 0
+      for _, member in ipairs(block.members) do
+        if not member.controlledChildren then leaves = leaves + 1 end
+      end
+      if block.auraCount ~= leaves then Problem(block.data.id .. ": aura count " .. tostring(block.auraCount)) end
+      blockAuras = blockAuras + leaves
       local texts = OptionsPrivate.classPackBlockTexts[block.label]
       if not texts then
         Problem(block.data.id .. ": no title for " .. block.label)
@@ -90,6 +98,11 @@ return function(test)
           if not frFR:find('L["' .. key .. '"] = ', 1, true) then Problem("frFR: missing " .. key) end
         end
       end
+    end
+
+    -- The count of the whole HUD is the sum of its blocks: no aura sits outside a block.
+    if OptionsPrivate.CountPackAuras(classPack) ~= blockAuras or blockAuras == 0 then
+      Problem(class .. ": whole HUD counts " .. tostring(OptionsPrivate.CountPackAuras(classPack)) .. " auras, blocks " .. blockAuras)
     end
 
     local function Import(label)
@@ -243,6 +256,10 @@ return function(test)
   local again = OptionsPrivate.GetClassPackBlocks(OptionsPrivate.classPacks.MAGE)
   for _, block in ipairs(again) do
     if block.label == "Bars" and block.data.anchorFrameType ~= "SELECTFRAME" then Problem("MAGE: cached Bars modified") end
+  end
+  -- Every utility pack is counted: an unreadable pack string would show its button without a number.
+  for _, utilityPack in ipairs(OptionsPrivate.utilityPacks) do
+    if not OptionsPrivate.CountPackAuras(utilityPack.data) then Problem(utilityPack.name .. ": no aura count") end
   end
   assert(#problems == 0, #problems .. " pack library problem(s):\n" .. table.concat(problems, "\n"))
 end

@@ -1012,4 +1012,10 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Shows for up to this many seconds when the aura is gained. On a target or nameplate, changing unit can show an aura that was already there."] = "오라를 얻으면 최대 이 시간(초) 동안 표시됩니다. 대상 또는 이름표에서는 유닛을 바꾸면 이미 있던 오라가 표시될 수 있습니다."
 	L["Spell Set"] = "주문 세트"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "사용자 지정 코드가 WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } })로 설정한 주문 목록의 이름입니다. 이 목록의 주문 ID는 위의 ID에 추가됩니다. 이 이름의 목록이 설정되어 있지 않으면 트리거는 위의 주문 ID만 사용합니다."
+	L["Mute"] = "음소거"
+	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "이 항목을 선택한 동안에는 어떤 오라도 소리를 재생하거나 말하지 않습니다. 오라는 변경되지 않습니다."
+	L["%s (1 aura)"] = "%s (오라 1개)"
+	L["%s (%d auras)"] = "%s (오라 %d개)"
+	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "아직 오라가 없습니다. 준비된 팩을 설치하거나, 가이드를 읽거나, 문자열을 가져오세요."
+	L["Guide"] = "가이드"
 

@@ -62,6 +62,92 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-21
+
+Tests `Tests/Scenarios/108_LocaleKeysExist.lua` and `Tests/Scenarios/88_PackLibrary.lua` (aura counts). Not tested
+in game yet.
+
+### Added
+- `WeakAuras/WeakAuras.lua`: `/wa toggle` pauses or resumes every aura (a chat line asks to close the options or the placement mode when one is open),
+  `/wa mute` turns the sounds of every aura off or on, `/wa welcome` shows the welcome window again, or says in the chat that it cannot open now. The three
+  commands are listed in the `/wa help` text.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/RegionTypes/RegionPrototype.lua`, `WeakAuras/BlizzardAuraDisplaySounds.lua`:
+  `WeakAurasSaved.soundsMuted`, account-wide. While set, no aura plays a sound file, a sound kit or a
+  text-to-speech message, and the sounds of Aura (Modern) auras are removed from the game until the mute ends. A
+  chat line recalls it at login. `WeakAuras.ToggleSoundsMuted()` is public. The sound files and sound kits that already play are cut; a
+  text-to-speech message already started is not.
+  When the game refuses the change during combat, a chat line says that the sounds of Aura (Modern) auras
+  change when combat ends.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: "Mute" check box in the toolbar of the options window.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`, `WeakAurasOptions/WeakAurasOptions.lua`: with no aura at all,
+  the list of the options window shows one line of text and three buttons, Packs, Guide and Import. It hides as
+  soon as one aura exists. A search without result does not show it.
+- `WeakAurasOptions/PackLibrary.lua`, `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the Packs page shows the
+  number of auras of the whole HUD, of each block and of each utility pack (`OptionsPrivate.CountPackAuras`,
+  `block.auraCount`). Groups are not counted.
+- `Tests/Scenarios/108_LocaleKeysExist.lua`: every literal `L["..."]` key used in the code exists in the enUS file
+  of its addon.
+- `Tests/PrepareRelease.py`: `python Tests/PrepareRelease.py <version> [--date YYYY-MM-DD] [--check]` writes the
+  version of the five TOC files, the first title of `WeakAuras/CHANGELOG.md` and the version, date and first entry
+  of `WeakAurasOptions/Changelog.lua`. It runs no git command.
+
+### Changed
+- `WeakAuras/WeakAuras.lua`: the first login popup is a short welcome: one sentence on the addon, one on the class
+  HUD, and four buttons, "Install the full HUD", "Choose blocks" (opens the Packs page), "Guide" and "Later". The
+  list of WoW Forever limits moved to the Guide. The popup counts as seen when a button is clicked, no longer when
+  it shows: closed with Escape, it comes back at the next login. A button clicked while the auras still load
+  acts when the login ends (`afterLoginQueue`); "Choose blocks" clicked in combat opens the Packs page when
+  combat ends, and clicked in the placement mode it leaves that mode.
+- `WeakAuras/WeakAuras.lua`: `WeakAuras.ImportClassPack()` called before the end of the login waits for it,
+  with the login chat line, instead of a popup asking to try again. It returns `false, "queued"` when the
+  import waits for the end of the login or of combat.
+- `WeakAuras/WeakAuras.lua`: `WeakAurasSaved.classPackOffered`, per class. The first login of a character of a
+  class that was never offered its HUD shows a short offer (install, choose blocks, later), after the "What's new"
+  popup when both are due. A class whose HUD is already installed gets no offer.
+- `WeakAuras/WeakAuras.lua`: the "class pack changed" popup counts as seen when the import starts or "Later"
+  is clicked, no longer when it shows: closed with Escape, or with an import that could not start, it comes
+  back at the next login.
+
+### Fixed
+- `WeakAuras/WeakAuras.lua`: `/wa unlock` typed while the auras still load no longer keeps the login from
+  ending: the placement mode opens when the login ends. `Private.LoadOptions` returns false during the login
+  and opens the options when it ends. `/wa` or the minimap icon during the login prints the login line and
+  opens the options when it ends, instead of doing nothing. An import asked during the login (aura link,
+  tutorial, `/wa undelete`) no longer raises an error: it starts when the login ends
+  (`Private.RunAfterLogin`).
+- `WeakAuras/Transmission.lua`: an import started in the placement mode leaves that mode and shows the
+  import window, instead of opening it in the hidden options window.
+- `WeakAuras/WeakAuras.lua`: "Choose blocks" clicked in combat with the options already loaded opens the
+  Packs page when combat ends.
+- `WeakAuras/WeakAuras.lua`: `/wa demo` typed in the placement mode leaves that mode and shows the demo in the
+  options window. `WeakAuras.ImportClassPack()` says in the chat when the class has no pack.
+- `WeakAuras/WeakAuras.lua`: "Later" closes the offer of the class HUD, which stayed open.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the "Mute" box of the toolbar follows `/wa mute` typed
+  while the options window is open.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: the "CDM" box of the toolbar starts after the label of the
+  "Mute" box, which it covered in French.
+- `WeakAuras/Transmission.lua`: `WeakAuras.Import` returns "This text holds no aura to import." for a value that is neither
+  a string nor a table, a string that decodes to nothing, data without a version number or children that
+  are not a list of tables, instead of raising an error. The tooltip says that the text holds no aura to
+  import, as for a string that does not decode.
+- Rogue spell IDs checked against the client tables of build 1.60.1.71037. `Tests/Packs/Voleur/PackVoleur.lua`
+  and `WeakAurasTemplates/TriggerTemplatesDataForever.lua`: Mutilate uses 399956 (rank 1 of the chain 399956,
+  1241582, 1241584) instead of 1310707, which that build no longer teaches (SkillLineAbility AcquireMethod 3).
+  `WeakAuras/SecretAuraRanks.lua`: 1310707 leaves the Mutilate family. The Coup de Grace ability 1310709 is
+  removed from the Rogue templates: the name Coup de Grace now belongs to the passive talent 14162.
+  Blessing of Light (19977 to 19979, Greater 25890) and Salvation (1038, Mass 25895) are gone from that build
+  (GetSpellInfo returns nil in game): removed from `Tests/Packs/Paladin/PackPaladin.lua`,
+  `Tests/Packs/Utility/BuffCheck/PackBuffCheck.lua` and the rank families. `Tests/GenerateSpellData.py` drops
+  the IDs absent from `SpellName.csv`. `WeakAurasOptions/ClassPacks.lua` and `UtilityPacks.lua` regenerated;
+  `Tests/Scenarios/48_Lot6aContract.lua` follows the families.
+
+### Changed (documents)
+- `TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`: "Other changes" says that the Swing Timer does not reset on melee
+  hits.
+- `DESCRIPTION.md`, `GUIDE.md`: quick start and command table follow the new welcome window and commands.
+- `WeakAuras/Locales/*.lua`, `WeakAurasOptions/Locales/*.lua`: texts of the above in the 11 languages. The texts
+  of the old first login popup are removed from enUS and frFR.
+
 ## 2026-11-19
 
 Test `Tests/Scenarios/107_SecretGeometryAndIdentity.lua`. Not tested in game yet.

@@ -85,10 +85,11 @@ return function(test)
     end
     opened = nil
     -- Options open only for the restore: Delete would refresh them.
-    local isOptionsOpen = WeakAuras.IsOptionsOpen
+    local isOptionsOpen, optionsFrame = WeakAuras.IsOptionsOpen, private.OptionsFrame
     WeakAuras.IsOptionsOpen = function() return true end
+    private.OptionsFrame = function() return { IsVisible = function() return true end } end
     local restoredOk = private.RestoreDeletedAura(key)
-    WeakAuras.IsOptionsOpen = isOptionsOpen
+    WeakAuras.IsOptionsOpen, private.OptionsFrame = isOptionsOpen, optionsFrame
     assert(restoredOk, id .. ": restore failed")
     assert(opened, id .. ": import window not opened")
     Check(id, original, id .. (tags and " with tags" or ""))

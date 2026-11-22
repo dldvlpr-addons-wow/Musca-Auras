@@ -580,6 +580,14 @@ end
 local delayedImport = CreateFrame("Frame")
 
 local function ImportNow(data, children, target, linkedAuras, sender, callbackFunc)
+  if not WeakAuras.IsLoginFinished() then
+    -- The options can't load yet: the import keeps its data and starts when the login ends.
+    WeakAuras.prettyPrint(Private.LoginMessage())
+    Private.RunAfterLogin(function()
+      ImportNow(data, children, target, linkedAuras, sender, callbackFunc)
+    end)
+    return
+  end
   if InCombatLockdown() then
     WeakAuras.prettyPrint(L["Importing will start after combat ends."])
 
@@ -592,7 +600,9 @@ local function ImportNow(data, children, target, linkedAuras, sender, callbackFu
   end
 
   if Private.LoadOptions() then
-    if not WeakAuras.IsOptionsOpen() then
+    -- The placement mode counts as open options: the window itself must show, which also leaves that mode.
+    local optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
+    if not (optionsFrame and optionsFrame:IsVisible()) then
       WeakAuras.OpenOptions()
     end
     Private.OpenUpdate(data, children, target, linkedAuras, sender, callbackFunc)
@@ -611,20 +621,30 @@ function WeakAuras.Import(inData, target, callbackFunc, linkedAuras)
         {1, received, 1, 0, 0, 1}
       }
       return nil, received
-    elseif received.m == "d" then
+    elseif type(received) == "table" and received.m == "d" then
       data = received.d
       children = received.c
       version = received.v
       senderVersion = received.s
     end
-  elseif type(inData.d) == 'table' then
+  elseif type(inData) == 'table' and type(inData.d) == 'table' then
     data = inData.d
     children = inData.c
     version = inData.v
     senderVersion = inData.s
   end
-  if type(data) ~= "table" then
-    return nil, "Invalid import data."
+  local valid = type(data) == "table" and type(version) == "number"
+    and (children == nil or type(children) == "table")
+  for _, child in ipairs(valid and children or {}) do
+    valid = valid and type(child) == "table"
+  end
+  if not valid then
+    -- Shown like an unreadable string, so a pasted text that is not an aura does not fail silently.
+    ShowTooltip{
+      {1, "Musca Auras", brandRed, brandGreen, brandBlue},
+      {1, L["This text holds no aura to import."], 1, 0, 0, 1}
+    }
+    return nil, L["This text holds no aura to import."]
   end
 
   if senderVersion ~= versionString then

@@ -1489,4 +1489,10 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Shows for up to this many seconds when the aura is gained. On a target or nameplate, changing unit can show an aura that was already there."] = "Wird bis zu dieser Anzahl Sekunden angezeigt, wenn die Aura erhalten wird. Bei einem Ziel oder einer Namensplakette kann ein Einheitenwechsel eine bereits vorhandene Aura anzeigen."
 	L["Spell Set"] = "Zauberset"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "Name einer Zauberliste, die von benutzerdefiniertem Code mit WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }) gesetzt wird. Ihre Zauber-IDs werden zu den oben genannten hinzugefügt. Solange keine Liste mit diesem Namen gesetzt ist, nutzt der Auslöser nur die oben genannten Zauber-IDs."
+	L["Mute"] = "Stumm"
+	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Solange dies aktiviert ist, spielt keine Aura einen Sound ab oder spricht. Die Auren werden nicht verändert."
+	L["%s (1 aura)"] = "%s (1 Aura)"
+	L["%s (%d auras)"] = "%s (%d Auren)"
+	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "Du hast noch keine Aura. Installiere ein fertiges Paket, lies den Leitfaden oder importiere eine Zeichenkette."
+	L["Guide"] = "Leitfaden"
 

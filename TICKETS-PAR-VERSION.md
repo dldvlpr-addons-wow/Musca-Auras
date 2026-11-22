@@ -1,14 +1,16 @@
 # Tickets par version
 
-Établi le 2026-10-27. La 1.15 reprend le travail fait et non commité, plus six compléments de packs. Les 70 tickets vont de la 1.15 à la 1.23, dans l'ordre de réalisation. L'avancement est dans la section « Déjà fait » de chaque version.
+Établi le 2026-10-27, reclassé le 2026-11-21. 85 tickets : 60 livrés (1.15 à 1.20), 1 clos sans développement (Dette 5), 1 écarté (Rebranding 9), 23 à faire (1.21 à 1.29). L'avancement est dans la section « Déjà fait » de chaque version sortie.
 
 Séries :
-- « Packs » : compléments des packs de classe (8) ;
-- « Dette » : dette technique et bugs (23) ;
-- « Placement » : grille et magnétisme (15, dont 8 ajoutés le 2026-11-10) ;
-- « Rebranding » : interface de la 1.18 (9) ;
-- « Accueil » : accueil du nouveau joueur (4) ;
-- « Populaire » : demandes populaires de WeakAuras (11, dont les auras cliquables ajoutées le 2026-11-13).
+- « Packs » : compléments des packs de classe (8, livrés) ;
+- « Dette » : dette technique et bugs (23 ; reste Dette 3) ;
+- « Placement » : grille et magnétisme (15, dont 8 ajoutés le 2026-11-10 ; reste Placement 7) ;
+- « Rebranding » : interface de la 1.18 (9, livrés sauf Rebranding 9, écarté) ;
+- « Accueil » : accueil du nouveau joueur (4, à faire) ;
+- « Populaire » : demandes populaires de WeakAuras (11, dont les auras cliquables ajoutées le 2026-11-13 ; Populaire 11 livré) ;
+- « API » : API publique pour les modules d'addons tiers (8, ajoutés le 2026-11-21, à faire) ;
+- « Outils » : diagnostic, sauvegardes et outillage de sortie (7, ajoutés le 2026-11-21, à faire).
 
 Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WOW_UI_SOURCE` pointant sur le source Forever. `luacheck` n'est pas installé sur le poste : il ne tourne qu'en CI (`.github/workflows/lint.yml`).
 
@@ -19,45 +21,57 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 3. Les textes et écrans neufs viennent après la charte de la 1.18, pour ne les écrire qu'une fois.
 4. Une version mélange du S visible et au plus un ou deux M. Les L ferment le plan.
 5. Chaque version se teste en jeu avant sa sortie (`SUIVI-BUGS-ET-TESTS.md`).
+6. Les numéros de ligne d'un ticket datent de sa rédaction : les revérifier à l'ouverture du ticket.
 
 ## Sommaire
 
-| Version | Thème | Tickets |
-|---|---|---|
-| 1.15 | Packs (gros du travail fait, non commité) | Packs 2, 3, 4, 6, 8, 1 |
-| 1.16 | Stabilisation | Dette 2, 9, 10 à 23, Packs 5, 7, Dette 6, 8 |
-| 1.17 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6, puis 9, 8, 10 à 15 |
-| 1.18 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 8, 4 (Rebranding 9 écarté) |
-| 1.19 | Auras cliquables | Dette 4, Populaire 11 |
-| 1.20 | Accueil et commandes | Accueil 2, 1, 3, 4, Populaire 1, 10 |
-| 1.21 | Fiabilité, chargement et import | Dette 3, 5, Populaire 5, 3, 2 |
-| 1.22 | Édition d'auras | Populaire 4, 6, 7 |
-| 1.23 | Gros chantiers | Populaire 8, Placement 7, Populaire 9 |
+| Version | Sortie | Thème | Tickets |
+|---|---|---|---|
+| 1.15 | 2026-11-05 | Packs | Packs 2, 3, 4, 6, 8, 1 |
+| 1.16 | 2026-11-07 | Stabilisation | Dette 2, 9, 10 à 23, Packs 5, 7, Dette 6, 8 |
+| 1.16.1 | 2026-11-09 | Correctifs | Hors ticket |
+| 1.17 | 2026-11-12 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6, puis 9, 8, 10 à 15 |
+| 1.18 | 2026-11-13 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 8, 4 (Rebranding 9 écarté) |
+| 1.18.1, 1.18.2 | 2026-11-15, 2026-11-16 | Correctifs du trigger Cooldown | Hors ticket |
+| 1.19 | 2026-11-18 | Auras cliquables | Dette 4, Populaire 11 |
+| 1.20 | 2026-11-22 | Accueil et commandes | Outils 1, 3, Accueil 2, 1, 3, 4, Populaire 1, 10 |
+| 1.21 | à faire | Fiabilité et diagnostic | Dette 3, Populaire 5, 3, 2, Outils 2, 4 |
+| 1.22 | à faire | Édition d'auras | Populaire 4, 6, Placement 7 |
+| 1.23 | à faire | Sauvegardes | Outils 5, 6 |
+| 1.24 | à faire | Groupes dynamiques et annonce de version | Populaire 7, Outils 7 |
+| 1.25 | à faire | API : fondations | API 1, 3, 2, 4 |
+| 1.26 | à faire | API : packs, ancrage, triggers | API 5, 6, 7 |
+| 1.27 | à faire | Templates personnalisés | Populaire 8 |
+| 1.28 | à faire | Animations conditionnelles | Populaire 9 |
+| 1.29 | à faire | API : auras possédées par un addon | API 8 |
+
+Tests en jeu en retard sur des versions sorties : 1.15 (étape 13 du suivi), 1.16 et 1.17 (aucune étape), 1.19 (étape 15).
 
 ## Dépendances
 
+Seules les dépendances entre tickets à faire sont listées. Levées par une sortie : Dette 1, 4, 6, 7, 17, 18, Packs 2, Placement 4, Rebranding 1.
+
 | Avant | Après | Raison |
 |---|---|---|
-| Dette 1 | Placement 1 à 6 | Même fichier, `MoverSizer.lua` |
-| Dette 7 | Placement 4 | Le moteur commun demande un scénario |
-| Placement 4 | Placement 7 | L'ancrage s'appuie sur le calage commun |
-| Rebranding 1 | Accueil 2, Populaire 10 | Textes et boutons dans la charte |
+| Outils 1 | Accueil 1 à 4, Populaire 1, 10, Outils 2, 4, 5, 6, 7 | Chaque texte neuf est contrôlé par le scénario des clés |
 | Accueil 2 | Accueil 1 | Mêmes boutons |
-| Dette 6 | Accueil 3 | Le compteur lit les packs |
-| Packs 2 | Packs 3, 5, 7 | Les ID se tranchent dans le même passage du DB2 |
-| Dette 4 | Populaire 11, 4, 6, 7, 8 | Nouveaux champs dans les auras |
-| Dette 18 | Populaire 6 | Même fichier, `AuthorOptions.lua` |
-| Dette 17, Populaire 4 | Populaire 9 | Animations et conditions |
+| Accueil 3 | API 5 | Même page Packs, même compteur d'auras |
+| Populaire 4 | Populaire 9 | Animations et conditions |
+| Outils 5 | Outils 6 | Même zone de la fenêtre, mêmes confirmations |
+| API 1 | API 2 à 8 | Chaque fonction publique neuve entre dans la liste figée |
+| API 1, API 2 | API 4 | Le registre lit la version d'API et s'appuie sur les événements |
+| API 4 | API 5 | Les packs tiers s'inscrivent à l'étape « options chargées » |
+| API 3 | API 7 | Validation à l'enregistrement, même principe |
 
 ---
 
 ## 1.15 : packs
 
-Le gros du travail est fait et non commité. Il reste six compléments de packs, tous S, dans les mêmes fichiers : les faire avant le test en jeu évite un second passage. Packs 2 passe en premier : il valide les ID déjà livrés, et Packs 3 se tranche pendant le même passage dans le DB2.
+Sortie le 2026-11-05 (1.15.0). Les six tickets Packs sont livrés. Packs 2 est passé en premier : il valide les ID déjà livrés, et Packs 3 s'est tranché pendant le même passage dans le DB2.
 
 ### Déjà fait
 
-Entrées du 2026-10-25 et du 2026-10-26 de `CHANGES.md`. Banc headless vert (85 scénarios, 0 échec). Rien n'est testé en jeu.
+Entrées du 2026-10-25, du 2026-10-26, du 2026-10-29 et du 2026-11-05 de `CHANGES.md`. Banc headless vert à la sortie (86 scénarios, 0 échec).
 
 - Code custom : `WeakAuras.IsSpellReady`, `GetSpellCooldownDurationNoGCD`, `SetSpellCooldownState`, `SetLoadFlag`.
 - Page Packs : HUD complet ou bloc par bloc, 24 packs utilitaires.
@@ -71,22 +85,19 @@ Entrées du 2026-10-25 et du 2026-10-26 de `CHANGES.md`. Banc headless vert (85 
 - Retiré : son de voix enregistrée.
 - Corrigés : Threat Situation avec valeurs secrètes ; format de nombre en précision 0 avec un nombre secret.
 - Guides `Classes/*.md`, README, DESCRIPTION et harness de test mis à jour.
+- Packs 2 : durées et charges de tous les ID revérifiées dans le DB2 70532. Les segments Arcane Blast n'ont pris leur durée de 18 s qu'en 1.17.0.
+- Packs 3 : auras « non vérifiées » tranchées, Deep Wounds retiré du pack. Restent des tests en jeu notés dans les `NOTES.md` : debuffs sur soi (Paladin, Prêtre), segments (Mage).
+- Packs 4 : icône Defensives pour Guerrier, Druide, Voleur et Chasseur.
+- Packs 6 : `fading = 60` sur Righteous Fury (`PackPaladin.lua`).
+- Packs 8 : `meleeRange` pour le Chasseur (`PackChasseur.lua`), option ajoutée au builder.
+- Packs 1 : poisons au rang le plus haut connu (`PackVoleur.lua`), munitions équipées sous 200 (`PackChasseur.lua`). Écart au ticket : pas d'ID d'objet par entrée.
 
-### Avant la sortie, après les tickets
+### Reste ouvert
 
-1. Régénérer les packs, relancer `lua5.1 Tests/run.lua`.
-2. `WeakAurasOptions/Changelog.lua:13-14` : `versionString = '1.15.0'`, `dateString` du jour. Réécrire `highlightText` et `commitText`, qui décrivent encore la 1.14.
-3. `DESCRIPTION.md:31` : ajouter un bloc 1.15 à « New in ».
-4. `CHANGES.md` : ajouter une entrée pour les tickets Packs ci-dessous.
-5. `SUIVI-BUGS-ET-TESTS.md` : ajouter les tests de la 1.15, puis les passer en jeu :
-   - les 4 fonctions de code custom ;
-   - la page Packs : HUD complet et bloc par bloc ;
-   - les 24 packs utilitaires ;
-   - une aura 1.14.0 avec voix enregistrée : le son disparaît ;
-   - Threat Situation et format de nombre en précision 0 avec valeurs secrètes ;
-   - les packs de classe : sons de proc, « Fading », Enemy Cast, swing timer distance, Defensives, PW:S, Infusion of Light, Arcane Blast, et les ajouts des tickets Packs ;
-   - la notice des packs de classe, réaffichée une seule fois.
-6. Après le test, écrire « Released as 1.15.0. Tested in game… » dans `CHANGES.md`, comme pour les versions précédentes.
+La version est sortie, deux points restent.
+
+1. Tests en jeu de la 1.15 : étape 13 de `SUIVI-BUGS-ET-TESTS.md`, aucune case cochée.
+2. `CHANGES.md` n'a pas de ligne « Released as 1.15.0. Tested in game… ». La dernière est celle de la 1.13.0 : les entrées suivantes disent seulement « Tested in game » ou « Not yet tested in game ».
 
 ### Ordre
 
@@ -225,11 +236,11 @@ Entrées du 2026-10-25 et du 2026-10-26 de `CHANGES.md`. Banc headless vert (85 
 
 ## 1.16 : stabilisation
 
-Première version après les packs de la 1.15. Corriger les bugs connus avant d'ajouter des fonctionnalités évite de les mêler aux régressions de ce contenu. Packs 5 et 7 demandent une vérification en jeu ou des ID à trancher : ils passent ici, avant Dette 6 (régénération et synchronisation des packs).
+Sortie le 2026-11-07 (1.16.0), puis 1.16.1 le 2026-11-09. Première version après les packs de la 1.15. Corriger les bugs connus avant d'ajouter des fonctionnalités évite de les mêler aux régressions de ce contenu. Packs 5 et 7 demandent une vérification en jeu ou des ID à trancher : ils passent ici, avant Dette 6 (régénération et synchronisation des packs).
 
 ### Déjà fait
 
-Entrée du 2026-11-06 de `CHANGES.md`. Banc headless vert (124 scénarios, 0 échec). Rien n'est testé en jeu.
+Entrée du 2026-11-06 de `CHANGES.md`. Banc headless vert à la sortie (124 scénarios, 0 échec). Aucune étape de `SUIVI-BUGS-ET-TESTS.md` ne couvre la 1.16.
 
 - Dette 2 : scénario 91 (version et date de `Changelog.lua`, premier titre de `CHANGELOG.md`, `## Version:` des cinq TOC).
 - Dette 9 : durée custom secrète sans timer (scénario 92). Dette 10 : arguments du trigger DBM Timer.
@@ -252,11 +263,16 @@ Entrée du 2026-11-06 de `CHANGES.md`. Banc headless vert (124 scénarios, 0 éc
 - Dette 6 : `lua5.1 Tests/Packs/Regenerate.lua`, scénario 94, `VerificationPack.lua` lancé par `Tests/run.lua`
   pour chaque pack ; un seul `ForeverAurasExport1.txt` (`Tests/Fixtures/`).
 - Dette 8 : `luac.out`, tests de build toujours faux (`WoW80`, `BuildInfo > 80100` de `Model.lua`),
-  `flavorFromTocToNumber` retirés.
-- `CLASS_PACK_VERSION` passe à `"1.16.0"` : la notice des packs se réaffiche.
-- Non fait : les deux `oldDataStub` de `WeakAuras.lua` ne pointent pas vers `Private.data_stub` (ancien format de
-  trigger, différents du stub de `Types.lua`). `Types.lua:2373` garde `BuildInfo <= 80100`, hors ticket.
-- À vérifier : les TOC portent encore `## Version: 1.15.0`, comme `Changelog.lua` et `CHANGELOG.md`.
+  `flavorFromTocToNumber` retirés. Le reste du ticket est dans « Dette notée, sans ticket ».
+- `CLASS_PACK_VERSION` passe à `"1.16.0"` : la notice des packs se réaffiche. Elle vaut `"1.17.0"` depuis la 1.17.0.
+- 1.16.1, hors ticket : Proc Glow dans la liste des types de glow, option d'auteur sans nom qui ne casse plus le
+  panneau. Testé en jeu.
+
+### Reste ouvert
+
+- Packs 5 : cumuls secrets de Sunder Armor en combat, à tester en jeu. Aucune étape dans le suivi.
+- Dette 13 : mode compress de la texture linéaire, test en jeu demandé par le ticket, non fait.
+- Non revérifiés dans le code le 2026-11-21 : overlays TSU (Dette 12), `option.default` (Dette 15).
 
 ### Ordre
 
@@ -727,7 +743,7 @@ La régénération se fait à la main, en plusieurs étapes décrites dans les e
 
 ## 1.17 : placement
 
-Dette 7 passe d'abord : les tickets de placement ajoutent des scénarios. Dette 1 corrige `MoverSizer.lua` avant qu'on le retravaille. Placement 7 passe en 1.23 : il modifie les données d'ancrage sauvegardées et dépend du moteur commun (Placement 4).
+Sortie le 2026-11-12 (1.17.0). Dette 7 est passée d'abord : les tickets de placement ajoutent des scénarios. Dette 1 a corrigé `MoverSizer.lua` avant qu'on le retravaille. Placement 7 reste ouvert, en 1.22 : les liens d'ancrage de la 1.17.0 en couvrent l'essentiel.
 
 ### Contexte du placement
 
@@ -744,7 +760,7 @@ Contraintes API (source Forever 1.60.1.70532) :
 
 ### Déjà fait
 
-Entrée du 2026-11-08 de `CHANGES.md`. Banc headless vert (125 scénarios, 0 échec). Rien n'est testé en jeu.
+Entrées du 2026-11-08 au 2026-11-12 de `CHANGES.md`. Aucune étape de `SUIVI-BUGS-ET-TESTS.md` ne couvre la 1.17 : les « À vérifier en jeu » ci-dessous restent ouverts.
 
 - Dette 7 : `Tests/Harness/Assertions.lua` (`Same`, `Near`, seuls helpers identiques), filtre de `run.lua` par numéro
   ou par nom, sans les packs. Aucun scénario migré : migration au fil des modifications.
@@ -803,6 +819,18 @@ Entrée du 2026-11-08 de `CHANGES.md`. Banc headless vert (125 scénarios, 0 éc
   grille de `/wa` est cachée tant que le mode édition est ouvert. À vérifier en jeu : clic droit sur « Grille », bouger le
   curseur, la grille doit suivre ; aura glissée près d'une ligne ; fermer `/wa`, la grille doit disparaître ;
   lisibilité des lignes sur un décor clair ; curseur lisible au-dessus de la liste des auras.
+- Placement 9 : bords des petits groupes (`snapInsetX`, `snapInsetY`, `EditModePlacement.lua`).
+- Placement 8 : lignes du milieu de l'écran (`ScreenLines`, `PlacementSnap.lua`).
+- Placement 10 : même seuil (10) et Ctrl pour les centres dans les deux outils.
+- Placement 11 : offsets affichés à côté de la boîte pendant le glisser.
+- Placement 12 : aura de référence mise en évidence (`ColorBoxes`).
+- Placement 13 : ligne d'espacement égal (`AddSpacingLines`). Guide borné : non revérifié à part le 2026-11-21.
+- Placement 14 : poignée de redimensionnement aimantée du mode édition (`DropSize`, `OnSizerDown`, `OnSizerUp`).
+- Placement 15 : bloc « Align Selection » en multi-sélection dans `/wa` (`PlacementSnap.AlignShifts`,
+  `DisplayOptions.lua`).
+- Hors tickets : mode placement `/wa unlock` (scénario 99), panneau de placement (X, Y, taille, croissance du groupe
+  dynamique), liens d'ancrage (bouton « Link », menu d'ancrage du mode édition, scénario 98), clic droit sur une
+  boîte, nouveau look de la fenêtre `/wa`, popup « Quoi de neuf 1.17 », partie placement du Guide.
 
 ### Ordre
 
@@ -1174,7 +1202,7 @@ Dette notée : `ShiftOfSnap` reconstruit et trie toutes les lignes à chaque `On
 
 ## 1.18 : rebranding
 
-Rien d'autre dans cette version : le rendu ne se vérifie qu'en jeu.
+Sortie le 2026-11-13 (1.18.0), puis 1.18.1 (2026-11-15) et 1.18.2 (2026-11-16). Rien d'autre que le rebranding dans la 1.18.0 : le rendu ne se vérifie qu'en jeu.
 
 ### Principe : ne pas perdre l'utilisateur
 
@@ -1207,11 +1235,13 @@ Aucun test headless ne couvre le rendu (couleurs, textures, titres) : chaque tic
 
 ### Déjà fait
 
-Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert (128 scénarios, 0 échec). Rien n'est testé en jeu. Tests en jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 14.
+Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert à la sortie (128 scénarios, 0 échec). Testé en jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 14, OK le 2026-11-13.
 
+- Rebranding 1 : charte `DESIGN.md`.
 - Rebranding 2 : « Musca Auras » dans les 11 locales, le tutoriel, le chat et les textes en dur. Attribution à
   WeakAuras et identifiants de compatibilité inchangés.
-- Rebranding 3 : `## Notes:` du toc, `## X-Wago-ID` retiré, `README.md`, `DESCRIPTION.md`, `.github/logo.png`.
+- Rebranding 3 : `## Notes:` du toc, `README.md`, `DESCRIPTION.md`, `.github/logo.png`. Écart au ticket :
+  `## X-Wago-ID` est toujours dans `WeakAuras/WeakAuras.toc`.
 - Rebranding 5 : page Options > AddOns et entrée du menu des addons de la minicarte.
 - Rebranding 6 : fenêtre Guide construite avec `Style`, logo Musca dans la bande de titre comme la fenêtre d'options.
 - Rebranding 7 : `Style.Hex`, `Style.Markup`, couleurs des widgets d'options et couleurs écrites (`|cff`) du cœur et
@@ -1219,11 +1249,16 @@ Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert (128 scénarios, 0 éc
   `RegionOptions/DynamicGroup.lua` et `Group.lua`. Teinte aléatoire de l'icône de la minicarte retirée. Gardés
   exprès : la couleur du lien de chat de `Transmission.lua` (lue par les autres clients) et les
   `SetVertexColor(1, 1, 1)` des widgets, qui retirent une teinte.
-- Rebranding 8 : `icon.tga` dérivée du logo rond, `icon.blp` supprimée.
+- Rebranding 8 : `icon.tga` dérivée du logo rond, `icon.blp` supprimée. Restent `logo_64.tga` et `logo_256.tga`,
+  proposés dans la liste des textures sous le libellé « WeakAuras logo » (`Types.lua`).
 - Rebranding 4 : popup 1.18, `WHATS_NEW_VERSION`, changelogs et version des toc. Écart au ticket : le popup s'ouvre
   à la connexion, comme celui de la 1.17, et non au premier `/wa`. Il se relit par le bouton « Changelog » de la
   fenêtre d'options.
 - Rebranding 9 : écarté le 2026-11-13, voir « Écartés ».
+- 1.18.1, hors ticket : en combat, un sort hors du temps de recharge global (Judgement, Bloodrage) ne s'affiche plus
+  prêt pendant son temps de recharge.
+- 1.18.2, hors ticket : « Hide GCD Text » cache aussi un texte `%p` ou `%t` et marche en combat ; la condition
+  « On Global Cooldown » marche en combat.
 
 ### Ordre
 
@@ -1475,9 +1510,27 @@ Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert (128 scénarios, 0 éc
 
 ## 1.19 : auras cliquables
 
-Version à un seul sujet, décidée le 2026-11-13 : l'auteur classe les auras cliquables indispensables. Populaire 11 est un L. Il sort seul avec Dette 4, pour ne tester en jeu qu'un sujet. Les versions suivantes ont glissé d'un cran.
+Sortie le 2026-11-18 (1.19.0). Version à un seul sujet, décidée le 2026-11-13 : l'auteur classe les auras cliquables indispensables. Populaire 11 est un L. Il sort seul avec Dette 4, pour ne tester en jeu qu'un sujet. Les versions suivantes ont glissé d'un cran.
 
-Dette 4 (tests de migration) précède tous les tickets qui ajoutent des champs aux auras : Populaire 11 ici, puis ceux des 1.22 et 1.23.
+Dette 4 (tests de migration) précède tous les tickets qui ajoutent des champs aux auras : Populaire 11 ici, puis ceux des versions suivantes.
+
+### Déjà fait
+
+Entrée du 2026-11-18 de `CHANGES.md`.
+
+- Dette 4 : scénarios 102, 103 et 104 (migration et restauration des données).
+- Populaire 11 : sous-élément Click Action (`ClickButtons.lua`, `SubRegionTypes/ClickAction.lua`,
+  `SubRegionOptions/ClickAction.lua`), touche par aura, « Clickable in Combat », scénario 101, `GUIDE.md`.
+- Hors ticket : trigger Health, « Show Absorb » dessine le bouclier en overlay d'une Progress Bar, en combat aussi.
+
+### Reste ouvert
+
+Entrée du 2026-11-19 de `CHANGES.md`, écrite après la sortie et absente du CHANGELOG 1.19.0 : `WeakAuras.CreateAuraSlot`,
+rapports `/wa modern` et `/wa cdm`, scénario 107, correctifs, boutons retirés. Hors ticket, non testée en jeu. Sa version
+de sortie reste à décider.
+
+Tests en jeu : étape 15 de `SUIVI-BUGS-ET-TESTS.md`. Seuls le clic gauche (sort) et le clic droit (retrait de buff)
+sont passés, le 2026-11-18.
 
 ### Ordre
 
@@ -1561,35 +1614,112 @@ Dette 4 (tests de migration) précède tous les tickets qui ajoutent des champs 
 
 ## 1.20 : accueil et commandes
 
-L'accueil et les nouvelles commandes ajoutent des textes et des boutons : les écrire après le changement de nom et de charte de la 1.18 évite de les refaire. Accueil 3 lit les packs régénérés par Dette 6 (1.16).
+Sortie le 2026-11-22 (1.20.0).
+
+L'accueil et les nouvelles commandes ajoutent des textes et des boutons, dans la charte de la 1.18. Outils 1 passe en premier : son scénario contrôle les clés de locale de tous les textes neufs, ici et dans les versions suivantes. Outils 3 suit : le script de sortie sert dès cette version. Tous les tickets sont S, sauf Accueil 4 (S à M).
 
 ### Parcours actuel au premier login
 
-Parcours actuel au premier login (lu dans le code, non testé en jeu) :
+Lu dans le code le 2026-11-21, non testé en jeu :
 
-- Aucune aura n'est installée d'office. `ADDON_LOADED` crée `WeakAurasSaved` avec `displays = {}` (`WeakAuras/WeakAuras.lua:1484-1521`).
-- `PLAYER_LOGIN` affiche la popup `WEAKAURAS_FOREVER_DISCLAIMER` si `not db.foreverDisclaimerSeen` (`WeakAuras.lua:1540`). Contenu : les limites de Forever, et trois boutons : `OKAY`, `Guide`, `Install <Classe> HUD` (`l.2597-2623`).
-- Le HUD complet passe par `WeakAuras.ImportClassPack()` (`l.180-204`), qui se met en file en combat et refuse pendant le login.
-- Le choix bloc par bloc et les 24 packs utilitaires ne sont accessibles que par `/wa` > Packs (`OptionsFrame.lua:1432-1507`, `WeakAurasOptions/PackLibrary.lua`).
+- Aucune aura n'est installée d'office. `ADDON_LOADED` crée `WeakAurasSaved` avec `displays = {}`.
+- `PLAYER_LOGIN`, après `Private.Login`, ouvre une seule popup, dans cet ordre (`WeakAuras/WeakAuras.lua`) :
+  - `WEAKAURAS_FOREVER_DISCLAIMER` si `not db.foreverDisclaimerSeen` ;
+  - sinon `WEAKAURAS_WHATS_NEW` si `db.whatsNewSeen ~= WHATS_NEW_VERSION` ; la notice des packs suit à sa fermeture ;
+  - sinon la notice des packs de classe, si `db.classPackNoticeSeen ~= CLASS_PACK_VERSION` et `HasClassPack()`.
+- Popup Forever : les limites de Forever et trois boutons, `OKAY`, `Guide`, `Install <Classe> HUD`. Son `OnShow` pose `foreverDisclaimerSeen`, `classPackNoticeSeen` et `whatsNewSeen`.
+- Le HUD complet passe par `WeakAuras.ImportClassPack()`, qui se met en file en combat et refuse pendant le login.
+- Le choix bloc par bloc et les 24 packs utilitaires ne sont accessibles que par `/wa` > New Aura > Packs (`frame:OpenPacks`, `OptionsFrame.lua`, `WeakAurasOptions/PackLibrary.lua`).
 - Aucun écran pour une liste d'auras vide, aucun compteur d'auras par pack, aucun flag par personnage.
 
 ### Ordre
 
-1. Accueil 2 : Accueil court, séparé de l'avertissement Forever
-2. Accueil 1 : Proposer le HUD au premier login de chaque classe
-3. Accueil 3 : Nombre d'auras par pack et par bloc dans la page Packs
-4. Accueil 4 : Écran pour une liste d'auras vide dans `/wa`
-5. Populaire 1 : Commande `/wa toggle`
-6. Populaire 10 : Mute global des sons
+1. Outils 1 : Scénario « toute clé de locale utilisée existe dans enUS »
+2. Outils 3 : Script de sortie, version et changelog en une commande
+3. Accueil 2 : Accueil court, séparé de l'avertissement Forever
+4. Accueil 1 : Proposer le HUD au premier login de chaque classe
+5. Accueil 3 : Nombre d'auras par pack et par bloc dans la page Packs
+6. Accueil 4 : Écran pour une liste d'auras vide dans `/wa`
+7. Populaire 1 : Commande `/wa toggle`
+8. Populaire 10 : Mute global des sons
+
+### Déjà fait
+
+Entrée du 2026-11-21 de `CHANGES.md`. Les huit tickets sont codés, banc headless à 137 scénarios, 0 échec. Testé en
+jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 16, OK le 2026-11-22.
+
+- Outils 1 : scénario 108. Il a fait retirer de enUS et frFR les textes de l'ancienne popup de premier login.
+- Outils 3 : `Tests/PrepareRelease.py`. Écart avec le ticket : la source est `WeakAuras/CHANGELOG.md`, pas
+  `CHANGES.md`, dont le texte s'adresse aux développeurs.
+- Accueil 2 : accueil court à quatre boutons (HUD complet, blocs, Guide, plus tard), flags posés au clic,
+  `/wa welcome`, ligne Swing Timer dans le Guide.
+- Accueil 1 : `classPackOffered` par classe, offre après « Quoi de neuf ».
+- Accueil 3 : nombre d'auras du HUD, de chaque bloc et de chaque pack utilitaire.
+- Accueil 4 : encart de liste vide avec Packs, Guide, Import.
+- Populaire 1 : `/wa toggle` ; fenêtre d'options ou mode placement ouvert, une ligne du chat demande de le
+  fermer.
+- Populaire 10 : `/wa mute`, case « Mute » de la barre d'outils, rappel au login, sons des Aura (Modern) compris.
+  Les sons en cours sont coupés, sauf une synthèse vocale déjà lancée.
+- Corrigé en plus : `/wa unlock` tapé pendant le chargement ne bloque plus le login ; la notice « class pack
+  changed » compte comme vue à la réponse, plus à l'affichage ; `WeakAuras.Import` ne lève plus sur une donnée
+  illisible.
+
+### Reste ouvert
+
+- Rendu de la popup à quatre boutons et des libellés longs (allemand, russe) à voir en jeu.
+
+---
+
+### Outils 1 : Scénario « toute clé de locale utilisée existe dans enUS »
+
+**Pourquoi.** Le repli des tables de locale (`setmetatable` à la fin de `WeakAuras/Locales/enUS.lua`) rend la clé elle-même : une clé absente ou mal tapée s'affiche en anglais dans toutes les langues, sans erreur. Aucun scénario de `Tests/Scenarios/` ne parcourt les `L["..."]` du code.
+
+**Valeur.** Une faute de frappe dans une clé est attrapée au banc, pas chez le joueur.
+
+**À faire.**
+- Scénario neuf : lire les fichiers Lua de `WeakAuras/` et de `WeakAurasOptions/` (hors `Libs/` et `Locales/`), relever les `L["..."]` littéraux, vérifier que chacun existe dans le `enUS.lua` du même addon.
+- Liste d'exceptions courte pour les clés construites à l'exécution, avec la raison en commentaire.
+- Corriger les clés manquantes que le scénario trouve.
+
+**Coût.** S.
+
+**Risque.** Faible. Le nombre de clés déjà manquantes n'est pas connu : la correction peut dépasser le S.
+
+**Fichiers.**
+- `Tests/Scenarios/` (scénario neuf)
+- `WeakAuras/Locales/enUS.lua`, `WeakAurasOptions/Locales/enUS.lua`
+
+---
+
+### Outils 3 : Script de sortie, version et changelog en une commande
+
+**Pourquoi.** Une sortie demande sept écritures à la main : la ligne `## Version` des cinq `.toc`, `versionString` et `dateString` de `WeakAurasOptions/Changelog.lua:7`, le premier titre de `WeakAuras/CHANGELOG.md`. Le scénario `Tests/Scenarios/91_ForkVersionMatches.lua` détecte un écart, il ne l'écrit pas. `Changelog.lua` recopie le texte de `CHANGES.md` à la main (dette notée).
+
+**Valeur.** Une sortie ne part plus avec une version incohérente ni un changelog en jeu en retard. `.github/workflows/release.yml` refuse déjà un tag qui diffère du premier titre du changelog.
+
+**À faire.**
+- Script dans `Tests/`, sur le modèle de `Tests/GenerateTutorial.py` : un argument, le numéro de version. Il écrit les sept endroits.
+- Générer le corps de `WeakAurasOptions/Changelog.lua` depuis l'entrée correspondante de `CHANGES.md`.
+- Option `--check` : sortie en erreur si les fichiers ne correspondent pas à ce que le script produirait.
+- Le script n'exécute aucune commande git.
+
+**Coût.** S.
+
+**Risque.** Faible. La conversion du Markdown de `CHANGES.md` vers le format de `Changelog.lua` est à relire sur les trois dernières sorties.
+
+**Fichiers.**
+- `Tests/` (script neuf)
+- `WeakAurasOptions/Changelog.lua`
+- les cinq `.toc`, `WeakAuras/CHANGELOG.md`
 
 ---
 
 ### Accueil 2 : Accueil court, séparé de l'avertissement Forever
 
 **Pourquoi.**
-- L'action utile, installer le HUD, est le 3e bouton (`button3`, `WeakAuras.lua:1541`), sous une liste de limites techniques (`l.2598-2608`).
+- L'action utile, installer le HUD, est le 3e bouton (`button3`, posé au `PLAYER_LOGIN`), sous une liste de limites techniques (texte de `WEAKAURAS_FOREVER_DISCLAIMER`).
 - Le HUD s'installe en entier : la popup ne mentionne pas le choix par bloc de la page Packs.
-- `OnShow` coche `foreverDisclaimerSeen` et `classPackNoticeSeen` (`l.2619-2622`). Fermer par Échap sans rien choisir compte comme vu, sans retour possible.
+- `OnShow` pose `foreverDisclaimerSeen`, `classPackNoticeSeen` et `whatsNewSeen`. Fermer par Échap sans rien choisir compte comme vu, sans retour possible.
 
 **Valeur.** Au premier login, le joueur choisit clairement le volume d'auras qu'il veut : tout, une sélection, ou rien pour l'instant.
 
@@ -1600,13 +1730,14 @@ Parcours actuel au premier login (lu dans le code, non testé en jeu) :
   - « Choisir les blocs » : charger les options (`Private.LoadOptions`), ouvrir `/wa`, puis `frame:OpenPacks()` ;
   - « Plus tard ».
 - Déplacer la liste des limites dans le Guide, qui a déjà « What changes on Forever » (`TUTORIAL.md`, `WeakAuras/ForeverTutorial.lua`). Ajouter un lien Guide dans l'accueil.
-- Cocher le flag au clic d'un bouton, plus à `OnShow`.
-- Ajouter `/wa welcome` pour réafficher l'accueil, et le citer dans `Private.PrintHelp` (`l.206-224`).
+- Poser les trois flags au clic d'un bouton, plus à `OnShow`. Un compte neuf ne doit toujours pas voir « Quoi de neuf » (`WEAKAURAS_WHATS_NEW`) ni la notice des packs juste après l'accueil.
+- Ajouter `/wa welcome` pour réafficher l'accueil, et le citer dans `Private.PrintHelp`.
 
 **Coût.** S.
 
 **Risque.**
-- Les options se chargent à la demande. « Choisir les blocs » doit passer par `LoadOptions`, qui attend déjà la fin du login et du combat (`l.148-168`).
+- Les options se chargent à la demande. « Choisir les blocs » doit passer par `LoadOptions`, qui attend déjà la fin du login et du combat.
+- Fermer par Échap ne pose plus aucun flag : l'accueil revient au login suivant, tant qu'aucun bouton n'est cliqué.
 - Mettre à jour `DESCRIPTION.md` (« Quick start », étape 2) et les locales.
 
 **Fichiers.**
@@ -1620,13 +1751,14 @@ Parcours actuel au premier login (lu dans le code, non testé en jeu) :
 
 ### Accueil 1 : Proposer le HUD au premier login de chaque classe
 
-**Pourquoi.** `foreverDisclaimerSeen` est stocké dans `WeakAurasSaved`, au niveau du compte (`WeakAuras.lua:1540`, `:2620`). Seul le premier personnage reçoit la proposition. Un personnage d'une autre classe ne se voit jamais proposer son HUD : il doit trouver `/wa` > Packs seul.
+**Pourquoi.** `foreverDisclaimerSeen` est stocké dans `WeakAurasSaved`, au niveau du compte. Seul le premier personnage reçoit la proposition. Un personnage d'une autre classe ne se voit jamais proposer son HUD : il doit trouver `/wa` > Packs seul.
 
 **Valeur.** Chaque nouveau personnage se voit proposer le HUD de sa classe au premier login.
 
 **À faire.**
 - Ajouter une table `classPackOffered` dans `WeakAurasSaved`, indexée par le jeton de classe (`select(2, UnitClass("player"))`).
-- Au `PLAYER_LOGIN`, quand l'accueil a déjà été vu sur le compte : si `not HasClassPack()` (`l.392-402`) et que la classe n'est pas dans `classPackOffered`, afficher une popup courte « Installer le HUD <Classe> », puis marquer la classe.
+- Au `PLAYER_LOGIN`, quand l'accueil a déjà été vu sur le compte : si `not HasClassPack()` et que la classe n'est pas dans `classPackOffered`, afficher une popup courte « Installer le HUD <Classe> », puis marquer la classe.
+- Une seule popup par login. Le login a trois branches exclusives (accueil, « Quoi de neuf », notice des packs) : la proposition passe après « Quoi de neuf », comme la notice des packs (`ShowDueClassPackNotice`).
 - Réutiliser les boutons de l'Accueil 2.
 
 **Coût.** S.
@@ -1663,7 +1795,7 @@ Parcours actuel au premier login (lu dans le code, non testé en jeu) :
 
 ### Accueil 4 : Écran pour une liste d'auras vide dans `/wa`
 
-**Pourquoi.** Sans aucune aura, la liste de `/wa` est vide, sans texte. Aucune occurrence d'état vide dans `WeakAurasOptions.lua`. Les packs ne sont accessibles que par le bouton « Packs » de la barre d'outils, et sont absents du panneau « New » (`frame.NewAura`, `OptionsFrame.lua:1509+`).
+**Pourquoi.** Sans aucune aura, la liste de `/wa` est vide, sans texte. Aucune occurrence d'état vide dans `WeakAurasOptions.lua`. Les packs ne sont accessibles que par le bouton « Packs » du panneau « New Aura » (`frame.NewAura`, `OptionsFrame.lua`).
 
 **Valeur.** Un joueur qui a ignoré l'accueil, ou supprimé toutes ses auras, voit tout de suite quoi faire : Packs, Guide, Import.
 
@@ -1726,17 +1858,18 @@ Parcours actuel au premier login (lu dans le code, non testé en jeu) :
 
 ---
 
-## 1.21 : fiabilité, chargement et import
+## 1.21 : fiabilité et diagnostic
 
-Dette 4 (tests de migration) est passée en 1.19, avant les auras cliquables.
+Un seul M (Populaire 5), le reste S ou S à M. Dette 5 est close sans développement : voir « Clos sans développement ». Outils 2 et Outils 4 ajoutent deux commandes de diagnostic.
 
 ### Ordre
 
 1. Dette 3 : Un seul jeu de helpers pour les secrets
-2. Dette 5 : Durcir les lectures de secrets ouvertes dans le suivi
-3. Populaire 5 : Safe mode `/wa safemode`
-4. Populaire 3 : Alerte des médias manquants à l'import
-5. Populaire 2 : Condition de chargement « AddOn chargé »
+2. Populaire 5 : Safe mode `/wa safemode`
+3. Populaire 3 : Alerte des médias manquants à l'import
+4. Populaire 2 : Condition de chargement « AddOn chargé »
+5. Outils 2 : `/wa report`, rapport de diagnostic à copier
+6. Outils 4 : `/wa packcheck`, sorts de pack absents du grimoire
 
 ---
 
@@ -1747,7 +1880,7 @@ Dette 4 (tests de migration) est passée en 1.19, avant les auras cliquables.
 - `Round` : `SecretAuraAppearance.lua:58`, `SecretAuraSingle.lua:45` ;
 - `IsTable` : `SecretAuraConditions.lua:31`, `SecretAuraSingle.lua:40` ;
 - `FirstProblem` : `SecretAuraConditions.lua:44`, `SecretAuraSingle.lua:75` ;
-- `SameValue` : `CooldownViewerStates.lua:461`, `SecretAuraConditions.lua:1087` ;
+- `SameValue` : `CooldownViewerStates.lua:461`, `SecretAuraConditions.lua:1095` ;
 - `ReadLevel` : `BlizzardAuraDisplayButtons.lua:38`, `SecretAuraAppearance.lua:66`.
 
 Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chemin que le banc ne voit pas.
@@ -1768,35 +1901,6 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 - `WeakAuras/SecretAuraAppearance.lua`, `SecretAuraSingle.lua`, `SecretAuraSingleLearning.lua`, `SecretAuraConditions.lua`
 - `WeakAuras/CooldownViewerStates.lua`, `BlizzardAuraDisplayButtons.lua`
 - `WeakAuras/SecretRestrictions.lua`
-
----
-
-### Dette 5 : Durcir les lectures de secrets ouvertes dans le suivi
-
-**Pourquoi.** L'audit `wow-api` du 2026-10-08 (`SUIVI-BUGS-ET-TESTS.md`, section 2) liste des appels sans `pcall` ni garde de secret, toujours ouverts :
-- A2 : `WeakAuras/RegionTypes/Icon.lua:454,686,715`, `SetCooldown*` sans `pcall` ;
-- A3 : rôle et portée lus sans garde (`BuffTrigger2.lua:189,1463,1588`, `GenericTrigger.lua:4080,4090`, `WeakAuras.lua:1753`) ;
-- A4 : `SecretRestrictions.lua:87-100`, pas de relecture différée après `PLAYER_REGEN_ENABLED` ;
-- A5 : `GenericTrigger.lua:5212`, `IsItemInRange` sans `pcall` ;
-- A7 : `AuraEnvironment.lua:28-39`, `WA_GetUnitAura` sans test de secret ;
-- A8 : `BuffTriggerNativeFilter.lua:32-34`, comparaison hors `pcall`.
-
-**Valeur.** Moins d'erreurs Lua en instance et en combat, là où les valeurs deviennent secrètes.
-
-**À faire.**
-- Faire revérifier par `wow-api` chaque API concernée (champs secrets, `HasRestrictions`) avant de toucher au code.
-- Poser la garde au plus près de l'appel, avec `Private.IsSecret` (voir Dette 3).
-- Ajouter un scénario par garde quand le banc peut le prouver.
-- Cocher les étapes correspondantes de la section 3 du suivi après le test en jeu.
-
-**Coût.** M.
-
-**Risque.** Une garde qui masque une valeur légitime : l'aura ne s'affiche plus. Le banc ne prouve pas une garde qui ne protège qu'une comparaison (Lua 5.1 n'appelle pas `__eq` entre types différents) : test en jeu obligatoire.
-
-**Fichiers.**
-- `WeakAuras/RegionTypes/Icon.lua`, `BuffTrigger2.lua`, `GenericTrigger.lua`, `WeakAuras.lua`
-- `WeakAuras/SecretRestrictions.lua`, `AuraEnvironment.lua`, `BuffTriggerNativeFilter.lua`
-- `SUIVI-BUGS-ET-TESTS.md`
 
 ---
 
@@ -1823,7 +1927,7 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ### Populaire 3 : Alerte des médias manquants à l'import
 
-**Pourquoi.** Demande #5477. La fenêtre d'import n'affiche que `scamCheckText` (`WeakAuras/Update.lua:1702`). Une aura qui utilise la texture, la police ou le son d'un addon absent s'importe sans prévenir, puis s'affiche avec le média par défaut. `LSM:IsValid(mediatype, key)` existe dans la lib embarquée (`WeakAuras/Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua:289`).
+**Pourquoi.** Demande #5477. La fenêtre d'import n'affiche que `scamCheckText` (`WeakAurasOptions/OptionsFrames/Update.lua`). Une aura qui utilise la texture, la police ou le son d'un addon absent s'importe sans prévenir, puis s'affiche avec le média par défaut. `LSM:IsValid(mediatype, key)` existe dans la lib embarquée (`WeakAuras/Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua:289`).
 
 **Valeur.** Le joueur sait avant d'importer qu'il lui manque un addon de médias.
 
@@ -1837,7 +1941,7 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 **Risque.** Faible : affichage seulement. Le relevé doit couvrir tous les champs de média, sans signaler à tort un chemin direct.
 
 **Fichiers.**
-- `WeakAuras/Update.lua`
+- `WeakAurasOptions/OptionsFrames/Update.lua`
 - `WeakAuras/Transmission.lua`
 - Locales
 
@@ -1864,13 +1968,68 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
+### Outils 2 : `/wa report`, rapport de diagnostic à copier
+
+**Pourquoi.** Le joueur n'a aucun moyen d'exporter un diagnostic, et `.github/` ne contient aucun gabarit d'issue. `waErrorHandler` (`WeakAuras/WeakAuras.lua:106-140`) pose déjà les avertissements `LuaError` et `SecretValueRead` par aura. `/wa pprint` n'affiche que le dernier profilage.
+
+**Valeur.** Un rapport de bug arrive avec les informations qui manquent aujourd'hui, sans échange de questions.
+
+**À faire.**
+- Commande `/wa report` : fenêtre de texte à copier, comme celle de `/wa pprint`.
+- Contenu : version de l'addon, numéro d'interface, classe et niveau, langue du client, addons chargés, nombre d'auras, liste des auras en avertissement avec la clé de l'avertissement.
+- Aucun nom de personnage, de royaume ni de guilde dans le rapport.
+- Refusée en combat, comme `/wa loadcost`.
+- Ajouter la commande à `Private.PrintHelp`, avec `pcancel`, `pshow` et `ff` qui n'y figurent pas (`WeakAuras/WeakAuras.lua:224`).
+- Gabarit d'issue dans `.github/ISSUE_TEMPLATE/` qui demande de coller le rapport.
+
+**Coût.** S à M.
+
+**Risque.** Faible. La liste des clés d'avertissement de `WeakAuras/AuraWarnings.lua` n'a pas été lue.
+
+**À tester en jeu.** `/wa report` hors combat puis en combat. Une aura en erreur Lua apparaît dans la liste.
+
+**Fichiers.**
+- `WeakAuras/WeakAuras.lua`
+- `WeakAuras/AuraWarnings.lua`
+- `.github/ISSUE_TEMPLATE/` (neuf), `GUIDE.md`
+- les `Locales/enUS.lua` et `frFR.lua`
+
+---
+
+### Outils 4 : `/wa packcheck`, sorts de pack absents du grimoire
+
+**Pourquoi.** Les `Tests/Packs/*/NOTES.md` gardent des ID « pas encore vérifiés en jeu » : Chaman (`NOTES.md:52`), Wyvern Sting du Chasseur (`:26`), Holy Strike du Paladin (`:48`), rangs de Fire Ward, Frost Ward et Slow Fall du Mage (`:14`). Le banc n'a pas de grimoire, donc seul le jeu peut trancher.
+
+**Valeur.** La vérification d'un pack par classe tient en une commande. Le joueur voit pourquoi une aura reste vide.
+
+**À faire.**
+- Commande `/wa packcheck` : pour chaque aura installée qui vient d'un pack de classe, relever les sorts de ses triggers et de ses conditions de chargement, puis lister ceux que `WeakAuras.IsSpellKnownIncludingPet` ne connaît pas.
+- Sortie dans le chat : nom de l'aura, ID du sort, nom du sort quand le client le donne.
+- Distinguer « sort inconnu du client » de « sort non appris ».
+- Refusée en combat.
+
+**Coût.** S à M.
+
+**Risque.** Faible. Les sorts de talent non pris sortent comme non appris : le dire dans le message.
+
+**À tester en jeu.** Une classe avec son HUD complet installé, personnage de bas niveau puis de haut niveau.
+
+**Fichiers.**
+- `WeakAuras/WeakAuras.lua`
+- `WeakAurasOptions/ClassPacks.lua`
+- les `Locales/enUS.lua` et `frFR.lua`
+
+---
+
 ## 1.22 : édition d'auras
+
+Deux M (Populaire 4, Populaire 6) et Placement 7, réduit à S à M depuis les liens d'ancrage de la 1.17.0. Populaire 7 passe en 1.24 : trois M dans une version dépassent la règle 4.
 
 ### Ordre
 
 1. Populaire 4 : Nom de trigger éditable
 2. Populaire 6 : Options custom conditionnelles
-3. Populaire 7 : Taille imposée aux enfants d'un groupe dynamique
+3. Placement 7 : Ancrer une aura à une autre en la calant dessus
 
 ---
 
@@ -1915,6 +2074,101 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
+### Placement 7 : Ancrer une aura à une autre en la calant dessus
+
+**Pourquoi.** Depuis la 1.17.0, le bouton « Link » du déplaceur `/wa` et le menu d'ancrage des boîtes du mode édition lient une aura à une autre (`AnchorLinks.lua`, `AnchorLinker.lua`, scénario 98). Les boucles sont refusées (`AnchorLinks.DependsOn`). Il manque le geste direct : lâcher une aura sur le bord d'une autre pour créer le lien.
+
+**Valeur.** Des auras collées qui bougent ensemble, sans passer par un bouton ni un menu.
+
+**À faire.**
+- Au lâcher calé sur un bord d'aura, avec un modificateur à choisir, créer le lien par les fonctions d'`AnchorLinks.lua`. Pas de second chemin d'écriture de l'ancrage.
+- Même geste dans le déplaceur `/wa` et dans le mode édition.
+
+**Coût.** S à M. Le ticket valait L avant les liens d'ancrage de la 1.17.0.
+
+**Risque.** Ctrl (centres), Maj (sans calage dans le mode édition, inverse « Aligner magnétiquement » dans `/wa`) et Alt (groupe, dans le mode édition) sont déjà pris : le modificateur est à trouver. Aura qui disparaît quand l'aura cible n'est pas chargée, comme pour les liens actuels.
+
+**Fichiers.**
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
+- `WeakAuras/EditModePlacement.lua`
+- `WeakAuras/AnchorLinks.lua`
+
+---
+
+## 1.23 : sauvegardes
+
+Deux M. Outils 5 et Outils 6 touchent la même zone de la fenêtre d'options et s'appuient sur les tests de restauration de Dette 4 (1.19).
+
+### Ordre
+
+1. Outils 5 : Sauvegardes dans la fenêtre `/wa`
+2. Outils 6 : « Revenir à la version importée » pour une aura
+
+---
+
+### Outils 5 : Sauvegardes dans la fenêtre `/wa`
+
+**Pourquoi.** `/wa backups`, `/wa restore <n>`, `/wa deleted` et `/wa undelete <n>` n'existent qu'en commande (`WeakAuras/WeakAuras.lua:262-390`). Une recherche de « backup » ne trouve rien dans `OptionsFrame.lua`, `DisplayButton.lua` ni `WeakAurasOptions.lua`. Le moteur garde pourtant trois copies quotidiennes et les auras supprimées pendant 30 jours (`WeakAuras/AuraBackups.lua:5-9`, `:86-89`).
+
+**Valeur.** Un joueur qui supprime une aura par erreur la retrouve sans connaître la commande.
+
+**À faire.**
+- Entrée « Sauvegardes » dans la fenêtre : liste des copies quotidiennes avec leur date et leur nombre d'auras, liste des auras supprimées avec leur date de suppression.
+- Bouton de restauration d'une aura supprimée : même chemin que `/wa undelete`, par la fenêtre d'import.
+- Bouton de restauration d'une copie : même confirmation `WEAKAURAS_CONFIRM_RESTORE` que la commande, puis rechargement.
+- Désactivé en combat.
+- Suivre `DESIGN.md` s'il existe, et la charte de la 1.18.
+
+**Coût.** M.
+
+**Risque.** Moyen. La restauration d'une copie remplace toutes les auras : la confirmation ne doit pas pouvoir être contournée.
+
+**À tester en jeu.** Supprimer une aura, la restaurer par le bouton. Restaurer une copie de la veille. Bouton grisé en combat.
+
+**Fichiers.**
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`
+- `WeakAuras/AuraBackups.lua`
+- les `Locales/enUS.lua` et `frFR.lua`
+
+---
+
+### Outils 6 : « Revenir à la version importée » pour une aura
+
+**Pourquoi.** `Private.SetHistory` est appelé à l'import (`WeakAurasOptions/OptionsFrames/Update.lua:2111`), mais rien ne relit cet historique : aucune fonction de lecture ni de restauration trouvée, aucune interface.
+
+**Valeur.** Le joueur annule ses modifications sur un pack ou une aura importée sans la réimporter.
+
+**À faire.**
+- Lire `WeakAuras/History.lua` pour établir ce qui est gardé (aura seule ou groupe entier, durée de conservation) avant de concevoir.
+- Entrée « Revenir à la version importée » dans le menu de l'aura, visible seulement quand un historique existe.
+- Confirmation avant remplacement. L'action passe par l'annulation de `WeakAuras/TimeMachine.lua` pour rester réversible.
+- Pas de badge « modifiée » dans la liste : ce marquage a été écarté le 2026-10-27.
+
+**Coût.** M.
+
+**Risque.** Moyen. Le contenu réel de l'historique n'a pas été lu : si seule la dernière version importée est gardée sans les enfants, le ticket se limite aux auras seules.
+
+**À tester en jeu.** Importer un pack, modifier une aura, revenir à la version importée, annuler par le bouton d'annulation.
+
+**Fichiers.**
+- `WeakAuras/History.lua`
+- `WeakAurasOptions/OptionsFrames/Update.lua`
+- `WeakAurasOptions/AceGUI-Widgets/AceGUIWidget-WeakAurasDisplayButton.lua`
+- Scénario neuf
+
+---
+
+## 1.24 : groupes dynamiques et annonce de version
+
+Deux M sans lien entre eux, chacun testable seul. Outils 7 : vérifier l'API des messages d'addon avec `wow-api` avant de coder.
+
+### Ordre
+
+1. Populaire 7 : Taille imposée aux enfants d'un groupe dynamique
+2. Outils 7 : Annonce de nouvelle version entre joueurs
+
+---
+
 ### Populaire 7 : Taille imposée aux enfants d'un groupe dynamique
 
 **Pourquoi.** Demande #4057. Chaque enfant d'un groupe dynamique garde sa propre taille (`WeakAuras/RegionTypes/DynamicGroup.lua`, vers `l.1507`). Pour redimensionner une barre d'icônes, il faut modifier chaque aura.
@@ -1936,15 +2190,251 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
-## 1.23 : gros chantiers
+### Outils 7 : Annonce de nouvelle version entre joueurs
 
-Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la version devient trop lourde. Populaire 9 touche aux conditions comme Populaire 4 : il passe après.
+**Pourquoi.** `WeakAurasOptions/VersionCheck.lua` compare seulement la version des options à celle du moteur. Le moteur n'envoie aucun message d'addon de version : les seuls envois sont dans des packs utilitaires et dans la demande d'aura de `WeakAuras/Transmission.lua:680-695`.
+
+**Valeur.** Un joueur en retard d'une version l'apprend en guilde ou en groupe, une fois par session.
+
+**À faire.**
+- Vérifier d'abord avec `wow-api` l'envoi de messages d'addon sur Forever : canaux permis, restrictions en instance et en combat (`GetWhisperBlock`, `WeakAuras/Transmission.lua:236-243`).
+- Fichier neuf `WeakAuras/VersionCheck.lua` : envoi de la version à l'entrée en groupe et au login en guilde, hors combat.
+- À la réception d'une version plus récente : une ligne dans le chat, une seule fois par session.
+- Ne jamais répondre à un message reçu, pour éviter les rafales.
+- Option pour couper l'annonce.
+
+**Coût.** M.
+
+**Risque.** Moyen. Si les messages d'addon sont bloqués en instance, la valeur se limite à la guilde. Comparaison de versions à écrire avec soin (`1.9.0` avant `1.19.0`).
+
+**À tester en jeu.** Deux comptes en groupe avec deux versions différentes. Aucun message en combat. Une seule ligne par session.
+
+**Fichiers.**
+- `WeakAuras/VersionCheck.lua` (neuf), `WeakAuras/WeakAuras.toc`
+- `WeakAuras/WeakAuras.lua`
+- Scénario neuf, `GUIDE.md`
+
+---
+
+## 1.25 : API, fondations
+
+Série décidée le 2026-11-21. But de l'auteur : une API sur laquelle d'autres addons, par exemple les addons d'interface, branchent des modules pour utiliser le moteur. Un seul M (API 4).
+
+État lu dans le code le 2026-11-21, rien testé en jeu :
+
+- Environ 185 symboles sur la table globale `WeakAuras`. Aucun numéro d'API : seuls `WeakAuras.versionString`, `buildTime` et `BuildInfo` (`WeakAuras/Init.lua:397-400`) et `WeakAuras.InternalVersion` (`WeakAuras/WeakAuras.lua:98`) existent.
+- `Private` est la table `select(2, ...)` de l'addon (`Init.lua:2`). Elle n'est exposée nulle part en global : un addon tiers n'y accède pas.
+- Aucun scénario ne joue un addon tiers, aucun test ne fige la liste des fonctions publiques.
+- Les fonctions d'enregistrement sont bloquées dans l'environnement du code custom des auras (`WeakAuras/AuraEnvironment.lua:485-497`). Elles le restent.
+
+Comportement en combat d'appels venus d'un addon tiers (valeurs secrètes, taint) : non vérifié. Chaque ticket qui ouvre une fonction liste ses tests en jeu.
+
+### Ordre
+
+1. API 1 : Contrat public versionné
+2. API 3 : Types de région publics et validation des systèmes de trigger
+3. API 2 : Bus d'événements public
+4. API 4 : Registre de modules
+
+---
+
+### API 1 : Contrat public versionné
+
+**Pourquoi.** Un addon tiers ne peut pas savoir ce qu'il a le droit d'appeler, ni tester la version de l'API. La table `WeakAuras` mélange environ 185 symboles : fonctions d'enregistrement, lecture d'état, actions, et utilitaires destinés au code custom des auras. Aucun test ne signale le retrait ou le changement d'une fonction publique.
+
+**Valeur.** Un auteur d'addon lit une liste courte de fonctions garanties et teste un numéro. Un changement cassant se voit dans le banc avant la sortie.
+
+**À faire.**
+- Ajouter `WeakAuras.API_VERSION`, un entier qui monte à chaque changement cassant.
+- Écrire la liste des fonctions garanties. Départ : `RegisterSubRegionType`, `RegisterSubRegionOptions`, `RegisterTriggerSystem`, `RegisterTriggerSystemOptions`, `GetData`, `GetRegion`, `GetTriggerStateForTrigger`, `GetActiveStates`, `IsAuraLoaded`, `IsAuraActive`, `IsOptionsOpen`, `IsLoginFinished`, `IsRestricted`, `GetUnitFrame`, `GetUnitNameplate`, `ScanEvents`, `Import`, `ImportClassPack`, `OpenOptions`, `Toggle`. Tout le reste est déclaré interne dans la documentation.
+- Scénario qui fige cette liste : nom et type de chaque entrée.
+- Scénario « addon tiers » : du code chargé après `WeakAuras`, sans accès à `Private`, appelle chaque fonction de la liste.
+- Section « API for addon authors » dans `GUIDE.md`.
+
+**Coût.** S.
+
+**Risque.** Nul pour le joueur. La liste engage : n'y mettre que ce qui restera stable.
+
+**Fichiers.**
+- `WeakAuras/Init.lua`
+- Deux scénarios neufs dans `Tests/Scenarios/`
+- `GUIDE.md`, `CHANGES.md`
+
+---
+
+### API 3 : Types de région publics et validation des systèmes de trigger
+
+**Pourquoi.**
+- `RegisterRegionType` et `RegisterRegionOptions` n'existent que sur `Private` (`WeakAuras/WeakAuras.lua:631`, `:739`, stubs à `Init.lua:604-610`), alors que les sous-régions s'enregistrent par `WeakAuras.RegisterSubRegionType` (`:675`). Un addon tiers ne peut pas ajouter son propre type d'affichage.
+- `WeakAuras.RegisterTriggerSystem(types, triggerSystem)` (`:5157`) ne valide rien, alors que le moteur appelle 12 méthodes sur chaque système : `UnloadAll`, `LoadDisplays`, `UnloadDisplays`, `FinishLoadUnload`, `Delete`, `Rename`, `Add`, `GetAdditionalProperties`, `GetProgressSources`, `GetTriggerConditions`, `CreateFallbackState`, `SetToolTip`. Une méthode absente donne une erreur plus tard, loin de sa cause.
+
+**Valeur.** Un addon tiers ajoute un type de région. Une erreur de sa part sort à l'enregistrement, avec son nom, pas en plein combat.
+
+**À faire.**
+- Exposer `WeakAuras.RegisterRegionType` et `WeakAuras.RegisterRegionOptions`, qui appellent les fonctions de `Private` avec leur validation actuelle.
+- Dans `RegisterTriggerSystem` : lever une erreur (`error(..., 2)`) quand une des 12 méthodes manque ou qu'un type est déjà pris.
+- Garder ces fonctions bloquées dans l'environnement du code custom (`AuraEnvironment.lua:492-497`), et y ajouter les deux nouvelles.
+- Ajouter les deux fonctions à la liste figée d'API 1.
+
+**Coût.** S.
+
+**Risque.** Faible. La validation peut refuser un système interne incomplet : `aura2`, les types génériques et `secretAura` passent par le banc. Une aura sauvegardée dont le type de région vient d'un addon absent : vérifier qu'elle se décharge sans erreur.
+
+**Fichiers.**
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/Init.lua`
+- `WeakAuras/AuraEnvironment.lua`
+- Un scénario neuf
+
+---
+
+### API 2 : Bus d'événements public
+
+**Pourquoi.** `Private.callbacks` est un bus interne, sans désabonnement (`WeakAuras/WeakAuras.lua:40-47`). Il émet déjà `Add`, `Delete`, `Rename`, `RenameFirst`, `AboutToDelete`, `ScanForLoads`, `AuraWarningsUpdated`, `ProfileCostsUpdated` et `RestrictionChanged` (`WeakAuras/SecretRestrictions.lua:90`). Rien n'est exposé sur `WeakAuras`. Aucun événement ne signale la fin du chargement des options (les seuls sont `BeforeReload` et `AfterReload`, `WeakAurasOptions/LoadOptions.lua:1007`, `:1010`), ni l'affichage d'une aura.
+
+**Valeur.** Un addon d'interface réagit au moteur, par exemple quand une aura apparaît ou quand les restrictions de combat changent, sans le sonder à intervalle.
+
+**À faire.**
+- `WeakAuras.RegisterCallback(owner, event, func)` et `WeakAuras.UnregisterCallback(owner, event)`, posées sur `Private.callbacks`. Ajouter le désabonnement au bus.
+- Événements publics : `Add`, `Delete`, `Rename`, `ScanForLoads`, `RestrictionChanged`, plus trois neufs : `OptionsLoaded`, `AuraShown` (id, cloneId) et `AuraHidden` (id, cloneId).
+- Appeler chaque fonction d'un tiers de façon protégée : une erreur est signalée avec le nom de son propriétaire et ne coupe ni le moteur ni les autres abonnés.
+- Ajouter les deux fonctions et la liste des événements à API 1.
+
+**Coût.** S à M.
+
+**Risque.** Faible. `AuraShown` et `AuraHidden` partent à chaque changement d'état : ne rien émettre quand personne n'est abonné. Ne passer que des identifiants, jamais une valeur lue en combat.
+
+**À tester en jeu.** Abonnement à `AuraShown` sur une aura de buff, en combat : pas d'erreur, pas de chute de fps.
+
+**Fichiers.**
+- `WeakAuras/WeakAuras.lua`
+- `WeakAuras/RegionTypes/RegionPrototype.lua`
+- `WeakAurasOptions/WeakAurasOptions.lua`
+- Un scénario neuf, `GUIDE.md`
+
+---
+
+### API 4 : Registre de modules
+
+**Pourquoi.** Le modèle de module actuel ne sert que les cinq addons du dépôt : `WeakAuras` charge `WeakAurasOptions` à la demande (`WeakAuras/WeakAuras.lua:164`) et lui passe `Private` par `UsePrivate` (`WeakAurasOptions/WeakAurasOptions.lua:793`). Les options de région s'enregistrent une seule fois, à ce moment-là (`:793-800`) : un addon tiers qui s'inscrit après n'est jamais appelé, et il ne peut pas savoir si les options sont déjà chargées.
+
+**Valeur.** Un point d'entrée unique. L'addon tiers déclare son module, et le moteur appelle chaque étape au bon moment, quel que soit l'ordre de chargement des addons.
+
+**À faire.**
+- `WeakAuras.RegisterModule(name, module)`, où `module` est une table : `apiVersion` (obligatoire), `OnEngineReady` et `OnOptionsLoaded` (facultatives).
+- `OnEngineReady` : appelée à la fin du login, ou tout de suite si le login est fini (`WeakAuras.IsLoginFinished`).
+- `OnOptionsLoaded` : appelée après `UsePrivate`, ou tout de suite si les options sont ouvertes. C'est là qu'un module enregistre ses options de région, de sous-région et de trigger.
+- Refuser un module dont `apiVersion` dépasse `WeakAuras.API_VERSION`, avec un message dans le chat qui nomme le module. Refuser un nom déjà pris.
+- Appels protégés, comme dans API 2.
+- `WeakAuras.GetModules()` : noms des modules inscrits, pour le diagnostic. Les lister dans `/wa pprint`.
+- Addon d'exemple minimal dans `Tests/Fixtures/`, chargé par un scénario.
+
+**Coût.** M.
+
+**Risque.** Moyen. Ordre des appels pendant le login, où `ImportClassPack` refuse déjà de tourner (`WeakAuras.lua:198-203`). Un module qui enregistre un type de région après le chargement des auras sauvegardées : les auras de ce type doivent être recréées, à vérifier dans le scénario.
+
+**Fichiers.**
+- `WeakAuras/Modules.lua` (neuf), `WeakAuras/WeakAuras.toc`
+- `WeakAuras/WeakAuras.lua`
+- `WeakAurasOptions/WeakAurasOptions.lua`
+- `Tests/Fixtures/`, un scénario neuf
+- `GUIDE.md`, `CHANGES.md`
+
+---
+
+## 1.26 : API, packs, ancrage et triggers
+
+Trois tickets indépendants entre eux. API 5 dépend d'API 4 (1.25) et d'Accueil 3 (1.20). API 7 est le plus lourd (M à L) : il peut sortir seul si la version devient trop grosse.
+
+### Ordre
+
+1. API 5 : Packs fournis par un addon tiers
+2. API 6 : Cadres d'ancrage déclarés par les addons
+3. API 7 : Prototypes de trigger tiers
+
+---
+
+### API 5 : Packs fournis par un addon tiers
+
+**Pourquoi.** Les packs utilitaires sont une table privée, `OptionsPrivate.utilityPacks`, remplie par un fichier du toc des options (`WeakAurasOptions/UtilityPacks.lua:5-8`, `WeakAurasOptions.toc:74-76`). Format : `{ name, description, category, icon, data = "!WA:2!..." }`. Aucune fonction d'enregistrement. `WeakAuras.ImportClassPack()` ne sert que le pack de classe du joueur.
+
+**Valeur.** Un addon d'interface livre ses auras prêtes à installer, visibles dans la page Packs à côté des packs utilitaires.
+
+**À faire.**
+- `WeakAuras.RegisterPack(owner, pack)`, même format que les packs utilitaires. Les packs inscrits avant le chargement des options sont gardés en attente.
+- Afficher ces packs dans la page Packs (`WeakAurasOptions/OptionsFrames/OptionsFrame.lua:1709`, `:1736`), dans une catégorie au nom de l'addon fournisseur.
+- L'import passe par `WeakAuras.Import` et sa fenêtre de confirmation, comme aujourd'hui.
+- Valider à l'enregistrement : champs présents, chaîne décodable (`Private.StringToTable`). Un pack invalide est refusé avec le nom de son propriétaire.
+- Compteur d'auras d'Accueil 3 appliqué à ces packs.
+
+**Coût.** S.
+
+**Risque.** Faible. Un pack tiers peut contenir du code custom : la fenêtre de confirmation le montre déjà, ne pas l'affaiblir.
+
+**Fichiers.**
+- `WeakAurasOptions/PackLibrary.lua`
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`
+- `WeakAuras/WeakAuras.lua`
+- `Tests/Scenarios/88_PackLibrary.lua`
+
+---
+
+### API 6 : Cadres d'ancrage déclarés par les addons
+
+**Pourquoi.** L'ancrage « Unit Frame » passe par `WeakAuras.GetUnitFrame = LGF.GetUnitFrame` (`WeakAuras/AuraEnvironment.lua:158-159`), soit LibGetFrame-1.0. La lib reconnaît les addons par des motifs de noms écrits en dur (`WeakAuras/Libs/LibGetFrame-1.0/LibGetFrame-1.0.lua:35-200`), plus deux cas particuliers (`:552`, `:559`). Un addon d'unit frames absent de cette liste n'est pas trouvé, et rien côté moteur ne permet de l'ajouter.
+
+**Valeur.** Une aura s'ancre aux cadres de n'importe quel addon d'interface, sans attendre une mise à jour de la lib.
+
+**À faire.**
+- `WeakAuras.RegisterUnitFrameProvider(owner, func)`, où `func(unit)` renvoie un cadre ou `nil`. Les fournisseurs sont consultés avant LibGetFrame.
+- `WeakAuras.UnregisterUnitFrameProvider(owner)`.
+- Relancer l'ancrage des auras concernées quand un fournisseur s'inscrit.
+- Ne pas modifier la lib embarquée.
+
+**Coût.** S à M.
+
+**Risque.** Faible. Un cadre protégé comme ancre peut rendre la région protégée (voir le principe de Populaire 11) : refuser l'ancre quand `frame:IsProtected()` est vrai, ou le documenter après test.
+
+**À tester en jeu.** Aura ancrée à un cadre fourni par un addon tiers, en combat : elle s'affiche et se cache sans `ADDON_ACTION_BLOCKED`.
+
+**Fichiers.**
+- `WeakAuras/AuraEnvironment.lua`
+- `WeakAuras/AnchorLinks.lua`
+- `WeakAuras/RegionTypes/RegionPrototype.lua`
+- Un scénario neuf
+
+---
+
+### API 7 : Prototypes de trigger tiers
+
+**Pourquoi.** Les triggers à options générées viennent de `Private.event_prototypes` (`WeakAuras/Prototypes.lua:2038`), une table interne. Pour exposer ses données, un addon tiers a deux chemins : écrire un système de trigger complet avec ses 12 méthodes et ses options, ou envoyer `WeakAuras.ScanEvents` et laisser le joueur écrire du code custom (`WeakAuras/GenericTrigger.lua:962`).
+
+**Valeur.** L'addon d'interface expose ses données comme un trigger normal, réglable par le joueur sans une ligne de code.
+
+**À faire.**
+- `WeakAuras.RegisterTriggerPrototype(owner, name, prototype)`, qui ajoute le prototype à la catégorie « addons » (`Private.category_event_prototype.addons`).
+- Valider le prototype à l'enregistrement : `type`, `events`, `name`, `args`. Refuser un nom déjà pris.
+- Aura dont le prototype est absent, parce que l'addon fournisseur n'est pas chargé : elle reste déchargée, sans erreur, avec un avertissement dans les options.
+- Documenter le format d'un prototype dans `GUIDE.md`, sur un exemple complet.
+
+**Coût.** M à L.
+
+**Risque.** Moyen. Les prototypes servent à générer du code à partir de chaînes : repasser les chemins de `ConstructTest` sur un prototype tiers (correctif `%q` du 2026-10-30, `Tests/Scenarios/90_GenericTestQuoting.lua`). Un prototype mal écrit peut ralentir tous les triggers génériques.
+
+**Fichiers.**
+- `WeakAuras/Prototypes.lua`
+- `WeakAuras/GenericTrigger.lua`
+- `WeakAurasOptions/GenericTrigger.lua`
+- Un scénario neuf, `GUIDE.md`
+
+---
+
+## 1.27 : templates personnalisés
+
+Les trois dernières versions portent chacune un seul gros ticket : les L ferment le plan (règle 4). Populaire 8 est M à L.
 
 ### Ordre
 
 1. Populaire 8 : Templates personnalisés
-2. Placement 7 : Ancrer une aura à une autre en la calant dessus
-3. Populaire 9 : Animations conditionnelles
 
 ---
 
@@ -1971,24 +2461,13 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la versi
 
 ---
 
-### Placement 7 : Ancrer une aura à une autre en la calant dessus
+## 1.28 : animations conditionnelles
 
-**Pourquoi.** Le calage aligne une aura sur une autre sans créer de lien entre elles. Pour qu'une aura suive une autre, il faut aujourd'hui régler l'ancrage dans les options (`anchorFrameType`, `CommonOptions.lua:1346`).
+Un seul ticket, L. Populaire 9 touche aux conditions comme Populaire 4 (1.22) : il passe après.
 
-**Valeur.** Des auras collées qui bougent ensemble, comme `SnapToFrame` sur les cadres Blizzard.
+### Ordre
 
-**À faire.**
-- Au lâcher sur un bord d'aura, avec un modificateur à choisir, écrire l'ancrage relatif : `anchorFrameType`, `anchorFrameFrame`, `selfPoint`, `anchorPoint`, offsets.
-- Refuser un ancrage qui créerait une boucle (A ancrée à B, B ancrée à A).
-
-**Coût.** L.
-
-**Risque.** Modifie les données d'ancrage sauvegardées. Ancrages en boucle. Aura qui disparaît quand l'aura cible n'est pas chargée.
-
-**Fichiers.**
-- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
-- `WeakAuras/EditModePlacement.lua`
-- `WeakAurasOptions/CommonOptions.lua`
+1. Populaire 9 : Animations conditionnelles
 
 ---
 
@@ -2014,6 +2493,44 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la versi
 
 ---
 
+## 1.29 : API, auras possédées par un addon
+
+Un seul ticket, L, à risque élevé : il sort seul, comme Populaire 11 en 1.19. À ne lancer que quand un addon d'interface réel en a besoin.
+
+### Ordre
+
+1. API 8 : Auras possédées par un addon, non sauvegardées
+
+---
+
+### API 8 : Auras possédées par un addon, non sauvegardées
+
+**Pourquoi.** `WeakAuras.Add(data)` écrit toujours dans `WeakAurasSaved` (`WeakAuras/WeakAuras.lua:3638`, `:3663`, `:3711`). Il n'existe aucune notion d'aura possédée par un addon : un addon qui crée ses auras par code les mélange à celles du joueur, elles restent après sa désinstallation, et elles partent dans les exports et les sauvegardes.
+
+**Valeur.** Un addon d'interface fait tourner ses propres affichages sur le moteur sans rien écrire dans les données du joueur.
+
+**À faire.**
+- `WeakAuras.AddOwned(owner, data)` et `WeakAuras.DeleteOwned(owner, id)`. L'addon recrée ses auras à chaque session.
+- Ranger ces auras hors de `db.displays`, ou les marquer et les retirer à la sauvegarde : à trancher à la conception, selon le nombre de lectures de `db.displays` à adapter.
+- Les exclure des exports (`WeakAuras/Transmission.lua`), des sauvegardes (`WeakAuras/AuraBackups.lua`) et de la migration.
+- Dans `/wa` : les afficher dans un groupe au nom de l'addon, en lecture seule, ou les masquer. À trancher.
+- Identifiants préfixés par le nom du propriétaire, pour éviter une collision avec une aura du joueur.
+- Refuser le code custom dans une aura possédée, ou l'accepter : à trancher. L'aura ne passe pas par la fenêtre de confirmation.
+
+**Coût.** L.
+
+**Risque.** Élevé. `db.displays` est lu dans tout le moteur et dans les options. Une aura possédée qui fuit dans `WeakAurasSaved` reste orpheline. Dette 4 (tests de migration et de restauration) doit couvrir ce cas avant.
+
+**À tester en jeu.** Aura possédée créée au login puis en combat. `/reload` : aucune trace dans `WeakAurasSaved`. Addon fournisseur désactivé : aucune aura orpheline.
+
+**Fichiers.**
+- `WeakAuras/WeakAuras.lua`
+- `WeakAuras/Transmission.lua`, `WeakAuras/AuraBackups.lua`
+- `WeakAurasOptions/WeakAurasOptions.lua`
+- Scénarios neufs, `GUIDE.md`
+
+---
+
 ## Dette notée, sans ticket
 
 ### Dette technique
@@ -2022,23 +2539,31 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la versi
 - `GenericTrigger.lua:3413` (`shortcut:`) : les charges sont ignorées, un sort qui a encore des charges est lu comme non prêt.
 - `AuraBackups.lua:42` (`ponytail:`) : l'archive sérialise toute la liste en une fois par jour.
 - `.luacheckrc` : environ 491 globaux déclarés en écriture (`globals`) plutôt qu'en lecture, et `Tests/**` exclu.
-- Page Packs : textes traduits en enUS et frFR seulement. `OptionsFrame.lua:1779` passe déjà les libellés de `PackLibrary.lua:7-18` par `L[...]`, mais les 9 autres locales de `WeakAurasOptions/Locales/` n'ont aucune clé propre à Musca Auras (« Whole HUD », « Utility Packs », blocs, packs utilitaires).
+- Page Packs : textes traduits en enUS et frFR seulement. `OptionsFrame.lua` passe déjà les libellés de `PackLibrary.lua:7-18` par `L[...]`, mais les 9 autres locales de `WeakAurasOptions/Locales/` n'ont aucune clé propre à Musca Auras (« Whole HUD », « Utility Packs », blocs, packs utilitaires).
+- `Tests/Harness/Environment.lua:14-26` : chemin en dur vers un dossier utilisateur Windows, en dernier repli de `WOW_UI_SOURCE`.
+- `WeakAuras/Animations.lua:354` (`shortcut:`) : seule la région de base du frère est comparée, pas ses clones.
+- Reste de Dette 8 : `oldDataStub` et `oldDataStub2` de `WeakAuras.lua` ne pointent pas vers `Private.data_stub` (ancien format de trigger, différents du stub de `Types.lua`). `Types.lua` garde un test `BuildInfo <= 80100`.
 
 ### Placement
 
-- `MoverSizer.lua:1123` : `parentData == "dynamicgroup"` compare une table à une chaîne, donc la condition est toujours fausse. La branche prévue pour un enfant de groupe dynamique qu'on redimensionne ne s'exécute jamais. Correctif : `parentData.regionType == "dynamicgroup"`.
-- Le test Shift/`magnetAlign` est recopié 4 fois (`MoverSizer.lua:835`, `:916`, `:1266`, `:1368`).
+- Le test Shift/`magnetAlign` est recopié 4 fois (`MoverSizer.lua`).
 - Les 8 poignées de redimensionnement sont du copier-coller (`MoverSizer.lua:147-372`, `:1410-1441`).
 
 ### Rebranding
 
 - Aucun test ne couvre le rendu de l'interface (titres, couleurs, textures).
-- `WeakAurasOptions/Changelog.lua` recopie à la main le texte de `CHANGES.md`.
-- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua` fait 1814 lignes.
+- `WeakAurasOptions/Changelog.lua` : écrit par `Tests/PrepareRelease.py` depuis `WeakAuras/CHANGELOG.md` (Outils 3,
+  1.20). L'entrée 1.19.0, reformulée à la main, diffère encore de ce que le script écrirait.
+- `logo_64.tga` et `logo_256.tga` restent dans la liste des textures, libellés « WeakAuras logo » (reste de Rebranding 8).
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua` fait 2059 lignes (2026-11-21).
 
 ### Accueil
 
-- `WeakAuras.lua:2619-2622` : `OnShow` marque l'accueil vu avant tout choix. Corrigé par Accueil 2.
+- `OnShow` de `WEAKAURAS_FOREVER_DISCLAIMER` (`WeakAuras.lua`) marque l'accueil vu avant tout choix. Corrigé par Accueil 2.
+
+## Clos sans développement
+
+- Dette 5, « Durcir les lectures de secrets ouvertes dans le suivi » (clos le 2026-11-21) : les gardes A2, A3, A4, A5, A7 et A8 étaient déjà dans le code à la rédaction du ticket (entrée du 2026-10-13 de `CHANGES.md`). Relu le 2026-11-21 : `Private.ApplyCooldown` (`Icon.lua`), `Private.ReadableOrNil` (`BuffTrigger2.lua`), `C_Timer.After(0, Update)` (`SecretRestrictions.lua`), `pcall(C_Item.IsItemInRange…)` (`GenericTrigger.lua`), `Private.IsSecret` (`AuraEnvironment.lua`, `BuffTriggerNativeFilter.lua`). Restent les tests en jeu de l'étape 12 du suivi, dont la section « Risques » décrit encore l'état d'avant.
 
 ## Écartés
 
@@ -2063,6 +2588,18 @@ Tickets L ou M à L. Chacun peut sortir seul, en 1.23, 1.24 et 1.25, si la versi
 - Ouvrir `/wa` automatiquement au premier login : intrusif, et bloqué en combat.
 - Installer le HUD automatiquement : impose des auras, contraire au but.
 - Ouvrir le mode édition Blizzard par code après l'import : internes Blizzard, risque de taint (voir le contexte de la 1.17).
+
+### API
+
+- Exposer `Private` en global : plus aucun changement interne possible sans casser les addons tiers.
+- Import silencieux par un addon : la fenêtre de confirmation protège le joueur contre du code custom installé sans son accord.
+- Ouvrir les fonctions d'enregistrement au code custom des auras : bloquées exprès (`WeakAuras/AuraEnvironment.lua:485-497`).
+- Moteur embarquable comme librairie dans d'autres addons : un seul global `WeakAuras` et un seul `WeakAurasSaved`.
+- Nouveau nom de global pour l'API : même raison que le renommage des identifiants, plus haut.
+
+### Outils
+
+- Traduire les clés propres à Musca Auras dans les 9 autres langues (environ 127 dans `WeakAuras/Locales/`, 329 dans `WeakAurasOptions/Locales/`) : coût L, aucune demande constatée (2026-11-21).
 
 ### Demandes populaires
 

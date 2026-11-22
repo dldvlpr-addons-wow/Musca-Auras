@@ -20,8 +20,8 @@ return function(test)
     end
     Same(type(private.AuraSpellRankSupported), "function", "AuraSpellRankSupported type")
     Same(type(private.GetAuraSpellRanks), "function", "GetAuraSpellRanks type")
-    Same(#families, 524, "family count")
-    Same(#catalog, 1880, "catalog size")
+    Same(#families, 520, "family count")
+    Same(#catalog, 1873, "catalog size")
     Same(catalog[1], 10, "smallest catalog ID")
     Same(catalog[#catalog], 1322605, "largest catalog ID")
 
@@ -40,11 +40,11 @@ return function(test)
       if not ascending then notAscending = notAscending + 1 end
       if family[1] ~= smallest then firstNotSmallest = firstNotSmallest + 1 end
     end
-    Same(hash, 1200180319, "checksum of the families (content, rank order)")
+    Same(hash, 787723387, "checksum of the families (content, rank order)")
     Same(sized30, 1, "one family of 30 IDs (Drink)")
     Same(sized95, 1, "one family of 95 IDs (Food)")
-    Same(notAscending, 24, "families not ascending")
-    Same(firstNotSmallest, 19, "families whose first ID is not the smallest")
+    Same(notAscending, 23, "families not ascending")
+    Same(firstNotSmallest, 18, "families whose first ID is not the smallest")
 
     -- Families whose order is the order of the ranks, not of the IDs.
     Same(Joined(private.GetAuraSpellRanks(1464)), "1240193,1464,8820,11604,11605", "Slam")
@@ -58,7 +58,7 @@ return function(test)
     -- Families of one ID exist and are returned as such.
     local single = 0
     for _, family in ipairs(families) do if #family == 1 then single = single + 1 end end
-    Same(single, 208, "families of one ID")
+    Same(single, 205, "families of one ID")
 
     -- Unknown IDs: a new {id} each call, never stored, whatever the value.
     for _, value in ipairs({ 0, -5, 1.5, 999999999, "abc" }) do

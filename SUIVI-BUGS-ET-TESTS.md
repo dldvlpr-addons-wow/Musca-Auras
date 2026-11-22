@@ -642,6 +642,72 @@ Aura Icon neuve, élément « Click Action » ajouté dans l'onglet Display.
 48. [ ] Aura supprimée puis restaurée depuis l'archive : elle revient avec son groupe et l'ordre des enfants.
 49. [ ] Export d'une aura avec Click Action, suppression, réimport : actions, touche et mode conservés.
 
+## Étape 16 : tests de la 1.20, accueil et commandes (2026-11-21, 30 min) : OK le 2026-11-22
+
+Entrée du 2026-11-21 de `CHANGES.md`. Banc headless du 2026-11-21 : 137 scénarios, 0 échec. Rien n'est testé en
+jeu. Erreurs Lua affichées (`/console scriptErrors 1`). Un seul 🔴 en échec bloque la mise en production.
+
+### 16.1 Accueil
+Compte neuf : quitter le jeu, retirer `WeakAuras.lua` des SavedVariables, relancer.
+1. [ ] 🔴 Premier login : fenêtre d'accueil courte, nom de la classe lisible, quatre boutons sur une ligne (Install
+   the full HUD, Choose blocks, Guide, Later), aucun texte coupé. Aucune erreur Lua.
+2. [ ] Échap : la fenêtre se ferme. `/reload` : elle revient.
+3. [ ] 🔴 « Install the full HUD » : le HUD de la classe s'installe. `/reload` : ni accueil, ni « Quoi de neuf », ni
+   notice des packs, ni offre de HUD.
+4. [ ] `/wa welcome`, puis « Choose blocks » : `/wa` s'ouvre sur la page Packs.
+5. [ ] `/reload`, `/wa welcome` avant d'ouvrir `/wa`, puis « Choose blocks » en combat : ligne « Options will
+   finish loading after combat ends », aucune erreur, aucun `ADDON_ACTION_BLOCKED`. Fin du combat : `/wa` s'ouvre
+   sur la page Packs.
+5b. [ ] Pendant le chargement des auras (ligne « ... is still loading » du chat, juste après `/reload`), cliquer
+   « Install the full HUD » : le login se termine, puis l'import s'ouvre. Même chose avec `/wa unlock` tapé
+   pendant le chargement : le mode placement s'ouvre à la fin du login. `/wa` tapé deux fois pendant le
+   chargement : ligne du chat, puis `/wa` s'ouvre une fois à la fin du login et reste ouvert.
+5c. [ ] `/wa unlock`, `/wa welcome`, « Choose blocks » : le mode placement se ferme, `/wa` s'ouvre sur la page
+   Packs.
+5e. [ ] `/wa unlock`, `/wa welcome`, « Install the full HUD » : le mode placement se ferme, la fenêtre d'import
+   est visible.
+5f. [ ] `/wa` ouvert puis fermé, `/wa welcome`, « Choose blocks » en combat : fin du combat, `/wa` s'ouvre sur
+   la page Packs.
+5g. [ ] `/wa unlock`, puis `/wa demo` : le mode placement se ferme, `/wa` s'ouvre et la démo joue.
+5h. [ ] `/run print(WeakAuras.Import({}))` : infobulle « This text holds no aura to import. », ligne « nil This
+   text holds no aura to import. » dans le chat, aucune erreur Lua.
+5d. [ ] Sauvegarde d'avant la 1.17, ou `classPackNoticeSeen` retiré des SavedVariables, avec un HUD installé :
+   popup « class pack changed ». Échap, `/reload` :
+   elle revient. « Later », `/reload` : elle ne revient plus.
+6. [ ] `/wa welcome`, puis « Guide » : le guide s'ouvre, section « Other changes » avec la ligne Swing Timer.
+7. [ ] Sauvegarde 1.19 avec le HUD d'une classe, login d'un personnage d'une autre classe : offre courte du HUD de
+   cette classe, une seule fois. « Later » ferme la popup. Personnage dont le HUD est déjà installé : aucune
+   offre.
+8. [ ] Sauvegarde 1.19 sans le HUD de la classe, premier login en 1.20 : l'offre de HUD s'affiche (« Quoi de
+   neuf » 1.18.0 déjà vu, il ne revient pas). Sauvegarde d'avant la 1.18 : « Quoi de neuf », puis l'offre à sa
+   fermeture.
+Libellés : la fiche cite l'anglais. Client français : « Installer le HUD complet », « Choisir les blocs »,
+« Plus tard », « Ce texte ne contient aucune aura à importer. ».
+
+### 16.2 Page Packs et liste vide
+9. [ ] Page Packs : « Whole HUD (N auras) », chaque bloc et chaque pack utilitaire avec son nombre. Installer un
+   bloc : le nombre d'auras créées est celui affiché.
+10. [ ] 🔴 `/wa` sans aucune aura : ligne de texte et boutons Packs, Guide, Import au milieu de la liste. Chaque
+    bouton ouvre sa page.
+11. [ ] Créer une aura, importer une chaîne, puis `/wa undelete` après une suppression totale : l'encart disparaît à
+    chaque fois. Supprimer la dernière aura : il revient.
+12. [ ] Avec des auras, recherche sans résultat : l'encart ne s'affiche pas.
+
+### 16.3 Commandes et mute
+13. [ ] `/wa toggle` deux fois : les auras disparaissent puis reviennent. Fenêtre `/wa` ouverte : ligne dans le
+    chat qui demande de la fermer, les auras ne changent pas. Même ligne sous `/wa unlock`.
+14. [ ] 🔴 `/wa mute` : ligne dans le chat. Une aura à son (fichier), une à Sound Kit, une à Text-to-Speech et une
+    Aura (Modern) à son, déclenchées hors combat puis en combat : aucun son. `/wa mute` : les sons reviennent, en
+    combat aussi pour l'Aura (Modern), sinon une ligne du chat annonce le changement à la fin du combat.
+14b. [ ] Aura à son long (fichier) en cours de lecture, `/wa mute` : le son se coupe aussitôt.
+15. [ ] Mute actif, `/reload` : rappel dans le chat, toujours aucun son.
+16. [ ] Case « Mute » de la barre d'outils de `/wa` : suit `/wa mute` dans les deux sens, infobulle au survol, la
+    barre d'outils ne déborde pas.
+17. [ ] `/wa help` : les lignes toggle, mute et welcome.
+
+### 16.4 Non-régression
+18. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
+
 ---
 
 # 4. Résultats reçus et prompt de fin

@@ -1016,4 +1016,10 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Shows for up to this many seconds when the aura is gained. On a target or nameplate, changing unit can show an aura that was already there."] = "获得光环后最多显示这么多秒。在目标或姓名板上，切换单位可能会显示原本就存在的光环。"
 	L["Spell Set"] = "法术组"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "由自定义代码通过 WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }) 设置的法术列表名称。其法术 ID 会添加到上面的法术 ID 中。在没有设置该名称的列表时，触发器只使用上面的法术 ID。"
+	L["Mute"] = "静音"
+	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "勾选后，任何光环都不会播放声音或语音。光环本身不会被修改。"
+	L["%s (1 aura)"] = "%s（1 个光环）"
+	L["%s (%d auras)"] = "%s（%d 个光环）"
+	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "你还没有任何光环。可以安装现成的光环包、阅读指南，或导入字符串。"
+	L["Guide"] = "指南"
 

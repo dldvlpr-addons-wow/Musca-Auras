@@ -191,7 +191,8 @@ local function SoundPlayHelper(self)
     return;
   end
 
-  if (WeakAuras.IsOptionsOpen() or Private.SquelchingActions(self.uid) or WeakAuras.InLoadingScreen()) then
+  if (WeakAuras.IsOptionsOpen() or Private.SquelchingActions(self.uid) or WeakAuras.InLoadingScreen()
+      or Private.db.soundsMuted) then
     Private.StopProfileSystem("sound");
     return;
   end

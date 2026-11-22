@@ -626,6 +626,9 @@ Not converted: TimelineParser triggers, `ForeverAuras.AuraOverlay` calls (rewrit
 | `/wa unlock` | Placement mode: move, resize and anchor your auras on the screen (out of combat). |
 | `/wa cdm` | Shows or hides the Blizzard Cooldown Manager (out of combat). |
 | `/wa minimap` | Shows or hides the minimap button. |
+| `/wa toggle` | Pauses or resumes every aura. |
+| `/wa mute` | Turns the sounds of every aura off or on. The auras are not changed. |
+| `/wa welcome` | Shows the welcome window again. |
 | `/wa pstart`, `/wa pstop`, `/wa pprint` | Profiling: find which aura costs the most. `/wa pstart combat` profiles the next combat. |
 | `/wa paura <aura>` | The cost of one aura in the last profiling. |
 | `/wa pslow [ms]` | Reports every frame slower than `ms` (30 by default), with the auras that ran in it. Type it again to stop. |

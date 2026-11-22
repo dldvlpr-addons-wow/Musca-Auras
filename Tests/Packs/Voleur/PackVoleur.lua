@@ -25,7 +25,7 @@ return Pack.Build({
   rotation = {
     { name = "Sinister Strike", spell = 1752 },
     { name = "Backstab", spell = 53 },
-    { name = "Mutilate", spell = 1310707 },
+    { name = "Mutilate", spell = 399956 },
     { name = "Hemorrhage", spell = 16511 },
     { name = "Ambush", spell = 8676 },
     { name = "Eviscerate", spell = 2098 },

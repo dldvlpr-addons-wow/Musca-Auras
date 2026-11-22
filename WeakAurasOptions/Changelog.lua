@@ -4,14 +4,36 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.19.0',
-  dateString = '2026-11-18',
+  versionString = '1.20.0',
+  dateString = '2026-11-22',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- New: Click Action, an element that makes an aura clickable. Left, right and middle click each cast a spell, use an item, run a macro, target a unit or remove a buff
-- New: a key per aura, which does the action of the left click
-- Choose when the aura stays clickable in combat: while it shows at the combat start, the whole combat, always, or on a macro condition
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.19.0 (2026-11-18):
+- New: /wa mute turns the sounds of every aura off or on, also with the "Mute" box of the /wa window
+- New: /wa toggle pauses or resumes every aura, /wa welcome shows the welcome window again
+- The Packs page shows the number of auras of the HUD, of each block and of each utility pack
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.20.0 (2026-11-22):
+
+New:
+
+- /wa toggle pauses or resumes every aura
+- /wa mute turns the sounds of every aura off or on, for the whole account. The /wa window has a "Mute" box that does the same
+- /wa welcome shows the welcome window again
+- With no aura at all, the /wa list shows three buttons: Packs, Guide and Import
+- The Packs page shows the number of auras of the whole HUD, of each block and of each utility pack
+- The first login of a character whose class HUD is not installed offers that HUD once
+
+Changed:
+
+- The first login window is a short welcome with four buttons: "Install the full HUD", "Choose blocks", "Guide" and "Later". The list of WoW Forever limits moved to the Guide. Closed with Escape, the window comes back at the next login
+
+Fixed:
+
+- /wa, /wa unlock, the minimap icon, an aura link or /wa undelete used while the auras still load now act when the login ends, instead of doing nothing or raising an error
+- An import started in the placement mode leaves that mode and shows the import window
+- Importing a text that holds no aura says so, instead of raising an error
+- Rogue pack: Mutilate uses the spell taught by WoW Forever 1.60.1. Paladin and BuffCheck packs: Blessing of Light and Blessing of Salvation, gone from the game, are removed
+
+1.19.0 (2026-11-18):
 
 New:
 

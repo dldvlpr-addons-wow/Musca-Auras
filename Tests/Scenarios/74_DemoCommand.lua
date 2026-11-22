@@ -5,6 +5,7 @@ return function(test)
 
   local open, opened, shown = false, 0, {}
   WeakAuras.IsOptionsOpen = function() return open end
+  private.OptionsFrame = function() return { IsVisible = function() return open end } end
   WeakAuras.OpenOptions = function() opened = opened + 1; open = true end
   WeakAuras.GetData = function(id) return id == "My Aura" and { id = id } or nil end
   private.ShowDemo = function(id) shown[#shown + 1] = id or "all" end

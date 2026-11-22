@@ -94,6 +94,18 @@ WeakAuras.timer = timer
 local loginQueue = {}
 local queueshowooc
 local queueClassPackImport
+local queueOpenPacks
+-- Run once the login is finished. A loginQueue callback still runs before that: one that waits for the end
+-- of the login must not queue itself there again.
+local afterLoginQueue, afterLoginQueued = {}, {}
+-- One callback per key (the callback itself by default), run in the order of the requests.
+function Private.RunAfterLogin(callback, key)
+  key = key or callback
+  if afterLoginQueued[key] then return end
+  afterLoginQueued[key] = true
+  afterLoginQueue[#afterLoginQueue + 1] = callback
+end
+local RunAfterLogin = Private.RunAfterLogin
 
 function WeakAuras.InternalVersion()
   return internalVersion;
@@ -153,7 +165,8 @@ function Private.LoadOptions(msg)
   if not(C_AddOns.IsAddOnLoaded("WeakAurasOptions")) then
     if not WeakAuras.IsLoginFinished() then
       prettyPrint(Private.LoginMessage())
-      loginQueue[#loginQueue + 1] = WeakAuras.OpenOptions
+      RunAfterLogin(WeakAuras.OpenOptions)
+      return false
     elseif InCombatLockdown() then
       -- inform the user and queue ooc
       prettyPrint(L["Options will finish loading after combat ends."])
@@ -175,7 +188,17 @@ end
 function WeakAuras.OpenOptions(msg)
   if Private.NeedToRepairDatabase() then
     StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "downgrade"})
-  elseif (WeakAuras.IsLoginFinished() and Private.LoadOptions(msg)) then
+  elseif not WeakAuras.IsLoginFinished() then
+    -- /wa or the minimap icon while the auras still load: the options open when the login ends, unless
+    -- another queued action opened them first (this function is a toggle).
+    prettyPrint(Private.LoginMessage())
+    RunAfterLogin(function()
+      local optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
+      if not (optionsFrame and optionsFrame:IsVisible()) then
+        WeakAuras.OpenOptions(msg)
+      end
+    end, WeakAuras.OpenOptions)
+  elseif Private.LoadOptions(msg) then
     WeakAuras.ToggleOptions(msg, Private);
   end
 end
@@ -189,7 +212,7 @@ function Private.StartPlacementMode()
   elseif not WeakAuras.IsLoginFinished() then
     -- /wa unlock can be typed while the auras still load.
     prettyPrint(Private.LoginMessage())
-    loginQueue[#loginQueue + 1] = Private.StartPlacementMode
+    RunAfterLogin(Private.StartPlacementMode)
   elseif Private.LoadOptions() and WeakAuras.TogglePlacementMode then
     WeakAuras.TogglePlacementMode(Private)
   end
@@ -200,21 +223,24 @@ function WeakAuras.ImportClassPack()
     queueClassPackImport = true
     Private.frames["Addon Initialization Handler"]:RegisterEvent("PLAYER_REGEN_ENABLED")
     StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", L["The class pack can't be imported during combat. The import will start when combat ends."])
-    return false
+    return false, "queued"
   end
   if Private.NeedToRepairDatabase() then
     StaticPopup_Show("WEAKAURAS_CONFIRM_REPAIR", nil, nil, {reason = "downgrade"})
     return false
   end
   if not WeakAuras.IsLoginFinished() then
-    StaticPopup_Show("WEAKAURAS_ACTION_BLOCKED", L["Musca Auras is still loading. Try again in a few seconds."])
-    return false
+    -- A button of the welcome window can be clicked while the auras still load.
+    prettyPrint(Private.LoginMessage())
+    RunAfterLogin(WeakAuras.ImportClassPack)
+    return false, "queued"
   end
   if not Private.LoadOptions() then
     return false
   end
   local classPack = WeakAuras.GetClassPack and WeakAuras.GetClassPack(select(2, UnitClass("player")))
   if not classPack then
+    prettyPrint(L["No class pack is available for your class."])
     return false
   end
   local _, failure = WeakAuras.Import(classPack)
@@ -225,6 +251,9 @@ function Private.PrintHelp()
   print(L["Usage:"])
   print(L["/wa help - Show this message"])
   print(L["/wa minimap - Toggle the minimap icon"])
+  print(L["/wa toggle - Pause or resume every aura"])
+  print(L["/wa mute - Turn the sounds of every aura off or on"])
+  print(L["/wa welcome - Show the welcome window again"])
   print(L["/wa tutorial - Guide: learn everything about Musca Auras on WoW Forever, with auras to import"])
   if C_CooldownViewer then
     print(L["/wa cdm - Show or hide the Blizzard Cooldown Manager"])
@@ -273,6 +302,19 @@ function SlashCmdList.WEAKAURAS(input)
     Private.ShowForeverTutorial()
   elseif msg == "minimap" then
     WeakAuras.ToggleMinimap();
+  elseif msg == "toggle" then
+    -- The open options and the placement mode keep the auras paused.
+    if WeakAuras.IsOptionsOpen() then
+      prettyPrint(L["Close the options or the placement mode to pause or resume the auras."])
+    else
+      WeakAuras.Toggle()
+    end
+  elseif msg == "mute" then
+    WeakAuras.ToggleSoundsMuted()
+  elseif msg == "welcome" then
+    if not Private.ShowWelcome() then
+      prettyPrint(L["The welcome window can't open now. Close a popup, then type /wa welcome again."])
+    end
   elseif msg == "cdm" and input:match("^%s*%S+%s+%S") then
     -- The aura name keeps its case, unlike args.
     Private.PrintCooldownManagerTriggerStatus(input:match("^%s*%S+%s+(.-)%s*$"))
@@ -313,10 +355,13 @@ function SlashCmdList.WEAKAURAS(input)
     if id and not WeakAuras.GetData(id) then
       prettyPrint(("No aura named %q."):format(id))
     else
-      if not WeakAuras.IsOptionsOpen() then
+      -- The placement mode counts as open options: the window itself must show, which also leaves that mode.
+      local optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
+      if not (optionsFrame and optionsFrame:IsVisible()) then
         WeakAuras.OpenOptions()
+        optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
       end
-      if WeakAuras.IsOptionsOpen() then
+      if optionsFrame and optionsFrame:IsVisible() then
         Private.ShowDemo(id)
       elseif InCombatLockdown() then
         prettyPrint("The demo does not start during combat. Type /wa demo again after combat.")
@@ -415,6 +460,26 @@ function Private.ToggleCooldownManager()
   prettyPrint(shown and L["Blizzard Cooldown Manager hidden."] or L["Blizzard Cooldown Manager shown."])
 end
 
+-- /wa mute: no aura plays a sound or speaks until the mute ends. The auras themselves are not changed.
+function WeakAuras.ToggleSoundsMuted()
+  Private.db.soundsMuted = not Private.db.soundsMuted or nil
+  if Private.db.soundsMuted then
+    -- The sounds that already play are cut too.
+    for id, regionData in pairs(Private.regions) do
+      if regionData.region and regionData.region.SoundStop then regionData.region:SoundStop() end
+      for _, clone in pairs(Private.clones[id] or {}) do
+        if clone.SoundStop then clone:SoundStop() end
+      end
+    end
+  end
+  local pending = Private.SyncAuraSoundsWithMute()
+  prettyPrint(Private.db.soundsMuted and L["Aura sounds are off. Type /wa mute to turn them on again."]
+    or L["Aura sounds are on."])
+  if pending then
+    prettyPrint(L["The sounds of Aura (Modern) auras change when combat ends."])
+  end
+end
+
 function WeakAuras.ToggleMinimap()
   WeakAurasSaved.minimap.hide = not WeakAurasSaved.minimap.hide
   if WeakAurasSaved.minimap.hide then
@@ -457,6 +522,65 @@ local function HasClassPack()
     end
   end
   return false
+end
+
+-- The HUD of a class is offered once per account, at the first login of a character of that class. A class
+-- whose HUD is already installed is marked without a popup.
+local function ShowDueClassPackOffer()
+  local className, playerClass = UnitClass("player")
+  db.classPackOffered = db.classPackOffered or {}
+  if not playerClass or db.classPackOffered[playerClass] then return end
+  if HasClassPack() or StaticPopup_Show("WEAKAURAS_CLASS_PACK_OFFER", className) then
+    db.classPackOffered[playerClass] = true
+  end
+end
+
+-- One popup per login: the notice of a changed class pack, else the offer of the HUD of the class.
+local function ShowDueClassPackNotice()
+  if db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
+    ShowClassPackNotice()
+  else
+    ShowDueClassPackOffer()
+  end
+end
+
+-- An answer to the welcome window counts as seen: neither "What's new" nor the class pack popups follow it.
+local function MarkWelcomeSeen()
+  db.foreverDisclaimerSeen = true
+  db.classPackNoticeSeen = CLASS_PACK_VERSION
+  db.whatsNewSeen = WHATS_NEW_VERSION
+  local _, playerClass = UnitClass("player")
+  if playerClass then
+    db.classPackOffered = db.classPackOffered or {}
+    db.classPackOffered[playerClass] = true
+  end
+end
+
+-- /wa welcome, and the first login of the account.
+function Private.ShowWelcome()
+  return StaticPopup_Show("WEAKAURAS_FOREVER_DISCLAIMER", (UnitClass("player")))
+end
+
+-- "Choose blocks" of the welcome window: the Packs page of the options.
+local function ChooseClassPackBlocks()
+  if not WeakAuras.IsLoginFinished() then
+    prettyPrint(Private.LoginMessage())
+    RunAfterLogin(ChooseClassPackBlocks)
+    return
+  end
+  local optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
+  if not (optionsFrame and optionsFrame:IsVisible()) then
+    -- Opening the options also leaves the placement mode, which IsOptionsOpen counts as open options.
+    WeakAuras.OpenOptions()
+    optionsFrame = Private.OptionsFrame and Private.OptionsFrame()
+  end
+  if optionsFrame and optionsFrame:IsVisible() then
+    optionsFrame:OpenPacks()
+  elseif InCombatLockdown() then
+    -- During combat the options open when combat ends: the Packs page follows them.
+    queueOpenPacks = true
+    Private.frames["Addon Initialization Handler"]:RegisterEvent("PLAYER_REGEN_ENABLED")
+  end
 end
 
 -- While true no events are handled. E.g. WeakAuras is paused while the Options dialog is open
@@ -1535,6 +1659,11 @@ function Private.Login(takeNewSnapshots)
     end
 
     loginFinished = true
+    for _, callback in ipairs(afterLoginQueue) do
+      C_Timer.After(0, function() callback() end)
+    end
+    wipe(afterLoginQueue)
+    wipe(afterLoginQueued)
     -- A failed copy must not stop the rest of the login. A disabled archive addon only skips it.
     xpcall(Private.BackupDisplays, geterrorhandler(), db.displays)
     -- Tell Dynamic Groups that we are done with login
@@ -1620,14 +1749,16 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
     end
     if dbIsValid then
       Private.Login(takeNewSnapshots)
+      if db.soundsMuted then
+        prettyPrint(L["Aura sounds are off. Type /wa mute to turn them on again."])
+      end
       if not db.foreverDisclaimerSeen then
-        StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"].button3 = L["Install %s HUD"]:format(UnitClass("player"))
-        StaticPopup_Show("WEAKAURAS_FOREVER_DISCLAIMER")
+        Private.ShowWelcome()
       elseif db.whatsNewSeen ~= WHATS_NEW_VERSION then
-        -- The class pack notice follows when this popup is closed.
+        -- The class pack notice or offer follows when this popup is closed.
         StaticPopup_Show("WEAKAURAS_WHATS_NEW")
-      elseif db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
-        ShowClassPackNotice()
+      else
+        ShowDueClassPackNotice()
       end
     else
       -- db isn't valid. Request permission to run repair tool before logging in
@@ -1668,6 +1799,11 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
         if (queueshowooc) then
           WeakAuras.OpenOptions(queueshowooc)
           queueshowooc = nil
+        end
+        if queueOpenPacks then
+          queueOpenPacks = nil
+          -- After every handler of this event: the options addon reopens its window on it too.
+          C_Timer.After(0, ChooseClassPackBlocks)
         end
         if queueClassPackImport then
           queueClassPackImport = nil
@@ -2733,23 +2869,24 @@ end
 StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
   text = L["The class pack changed in this version. Update it to get the new auras: your positions and options are kept."],
   button2 = L["Later"],
+  -- The notice counts as seen on an answer: an import that could not start, Escape or another popup taking
+  -- its place leave it due at the next login.
   OnAccept = function()
-    WeakAuras.ImportClassPack()
+    local started, queued = WeakAuras.ImportClassPack()
+    if started or queued then
+      db.classPackNoticeSeen = CLASS_PACK_VERSION
+    end
   end,
-  OnShow = function()
-    db.classPackNoticeSeen = CLASS_PACK_VERSION
+  OnCancel = function(_, _, reason)
+    if reason == "clicked" then
+      db.classPackNoticeSeen = CLASS_PACK_VERSION
+    end
   end,
+  OnEscape = function() end,
   timeout = 0,
   whileDead = true,
   hideOnEscape = true,
 }
-
--- The class pack notice waits for this popup to close, whichever way it closes.
-local function ShowDueClassPackNotice()
-  if db.classPackNoticeSeen ~= CLASS_PACK_VERSION and HasClassPack() then
-    ShowClassPackNotice()
-  end
-end
 
 StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
   text = Private.Style.Markup("|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
@@ -2758,6 +2895,7 @@ StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
     .. L["- Two more ways to open it: the addon menu of the minimap, and a page in Options > AddOns."] .. "\n\n"
     .. L["Nothing else changes: |cffffd100/wa|r, your auras, their positions and the Wago imports work as before."]),
   button1 = OKAY,
+  -- The class pack notice or offer waits for this popup to close, whichever way it closes.
   OnAccept = ShowDueClassPackNotice,
   OnCancel = ShowDueClassPackNotice,
   OnShow = function()
@@ -2768,33 +2906,50 @@ StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
   hideOnEscape = true,
 }
 
+-- The welcome window: %s is the name of the class. Its callbacks are picked by button index, so that the four
+-- buttons each have their own. Escape is no answer: the window comes back at the next login.
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   text = Private.Style.Markup("|cff00ccffMusca Auras|r\n\n"
-    .. L["WoW Forever runs on the modern game engine (12.x). The game limits what addons can do, so many Classic auras need changes."] .. "\n\n"
-    .. L["|cffffcc00Not possible or limited:|r"] .. "\n"
-    .. L["- Combat log triggers never fire: the game closes the combat log to addons."] .. "\n"
-    .. L["- During combat, the game can hide combat data (buffs, casts, cooldowns) from addons. Buff and debuff triggers then keep their last state and update when combat ends."] .. "\n"
-    .. L["- The swing timer does not reset on melee hits."] .. "\n"
-    .. L["- Talent load options work for your own specialization only."] .. "\n"
-    .. L["- Spell names work in the spell lists of Aura (Modern) triggers. Elsewhere, type spell IDs."] .. "\n"
-    .. L["- The \"Chat Message\" action may not send in instances or during combat."] .. "\n\n"
-    .. L["Click |cffffd100Guide|r below, or the Guide button in |cffffd100/wa|r, to learn everything about Musca Auras here."] .. "\n\n"
-    .. L["Report other problems on the addon page."]),
-  button1 = OKAY,
-  button2 = L["Guide"],
-  OnCancel = function(_, _, reason)
-    if reason == "clicked" then
-      Private.ShowForeverTutorial()
-    end
-  end,
-  OnAlt = function()
+    .. L["Musca Auras shows your buffs, cooldowns and resources as icons, bars and texts that you build or import."] .. "\n\n"
+    .. L["A ready-made HUD exists for your class (%s). Install it whole, or choose only the blocks you want."] .. "\n\n"
+    .. L["The |cffffd100Guide|r says what works differently on WoW Forever. Type |cffffd100/wa welcome|r to see this window again."]),
+  button1 = L["Install the full HUD"],
+  button2 = L["Choose blocks"],
+  button3 = L["Guide"],
+  button4 = L["Later"],
+  selectCallbackByIndex = true,
+  OnButton1 = function()
+    MarkWelcomeSeen()
     WeakAuras.ImportClassPack()
   end,
-  OnShow = function()
-    db.foreverDisclaimerSeen = true
-    db.classPackNoticeSeen = CLASS_PACK_VERSION
-    db.whatsNewSeen = WHATS_NEW_VERSION
+  OnButton2 = function()
+    MarkWelcomeSeen()
+    ChooseClassPackBlocks()
   end,
+  OnButton3 = function()
+    MarkWelcomeSeen()
+    Private.ShowForeverTutorial()
+  end,
+  OnButton4 = MarkWelcomeSeen,
+  OnEscape = function() end,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+}
+
+-- The offer of the HUD to a class that never had it: %s is the name of the class.
+StaticPopupDialogs["WEAKAURAS_CLASS_PACK_OFFER"] = {
+  text = L["A ready-made HUD exists for your class (%s). Install it whole, or choose only the blocks you want."],
+  button1 = L["Install the full HUD"],
+  button2 = L["Choose blocks"],
+  button3 = L["Later"],
+  selectCallbackByIndex = true,
+  OnButton1 = function()
+    WeakAuras.ImportClassPack()
+  end,
+  OnButton2 = ChooseClassPackBlocks,
+  -- With selectCallbackByIndex, a button without its callback leaves the popup open.
+  OnButton3 = function() end,
   timeout = 0,
   whileDead = true,
   hideOnEscape = true,
@@ -4075,7 +4230,7 @@ function Private.HandleChatAction(message_type, message, message_dest, message_d
   if(message_type == "PRINT") then
     DEFAULT_CHAT_FRAME:AddMessage(message, r or 1, g or 1, b or 1);
   elseif message_type == "TTS" then
-    if not Private.SquelchingActions(region.uid) then
+    if not Private.SquelchingActions(region.uid) and not db.soundsMuted then
       pcall(function()
         local voice = TextToSpeech_GetSelectedVoice(Enum.TtsVoiceType.Standard)
         if not voice then return end

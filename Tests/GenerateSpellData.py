@@ -49,7 +49,7 @@ def rank_families(data, spell_names):
     families = {}
     for key, entry in data["spell_desc"].items():
         class_name, spell_name, subtext = key.split("|")
-        if "id" not in entry or (class_name, spell_name) in general:
+        if "id" not in entry or entry["id"] not in spell_names or (class_name, spell_name) in general:
             continue
         variant = "" if subtext == "" or re.fullmatch(r"Rank \d+", subtext) else subtext
         families.setdefault((class_name, spell_name, variant), []).append(entry["id"])

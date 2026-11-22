@@ -2,7 +2,8 @@
 -- Spell rank labelOrder, used by the secret aura options and the cooldown viewer.
 -- Rank data from talentsforever.com (https://talentsforever.com), CC BY 4.0
 -- (https://creativecommons.org/licenses/by/4.0/), data.json, generated 2026-10-13.
--- Changed: beta spell IDs only, grouped by class, spell and rank, named variants kept separate.
+-- Changed: beta spell IDs only, grouped by class, spell and rank, named variants kept separate,
+-- IDs absent from the client SpellName table dropped.
 -- See SpellRankData-LICENSE.txt.
 if not WeakAuras.IsLibsOK() then return end
 local _, Private = ...
@@ -224,11 +225,9 @@ local rankTables = {
   ["Mage / Teleport: Undercity"] = {3563},
   ["Paladin / Blessing of Freedom"] = {1044},
   ["Paladin / Blessing of Kings"] = {20217},
-  ["Paladin / Blessing of Light"] = {19977, 19978, 19979},
   ["Paladin / Blessing of Might"] = {19740, 19834, 19835, 19836, 19837, 19838, 25291},
   ["Paladin / Blessing of Protection"] = {1022, 5599, 10278},
   ["Paladin / Blessing of Sacrifice"] = {6940, 20729},
-  ["Paladin / Blessing of Salvation"] = {1038},
   ["Paladin / Blessing of Wisdom"] = {19742, 19850, 19852, 19853, 19854, 25290},
   ["Paladin / Cleanse"] = {4987},
   ["Paladin / Concentration Aura"] = {19746},
@@ -243,9 +242,7 @@ local rankTables = {
   ["Paladin / Flash of Light"] = {19750, 19939, 19940, 19941, 19942, 19943},
   ["Paladin / Frost Resistance Aura"] = {19888, 19897, 19898},
   ["Paladin / Greater Blessing of Kings"] = {25898},
-  ["Paladin / Greater Blessing of Light"] = {25890},
   ["Paladin / Greater Blessing of Might"] = {25782, 25916},
-  ["Paladin / Greater Blessing of Salvation"] = {25895},
   ["Paladin / Greater Blessing of Wisdom"] = {25894, 25918},
   ["Paladin / Hammer of Justice"] = {853, 5588, 5589, 10308},
   ["Paladin / Hammer of Wrath"] = {24275, 24274, 24239},
@@ -358,7 +355,7 @@ local rankTables = {
   ["Rogue / Kick"] = {1766, 1767, 1768, 1769},
   ["Rogue / Kidney Shot"] = {408, 8643},
   ["Rogue / Mind-numbing Poison"] = {5763, 8694, 11400},
-  ["Rogue / Mutilate"] = {1310707, 399956, 1241582, 1241584},
+  ["Rogue / Mutilate"] = {399956, 1241582, 1241584},
   ["Rogue / Pick Pocket"] = {921},
   ["Rogue / Premeditation"] = {14183},
   ["Rogue / Preparation"] = {14185},

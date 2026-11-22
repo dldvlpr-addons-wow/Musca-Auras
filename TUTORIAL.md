@@ -79,6 +79,7 @@ Triggers that use the combat log (`CLEU`, "Combat Log") never fire. For damage t
   Classic spells have one ID per rank.
 - **Talent load options** list the talents of your own specialization only. Select it alone in the **Class and Specialization** load option first.
 - **Chat Message action** can be blocked during encounters and PvP matches.
+- **Swing Timer** does not reset on melee hits.
 - **Old functions in custom code** no longer exist (`GetSpellInfo`, `GetSpellCooldown`, `UnitBuff`...).
   Use `C_Spell`, `C_UnitAuras`, `C_Item`.
 - **Blizzard Cooldown Manager.** `/wa cdm` shows or hides it, out of combat. On the Forever beta it is not
