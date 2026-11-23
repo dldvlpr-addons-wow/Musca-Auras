@@ -160,6 +160,21 @@ function Private.AuraWarnings.FormatWarnings(uid)
   return icons[maxSeverity], titles[maxSeverity], result
 end
 
+-- /wa report: one "aura name: key (severity)" line per warning, sorted.
+function Private.AuraWarnings.ListWarnings()
+  local lines = {}
+  for uid, auraWarnings in pairs(warnings) do
+    local data = Private.GetDataByUID(uid)
+    if data then
+      for key, warning in pairs(auraWarnings) do
+        lines[#lines + 1] = ("%s: %s (%s)"):format(data.id, key, warning.severity)
+      end
+    end
+  end
+  table.sort(lines)
+  return lines
+end
+
 function Private.AuraWarnings.GetAllWarnings(uid)
   local results = {}
   local thisWarnings

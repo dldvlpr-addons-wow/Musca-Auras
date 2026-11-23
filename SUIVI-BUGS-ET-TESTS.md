@@ -708,6 +708,42 @@ Libellés : la fiche cite l'anglais. Client français : « Installer le HUD comp
 ### 16.4 Non-régression
 18. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
 
+## Étape 17 : tests de la 1.21, fiabilité et diagnostic (2026-11-23, 30 min)
+
+Entrée du 2026-11-23 de `CHANGES.md`. Banc headless du 2026-11-23 : 137 scénarios, 0 échec. Rien n'est testé en
+jeu. Erreurs Lua affichées (`/console scriptErrors 1`). Un seul 🔴 en échec bloque la mise en production.
+
+### 17.1 Safe mode
+1. [ ] 🔴 `/wa safemode` : l'interface se recharge, aucune aura ne s'affiche, ligne « Safe mode: ... » dans le chat,
+   aucune erreur Lua, y compris avec une aura à code personnalisé.
+2. [ ] `/wa` s'ouvre, une aura se modifie et se supprime sans erreur.
+3. [ ] 🔴 `/wa safemode` à nouveau : rechargement, les auras reviennent et leur code tourne. Même chose avec un
+   simple `/reload` depuis le safe mode.
+
+### 17.2 Médias et chargement
+4. [ ] Importer une aura qui nomme une police ou une texture d'un addon absent (SharedMedia désactivé) : ligne dorée
+   « Media missing from your addons... » avec le type et le nom ; l'aura s'affiche avec la police par défaut.
+   Une aura aux médias du jeu : aucune ligne.
+5. [ ] 🔴 Option de chargement « AddOn Loaded » à `Details` (ou un addon installé) : l'aura se charge ; nom d'un
+   addon absent : elle ne se charge pas ; `Details, Absent` : elle ne se charge pas.
+6. [ ] Addon chargé à la demande (`/run C_AddOns.LoadAddOn("Blizzard_...")`, dossier mis dans l'option) : l'aura se
+   charge sans `/reload`.
+
+### 17.3 Commandes
+7. [ ] 🔴 `/wa report` hors combat : fenêtre titrée « Musca Auras Diagnostic Report », versions, nombre d'auras,
+   addons chargés, auras à avertissement ; aucun nom de personnage, de royaume ni de guilde. Ctrl+A, Ctrl+C :
+   le texte se colle.
+8. [ ] `/wa pstart`, `/wa pstop`, `/wa pprint` après `/wa report` : titre « Musca Auras Profiling Report ».
+9. [ ] `/wa report` et `/wa packcheck` en combat : ligne « Type this command again after combat. ».
+10. [ ] 🔴 HUD de classe installé, `/wa packcheck` : ligne de bilan, puis les sorts non appris (talents non pris,
+    rangs au-dessus du niveau). Sans aura de pack : « No class pack aura is installed. ».
+11. [ ] `/wa help` : lignes safemode, report, packcheck, pcancel, pshow, ff.
+Libellés : la fiche cite l'anglais. Client français : « Mode sans échec », « Rapport de diagnostic Musca Auras »,
+« Retapez cette commande après le combat. ».
+
+### 17.4 Non-régression
+12. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
+
 ---
 
 # 4. Résultats reçus et prompt de fin

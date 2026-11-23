@@ -17,6 +17,15 @@ function Private.IsSecret(...)
   return false
 end
 
+-- Small helpers shared by the secret aura files, kept here so that they have one definition.
+function Private.IsTable(value)
+  return type(value) == "table"
+end
+
+function Private.Round(value)
+  return math.floor(value + 0.5)
+end
+
 -- Last readable UnitIsUnit answer per ordered pair of plain unit tokens, given back while the client
 -- keeps the comparison secret.
 local knownUnitComparisons = {}

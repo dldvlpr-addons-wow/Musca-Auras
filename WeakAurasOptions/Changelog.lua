@@ -4,14 +4,25 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.20.0',
-  dateString = '2026-11-22',
+  versionString = '1.21.0',
+  dateString = '2026-11-23',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- New: /wa mute turns the sounds of every aura off or on, also with the "Mute" box of the /wa window
-- New: /wa toggle pauses or resumes every aura, /wa welcome shows the welcome window again
-- The Packs page shows the number of auras of the HUD, of each block and of each utility pack
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.20.0 (2026-11-22):
+- New: /wa safemode pauses every aura and runs no custom code, to find an aura that breaks your UI
+- New: /wa report shows a diagnostic report to paste into a bug report, /wa packcheck lists the pack spells you do not know
+- New load option "AddOn Loaded", and the import lists the fonts and textures you do not have
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.21.0 (2026-11-23):
+
+New:
+
+- /wa safemode reloads the UI with every aura paused and no custom code run, to find an aura that breaks your UI. Type it again, or /reload, to leave
+- /wa report shows a diagnostic report to copy into a bug report. It holds no character, realm or guild name
+- /wa packcheck lists the spells of your class pack auras that your character does not know
+- New load option "AddOn Loaded": the aura loads only when the named addons are loaded
+- Importing an aura that uses a font, border, background or bar texture you do not have lists it, and the aura shows the default one instead
+- /wa help lists every command, pcancel, pshow and ff included
+
+1.20.0 (2026-11-22):
 
 New:
 

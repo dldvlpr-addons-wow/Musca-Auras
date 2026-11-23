@@ -1496,3 +1496,5 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["You have no aura yet. Install a ready-made pack, read the guide, or import a string."] = "Du hast noch keine Aura. Installiere ein fertiges Paket, lies den Leitfaden oder importiere eine Zeichenkette."
 	L["Guide"] = "Leitfaden"
 
+
+L["Media missing from your addons, replaced by the default one:"] = "Medien, die in deinen Addons fehlen, durch die Standardmedien ersetzt:"

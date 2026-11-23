@@ -1006,6 +1006,7 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Spell Set"] = "法術組"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "由自訂程式碼透過 WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }) 設定的法術列表名稱。其法術 ID 會加到上面的法術 ID 中。在沒有設定該名稱的列表時，觸發器只使用上面的法術 ID。"
 	L["Mute"] = "靜音"
+	L["Media missing from your addons, replaced by the default one:"] = "你的插件中缺少的媒體，已替換為預設媒體："
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "勾選後，任何光環都不會播放音效或語音。光環本身不會被修改。"
 	L["%s (1 aura)"] = "%s（1 個光環）"
 	L["%s (%d auras)"] = "%s（%d 個光環）"

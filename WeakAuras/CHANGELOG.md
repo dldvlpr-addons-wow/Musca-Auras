@@ -1,3 +1,18 @@
+# Musca Auras 1.21.0 (2026-11-23)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- `/wa safemode` reloads the UI with every aura paused and no custom code run, to find an aura that breaks your
+  UI. Type it again, or `/reload`, to leave.
+- `/wa report` shows a diagnostic report to copy into a bug report. It holds no character, realm or guild name.
+- `/wa packcheck` lists the spells of your class pack auras that your character does not know.
+- New load option "AddOn Loaded": the aura loads only when the named addons are loaded.
+- Importing an aura that uses a font, border, background or bar texture you do not have lists it, and the aura
+  shows the default one instead.
+- `/wa help` lists every command, `pcancel`, `pshow` and `ff` included.
+
 # Musca Auras 1.20.0 (2026-11-22)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

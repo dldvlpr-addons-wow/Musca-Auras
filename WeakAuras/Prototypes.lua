@@ -889,6 +889,17 @@ function WeakAuras.ValidateNumericOrPercent(info, val)
   return true
 end
 
+-- Load option "AddOn Loaded": true when every comma separated addon name is loaded.
+function Private.ExecEnv.AreAddOnsLoaded(input)
+  for name in tostring(input or ""):gmatch("[^,]+") do
+    name = name:match("^%s*(.-)%s*$")
+    if name ~= "" and not C_AddOns.IsAddOnLoaded(name) then
+      return false
+    end
+  end
+  return true
+end
+
 function Private.ExecEnv.CheckMPlusAffixIds(loadids, currentId)
   if (not loadids or not currentId) or type(currentId) ~= "table" then
     return false
@@ -1709,6 +1720,15 @@ Private.load_prototype = {
       multiline = true,
       test = "WeakAuras.IsBossModEnabled(wantedEncounters)",
       preamble = "local wantedEncounters = Private.ExecEnv.EncounterIdSet(%q)",
+    },
+    {
+      name = "addonLoaded",
+      display = L["AddOn Loaded"],
+      type = "string",
+      desc = L["Folder name of the addon in the AddOns folder. Several names separated by commas: all must be loaded."],
+      test = "Private.ExecEnv.AreAddOnsLoaded(%q)",
+      events = {"ADDON_LOADED"},
+      optional = true,
     },
     {
       name = "size",

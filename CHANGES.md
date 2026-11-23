@@ -62,6 +62,44 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-23
+
+Tests `Tests/run.lua` (137 scenarios, 0 failed). Not tested in game yet.
+
+### Added
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/AuraEnvironment.lua`: `/wa safemode` reloads the UI with every aura paused
+  and no custom code run: `WeakAuras.LoadFunction` returns nil while `Private.safeMode` is set. A chat line at
+  login says how to leave. The flag (`WeakAurasSaved.safeMode`) is read and cleared at `ADDON_LOADED`, so safe
+  mode lasts one session at most: `/wa safemode` again, or any `/reload`, leaves it.
+- `WeakAurasOptions/OptionsFrames/Update.lua`: the import view lists in gold the fonts, borders, backgrounds and
+  bar textures that the imported auras name and that no installed addon registers in LibSharedMedia. The aura
+  shows the default media in their place.
+- `WeakAuras/Prototypes.lua`: load option "AddOn Loaded": the folder names of one or more addons, separated by
+  commas; the aura loads only when all of them are loaded (`Private.ExecEnv.AreAddOnsLoaded`). `WeakAuras.lua`
+  registers `ADDON_LOADED` on the load frame, so an addon loaded on demand loads the aura.
+- `WeakAuras/WeakAuras.lua`, `WeakAuras/AuraWarnings.lua`, `WeakAuras/Profiling.lua`: `/wa report` shows a copyable
+  report: Musca version, client version, build, interface and locale, class and level, aura count (paused, safe
+  mode), loaded addons with their version, and the auras with a warning (`Private.AuraWarnings.ListWarnings`). It
+  holds no character, realm or guild name. It uses the profiling report window, whose title is set by each
+  command.
+- `.github/ISSUE_TEMPLATE/bug_report.md`: bug report template that asks for the `/wa report` text.
+- `WeakAuras/WeakAuras.lua`: `/wa packcheck` lists, for the installed class pack auras (uid built by
+  `Tests/Packs/PackBuilder.lua`), the spells of the cooldown and usable triggers and of the "Spell Known" load
+  option that the character does not know, told apart as "not learned" or "unknown to the game client". Aura
+  spell IDs (buffs, debuffs) are not checked.
+- `WeakAuras/WeakAuras.lua`: `/wa report` and `/wa packcheck` wait for the end of combat. `/wa help` lists
+  `safemode`, `report`, `packcheck`, and the existing `pcancel`, `pshow` and `ff`.
+
+### Changed
+- `WeakAuras/SecretRestrictions.lua`, `WeakAuras/SecretAuraAppearance.lua`, `WeakAuras/SecretAuraSingle.lua`,
+  `WeakAuras/SecretAuraSingleLearning.lua`, `WeakAuras/SecretAuraConditions.lua`: one set of helpers for secret
+  values, `Private.IsSecret`, `Private.IsTable` and `Private.Round`; the local copies point to them and
+  `Shared.IsSecret` is removed. `FirstProblem`, `SameValue` and `ReadLevel` keep their per-file versions: their
+  behavior differs between files.
+
+### Changed (documents)
+- `GUIDE.md`: `/wa safemode`, `/wa report` and `/wa packcheck` in the command table.
+
 ## 2026-11-21
 
 Tests `Tests/Scenarios/108_LocaleKeysExist.lua` and `Tests/Scenarios/88_PackLibrary.lua` (aura counts). Not tested

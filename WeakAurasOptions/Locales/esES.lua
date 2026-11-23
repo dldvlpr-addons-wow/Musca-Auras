@@ -968,6 +968,7 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Spell Set"] = "Conjunto de hechizos"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "Nombre de una lista de hechizos definida por código personalizado con WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Sus ID de hechizo se añaden a los de arriba. Mientras no haya ninguna lista con este nombre, el activador solo usa los ID de hechizo de arriba."
 	L["Mute"] = "Silenciar"
+	L["Media missing from your addons, replaced by the default one:"] = "Recursos que faltan en tus addons, sustituidos por el predeterminado:"
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Ninguna aura reproduce un sonido ni habla mientras esto esté marcado. Las auras no se modifican."
 	L["%s (1 aura)"] = "%s (1 aura)"
 	L["%s (%d auras)"] = "%s (%d auras)"

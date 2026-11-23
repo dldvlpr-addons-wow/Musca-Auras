@@ -28,9 +28,7 @@ local function Each(list)
   return ipairs(list or {})
 end
 
-local function IsTable(value)
-  return type(value) == "table"
-end
+local IsTable = Private.IsTable
 
 local function Slot(owner, field)
   local held = owner[field]

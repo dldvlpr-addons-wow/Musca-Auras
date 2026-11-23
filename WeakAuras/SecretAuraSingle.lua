@@ -37,12 +37,12 @@ end
 local FRIENDLY_CATEGORIES = KeySet({ "player", "pet", "group", "party", "raid" })
 local HOSTILE_CATEGORIES = KeySet({ "boss", "arena" })
 
-local function IsTable(value) return type(value) == "table" end
-local function IsSecret(value) return issecretvalue ~= nil and issecretvalue(value) == true end
+local IsTable = Private.IsTable
+local IsSecret = Private.IsSecret
 local function ReadableNumber(value) return type(value) == "number" and not IsSecret(value) end
 local function Paint(color, caption) return color .. caption .. "|r" end
 local function Clear(list) for slotKey in pairs(list) do list[slotKey] = nil end end
-local function Round(value) return math.floor(value + 0.5) end
+local Round = Private.Round
 local function Tenth(value) return Round(value * 10) / 10 end
 
 local function ToFinite(value)
@@ -302,7 +302,6 @@ Shared.GLOW_SPEED = GLOW_SPEED
 Shared.GOOD = GOOD
 Shared.HOSTILE_CATEGORIES = HOSTILE_CATEGORIES
 Shared.HasWindow = HasWindow
-Shared.IsSecret = IsSecret
 Shared.IsTable = IsTable
 Shared.KEEP_WHEN_LIMITED = KEEP_WHEN_LIMITED
 Shared.LIST_GROUP = LIST_GROUP

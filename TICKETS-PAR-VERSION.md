@@ -1,6 +1,6 @@
 # Tickets par version
 
-Établi le 2026-10-27, reclassé le 2026-11-21. 85 tickets : 60 livrés (1.15 à 1.20), 1 clos sans développement (Dette 5), 1 écarté (Rebranding 9), 23 à faire (1.21 à 1.29). L'avancement est dans la section « Déjà fait » de chaque version sortie.
+Établi le 2026-10-27, reclassé le 2026-11-21. 85 tickets : 66 livrés (1.15 à 1.21), 1 clos sans développement (Dette 5), 1 écarté (Rebranding 9), 17 à faire (1.22 à 1.29). L'avancement est dans la section « Déjà fait » de chaque version sortie.
 
 Séries :
 - « Packs » : compléments des packs de classe (8, livrés) ;
@@ -35,7 +35,7 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 | 1.18.1, 1.18.2 | 2026-11-15, 2026-11-16 | Correctifs du trigger Cooldown | Hors ticket |
 | 1.19 | 2026-11-18 | Auras cliquables | Dette 4, Populaire 11 |
 | 1.20 | 2026-11-22 | Accueil et commandes | Outils 1, 3, Accueil 2, 1, 3, 4, Populaire 1, 10 |
-| 1.21 | à faire | Fiabilité et diagnostic | Dette 3, Populaire 5, 3, 2, Outils 2, 4 |
+| 1.21 | 2026-11-23 | Fiabilité et diagnostic | Dette 3, Populaire 5, 3, 2, Outils 2, 4 |
 | 1.22 | à faire | Édition d'auras | Populaire 4, 6, Placement 7 |
 | 1.23 | à faire | Sauvegardes | Outils 5, 6 |
 | 1.24 | à faire | Groupes dynamiques et annonce de version | Populaire 7, Outils 7 |
@@ -1860,6 +1860,8 @@ jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 16, OK le 2026-11-22.
 
 ## 1.21 : fiabilité et diagnostic
 
+Sortie le 2026-11-23 (1.21.0).
+
 Un seul M (Populaire 5), le reste S ou S à M. Dette 5 est close sans développement : voir « Clos sans développement ». Outils 2 et Outils 4 ajoutent deux commandes de diagnostic.
 
 ### Ordre
@@ -1870,6 +1872,29 @@ Un seul M (Populaire 5), le reste S ou S à M. Dette 5 est close sans développe
 4. Populaire 2 : Condition de chargement « AddOn chargé »
 5. Outils 2 : `/wa report`, rapport de diagnostic à copier
 6. Outils 4 : `/wa packcheck`, sorts de pack absents du grimoire
+
+### Déjà fait
+
+Entrée du 2026-11-23 de `CHANGES.md`. Les six tickets sont codés, banc headless à 137 scénarios, 0 échec. Non testé
+en jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 17.
+
+- Dette 3 : `Private.IsSecret`, `Private.IsTable`, `Private.Round` partagés, `Shared.IsSecret` retiré. Écart avec le
+  ticket : `FirstProblem`, `SameValue` et `ReadLevel` restent par fichier, leurs comportements diffèrent (liste de
+  fonctions ou de paires, comparaison profonde ou par index, nil ou 0 sur un secret).
+- Populaire 5 : `/wa safemode`, `LoadFunction` rend nil, aucune aura reprise au login, ligne de chat. Le drapeau est
+  effacé au chargement : une session au plus.
+- Populaire 3 : médias LSM absents listés en doré dans la vue d'import.
+- Populaire 2 : option de chargement « AddOn Loaded », noms séparés par des virgules, rescan sur `ADDON_LOADED`.
+- Outils 2 : `/wa report` dans la fenêtre du profilage, gabarit `.github/ISSUE_TEMPLATE/bug_report.md`, ligne du
+  Guide.
+- Outils 4 : `/wa packcheck`, auras reconnues par le préfixe d'uid de `PackBuilder.lua`, triggers de sort et option
+  « Spell Known » ; les ID d'auras (buffs, débuffs) ne sont pas vérifiés.
+- En plus : `/wa help` liste `pcancel`, `pshow` et `ff`, déjà présentes.
+
+### Reste ouvert
+
+- Tout est à voir en jeu, en particulier la reprise normale après `/wa safemode` et le rescan d'une aura « AddOn
+  Loaded » sur un addon chargé à la demande.
 
 ---
 

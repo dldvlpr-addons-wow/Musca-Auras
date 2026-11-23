@@ -247,6 +247,109 @@ function WeakAuras.ImportClassPack()
   return failure == nil
 end
 
+-- /wa report: what a bug report needs, in a window to copy. No character, realm nor guild name.
+local function ShowDiagnosticReport()
+  local version, build, _, interface = GetBuildInfo()
+  local _, class = UnitClass("player")
+  local lines = {
+    "Musca Auras " .. tostring(C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")),
+    ("Client: %s (%s), interface %s, %s"):format(tostring(version), tostring(build), tostring(interface), GetLocale()),
+    ("Class: %s, level %s"):format(tostring(class), tostring(UnitLevel("player"))),
+  }
+  local auraCount = 0
+  for _ in pairs(Private.db.displays) do
+    auraCount = auraCount + 1
+  end
+  lines[#lines + 1] = ("Auras: %d%s%s"):format(auraCount, WeakAuras.IsPaused() and ", paused" or "",
+    Private.safeMode and ", safe mode" or "")
+
+  local addons = {}
+  for index = 1, C_AddOns.GetNumAddOns() do
+    local name = C_AddOns.GetAddOnInfo(index)
+    if C_AddOns.IsAddOnLoaded(index) then
+      addons[#addons + 1] = ("%s %s"):format(name, C_AddOns.GetAddOnMetadata(index, "Version") or "")
+    end
+  end
+  table.sort(addons)
+  lines[#lines + 1] = ""
+  lines[#lines + 1] = ("Loaded addons (%d):"):format(#addons)
+  for _, addon in ipairs(addons) do
+    lines[#lines + 1] = "  " .. addon
+  end
+
+  local warningLines = Private.AuraWarnings.ListWarnings()
+  lines[#lines + 1] = ""
+  lines[#lines + 1] = ("Auras with a warning (%d):"):format(#warningLines)
+  for _, line in ipairs(warningLines) do
+    lines[#lines + 1] = "  " .. line
+  end
+
+  local popup = WeakAurasProfilingReport
+  popup:ClearAllPoints()
+  popup:SetParent(UIParent)
+  popup:SetPoint("CENTER")
+  popup:ClearText()
+  popup:AddText(table.concat(lines, "|n"))
+  popup:Show()
+  -- The window is shared with /wa pprint, which sets its own title back.
+  popup:SetTitle(L["Musca Auras Diagnostic Report"])
+end
+
+-- /wa packcheck: the spells of the installed class pack auras that the character does not know. A pack aura has
+-- a uid built by Tests/Packs/PackBuilder.lua: "mc", the class, "V" and the pack version. Aura spell IDs (buffs,
+-- debuffs) are not checked: only cooldown and usable triggers, and the "Spell Known" load option.
+local function PrintPackCheck()
+  local lines, checked, packAuras = {}, 0, 0
+  local seen
+  -- Same rule as the load check: a rank 1 ID counts as known through the spell name unless the field is exact.
+  local function Check(data, spell, exact)
+    local spellId = tonumber(spell)
+    -- A pack aura often names the same spell in its trigger and in its "Spell Known" load option.
+    if not spellId or seen[spellId] then
+      return
+    end
+    seen[spellId] = true
+    checked = checked + 1
+    if WeakAuras.IsSpellKnownForLoad(spellId, exact) or WeakAuras.IsSpellKnownIncludingPet(spellId) then
+      return
+    end
+    local info = C_Spell.GetSpellInfo(spellId)
+    if info and info.name then
+      lines[#lines + 1] = L["%s: %d %s, not learned"]:format(data.id, spellId, info.name)
+    else
+      lines[#lines + 1] = L["%s: %d, unknown to the game client"]:format(data.id, spellId)
+    end
+  end
+  for _, data in pairs(Private.db.displays) do
+    if type(data.uid) == "string" and data.uid:match("^mc%a+V%d") then
+      packAuras = packAuras + 1
+      seen = {}
+      for _, triggerData in ipairs(data.triggers or {}) do
+        local trigger = triggerData.trigger
+        if trigger and trigger.type == "spell" then
+          Check(data, trigger.spellName, trigger.use_exact_spellName)
+        end
+      end
+      local load = data.load
+      if load and load.use_spellknown then
+        Check(data, load.spellknown, load.use_exact_spellknown)
+      end
+    end
+  end
+  if packAuras == 0 then
+    prettyPrint(L["No class pack aura is installed."])
+    return
+  end
+  table.sort(lines)
+  prettyPrint(L["Class pack check: %d spell(s) checked, %d not known."]:format(checked, #lines))
+  for _, line in ipairs(lines) do
+    print("  " .. line)
+  end
+  if #lines > 0 then
+    prettyPrint(L["A talent spell you have not taken, or a rank above your level, shows as not learned."])
+  end
+end
+
 function Private.PrintHelp()
   print(L["Usage:"])
   print(L["/wa help - Show this message"])
@@ -254,6 +357,7 @@ function Private.PrintHelp()
   print(L["/wa toggle - Pause or resume every aura"])
   print(L["/wa mute - Turn the sounds of every aura off or on"])
   print(L["/wa welcome - Show the welcome window again"])
+  print(L["/wa safemode - Reload the UI with every aura paused and no custom code run. Type it again to leave"])
   print(L["/wa tutorial - Guide: learn everything about Musca Auras on WoW Forever, with auras to import"])
   if C_CooldownViewer then
     print(L["/wa cdm - Show or hide the Blizzard Cooldown Manager"])
@@ -261,12 +365,17 @@ function Private.PrintHelp()
   print(L["/wa pstart - Start profiling. Optionally include a duration in seconds after which profiling automatically stops. To profile the next combat/encounter, pass a \"combat\" or \"encounter\" argument."])
   print(L["/wa pstop - Finish profiling"])
   print(L["/wa pprint - Show the results from the most recent profiling"])
+  print(L["/wa pcancel - Cancel a profiling planned for the next combat or encounter"])
+  print(L["/wa pshow - Show or hide the profiling window"])
+  print(L["/wa ff - List the optional features, or turn one on or off"])
   print(L["/wa paura <aura name> - Show the cost of one aura in the most recent profiling"])
   print(L["/wa pslow [ms] - Report every frame slower than ms (30 by default), with the auras that ran in it. Type it again to stop"])
   print(L["/wa loadcost - Time a full load scan and the memory it uses"])
   print(L["/wa modern [aura name] - List the auras with an Aura Modern trigger, or show what one tracks"])
   print(L["/wa cdm <aura name> - Show what the Cooldown Manager trigger of an aura tracks"])
   print(L["/wa repair - Repair tool"])
+  print(L["/wa report - Show a diagnostic report to copy into a bug report"])
+  print(L["/wa packcheck - List the spells of your class pack auras that your character does not know"])
   print(L["/wa unlock - Place your auras on the screen: move, resize, anchor them to each other"])
   print(L["/wa demo [aura name] - Show every loaded aura, or one aura, with sample timers to set up your layout"])
   print(L["/wa backups - List the daily copies of your auras"])
@@ -306,11 +415,17 @@ function SlashCmdList.WEAKAURAS(input)
     -- The open options and the placement mode keep the auras paused.
     if WeakAuras.IsOptionsOpen() then
       prettyPrint(L["Close the options or the placement mode to pause or resume the auras."])
+    elseif Private.safeMode then
+      prettyPrint(L["Safe mode: every aura is paused and no custom code runs. Fix or delete the faulty aura in /wa, then type /wa safemode to leave safe mode."])
     else
       WeakAuras.Toggle()
     end
   elseif msg == "mute" then
     WeakAuras.ToggleSoundsMuted()
+  elseif msg == "safemode" then
+    -- The flag lasts one login: typed again in safe mode, the reload starts normally.
+    Private.db.safeMode = not Private.safeMode or nil
+    ReloadUI()
   elseif msg == "welcome" then
     if not Private.ShowWelcome() then
       prettyPrint(L["The welcome window can't open now. Close a popup, then type /wa welcome again."])
@@ -341,6 +456,14 @@ function SlashCmdList.WEAKAURAS(input)
       local memory, start = collectgarbage("count"), debugprofilestop()
       Private.ScanForLoads(nil, "SCAN_ALL")
       prettyPrint(L["Load scan: %.1fms, %.0f KB of memory."]:format(debugprofilestop() - start, collectgarbage("count") - memory))
+    end
+  elseif msg == "report" or msg == "packcheck" then
+    if InCombatLockdown() then
+      prettyPrint(L["Type this command again after combat."])
+    elseif msg == "report" then
+      ShowDiagnosticReport()
+    else
+      PrintPackCheck()
     end
   elseif msg == "help" then
     Private.PrintHelp();
@@ -1643,7 +1766,10 @@ function Private.Login(takeNewSnapshots)
     coroutine.yield(0.5, "login register load events");
     Private.RegisterLoadEvents();
     coroutine.yield(50, "login resume");
-    Private.Resume();
+    -- Safe mode stays paused; /wa toggle resumes the auras, still without custom code.
+    if not Private.safeMode then
+      Private.Resume();
+    end
     coroutine.yield(10, "login run callbacks");
 
     local nextCallback = loginQueue[1];
@@ -1719,6 +1845,10 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
       db.lastLoadedDate = db.lastLoadedDate or {}
       db.loadTrackingSince = db.loadTrackingSince or time()
 
+      -- Read before any aura loads, cleared at once so that the next login is a normal one.
+      Private.safeMode = db.safeMode or nil
+      db.safeMode = nil
+
       Private.SyncParentChildRelationships();
       local isFirstUIDValidation = db.dbVersion == nil or db.dbVersion < 26;
       Private.ValidateUniqueDataIds(isFirstUIDValidation);
@@ -1746,6 +1876,9 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
     else
       -- db has same version as code, can commit to login
       dbIsValid = true
+    end
+    if Private.safeMode then
+      prettyPrint(L["Safe mode: every aura is paused and no custom code runs. Fix or delete the faulty aura in /wa, then type /wa safemode to leave safe mode."])
     end
     if dbIsValid then
       Private.Login(takeNewSnapshots)
@@ -2295,6 +2428,8 @@ loadFrame:RegisterEvent("PLAYER_UNGHOST")
 loadFrame:RegisterEvent("PARTY_LEADER_CHANGED")
 loadFrame:RegisterEvent("PLAYER_MOUNT_DISPLAY_CHANGED")
 loadFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
+-- Load option "AddOn Loaded": an addon loaded on demand after login.
+loadFrame:RegisterEvent("ADDON_LOADED")
 
 
 -- The end of combat fires PLAYER_REGEN_ENABLED and several restriction changes in the same frame:
@@ -2401,6 +2536,10 @@ local function UnloadAll()
 end
 
 function Private.Resume()
+  -- /wa safemode: closing the options or /wa toggle must not run the auras again.
+  if Private.safeMode then
+    return
+  end
   paused = false;
 
   local suspended = Private.PauseAllDynamicGroups()

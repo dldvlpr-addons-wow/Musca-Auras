@@ -129,6 +129,65 @@ local function compatibilityReport(auras, codes)
   return lines
 end
 
+local MEDIA_TYPE_LABELS = {
+  font = L["Font"],
+  border = L["Border"],
+  background = L["Background"],
+  statusbar = L["Bar Texture"],
+}
+
+-- Media type of a saved field that holds a LibSharedMedia name.
+local function mediaTypeOfField(key, data)
+  if key == "border_edge" or key == "borderEdge" then
+    return "border"
+  elseif key == "borderBackdrop" then
+    return "background"
+  elseif key == "text_font" or key:find("[Ff]ont$") then
+    return "font"
+  elseif key == "texture" and data.regionType == "aurabar" then
+    return "statusbar"
+  end
+end
+
+local function isMediaKnown(media, mediaType, name)
+  if mediaType == "statusbar" and media:IsValid("statusbar_atlas", name) then
+    return true
+  end
+  return media:IsValid(mediaType, name)
+end
+
+-- Fills missing[mediaType .. ": " .. name] for each LibSharedMedia name of the aura that no loaded addon
+-- registers. File paths, IDs and "None" are not names.
+local function collectMissingMedia(missing, media, data, node, depth)
+  if depth > 8 then return end
+  for key, value in pairs(node) do
+    if type(value) == "table" then
+      collectMissingMedia(missing, media, data, value, depth + 1)
+    elseif type(key) == "string" and type(value) == "string" then
+      local mediaType = mediaTypeOfField(key, data)
+      if mediaType and value ~= "" and value ~= "None" and not value:find("[/\\]") and not tonumber(value)
+         and not isMediaKnown(media, mediaType, value) then
+        missing[MEDIA_TYPE_LABELS[mediaType] .. ": " .. value] = true
+      end
+    end
+  end
+end
+
+local function missingMediaLines(auras)
+  local media = LibStub("LibSharedMedia-3.0", true)
+  if not media then return {} end
+  local missing = {}
+  for _, data in ipairs(auras) do
+    collectMissingMedia(missing, media, data, data, 0)
+  end
+  local lines = {}
+  for line in pairs(missing) do
+    tinsert(lines, line)
+  end
+  table.sort(lines)
+  return lines
+end
+
 local function scamCheck(codes, data)
   for i, v in ipairs(data.triggers) do
     checkTrigger(codes, L["%s - %i. Trigger"]:format(data.id, i), v.trigger, v.untrigger);
@@ -1747,6 +1806,17 @@ local methods = {
       flavorWarning:SetText(L["This aura was created with a different version (%s) of World of Warcraft.\nIt might not work correctly!"]:format(OptionsPrivate.Private.TocToExpansion[importBuild] or L["Unknown"]))
       flavorWarning:SetColor(1, 0, 0)
       self:AddChild(flavorWarning)
+    end
+
+    local missingMedia = missingMediaLines({data, unpack(children or {})})
+    if #missingMedia > 0 then
+      self:AddChild(AceGUI:Create("WeakAurasSpacer"))
+      local missingMediaText = AceGUI:Create("Label")
+      missingMediaText:SetFontObject(GameFontHighlight)
+      missingMediaText:SetFullWidth(true)
+      missingMediaText:SetText(L["Media missing from your addons, replaced by the default one:"] .. "\n" .. table.concat(missingMedia, "\n"))
+      missingMediaText:SetColor(1, 0.82, 0)
+      self:AddChild(missingMediaText)
     end
 
     local compatibilityLines = compatibilityReport({data, unpack(children or {})}, scamCheckResult)

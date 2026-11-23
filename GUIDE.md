@@ -636,6 +636,9 @@ Not converted: TimelineParser triggers, `ForeverAuras.AuraOverlay` calls (rewrit
 | `/wa modern [aura]` | Lists the auras with an Aura (Modern) trigger, or shows what one tracks right now. |
 | `/wa cdm <aura>` | Shows what the Cooldown Manager trigger of an aura tracks right now. |
 | `/wa repair` | Repairs a broken saved variables file. |
+| `/wa safemode` | Reloads the UI with every aura paused and no custom code run, to find a faulty aura. Type it again to leave. The next `/reload` leaves it too. |
+| `/wa report` | Shows a diagnostic report (versions, aura count, loaded addons, aura warnings) to copy into a bug report (out of combat). It holds no character, realm or guild name. |
+| `/wa packcheck` | Lists the spells of your class pack auras that your character does not know (out of combat). A talent you have not taken shows as not learned. |
 
 **My aura does not show.**
 

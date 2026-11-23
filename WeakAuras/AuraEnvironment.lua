@@ -814,6 +814,10 @@ local function_cache_custom = CreateFunctionCache(exec_env_custom)
 local function_cache_builtin = CreateFunctionCache(exec_env_builtin)
 
 function WeakAuras.LoadFunction(string, id)
+  -- /wa safemode: no custom code is compiled during this session.
+  if Private.safeMode then
+    return nil
+  end
   return function_cache_custom:Load(string, id)
 end
 

@@ -111,6 +111,7 @@ local L = WeakAuras.L
 	L["Guide"] = "Guide"
 	L["Left Edges"] = "Bords gauches"
 	L["Mute"] = "Muet"
+	L["Media missing from your addons, replaced by the default one:"] = "Médias absents de vos addons, remplacés par celui par défaut :"
 	L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."] = "Demande au moins deux auras de même point d'ancrage sur l'écran, un cadre ou la souris, ni groupes ni dans un groupe qui place ses enfants."
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Aucune aura ne joue de son ni ne parle tant que cette case est cochée. Les auras ne sont pas modifiées."
 	L["Out of the aura set of this character: %s"] = "Hors du jeu d'auras de ce personnage : %s"

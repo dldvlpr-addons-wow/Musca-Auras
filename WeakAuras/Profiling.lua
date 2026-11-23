@@ -548,6 +548,8 @@ function WeakAuras.PrintProfile()
   end
 
   popup:Show()
+  -- /wa report shares this window and changes its title.
+  popup:SetTitle(L["Musca Auras Profiling Report"])
 end
 
 WeakAurasProfilingLineMixin = {

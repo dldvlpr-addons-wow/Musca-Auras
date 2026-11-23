@@ -39,9 +39,7 @@ Display.supportedElements = {
   subglow = true, subtexture = true, subcdmdispel = true, subcdmdispelborder = true,
 }
 
-local function IsSecret(value)
-  return issecretvalue ~= nil and issecretvalue(value) and true or false
-end
+local IsSecret = Private.IsSecret
 
 local function Copy(value)
   if type(value) ~= "table" then return value end
@@ -55,9 +53,7 @@ local function ColorValues(color, fallback)
   return color[1], color[2], color[3], color[4] or 1
 end
 
-local function Round(value)
-  return math.floor(value + 0.5)
-end
+local Round = Private.Round
 
 local function Hide(object)
   if object then object:Hide() end
