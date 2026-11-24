@@ -98,6 +98,16 @@ Dans `/wa`, onglet **Load** d'une aura simple toujours visible, cocher « AddOn 
 3. [ ] Une aura à avertissement (par exemple une fonction supprimée dans son code) garde son avertissement dans
    `/wa`.
 
+## 8. Packs et `/wa unlock` (ajouts du 2026-11-24)
+
+- [ ] Connexion : la popup « Update <Classe> HUD » s'affiche sur un perso qui a le HUD. Mise à jour faite.
+- [ ] Gnome prêtre : icônes Eureka!, Confounding Flash et Contingency Plan présentes (recharges).
+- [ ] Gnome d'une autre classe : Eureka! présente (ID propre à la classe, trouvé par le nom).
+- [ ] Non-gnome : aucune de ces trois icônes.
+- [ ] Ready Flash : Eureka! flashe dans l'icône « Racials ».
+- [ ] `/wa unlock` : aucune boîte ni aperçu pour les auras d'une autre classe ; une aura « en combat » a sa boîte.
+- [ ] `/wa unlock` : Disable puis Enable sur une boîte, la boîte reste ; Disable puis Revert, la boîte reste.
+
 ## Résultat
 
 - Date du test :

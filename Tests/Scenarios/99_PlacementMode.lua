@@ -1,4 +1,5 @@
--- PlacementMode: /wa unlock. Every aura gets a box, loaded or not, except the children of a dynamic group; the panel
+-- PlacementMode: /wa unlock. Every aura this character can load gets a box, and those disabled during the mode, not
+-- those of another class nor the children of a dynamic group; the panel
 -- types in the placement of the selected aura; Escape closes one layer at a time, then asks to keep the changes;
 -- Discard puts every change back, grow of a dynamic group included; combat suspends the mode with its changes.
 local function Icon(id, load, parent)
@@ -18,6 +19,8 @@ return function(test)
   local saved = { displays = {
     Free = Icon("Free"),
     Never = Icon("Never", { use_never = true }),
+    InCombat = Icon("InCombat", { use_combat = true }),
+    OtherClass = Icon("OtherClass", { use_class = true, class = { single = "MAGE" } }),
     Dyn = {
       id = "Dyn", uid = "Dyn", regionType = "dynamicgroup", internalVersion = 91, controlledChildren = { "DynKid" },
       load = {}, triggers = {}, conditions = {}, actions = { start = {}, finish = {}, init = {} }, subRegions = {},
@@ -64,9 +67,19 @@ return function(test)
   local previews = 0
   local optionsPrivate
   optionsPrivate = {
-    StartPlacementPreview = function(privateTable) optionsPrivate.Private = privateTable; previews = previews + 1 end,
+    -- Paused as the real one: WeakAuras.Add does not scan the loads then.
+    StartPlacementPreview = function(privateTable)
+      optionsPrivate.Private = privateTable
+      privateTable.Pause()
+      previews = previews + 1
+    end,
     -- As the real one: nothing to put back once put back.
-    StopPlacementPreview = function() previews = math.max(previews - 1, 0) end,
+    StopPlacementPreview = function()
+      if previews > 0 then
+        optionsPrivate.Private.Resume()
+      end
+      previews = math.max(previews - 1, 0)
+    end,
     DynamicGroupSelfPoint = function(data) return data.grow == "DOWN" and "TOP" or "BOTTOM" end,
   }
   local directory = test.tocPath:gsub("WeakAuras/WeakAuras.toc$", "WeakAurasOptions/OptionsFrames/")
@@ -79,7 +92,9 @@ return function(test)
   WeakAuras.TogglePlacementMode(private)
   assert(previews == 1, "auras shown as in the options")
   assert(Box("Free") and Box("Dyn"), "boxes for the auras")
-  assert(Box("Never"), "box for an aura not loaded")
+  assert(not Box("Never"), "no box for an aura disabled before the mode, enabled again from /wa")
+  assert(Box("InCombat"), "box for an aura loaded in combat only")
+  assert(not Box("OtherClass"), "no box for an aura of another class")
   assert(not Box("DynKid"), "no box for a child of a dynamic group")
   assert(Box("Free"):GetFrameStrata() == "HIGH", "boxes over the dark screen of the mode")
 
@@ -168,14 +183,15 @@ return function(test)
   Box("Free"):GetScript("OnMouseDown")(Box("Free"), "RightButton")
   assert(choices and private.PlacementBoxes.Selected() == "Free", "right click selects and opens the menu")
   Pick("Disable")
-  assert(WeakAuras.GetData("Free").load.use_never == true, "Disable sets load Never")
+  assert(WeakAuras.GetData("Free").load.use_never == true and Box("Free"), "Disable sets load Never, the box stays")
+  assert(private.loaded.Free == nil, "Disable scans the loads, paused as the mode is")
   Box("Free"):GetScript("OnMouseDown")(Box("Free"), "RightButton")
   assert(choices[4].text == WeakAuras.L["Enable"], "a disabled aura offers Enable")
   Pick("Show in combat")
   assert(WeakAuras.GetData("Free").load.use_combat == true, "Show in combat sets load In Combat")
-  Box("Never"):GetScript("OnMouseDown")(Box("Never"), "RightButton")
+  Box("Free"):GetScript("OnMouseDown")(Box("Free"), "RightButton")
   Pick("Enable")
-  assert(not WeakAuras.GetData("Never").load.use_never, "Enable clears load Never")
+  assert(not WeakAuras.GetData("Free").load.use_never and Box("Free"), "Enable clears load Never, the box stays")
   private.AnchorLinks.ShowChoices = realShowChoices
 
   -- Escape: the link being picked, then the selection, then the question.
@@ -189,12 +205,22 @@ return function(test)
   Escape()
   assert(not popups.WEAKAURAS_PLACEMENT_LEAVE and Box("Free"), "Escape closes the question, the mode stays")
 
+  -- Revert, the mode open: the load fields put back are scanned, the box stays.
+  private.AnchorLinks.ShowChoices = function(list) choices = list end
+  Box("Free"):GetScript("OnMouseDown")(Box("Free"), "RightButton")
+  Pick("Disable")
+  private.AnchorLinks.ShowChoices = realShowChoices
+  assert(private.loaded.Free == nil, "Free disabled before the Revert")
+  private.PlacementBoxes.Revert()
+  assert(private.loaded.Free ~= nil and not WeakAuras.GetData("Free").load.use_never, "Revert scans the loads")
+  assert(Box("Free") and WeakAuras.GetData("Free").xOffset == 10, "Revert keeps the box, puts the aura back")
+
   -- Discard: every change put back.
   StaticPopupDialogs.WEAKAURAS_PLACEMENT_LEAVE.OnAlt()
   dyn = WeakAuras.GetData("Dyn")
   assert(WeakAuras.GetData("Free").xOffset == 10, "Discard puts the aura back")
-  assert(not WeakAuras.GetData("Free").load.use_never and WeakAuras.GetData("Free").load.use_combat == nil
-    and WeakAuras.GetData("Never").load.use_never == true, "Discard puts the load fields back")
+  assert(not WeakAuras.GetData("Free").load.use_never and WeakAuras.GetData("Free").load.use_combat == nil,
+    "Discard puts the load fields back")
   assert(dyn.grow == "UP" and dyn.selfPoint == "TOP" and dyn.space == 2, "Discard puts the group back")
   assert(not Box("Free") and not bar:IsShown() and previews == 0, "mode closed")
 

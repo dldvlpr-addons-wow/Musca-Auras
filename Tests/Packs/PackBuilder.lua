@@ -593,8 +593,10 @@ function Pack.Build(spec)
   end
   -- Racials load on the spell being known: each race sees its own, no race filter needed.
   -- "Known" falls back on the spell name. Forever has a single Berserking racial, 20554.
+  -- Eureka! (gnome, Forever) has one ID per class (1259812 to 1259823): the name fallback finds the player's own.
   for _, racial in ipairs({
     { "Perception", 20600 }, { "Stoneform", 20594 }, { "Shadowmeld", 20580 }, { "Escape Artist", 20589 },
+    { "Eureka!", 1259823 },
     { "Blood Fury", 20572 }, { "Will of the Forsaken", 7744 }, { "Cannibalize", 20577 }, { "War Stomp", 20549 },
     { "Berserking", 20554 },
   }) do

@@ -76,7 +76,8 @@ An aura can have several triggers. In the Trigger tab, choose **All triggers** (
 ### Placing your auras
 
 Type `/wa unlock`, or click **Unlock** at the top of the `/wa` window. The screen darkens under a grid and every
-aura gets a box, loaded or not. Placement mode does not open during combat.
+aura this character can load now gets a box, in-combat auras included. Auras of another class or character get
+none, nor auras disabled before you open it: enable those again from `/wa`. Placement mode does not open during combat.
 
 - Drag a box to move the aura. The children of a dynamic group are placed by their group.
 - The panel of the selected aura sets its X/Y position and its size, and the aura it follows (anchor link). For a

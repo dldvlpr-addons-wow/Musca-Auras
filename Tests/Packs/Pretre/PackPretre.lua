@@ -31,6 +31,8 @@ return Pack.Build({
     { name = "Desperate Prayer", spell = 13908 },
     { name = "Elune's Grace", spell = 2651 },
     { name = "Feedback", spell = 13896 },
+    { name = "Confounding Flash", spell = 1277455 },
+    { name = "Contingency Plan", spell = 1277462 },
   },
   buffs = {
     { name = "Weakened Soul", aura = { 6788 }, kind = "HARMFUL", known = 17 },

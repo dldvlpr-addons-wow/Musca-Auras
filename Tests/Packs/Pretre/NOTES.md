@@ -41,7 +41,7 @@ Source des IDs : `Classes/Priest.md` (DB2 1.60.1.70245).
 - Power Word: Shield : icône de rotation sur la cible, bouclier actif ou recharge (modèle Fojji). Sur soi, le bouclier passe par Defensives ; l'ancien buff « Power Word: Shield » est retiré. Bouclier posé sur soi en se ciblant : visible dans les deux icônes.
 - Weakened Soul sur la cible, de tout lanceur (known 17) ; celui sur soi reste.
 - Debuffs cible ajoutés : Silence 15487, Blackout 15269, Psychic Scream (8122, 8124, 10888, 10890), Shackle Undead (9484, 9485, 10955).
-- Raciaux : Elune's Grace 2651 et Feedback 13896 (recharges), Shadowguard 18137+ et Touch of Weakness 2652+ (buffs).
+- Raciaux : Elune's Grace 2651, Feedback 13896, Confounding Flash 1277455 et Contingency Plan 1277462 (gnome, Forever) (recharges), Shadowguard 18137+ et Touch of Weakness 2652+ (buffs).
 - Weakened Soul sur soi : Approximate Match (`secretApproximate`), posé par PackBuilder sur tout débuff HARMFUL du joueur, car en combat le client exclut ces débuffs des filtres par ID de sort. Le débuff n'apparaît qu'après un premier passage hors combat, qui apprend sa durée. Non vérifié en jeu.
 
 ## Pack 1.15.0 (2026-10-29), à tester en jeu

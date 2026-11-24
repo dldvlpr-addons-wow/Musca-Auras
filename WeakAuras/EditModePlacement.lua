@@ -389,12 +389,16 @@ local function SetLoad(id, field, value)
   if not data then
     return
   end
+  local changed = {}
   for child in Private.TraverseLeafsOrAura(data) do
     RememberPlacement(child)
     Private.TimeMachine:Watch(child)
     child.load[field] = value
     WeakAuras.Add(child)
+    changed[child.id] = true
   end
+  -- WeakAuras.Add skips the load scan while paused (/wa unlock): Private.loaded, which picks the boxes, must follow.
+  Private.ScanForLoads(changed)
   RefreshOptions(id)
   host.OnChange()
 end
@@ -998,6 +1002,7 @@ end
 -- "Revert All Changes" of Blizzard puts the auras moved, resized or linked since the Edit Mode opened or was saved
 -- back too.
 local function RevertMoves()
+  local changed = {}
   for uid, placement in pairs(offsetsBeforeMove) do
     local data = Private.GetDataByUID(uid)
     if data then
@@ -1009,6 +1014,7 @@ local function RevertMoves()
         data.load[field] = placement.load[field]
       end
       WeakAuras.Add(data)
+      changed[data.id] = true
       Private.AddParents(data)
       RefreshOptions(data.id)
       if WeakAuras.UpdateThumbnail then
@@ -1017,6 +1023,8 @@ local function RevertMoves()
     end
   end
   wipe(offsetsBeforeMove)
+  -- As in SetLoad: the load fields put back are scanned, paused or not.
+  Private.ScanForLoads(changed)
   host.OnChange()
 end
 
@@ -1101,6 +1109,8 @@ Private.PlacementBoxes = {
   -- The changes are kept: nothing left to revert.
   Forget = function() wipe(offsetsBeforeMove) end,
   Remember = RememberPlacement,
+  --- The auras of the boxes, as in the Edit Mode: those this character can load, and those disabled since the last save.
+  Ids = editModeHost.Ids,
   Selected = function() return selectedId end,
   Select = Select,
   StartLink = StartLink,

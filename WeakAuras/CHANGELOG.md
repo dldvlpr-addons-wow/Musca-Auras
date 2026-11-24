@@ -1,4 +1,4 @@
-# Musca Auras 1.21.0 (2026-11-23)
+# Musca Auras 1.21.0 (2026-11-24)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
 
@@ -12,6 +12,17 @@ Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://
 - Importing an aura that uses a font, border, background or bar texture you do not have lists it, and the aura
   shows the default one instead.
 - `/wa help` lists every command, `pcancel`, `pshow` and `ff` included.
+
+## Changed
+
+- Class packs: every class gets the gnome racial Eureka!, and the priest gets Confounding Flash and Contingency
+  Plan. They show only when your character knows the spell. Ready Flash flashes them too. Click "Update HUD" at
+  login to get them.
+
+## Fixed
+
+- `/wa unlock` no longer shows the auras of your other characters. It shows the auras this character can load, and
+  the auras you disable in it until you save. Enable an aura disabled before from `/wa`.
 
 # Musca Auras 1.20.0 (2026-11-22)
 

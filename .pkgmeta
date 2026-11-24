@@ -16,6 +16,7 @@ ignore:
   - GUIDE.md
   - DESIGN.md
   - "TICKETS-*"
+  - "TESTS-*"
   - SUIVI-BUGS-ET-TESTS.md
   - SUIVI-EVOLUTIONS-PACKS.md
   - "ANALYSE-*"

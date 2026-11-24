@@ -869,8 +869,8 @@ function WeakAuras.IsOptionsOpen()
   end
 end
 
---- Shows every aura, loaded or not, as the options do, without their window: for the placement mode of Musca.
-function OptionsPrivate.StartPlacementPreview(Private)
+--- Shows the auras of ids as the options do, without their window: for the placement mode of Musca.
+function OptionsPrivate.StartPlacementPreview(Private, ids)
   UsePrivate(Private)
   if frame and frame:IsVisible() then
     frame:Hide()
@@ -890,8 +890,9 @@ function OptionsPrivate.StartPlacementPreview(Private)
     OptionsPrivate.Private.personalRessourceDisplayFrame:OptionsOpened()
   end
   local suspended = OptionsPrivate.Private.PauseAllDynamicGroups()
-  for id, data in pairs(db.displays) do
-    if not OptionsPrivate.Private.IsGroupType(data) then
+  for id in pairs(ids) do
+    local data = db.displays[id]
+    if data and not OptionsPrivate.Private.IsGroupType(data) then
       OptionsPrivate.Private.EnsureRegion(id)
       OptionsPrivate.Private.FakeStatesFor(id, true)
     end

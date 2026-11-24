@@ -5,13 +5,13 @@ local AddonName = ...
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
   versionString = '1.21.0',
-  dateString = '2026-11-23',
+  dateString = '2026-11-24',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
 - New: /wa safemode pauses every aura and runs no custom code, to find an aura that breaks your UI
 - New: /wa report shows a diagnostic report to paste into a bug report, /wa packcheck lists the pack spells you do not know
 - New load option "AddOn Loaded", and the import lists the fonts and textures you do not have
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.21.0 (2026-11-23):
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.21.0 (2026-11-24):
 
 New:
 
@@ -21,6 +21,14 @@ New:
 - New load option "AddOn Loaded": the aura loads only when the named addons are loaded
 - Importing an aura that uses a font, border, background or bar texture you do not have lists it, and the aura shows the default one instead
 - /wa help lists every command, pcancel, pshow and ff included
+
+Changed:
+
+- Class packs: every class gets the gnome racial Eureka!, and the priest gets Confounding Flash and Contingency Plan. They show only when your character knows the spell. Ready Flash flashes them too. Click "Update HUD" at login to get them
+
+Fixed:
+
+- /wa unlock no longer shows the auras of your other characters. It shows the auras this character can load, and the auras you disable in it until you save. Enable an aura disabled before from /wa
 
 1.20.0 (2026-11-22):
 

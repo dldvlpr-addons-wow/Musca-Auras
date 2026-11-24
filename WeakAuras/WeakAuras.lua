@@ -626,7 +626,7 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 ---@class WeakAurasSaved
 local db;
 
-local CLASS_PACK_VERSION = "1.17.0"
+local CLASS_PACK_VERSION = "1.21.0"
 -- Version whose new features the "What's new" popup presents once, at the first login after the update.
 local WHATS_NEW_VERSION = "1.18.0"
 

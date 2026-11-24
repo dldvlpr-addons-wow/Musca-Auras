@@ -7,10 +7,10 @@ local OptionsPrivate = select(2, ...)
 
 local L = WeakAuras.L
 
--- Placement mode of Musca (/wa unlock): the screen darkened under a grid, every aura shown with a box, loaded or not,
--- as with the options open. A box is dragged, resized, anchored to another; the panel takes typed values. The bar on
--- top turns the grid and the snap on or off, reverts the changes, quits. Escape closes one layer at a time. Combat
--- suspends the mode, which comes back after it with its changes.
+-- Placement mode of Musca (/wa unlock): the screen darkened under a grid, every aura this character can load shown
+-- with a box, as with the options open. A box is dragged, resized, anchored to another; the panel takes typed values.
+-- The bar on top turns the grid and the snap on or off, reverts the changes, quits. Escape closes one layer at a time.
+-- Combat suspends the mode, which comes back after it with its changes.
 
 local gridSpacing = 32
 -- A stronger line every 4 lines, 128 pixels.
@@ -108,7 +108,7 @@ local function HideInterface()
 end
 
 local function Start(keepChanges)
-  OptionsPrivate.StartPlacementPreview(Private)
+  OptionsPrivate.StartPlacementPreview(Private, host.Ids())
   active, suspended = true, false
   ShowInterface(not keepChanges)
   Boxes().Show(host, keepChanges)
@@ -331,7 +331,11 @@ local function CreateInterface()
         return gridSpacing, centerX, centerY
       end
     end,
-    Ids = function() return WeakAurasSaved.displays end,
+    -- The auras this character can load (in combat only too), and those disabled since the last save to enable them
+    -- again: not those of another class or character.
+    Ids = function()
+      return Boxes().Ids()
+    end,
     OnChange = function()
       if active then
         OptionsPrivate.PlacementPanel.Show(Boxes().Selected())
