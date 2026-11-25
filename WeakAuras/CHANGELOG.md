@@ -1,3 +1,21 @@
+# Musca Auras 1.22.0 (2026-11-25)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## New
+
+- Triggers have a "Trigger Name" field. The name replaces "Trigger 3" in the trigger title, in the conditions and
+  in the icon source list. Leave it empty to keep the number.
+- Custom options (author mode) have a "Visible If" setting: the option shows in user mode only when another option
+  of the same level has the chosen value. Older versions ignore it and show the option.
+- Hold Alt when you drop an aura on the edge of another one, in `/wa` or in `/wa unlock`: the aura gets anchored to
+  it and follows it when it moves.
+- `/wa design` switches the options between the Musca design and the classic WeakAuras design (gold, game fonts,
+  WeakAuras logo). The "Classic design" box of the `/wa` window does the same. Type `/reload` to apply it. The auras do
+  not change.
+- `/wa unlock` bar: pick the border color of the boxes of groups, of auras in a group, of anchored auras and of the
+  other auras. Right-click a color to restore the default. The Edit Mode boxes use the same colors.
+
 # Musca Auras 1.21.0 (2026-11-24)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).

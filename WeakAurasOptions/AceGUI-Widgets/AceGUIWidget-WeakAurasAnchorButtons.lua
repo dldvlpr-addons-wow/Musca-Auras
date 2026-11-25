@@ -22,9 +22,17 @@ local methods = {
     if not tContains(directions, text) then return end
     for direction, button in pairs(self.buttons) do
       if direction == text then
-        button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+        if OptionsPrivate.Private.Style.classic then
+          button.tex:SetVertexColor(0.9, 0.9, 0, 1)
+        else
+          button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+        end
       else
-        button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+        if OptionsPrivate.Private.Style.classic then
+          button.tex:SetVertexColor(0.3, 0.3, 0.3, 1)
+        else
+          button.tex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+        end
       end
       button:SetNormalTexture(button.tex)
     end
@@ -50,12 +58,20 @@ local methods = {
   ["SetDisabled"] = function(self, disabled)
     self.disabled = disabled
     if disabled then
-      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+      if OptionsPrivate.Private.Style.classic then
+        self.label:SetTextColor(0.5,0.5,0.5)
+      else
+        self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
+      end
       for _, button in pairs(self.buttons) do
         button:EnableMouse(false)
       end
     else
-      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      if OptionsPrivate.Private.Style.classic then
+        self.label:SetTextColor(1,.82,0)
+      else
+        self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      end
       for _, button in pairs(self.buttons) do
         button:EnableMouse(true)
       end
@@ -94,8 +110,16 @@ local function Constructor()
      edgeSize = 2
      --insets = { left = 1, right = 1, top = 1, bottom = 1 },
   })
-  background:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
-  background:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("borderField"))
+  if OptionsPrivate.Private.Style.classic then
+    background:SetBackdropColor(0.2,0.2,0.2,0.5)
+  else
+    background:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+  end
+  if OptionsPrivate.Private.Style.classic then
+    background:SetBackdropBorderColor(1,1,1,0.6)
+  else
+    background:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("borderField"))
+  end
 
   local buttons = {}
   for _, direction in ipairs(directions) do
@@ -110,7 +134,11 @@ local function Constructor()
     local buttonTex = button:CreateTexture()
     buttonTex:SetAllPoints()
     buttonTex:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite.tga")
-    buttonTex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+    if OptionsPrivate.Private.Style.classic then
+      buttonTex:SetVertexColor(0.3, 0.3, 0.3, 1)
+    else
+      buttonTex:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+    end
     button:SetNormalTexture(buttonTex)
     button.tex = buttonTex
     button.value = direction

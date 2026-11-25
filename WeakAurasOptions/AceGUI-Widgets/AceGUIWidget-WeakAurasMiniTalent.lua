@@ -31,13 +31,29 @@ local function PaintTalent(button)
   button.crossA:SetShown(value == false)
   button.crossB:SetShown(value == false)
   if value == true then
-    button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+    if OptionsPrivate.Private.Style.classic then
+      button.halo:SetVertexColor(1, 1, 0, 1)
+    else
+      button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+    end
     icon:SetVertexColor(1, 1, 1)
   elseif value == false then
-    button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
-    icon:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
+    if OptionsPrivate.Private.Style.classic then
+      button.halo:SetVertexColor(1, 0, 0, 1)
+    else
+      button.halo:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
+    end
+    if OptionsPrivate.Private.Style.classic then
+      icon:SetVertexColor(1, 0, 0)
+    else
+      icon:SetVertexColor(OptionsPrivate.Private.Style.Color("error"))
+    end
   else
-    icon:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+    if OptionsPrivate.Private.Style.classic then
+      icon:SetVertexColor(0.3, 0.3, 0.3)
+    else
+      icon:SetVertexColor(OptionsPrivate.Private.Style.Color("borderHover"))
+    end
   end
 end
 
@@ -84,7 +100,11 @@ local CROSS_INSET = 3
 
 local function CreateCrossLine(button, fromPoint, fromX, toPoint, toX)
   local line = button:CreateLine(nil, "OVERLAY")
-  line:SetColorTexture(OptionsPrivate.Private.Style.Color("error"))
+  if OptionsPrivate.Private.Style.classic then
+    line:SetColorTexture(1, 0, 0, 1)
+  else
+    line:SetColorTexture(OptionsPrivate.Private.Style.Color("error"))
+  end
   line:SetThickness(2)
   line:SetBlendMode("ADD")
   line:SetStartPoint(fromPoint, button, fromX * CROSS_INSET, -CROSS_INSET)
@@ -181,7 +201,11 @@ local function LayoutOpen(self)
         local target = self.talentsById[talentId]
         if target and target.x then
           local line = self.linePool:Acquire()
-          line:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
+          if OptionsPrivate.Private.Style.classic then
+            line:SetColorTexture(1, 1, 1, 0.2)
+          else
+            line:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
+          end
           line:SetThickness(1)
           line:SetStartPoint(source.anchor, source)
           line:SetEndPoint("CENTER", target)
@@ -293,7 +317,11 @@ local function Constructor()
   toggle.icon:SetSize(28, 58)
   toggle.icon:SetScale(0.6)
   toggle.icon:SetPoint("LEFT", toggle.frame, "LEFT", 0, 10)
-  toggle.text:SetVertexColor(OptionsPrivate.Private.Style.Color("text"))
+  if OptionsPrivate.Private.Style.classic then
+    toggle.text:SetVertexColor(1, 1, 1)
+  else
+    toggle.text:SetVertexColor(OptionsPrivate.Private.Style.Color("text"))
+  end
   toggle:SetCallback("OnClick", function() widget:SetOpen(not widget.open) end)
   widget.toggle = toggle
 

@@ -236,8 +236,13 @@ local methods = {
       self.button:Disable()
     else
       editBox:EnableMouse(true)
-      editBox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
-      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      if OptionsPrivate.Private.Style.classic then
+        editBox:SetTextColor(1, 1, 1)
+        self.label:SetTextColor(1, 0.82, 0)
+      else
+        editBox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+        self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      end
       self.scrollFrame:EnableMouse(true)
     end
   end,

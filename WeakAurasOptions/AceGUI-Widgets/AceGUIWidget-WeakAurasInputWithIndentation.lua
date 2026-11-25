@@ -148,8 +148,13 @@ local methods = {
       self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textDisabled"))
     else
       self.editbox:EnableMouse(true)
-      self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
-      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      if OptionsPrivate.Private.Style.classic then
+        self.editbox:SetTextColor(1,1,1)
+        self.label:SetTextColor(1,.82,0)
+      else
+        self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+        self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+      end
     end
   end,
 

@@ -167,5 +167,5 @@ Features:Register({
 })
 
 Private.DebugPrint = Features:Wrap("debug", function(...)
-  print(Private.Style.Hex("primary") .. "Musca Auras debug:|r ", ...)
+  print((Private.Style.classic and "|cff00d3ff" or Private.Style.Hex("primary")) .. "Musca Auras debug:|r ", ...)
 end)

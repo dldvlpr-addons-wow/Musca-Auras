@@ -2067,18 +2067,33 @@ function OptionsPrivate.DropIndicator()
   if not indicator then
     ---@class Frame
     indicator = CreateFrame("Frame", "WeakAuras_DropIndicator")
-    indicator:SetHeight(2)
+    local Style = OptionsPrivate.Private.Style
+    -- Height of the line between rows: 4 in the classic design, 2 in the Musca one.
+    local lineHeight = Style.classic and 4 or 2
+    indicator:SetHeight(lineHeight)
     indicator:SetFrameStrata("FULLSCREEN")
 
-    -- Drop target of DESIGN.md: a 2 pixel brass line between rows, a 1 pixel brass border around a group.
-    local Style = OptionsPrivate.Private.Style
-    local groupTexture = CreateFrame("Frame", nil, indicator, "BackdropTemplate")
-    groupTexture:SetBackdrop({ edgeFile = Style.white, edgeSize = 1 })
-    groupTexture:SetBackdropBorderColor(Style.Color("primary"))
+    local groupTexture, lineTexture
+    if Style.classic then
+      groupTexture = indicator:CreateTexture(nil, "ARTWORK")
+      groupTexture:SetBlendMode("ADD")
+      groupTexture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
+      groupTexture:SetVertexColor(0.4, 0.7, 1, 0.7)
 
-    local lineTexture = indicator:CreateTexture(nil, "ARTWORK")
-    lineTexture:SetAllPoints(indicator)
-    lineTexture:SetColorTexture(Style.Color("primary"))
+      lineTexture = indicator:CreateTexture(nil, "ARTWORK")
+      lineTexture:SetBlendMode("ADD")
+      lineTexture:SetAllPoints(indicator)
+      lineTexture:SetTexture("Interface\\PaperDollInfoFrame\\UI-Character-Tab-Highlight")
+    else
+      -- Drop target of DESIGN.md: a 2 pixel brass line between rows, a 1 pixel brass border around a group.
+      groupTexture = CreateFrame("Frame", nil, indicator, "BackdropTemplate")
+      groupTexture:SetBackdrop({ edgeFile = Style.white, edgeSize = 1 })
+      groupTexture:SetBackdropBorderColor(Style.Color("primary"))
+
+      lineTexture = indicator:CreateTexture(nil, "ARTWORK")
+      lineTexture:SetAllPoints(indicator)
+      lineTexture:SetColorTexture(Style.Color("primary"))
+    end
 
     indicator.lineTexture = lineTexture
     indicator.groupTexture = groupTexture
@@ -2091,8 +2106,13 @@ function OptionsPrivate.DropIndicator()
       if action == "GROUP" then
         self.groupTexture:ClearAllPoints()
         self.groupTexture:Show()
-        self.groupTexture:SetPoint("TOPLEFT", target.frame, "TOPLEFT")
-        self.groupTexture:SetPoint("BOTTOMRIGHT", target.frame, "BOTTOMRIGHT")
+        if Style.classic then
+          self.groupTexture:SetPoint("TOPLEFT", target.icon, "TOPRIGHT", 2, -1)
+          self.groupTexture:SetPoint("BOTTOMRIGHT", target.frame, "BOTTOMRIGHT", 0, 1)
+        else
+          self.groupTexture:SetPoint("TOPLEFT", target.frame, "TOPLEFT")
+          self.groupTexture:SetPoint("BOTTOMRIGHT", target.frame, "BOTTOMRIGHT")
+        end
       else
         self.groupTexture:Hide()
       end
@@ -2102,12 +2122,12 @@ function OptionsPrivate.DropIndicator()
         self.lineTexture:Show()
         self:SetPoint("BOTTOMLEFT", target.frame, "TOPLEFT", 0, -1)
         self:SetPoint("BOTTOMRIGHT", target.frame, "TOPRIGHT", 0, -1)
-        self:SetHeight(2)
+        self:SetHeight(lineHeight)
       elseif action == "AFTER" then
         self.lineTexture:Show()
         self:SetPoint("TOPLEFT", target.frame, "BOTTOMLEFT", 0, 1)
         self:SetPoint("TOPRIGHT", target.frame, "BOTTOMRIGHT", 0, 1)
-        self:SetHeight(2)
+        self:SetHeight(lineHeight)
       else
         self.lineTexture:Hide()
       end

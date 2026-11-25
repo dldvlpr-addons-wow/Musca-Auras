@@ -26,11 +26,11 @@ Methods
 local methods = {
   ["OnAcquire"] = function(self)
     self:SetWidth(1000);
-    self:SetHeight(22);
+    self:SetHeight(OptionsPrivate.Private.Style.classic and 20 or 22);
   end,
   ["SetText"] = function(self, text)
     -- string.upper only knows ASCII: capitals in English only, where no letter is left out.
-    self.frame:SetText(" "..(GetLocale():find("^en") and text:upper() or text));
+    self.frame:SetText(" "..(GetLocale():find("^en") and not OptionsPrivate.Private.Style.classic and text:upper() or text));
   end,
   ["SetClick"] = function(self, func)
     self.frame:SetScript("OnClick", func);
@@ -50,7 +50,12 @@ local methods = {
   ["Expand"] = function(self, reloadTooltip)
     self.expand:Enable();
     self.expanded = true;
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-MinusButton-Up.blp");
+      self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-MinusButton-Down.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse")
+    end
     self.expand.title = L["Collapse"];
     self.expand.desc = self.expand.collapsedesc;
     self.expand:SetScript("OnClick", function() self:Collapse(true) end);
@@ -63,7 +68,12 @@ local methods = {
   ["Collapse"] = function(self, reloadTooltip)
     self.expand:Enable();
     self.expanded = false;
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Up.blp");
+      self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-PlusButton-Down.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    end
     self.expand.title = L["Expand"];
     self.expand.desc = self.expand.expanddesc;
     self.expand:SetScript("OnClick", function() self:Expand(true) end);
@@ -83,7 +93,11 @@ local methods = {
     self.expand:Disable();
     self.expand.disabled = true;
     self.expand.expanded = false;
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    end
   end,
   ["EnableExpand"] = function(self)
     self.expand.disabled = false;
@@ -115,6 +129,17 @@ local methods = {
     end
   end,
   ["UpdateViewTexture"] = function(self)
+    if OptionsPrivate.Private.Style.classic then
+      local visibility = self.view.visibility
+      if(visibility == 2) then
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking0.blp");
+      elseif(visibility == 1) then
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking2.blp");
+      else
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
+      end
+      return
+    end
     OptionsPrivate.Private.Style.PaintIcon(self.view)
   end,
   -- Number of auras of the section, at the right of the header.
@@ -141,27 +166,38 @@ local function Constructor()
   local name = Type..AceGUI:GetNextWidgetNum(Type)
   local button = CreateFrame("Button", name, UIParent, "OptionsListButtonTemplate");
   local Style = OptionsPrivate.Private.Style
-  button:SetHeight(22);
+  button:SetHeight(Style.classic and 20 or 22);
   button:SetWidth(1000);
-  -- Section header of DESIGN.md: the band, the title font in capitals, the raised fill under the mouse.
-  local font = _G.WeakAurasLoadedHeaderFont
-  if not font then
-    font = CreateFont("WeakAurasLoadedHeaderFont")
-    Style.SetFont(font, "title", "xs")
-    font:SetTextColor(Style.Color("textSecondary"))
-  end
-  button:SetNormalFontObject(font)
-  button:SetHighlightFontObject(font)
-  button:SetDisabledFontObject(font)
+  if Style.classic then
+    -- The classic design keeps the header of the game: its font and a faint fill.
+    button:SetDisabledFontObject("GameFontNormal");
+    local background = button:CreateTexture(nil, "BACKGROUND");
+    button.background = background;
+    background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
+    background:SetBlendMode("ADD");
+    background:SetVertexColor(0.5, 0.5, 0.5, 0.6);
+    background:SetAllPoints(button);
+  else
+    -- Section header of DESIGN.md: the band, the title font in capitals, the raised fill under the mouse.
+    local font = _G.WeakAurasLoadedHeaderFont
+    if not font then
+      font = CreateFont("WeakAurasLoadedHeaderFont")
+      Style.SetFont(font, "title", "xs")
+      font:SetTextColor(Style.Color("textSecondary"))
+    end
+    button:SetNormalFontObject(font)
+    button:SetHighlightFontObject(font)
+    button:SetDisabledFontObject(font)
 
-  local background = button:CreateTexture(nil, "BACKGROUND");
-  button.background = background;
-  background:SetColorTexture(Style.Color("band"));
-  background:SetAllPoints(button);
-  local hover = button:CreateTexture(nil, "HIGHLIGHT")
-  hover:SetColorTexture(Style.Color("text", 0.06))
-  hover:SetAllPoints(button)
-  button:SetHighlightTexture(hover)
+    local background = button:CreateTexture(nil, "BACKGROUND");
+    button.background = background;
+    background:SetColorTexture(Style.Color("band"));
+    background:SetAllPoints(button);
+    local hover = button:CreateTexture(nil, "HIGHLIGHT")
+    hover:SetColorTexture(Style.Color("text", 0.06))
+    hover:SetAllPoints(button)
+    button:SetHighlightTexture(hover)
+  end
 
   local expand = CreateFrame("Button", nil, button);
   button.expand = expand;
@@ -178,7 +214,12 @@ local function Constructor()
   expand.collapsedesc = "";
   expand:SetScript("OnEnter", function() Show_Tooltip(button, expand.title, expand.desc) end);
   expand:SetScript("OnLeave", Hide_Tooltip);
-  Style.NewIcon(expand, "expand", 10)
+  if Style.classic then
+    expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
+    expand:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(expand, "expand", 10)
+  end
 
   local view = CreateFrame("Button", nil, button);
   button.view = view;
@@ -189,7 +230,17 @@ local function Constructor()
   view:SetScript("OnEnter", function() Show_Tooltip(button, L["View"], view.desc) end);
   view:SetScript("OnLeave", Hide_Tooltip);
   view.visibility = 0;
-  Style.NewEye(view)
+  if Style.classic then
+    local viewTexture = view:CreateTexture()
+    view.texture = viewTexture;
+    viewTexture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
+    viewTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9);
+    viewTexture:SetAllPoints(view);
+    view:SetNormalTexture(viewTexture);
+    view:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewEye(view)
+  end
 
   local count = Style.NewText(button, "number", "xs", "textQuiet")
   count:SetPoint("RIGHT", view, "LEFT", -4, 0)

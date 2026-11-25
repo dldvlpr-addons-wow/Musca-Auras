@@ -55,11 +55,23 @@ end
 
 local function UpdateHandleColor(self)
   if self.progressBarHandle.mouseDown then
-    self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primary"))
+    if OptionsPrivate.Private.Style.classic then
+      self.progressBarHandleTexture:SetColorTexture(0.6, 0.6, 0, 1)
+    else
+      self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primary"))
+    end
   elseif self.progressBarHandle:IsMouseOver() then
-    self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primaryHover"))
+    if OptionsPrivate.Private.Style.classic then
+      self.progressBarHandleTexture:SetColorTexture(0.8, 0.8, 0, 1)
+    else
+      self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primaryHover"))
+    end
   else
-    self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primaryLow"))
+    if OptionsPrivate.Private.Style.classic then
+      self.progressBarHandleTexture:SetColorTexture(0.4, 0.4, 0, 1)
+    else
+      self.progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primaryLow"))
+    end
   end
 end
 
@@ -206,8 +218,13 @@ local methods = {
       self.leftbutton:SetEnabled(false)
       self.rightbutton:SetEnabled(false)
     else
-      self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
-      self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+      if OptionsPrivate.Private.Style.classic then
+        self.label:SetTextColor(1, 0.82, 0)
+        self.editbox:SetTextColor(1, 1, 1)
+      else
+        self.label:SetTextColor(OptionsPrivate.Private.Style.Color("textSecondary"))
+        self.editbox:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+      end
       self.editbox:EnableMouse(true)
     end
   end,
@@ -318,7 +335,11 @@ local function Constructor()
 
   local progressBar = editbox:CreateTexture(nil, "ARTWORK", nil)
   progressBar:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\spinboxoverlay")
-  progressBar:SetVertexColor(OptionsPrivate.Private.Style.Color("border"))
+  if OptionsPrivate.Private.Style.classic then
+    progressBar:SetVertexColor(0.50, 0.50, 0.50, 1)
+  else
+    progressBar:SetVertexColor(OptionsPrivate.Private.Style.Color("border"))
+  end
   progressBar:SetPoint("TOPLEFT", editbox, "TOPLEFT", progressLeftOffset, progressTopOffset)
   progressBar:SetPoint("BOTTOMLEFT", editbox, "BOTTOMLEFT", progressLeftOffset, progressBottomOffset)
   progressBar:SetWidth(0)
@@ -335,7 +356,11 @@ local function Constructor()
 
   local progressBarHandleTexture = progressBarHandle:CreateTexture(nil, "ARTWORK")
   progressBarHandleTexture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primary", 0.8))
+  if OptionsPrivate.Private.Style.classic then
+    progressBarHandleTexture:SetColorTexture(0.8, 0.8, 0, 0.8)
+  else
+    progressBarHandleTexture:SetColorTexture(OptionsPrivate.Private.Style.Color("primary", 0.8))
+  end
   progressBarHandleTexture:SetPoint("TOPLEFT", progressBarHandle, "TOPLEFT", 2, -2)
   progressBarHandleTexture:SetPoint("BOTTOMRIGHT", progressBarHandle, "BOTTOMRIGHT", -2, 2)
 

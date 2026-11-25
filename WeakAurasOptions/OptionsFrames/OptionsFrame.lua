@@ -30,6 +30,29 @@ local aceOptions = {}
 -- Grip of the bottom right corner: three diagonals of 1 pixel, brass under the mouse.
 local function CreateFrameSizer(frame, callback)
   local Style = OptionsPrivate.Private.Style
+  if Style.classic then
+    -- Classic design: the grip of the chat frame of the game.
+    local handle = CreateFrame("Button", nil, frame)
+    handle:SetPoint("BOTTOMRIGHT", frame)
+    handle:SetSize(25, 25)
+    handle:EnableMouse()
+    handle:SetScript("OnMouseDown", function()
+      frame:StartSizing("BOTTOMRIGHT")
+    end)
+    handle:SetScript("OnMouseUp", function()
+      frame:StopMovingOrSizing()
+      callback()
+    end)
+    for _, state in ipairs({ { "Up", "SetNormalTexture" }, { "Down", "SetPushedTexture" },
+                             { "Highlight", "SetHighlightTexture" } }) do
+      local texture = handle:CreateTexture(nil, "OVERLAY")
+      texture:SetTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-" .. state[1])
+      texture:SetPoint("BOTTOMLEFT", handle, 0, 1)
+      texture:SetPoint("TOPRIGHT", handle, -1, 0)
+      handle[state[2]](handle, texture)
+    end
+    return handle
+  end
   local handle = CreateFrame("Button", nil, frame)
   handle:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
   handle:SetSize(16, 16)
@@ -75,63 +98,90 @@ function OptionsPrivate.CreateFrame()
   local odb = OptionsPrivate.savedVars.odb
 
   local Style = OptionsPrivate.Private.Style
-  frame = CreateFrame("Frame", "WeakAurasOptions", UIParent, "BackdropTemplate")
-  Style.Fill(frame, "background")
+  local shadow
+  if Style.classic then
+    -- Classic design: the portrait window of the game, its title in the title bar of the template.
+    frame = CreateFrame("Frame", "WeakAurasOptions", UIParent, "PortraitFrameTemplate")
+    local color = CreateColorFromHexString("ff1f1e21") -- PANEL_BACKGROUND_COLOR
+    local r, g, b = color:GetRGB()
+    frame.Bg:SetColorTexture(r, g, b, 0.8)
+    frame.Bg.colorTexture = {r, g, b, 0.8}
+    WeakAurasOptionsPortrait:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_256.tga]])
+    if not frame.TitleContainer then
+      frame.TitleContainer = CreateFrame("Frame", nil, frame)
+      frame.TitleContainer:SetAllPoints(frame.TitleBg)
+    end
+    -- Hidden while the window is reduced, as the labels of the Musca title bar.
+    frame.titleLabels = WeakAurasOptionsTitleText
 
-  -- Drop shadow, 4 pixels down and right, under the window.
-  local shadow = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-  shadow:SetPoint("TOPLEFT", frame, "TOPLEFT", -12, 12)
-  shadow:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 20, -20)
-  shadow:SetBackdrop({ edgeFile = [[Interface\AddOns\WeakAuras\Media\Textures\Border_DropShadow]], edgeSize = 16 })
-  shadow:SetBackdropBorderColor(Style.Color("shadow"))
+    function OptionsPrivate.SetTitle(title)
+      local text = "Musca Auras " .. OptionsPrivate.changelog.versionString
+      if title and title ~= "" then
+        text = ("%s - %s"):format(text, title)
+      end
+      WeakAurasOptionsTitleText:SetText(text)
+    end
+  else
+    frame = CreateFrame("Frame", "WeakAurasOptions", UIParent, "BackdropTemplate")
+    Style.Fill(frame, "background")
 
-  -- Title bar: band, sheen on top, brass rule below; the whole bar drags the window.
-  local titleBar = CreateFrame("Frame", nil, frame)
-  titleBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
-  titleBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
-  titleBar:SetHeight(28)
-  titleBar:EnableMouse(true)
-  local titleBand = titleBar:CreateTexture(nil, "BACKGROUND")
-  titleBand:SetAllPoints()
-  titleBand:SetColorTexture(Style.Color("band"))
-  local titleSheen = titleBar:CreateTexture(nil, "BORDER")
-  titleSheen:SetColorTexture(Style.Color("sheen"))
-  titleSheen:SetHeight(1)
-  titleSheen:SetPoint("TOPLEFT")
-  titleSheen:SetPoint("TOPRIGHT")
-  -- The rule fades in from the left edge to the middle and out to the right edge.
-  local ruleLeft = titleBar:CreateTexture(nil, "BORDER")
-  ruleLeft:SetTexture(Style.white)
-  ruleLeft:SetHeight(1)
-  ruleLeft:SetPoint("BOTTOMLEFT")
-  ruleLeft:SetPoint("BOTTOMRIGHT", titleBar, "BOTTOM")
-  ruleLeft:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule", 0)), CreateColor(Style.Color("rule")))
-  local ruleRight = titleBar:CreateTexture(nil, "BORDER")
-  ruleRight:SetTexture(Style.white)
-  ruleRight:SetHeight(1)
-  ruleRight:SetPoint("BOTTOMLEFT", titleBar, "BOTTOM")
-  ruleRight:SetPoint("BOTTOMRIGHT")
-  ruleRight:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule")), CreateColor(Style.Color("rule", 0)))
-  local logo = titleBar:CreateTexture(nil, "ARTWORK")
-  logo:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
-  logo:SetSize(18, 18)
-  logo:SetPoint("LEFT", titleBar, "LEFT", 8, 0)
-  -- Name, version and the name of the mounted window, hidden while the window is reduced.
-  local titleLabels = CreateFrame("Frame", nil, titleBar)
-  titleLabels:SetAllPoints()
-  local titleText = Style.NewText(titleLabels, "title", "m")
-  titleText:SetPoint("LEFT", logo, "RIGHT", 6, 0)
-  titleText:SetText("Musca Auras")
-  local versionText = Style.NewText(titleLabels, "number", "xs", "textQuiet")
-  versionText:SetPoint("LEFT", titleText, "RIGHT", 6, 0)
-  versionText:SetText(OptionsPrivate.changelog.versionString)
-  local subtitleText = Style.NewText(titleLabels, "text", "s", "textSecondary")
-  subtitleText:SetPoint("LEFT", versionText, "RIGHT", 8, 0)
-  frame.TitleContainer = titleBar
-  frame.titleLabels = titleLabels
+    -- Drop shadow, 4 pixels down and right, under the window.
+    shadow = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    shadow:SetPoint("TOPLEFT", frame, "TOPLEFT", -12, 12)
+    shadow:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 20, -20)
+    shadow:SetBackdrop({ edgeFile = [[Interface\AddOns\WeakAuras\Media\Textures\Border_DropShadow]], edgeSize = 16 })
+    shadow:SetBackdropBorderColor(Style.Color("shadow"))
 
-  function OptionsPrivate.SetTitle(title)
-    subtitleText:SetText(title or "")
+    -- Title bar: band, sheen on top, brass rule below; the whole bar drags the window.
+    local titleBar = CreateFrame("Frame", nil, frame)
+    titleBar:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+    titleBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+    titleBar:SetHeight(28)
+    titleBar:EnableMouse(true)
+    local titleBand = titleBar:CreateTexture(nil, "BACKGROUND")
+    titleBand:SetAllPoints()
+    titleBand:SetColorTexture(Style.Color("band"))
+    local titleSheen = titleBar:CreateTexture(nil, "BORDER")
+    titleSheen:SetColorTexture(Style.Color("sheen"))
+    titleSheen:SetHeight(1)
+    titleSheen:SetPoint("TOPLEFT")
+    titleSheen:SetPoint("TOPRIGHT")
+    -- The rule fades in from the left edge to the middle and out to the right edge.
+    local ruleLeft = titleBar:CreateTexture(nil, "BORDER")
+    ruleLeft:SetTexture(Style.white)
+    ruleLeft:SetHeight(1)
+    ruleLeft:SetPoint("BOTTOMLEFT")
+    ruleLeft:SetPoint("BOTTOMRIGHT", titleBar, "BOTTOM")
+    ruleLeft:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule", 0)), CreateColor(Style.Color("rule")))
+    local ruleRight = titleBar:CreateTexture(nil, "BORDER")
+    ruleRight:SetTexture(Style.white)
+    ruleRight:SetHeight(1)
+    ruleRight:SetPoint("BOTTOMLEFT", titleBar, "BOTTOM")
+    ruleRight:SetPoint("BOTTOMRIGHT")
+    ruleRight:SetGradient("HORIZONTAL", CreateColor(Style.Color("rule")), CreateColor(Style.Color("rule", 0)))
+    local logo = titleBar:CreateTexture(nil, "ARTWORK")
+    -- The classic design shows the logo of WeakAuras; the name stays Musca Auras.
+    logo:SetTexture(Style.classic and [[Interface\AddOns\WeakAuras\Media\Textures\logo_256.tga]]
+      or [[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
+    logo:SetSize(18, 18)
+    logo:SetPoint("LEFT", titleBar, "LEFT", 8, 0)
+    -- Name, version and the name of the mounted window, hidden while the window is reduced.
+    local titleLabels = CreateFrame("Frame", nil, titleBar)
+    titleLabels:SetAllPoints()
+    local titleText = Style.NewText(titleLabels, "title", "m")
+    titleText:SetPoint("LEFT", logo, "RIGHT", 6, 0)
+    titleText:SetText("Musca Auras")
+    local versionText = Style.NewText(titleLabels, "number", "xs", "textQuiet")
+    versionText:SetPoint("LEFT", titleText, "RIGHT", 6, 0)
+    versionText:SetText(OptionsPrivate.changelog.versionString)
+    local subtitleText = Style.NewText(titleLabels, "text", "s", "textSecondary")
+    subtitleText:SetPoint("LEFT", versionText, "RIGHT", 8, 0)
+    frame.TitleContainer = titleBar
+    frame.titleLabels = titleLabels
+
+    function OptionsPrivate.SetTitle(title)
+      subtitleText:SetText(title or "")
+    end
   end
 
   tinsert(UISpecialFrames, frame:GetName())
@@ -140,24 +190,27 @@ function OptionsPrivate.CreateFrame()
   frame:SetResizable(true)
   frame:SetResizeBounds(minWidth, minHeight)
   frame:SetFrameStrata("DIALOG")
-  shadow:SetFrameLevel(math.max(frame:GetFrameLevel() - 1, 0))
+  -- The classic design keeps the window of the game: no shadow, no entrance animation.
+  if not Style.classic then
+    shadow:SetFrameLevel(math.max(frame:GetFrameLevel() - 1, 0))
 
-  -- Opening: from 8 pixels lower and transparent, brief; closing is instant.
-  local entrance = frame:CreateAnimationGroup()
-  local drop = entrance:CreateAnimation("Translation")
-  drop:SetOffset(0, -8)
-  drop:SetDuration(0)
-  drop:SetOrder(1)
-  Style.AddFade(entrance, 0, 0, 0):SetOrder(1)
-  local rise = entrance:CreateAnimation("Translation")
-  rise:SetOffset(0, 8)
-  rise:SetDuration(Style.durations.brief)
-  rise:SetSmoothing("OUT")
-  rise:SetOrder(2)
-  Style.AddFade(entrance, 0, 1, Style.durations.brief, 0, "OUT"):SetOrder(2)
-  frame:HookScript("OnShow", function()
-    entrance:Play()
-  end)
+    -- Opening: from 8 pixels lower and transparent, brief; closing is instant.
+    local entrance = frame:CreateAnimationGroup()
+    local drop = entrance:CreateAnimation("Translation")
+    drop:SetOffset(0, -8)
+    drop:SetDuration(0)
+    drop:SetOrder(1)
+    Style.AddFade(entrance, 0, 0, 0):SetOrder(1)
+    local rise = entrance:CreateAnimation("Translation")
+    rise:SetOffset(0, 8)
+    rise:SetDuration(Style.durations.brief)
+    rise:SetSmoothing("OUT")
+    rise:SetOrder(2)
+    Style.AddFade(entrance, 0, 1, Style.durations.brief, 0, "OUT"):SetOrder(2)
+    frame:HookScript("OnShow", function()
+      entrance:Play()
+    end)
+  end
 
   frame.window = "default"
 
@@ -357,73 +410,81 @@ function OptionsPrivate.CreateFrame()
 
 
 
-  -- Buttons of the title bar, 28 pixels: raised under the mouse, their drawing painted by Paint(over).
-  local function TitleButton(onClick)
-    local button = CreateFrame("Button", nil, frame.TitleContainer)
-    button:SetSize(28, 28)
-    button.hover = button:CreateTexture(nil, "BACKGROUND")
-    button.hover:SetAllPoints()
-    button.hover:SetColorTexture(Style.Color("raised"))
-    button.hover:Hide()
-    button:SetScript("OnEnter", function(self)
-      self.hover:Show()
-      self:Paint(true)
-    end)
-    button:SetScript("OnLeave", function(self)
-      self.hover:Hide()
-      self:Paint(false)
-    end)
-    button:SetScript("OnClick", onClick)
-    return button
-  end
-
-  -- Close: a cross of two bars turned by 45 degrees.
-  local closeButton = TitleButton(function()
-    frame:Hide()
-  end)
-  closeButton:SetPoint("TOPRIGHT")
-  local crossBars = {}
-  for _, angle in ipairs({ 45, -45 }) do
-    local bar = closeButton:CreateTexture(nil, "ARTWORK")
-    bar:SetTexture(Style.white)
-    bar:SetSize(1.5, 12)
-    bar:SetPoint("CENTER")
-    bar:SetRotation(math.rad(angle))
-    tinsert(crossBars, bar)
-  end
-  function closeButton:Paint(over)
-    for _, bar in ipairs(crossBars) do
-      bar:SetVertexColor(Style.Color(over and "error" or "textSecondary"))
+  local minimizebutton
+  if Style.classic then
+    -- Classic design: the close button of the portrait window, the reduce button of the game.
+    minimizebutton = CreateFrame("Button", nil, frame, "MaximizeMinimizeButtonFrameTemplate")
+    minimizebutton:SetFrameLevel(frame.TitleContainer:GetFrameLevel() + 1)
+    minimizebutton:SetPoint("RIGHT", frame.CloseButton, "LEFT", 10, 0)
+  else
+    -- Buttons of the title bar, 28 pixels: raised under the mouse, their drawing painted by Paint(over).
+    local function TitleButton(onClick)
+      local button = CreateFrame("Button", nil, frame.TitleContainer)
+      button:SetSize(28, 28)
+      button.hover = button:CreateTexture(nil, "BACKGROUND")
+      button.hover:SetAllPoints()
+      button.hover:SetColorTexture(Style.Color("raised"))
+      button.hover:Hide()
+      button:SetScript("OnEnter", function(self)
+        self.hover:Show()
+        self:Paint(true)
+      end)
+      button:SetScript("OnLeave", function(self)
+        self.hover:Hide()
+        self:Paint(false)
+      end)
+      button:SetScript("OnClick", onClick)
+      return button
     end
-  end
-  closeButton:Paint(false)
-  frame.CloseButton = closeButton
 
-  -- Reduce and restore: one square while reduced, two offset squares while the window is full size.
-  local minimizebutton = TitleButton()
-  minimizebutton:SetPoint("RIGHT", closeButton, "LEFT")
-  local function Square(size, x, y)
-    local square = CreateFrame("Frame", nil, minimizebutton, "BackdropTemplate")
-    square:SetSize(size, size)
-    square:SetPoint("CENTER", x, y)
-    square:SetBackdrop({ bgFile = Style.white, edgeFile = Style.white, edgeSize = 1 })
-    return square
-  end
-  local backSquare = Square(8, 2, 2)
-  local frontSquare = Square(8, -1, -1)
-  frontSquare:SetFrameLevel(backSquare:GetFrameLevel() + 1)
-  function minimizebutton:Paint(over)
-    local line = over and "text" or "textSecondary"
-    local fill = over and "raised" or "band"
-    frontSquare:SetSize(frame.minimized and 10 or 8, frame.minimized and 10 or 8)
-    frontSquare:SetPoint("CENTER", frame.minimized and 0 or -1, frame.minimized and 0 or -1)
-    backSquare:SetShown(not frame.minimized)
-    for _, square in ipairs({ backSquare, frontSquare }) do
-      square:SetBackdropColor(Style.Color(fill))
-      square:SetBackdropBorderColor(Style.Color(line))
+    -- Close: a cross of two bars turned by 45 degrees.
+    local closeButton = TitleButton(function()
+      frame:Hide()
+    end)
+    closeButton:SetPoint("TOPRIGHT")
+    local crossBars = {}
+    for _, angle in ipairs({ 45, -45 }) do
+      local bar = closeButton:CreateTexture(nil, "ARTWORK")
+      bar:SetTexture(Style.white)
+      bar:SetSize(1.5, 12)
+      bar:SetPoint("CENTER")
+      bar:SetRotation(math.rad(angle))
+      tinsert(crossBars, bar)
     end
+    function closeButton:Paint(over)
+      for _, bar in ipairs(crossBars) do
+        bar:SetVertexColor(Style.Color(over and "error" or "textSecondary"))
+      end
+    end
+    closeButton:Paint(false)
+    frame.CloseButton = closeButton
+
+    -- Reduce and restore: one square while reduced, two offset squares while the window is full size.
+    minimizebutton = TitleButton()
+    minimizebutton:SetPoint("RIGHT", closeButton, "LEFT")
+    local function Square(size, x, y)
+      local square = CreateFrame("Frame", nil, minimizebutton, "BackdropTemplate")
+      square:SetSize(size, size)
+      square:SetPoint("CENTER", x, y)
+      square:SetBackdrop({ bgFile = Style.white, edgeFile = Style.white, edgeSize = 1 })
+      return square
+    end
+    local backSquare = Square(8, 2, 2)
+    local frontSquare = Square(8, -1, -1)
+    frontSquare:SetFrameLevel(backSquare:GetFrameLevel() + 1)
+    function minimizebutton:Paint(over)
+      local line = over and "text" or "textSecondary"
+      local fill = over and "raised" or "band"
+      frontSquare:SetSize(frame.minimized and 10 or 8, frame.minimized and 10 or 8)
+      frontSquare:SetPoint("CENTER", frame.minimized and 0 or -1, frame.minimized and 0 or -1)
+      backSquare:SetShown(not frame.minimized)
+      for _, square in ipairs({ backSquare, frontSquare }) do
+        square:SetBackdropColor(Style.Color(fill))
+        square:SetBackdropBorderColor(Style.Color(line))
+      end
+    end
+    minimizebutton:Paint(false)
   end
-  minimizebutton:Paint(false)
 
   local function Maximize()
     frame.minimized = false
@@ -445,14 +506,19 @@ function OptionsPrivate.CreateFrame()
     frame:SetWidth(160)
     frame:UpdateFrameVisible()
   end
-  minimizebutton:SetScript("OnClick", function(self)
-    if frame.minimized then
-      Maximize()
-    else
-      Minimize()
-    end
-    self:Paint(self:IsMouseOver())
-  end)
+  if Style.classic then
+    minimizebutton:SetOnMaximizedCallback(Maximize)
+    minimizebutton:SetOnMinimizedCallback(Minimize)
+  else
+    minimizebutton:SetScript("OnClick", function(self)
+      if frame.minimized then
+        Maximize()
+      else
+        Minimize()
+      end
+      self:Paint(self:IsMouseOver())
+    end)
+  end
 
   local guideButton = Style.NewButton(frame.TitleContainer, L["Guide:"] .. " " .. L["learn Musca Auras"], "secondary",
     function()
@@ -472,29 +538,49 @@ function OptionsPrivate.CreateFrame()
   frame.guideButton = guideButton
 
   local tipFrame = CreateFrame("Frame", nil, frame)
-  tipFrame:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 17, 19)
-  tipFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 3)
-  tipFrame:Hide()
-  frame.tipFrame = tipFrame
-  -- Footer: band with a border on top, shown with the links.
-  local footerBand = tipFrame:CreateTexture(nil, "BACKGROUND")
-  footerBand:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
-  footerBand:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", -1, 22)
-  footerBand:SetColorTexture(Style.Color("band"))
-  local footerLine = tipFrame:CreateTexture(nil, "BORDER")
-  footerLine:SetHeight(1)
-  footerLine:SetPoint("BOTTOMLEFT", footerBand, "TOPLEFT")
-  footerLine:SetPoint("BOTTOMRIGHT", footerBand, "TOPRIGHT")
-  footerLine:SetColorTexture(Style.Color("border"))
+  -- The classic design has no footer band, the links sit higher.
+  if Style.classic then
+    tipFrame:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 17, 30)
+    tipFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 10)
+    tipFrame:Hide()
+    frame.tipFrame = tipFrame
+  else
+    tipFrame:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 17, 19)
+    tipFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 3)
+    tipFrame:Hide()
+    frame.tipFrame = tipFrame
+    -- Footer: band with a border on top, shown with the links.
+    local footerBand = tipFrame:CreateTexture(nil, "BACKGROUND")
+    footerBand:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
+    footerBand:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", -1, 22)
+    footerBand:SetColorTexture(Style.Color("band"))
+    local footerLine = tipFrame:CreateTexture(nil, "BORDER")
+    footerLine:SetHeight(1)
+    footerLine:SetPoint("BOTTOMLEFT", footerBand, "TOPLEFT")
+    footerLine:SetPoint("BOTTOMRIGHT", footerBand, "TOPRIGHT")
+    footerLine:SetColorTexture(Style.Color("border"))
+  end
 
   local tipPopup = CreateFrame("Frame", nil, frame, "BackdropTemplate")
   tipPopup:SetFrameStrata("FULLSCREEN")
-  Style.Fill(tipPopup, "raised", "borderHover")
-  local tipPopupMark = tipPopup:CreateTexture(nil, "ARTWORK")
-  tipPopupMark:SetHeight(2)
-  tipPopupMark:SetPoint("TOPLEFT", 1, -1)
-  tipPopupMark:SetPoint("TOPRIGHT", -1, -1)
-  tipPopupMark:SetColorTexture(Style.Color("primary"))
+  if Style.classic then
+    tipPopup:SetBackdrop({
+      bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+      edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+      tile = true,
+      tileSize = 16,
+      edgeSize = 16,
+      insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    tipPopup:SetBackdropColor(0, 0, 0, 0.8)
+  else
+    Style.Fill(tipPopup, "raised", "borderHover")
+    local tipPopupMark = tipPopup:CreateTexture(nil, "ARTWORK")
+    tipPopupMark:SetHeight(2)
+    tipPopupMark:SetPoint("TOPLEFT", 1, -1)
+    tipPopupMark:SetPoint("TOPRIGHT", -1, -1)
+    tipPopupMark:SetColorTexture(Style.Color("primary"))
+  end
   tipPopup:Hide()
   frame.tipPopup = tipPopup
 
@@ -626,8 +712,8 @@ function OptionsPrivate.CreateFrame()
 
   frame.ShowTip = function(self)
     self.tipFrame:Show()
-    self.buttonsContainer.frame:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 17, 24)
-    self.container.frame:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -17, 22)
+    self.buttonsContainer.frame:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 17, Style.classic and 30 or 24)
+    self.container.frame:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -17, Style.classic and 28 or 22)
   end
 
   frame.HideTip = function(self)
@@ -637,7 +723,15 @@ function OptionsPrivate.CreateFrame()
   end
 
   -- Section title of the New Aura panel, as the section headers of DESIGN.md: the title font, in capitals in English.
-  local function PaintSectionTitle(label, text)
+  -- size: font size of the classic design, 24 by default.
+  local function PaintSectionTitle(label, text, size)
+    if Style.classic then
+      label:SetFont(STANDARD_TEXT_FONT, size or 24, "OUTLINE")
+      label:SetColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+      label:SetText(text)
+      label:SetFullWidth(true)
+      return
+    end
     -- Through the font object of the Label, which OnAcquire drops: the pool of Label is shared with other addons.
     label:SetFont(STANDARD_TEXT_FONT, 10, "")
     Style.SetFont(label.fontObject, "title", "xs")
@@ -649,12 +743,14 @@ function OptionsPrivate.CreateFrame()
   -- The thin scroll bar of DESIGN.md on a ScrollFrame of AceGUI; its pool is shared with other addons, so the bar
   -- gets the look of the game back when the widget is released.
   local function SkinScrollFrame(scroll)
+    if Style.classic then return end
     Style.SkinScrollBar(scroll.scrollbar)
     scroll:SetCallback("OnRelease", function(widget) Style.UnskinScrollBar(widget.scrollbar) end)
   end
 
   -- An InlineGroup of AceGUI drawn as a block of DESIGN.md; its own look is given back when the pool takes it again.
   local function PaintInlineGroup(group, fill)
+    if Style.classic then return end
     local box = group.content:GetParent()
     local backdrop = box:GetBackdrop()
     local color, borderColor = { box:GetBackdropColor() }, { box:GetBackdropBorderColor() }
@@ -672,10 +768,12 @@ function OptionsPrivate.CreateFrame()
   end
 
   -- Right Side Container
+  -- The classic toolbar takes two rows of 28 pixels, its names do not fit on one: the content starts lower.
+  local classicToolbarShift = Style.classic and 28 or 0
   local container = AceGUI:Create("InlineGroup")
   container.frame:SetParent(frame)
   container.frame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 10)
-  container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
+  container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -classicToolbarShift)
   container.frame:Show()
   container.frame:SetClipsChildren(true)
   container.titletext:Hide()
@@ -686,48 +784,61 @@ function OptionsPrivate.CreateFrame()
   frame.container = container
   frame.moversizer, frame.mover = OptionsPrivate.MoverSizer(frame)
 
-  -- filter line: a well with a drawn magnifier, a hint while empty, a cross to clear it.
-  local filterInput = CreateFrame("EditBox", "WeakAurasFilterInput", frame, "BackdropTemplate")
-  filterInput:SetAutoFocus(false)
-  Style.SkinEditBox(filterInput, "text")
-  filterInput:SetTextInsets(20, 20, 0, 0)
-  local lensRing = filterInput:CreateTexture(nil, "ARTWORK")
-  lensRing:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\Circle_White_Border.tga]])
-  lensRing:SetVertexColor(Style.Color("textQuiet"))
-  lensRing:SetSize(8, 8)
-  lensRing:SetPoint("LEFT", filterInput, "LEFT", 6, 1)
-  local lensHandle = filterInput:CreateTexture(nil, "ARTWORK")
-  lensHandle:SetTexture(Style.white)
-  lensHandle:SetVertexColor(Style.Color("textQuiet"))
-  lensHandle:SetSize(1.5, 4)
-  lensHandle:SetPoint("CENTER", lensRing, "BOTTOMRIGHT", 0, 0)
-  lensHandle:SetRotation(math.rad(45))
-  local filterHint = Style.NewText(filterInput, "text", "s", "textDisabled")
-  filterHint:SetPoint("LEFT", filterInput, "LEFT", 20, 0)
-  filterHint:SetText(L["Search"])
-  local filterClear = CreateFrame("Button", nil, filterInput)
-  filterClear:SetSize(16, 16)
-  filterClear:SetPoint("RIGHT", filterInput, "RIGHT", -2, 0)
-  local clearText = Style.NewText(filterClear, "text", "s", "textQuiet")
-  clearText:SetPoint("CENTER")
-  clearText:SetText("×")
-  filterClear:SetScript("OnEnter", function() clearText:SetTextColor(Style.Color("text")) end)
-  filterClear:SetScript("OnLeave", function() clearText:SetTextColor(Style.Color("textQuiet")) end)
-  filterClear:SetScript("OnClick", function()
-    filterInput:SetText("")
-    filterInput:ClearFocus()
-  end)
-  filterClear:Hide()
-  filterInput:SetScript("OnTextChanged", function(self)
-    local empty = self:GetText() == ""
-    filterHint:SetShown(empty)
-    filterClear:SetShown(not empty)
-    OptionsPrivate.SortDisplayButtons(filterInput:GetText())
-  end)
-  filterInput:SetScript("OnEscapePressed", filterInput.ClearFocus)
-  filterInput:SetScript("OnEnterPressed", filterInput.ClearFocus)
-  filterInput:SetHeight(18)
-  filterInput:SetPoint("TOP", frame, "TOP", 0, -70)
+  local filterInput
+  if Style.classic then
+    -- Classic design: the search box of the game.
+    filterInput = CreateFrame("EditBox", "WeakAurasFilterInput", frame, "SearchBoxTemplate")
+    filterInput:SetScript("OnTextChanged", function(self)
+      SearchBoxTemplate_OnTextChanged(self)
+      OptionsPrivate.SortDisplayButtons(filterInput:GetText())
+    end)
+    filterInput:SetHeight(15)
+    filterInput:SetPoint("TOP", frame, "TOP", 0, -65 - classicToolbarShift)
+    filterInput:SetFont(STANDARD_TEXT_FONT, 10, "")
+  else
+    -- filter line: a well with a drawn magnifier, a hint while empty, a cross to clear it.
+    filterInput = CreateFrame("EditBox", "WeakAurasFilterInput", frame, "BackdropTemplate")
+    filterInput:SetAutoFocus(false)
+    Style.SkinEditBox(filterInput, "text")
+    filterInput:SetTextInsets(20, 20, 0, 0)
+    local lensRing = filterInput:CreateTexture(nil, "ARTWORK")
+    lensRing:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\Circle_White_Border.tga]])
+    lensRing:SetVertexColor(Style.Color("textQuiet"))
+    lensRing:SetSize(8, 8)
+    lensRing:SetPoint("LEFT", filterInput, "LEFT", 6, 1)
+    local lensHandle = filterInput:CreateTexture(nil, "ARTWORK")
+    lensHandle:SetTexture(Style.white)
+    lensHandle:SetVertexColor(Style.Color("textQuiet"))
+    lensHandle:SetSize(1.5, 4)
+    lensHandle:SetPoint("CENTER", lensRing, "BOTTOMRIGHT", 0, 0)
+    lensHandle:SetRotation(math.rad(45))
+    local filterHint = Style.NewText(filterInput, "text", "s", "textDisabled")
+    filterHint:SetPoint("LEFT", filterInput, "LEFT", 20, 0)
+    filterHint:SetText(L["Search"])
+    local filterClear = CreateFrame("Button", nil, filterInput)
+    filterClear:SetSize(16, 16)
+    filterClear:SetPoint("RIGHT", filterInput, "RIGHT", -2, 0)
+    local clearText = Style.NewText(filterClear, "text", "s", "textQuiet")
+    clearText:SetPoint("CENTER")
+    clearText:SetText("×")
+    filterClear:SetScript("OnEnter", function() clearText:SetTextColor(Style.Color("text")) end)
+    filterClear:SetScript("OnLeave", function() clearText:SetTextColor(Style.Color("textQuiet")) end)
+    filterClear:SetScript("OnClick", function()
+      filterInput:SetText("")
+      filterInput:ClearFocus()
+    end)
+    filterClear:Hide()
+    filterInput:SetScript("OnTextChanged", function(self)
+      local empty = self:GetText() == ""
+      filterHint:SetShown(empty)
+      filterClear:SetShown(not empty)
+      OptionsPrivate.SortDisplayButtons(filterInput:GetText())
+    end)
+    filterInput:SetScript("OnEscapePressed", filterInput.ClearFocus)
+    filterInput:SetScript("OnEnterPressed", filterInput.ClearFocus)
+    filterInput:SetHeight(18)
+    filterInput:SetPoint("TOP", frame, "TOP", 0, -70)
+  end
   filterInput:SetPoint("LEFT", frame, "LEFT", 24, 0)
   filterInput:SetPoint("RIGHT", container.frame, "LEFT", -2, 0)
   frame.filterInput = filterInput
@@ -739,7 +850,7 @@ function OptionsPrivate.CreateFrame()
   PaintInlineGroup(buttonsContainer, "surface")
   buttonsContainer.frame:SetParent(frame)
   buttonsContainer.frame:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 17, 12)
-  buttonsContainer.frame:SetPoint("TOP", frame, "TOP", 0, -67)
+  buttonsContainer.frame:SetPoint("TOP", frame, "TOP", 0, -67 - classicToolbarShift)
   buttonsContainer.frame:SetPoint("RIGHT", container.frame, "LEFT", -17)
   buttonsContainer.frame:Show()
   frame.buttonsContainer = buttonsContainer
@@ -748,19 +859,21 @@ function OptionsPrivate.CreateFrame()
   local toolbarContainer = CreateFrame("Frame", nil, buttonsContainer.frame)
   toolbarContainer:SetParent(buttonsContainer.frame)
   -- toolbarContainer:Hide()
-  toolbarContainer:SetPoint("TOPLEFT", buttonsContainer.frame, "TOPLEFT", 30, 30)
-  toolbarContainer:SetPoint("BOTTOMRIGHT", buttonsContainer.frame, "TOPRIGHT", 0, 0)
-  -- Band of the toolbar, from the left edge of the window, a border below.
-  local toolbarBand = toolbarContainer:CreateTexture(nil, "BACKGROUND")
-  toolbarBand:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -29)
-  toolbarBand:SetPoint("BOTTOM", toolbarContainer, "BOTTOM")
-  toolbarBand:SetPoint("RIGHT", toolbarContainer, "RIGHT")
-  toolbarBand:SetColorTexture(Style.Color("band"))
-  local toolbarLine = toolbarContainer:CreateTexture(nil, "BORDER")
-  toolbarLine:SetHeight(1)
-  toolbarLine:SetPoint("BOTTOMLEFT", toolbarBand, "BOTTOMLEFT")
-  toolbarLine:SetPoint("BOTTOMRIGHT", toolbarBand, "BOTTOMRIGHT")
-  toolbarLine:SetColorTexture(Style.Color("border"))
+  toolbarContainer:SetPoint("TOPLEFT", buttonsContainer.frame, "TOPLEFT", 30, 30 + classicToolbarShift)
+  toolbarContainer:SetPoint("BOTTOMRIGHT", buttonsContainer.frame, "TOPRIGHT", 0, classicToolbarShift)
+  if not Style.classic then
+    -- Band of the toolbar, from the left edge of the window, a border below.
+    local toolbarBand = toolbarContainer:CreateTexture(nil, "BACKGROUND")
+    toolbarBand:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -29)
+    toolbarBand:SetPoint("BOTTOM", toolbarContainer, "BOTTOM")
+    toolbarBand:SetPoint("RIGHT", toolbarContainer, "RIGHT")
+    toolbarBand:SetColorTexture(Style.Color("band"))
+    local toolbarLine = toolbarContainer:CreateTexture(nil, "BORDER")
+    toolbarLine:SetHeight(1)
+    toolbarLine:SetPoint("BOTTOMLEFT", toolbarBand, "BOTTOMLEFT")
+    toolbarLine:SetPoint("BOTTOMRIGHT", toolbarBand, "BOTTOMRIGHT")
+    toolbarLine:SetColorTexture(Style.Color("border"))
+  end
 
   -- A restored aura may have moved or resized: its group, thumbnail and mover follow, as after a setter.
   local function RefreshRestored(records)
@@ -777,14 +890,19 @@ function OptionsPrivate.CreateFrame()
   end
 
   -- Toolbar of DESIGN.md: 24 pixel buttons in groups (history, creation, toggles, tools) split by a 1 pixel rule.
-  local function SizeToolbarButton(button, text)
+  -- The classic design shows the buttons as in the first versions: names, game icons, 10 pixels apart, no rules.
+  local toolbarGap = Style.classic and 10 or 4
+  local function SizeToolbarButton(button, text, classicText)
     button:SetHeight(24)
-    button:SetText(text)
+    button:SetText(Style.classic and classicText or text)
   end
   local function NewToolbarSeparator(anchor)
     local separator = CreateFrame("Frame", nil, toolbarContainer)
-    separator:SetSize(17, 14)
+    separator:SetSize(Style.classic and 10 or 17, 14)
     separator:SetPoint("LEFT", anchor, "RIGHT", 0, 0)
+    if Style.classic then
+      return separator
+    end
     local line = separator:CreateTexture(nil, "ARTWORK")
     line:SetColorTexture(Style.Color("border"))
     line:SetSize(1, 14)
@@ -793,11 +911,13 @@ function OptionsPrivate.CreateFrame()
   end
 
   local undo = AceGUI:Create("WeakAurasToolbarButton")
-  SizeToolbarButton(undo)
+  SizeToolbarButton(undo, nil, L["Undo"])
   undo:SetTooltip(L["Undo"])
   undo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upleft")
   -- The arrow fills half of its texture: only the drawn part, 14 pixels wide.
-  undo:SetIconCoords(8/32, 24/32, 6/32, 24/32, 14, 16)
+  if not Style.classic then
+    undo:SetIconCoords(8/32, 24/32, 6/32, 24/32, 14, 16)
+  end
   undo:SetCallback("OnClick", function()
     local records = OptionsPrivate.Private.TimeMachine:DescribePrevious()
     OptionsPrivate.Private.TimeMachine:StepBackward()
@@ -810,10 +930,12 @@ function OptionsPrivate.CreateFrame()
   undo.frame:SetCollapsesLayout(true)
 
   local redo = AceGUI:Create("WeakAurasToolbarButton")
-  SizeToolbarButton(redo)
+  SizeToolbarButton(redo, nil, L["Redo"])
   redo:SetTooltip(L["Redo"])
   redo:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\upright")
-  redo:SetIconCoords(7/32, 23/32, 6/32, 24/32, 14, 16)
+  if not Style.classic then
+    redo:SetIconCoords(7/32, 23/32, 6/32, 24/32, 14, 16)
+  end
   redo:SetCallback("OnClick", function()
     local records = OptionsPrivate.Private.TimeMachine:DescribeNext()
     OptionsPrivate.Private.TimeMachine:StepForward()
@@ -822,7 +944,7 @@ function OptionsPrivate.CreateFrame()
   end)
   redo.frame:SetParent(toolbarContainer)
   redo.frame:SetShown(OptionsPrivate.Private.Features:Enabled("undo"))
-  redo:SetPoint("LEFT", undo.frame, "RIGHT", 4, 0)
+  redo:SetPoint("LEFT", undo.frame, "RIGHT", toolbarGap, 0)
   redo.frame:SetEnabled(OptionsPrivate.Private.TimeMachine:DescribeNext() ~= nil)
   redo.frame:SetCollapsesLayout(true)
   local historySeparator = NewToolbarSeparator(redo.frame)
@@ -879,7 +1001,7 @@ function OptionsPrivate.CreateFrame()
   importButton:SetCallback("OnClick", OptionsPrivate.ImportFromString)
   importButton.frame:SetParent(toolbarContainer)
   importButton.frame:Show()
-  importButton:SetPoint("LEFT", newButton.frame, "RIGHT", 4, 0)
+  importButton:SetPoint("LEFT", newButton.frame, "RIGHT", toolbarGap, 0)
 
   local creationSeparator = NewToolbarSeparator(importButton.frame)
 
@@ -914,10 +1036,12 @@ function OptionsPrivate.CreateFrame()
   unlockButton:SetPoint("LEFT", creationSeparator, "RIGHT", 0, 0)
 
   local lockButton = AceGUI:Create("WeakAurasToolbarButton")
-  SizeToolbarButton(lockButton)
+  SizeToolbarButton(lockButton, nil, L["Lock Positions"])
   lockButton:SetTooltip(L["Lock Positions"])
   lockButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\lockPosition")
-  lockButton:SetIconCoords(5/32, 27/32, 2/32, 32/32, 12, 16)
+  if not Style.classic then
+    lockButton:SetIconCoords(5/32, 27/32, 2/32, 32/32, 12, 16)
+  end
   lockButton:SetCallback("OnClick", function(self)
     if WeakAurasOptionsSaved.lockPositions then
       lockButton:SetStrongHighlight(false)
@@ -934,10 +1058,15 @@ function OptionsPrivate.CreateFrame()
   end
   lockButton.frame:SetParent(toolbarContainer)
   lockButton.frame:Show()
-  lockButton:SetPoint("LEFT", unlockButton, "RIGHT", 4, 0)
+  if Style.classic then
+    -- Second row of the classic toolbar: positions, then the Mute, CDM and Classic design boxes.
+    lockButton:SetPoint("TOPLEFT", toolbarContainer, "BOTTOMLEFT", 0, -2)
+  else
+    lockButton:SetPoint("LEFT", unlockButton, "RIGHT", toolbarGap, 0)
+  end
 
   local magnetButton = AceGUI:Create("WeakAurasToolbarButton")
-  SizeToolbarButton(magnetButton)
+  SizeToolbarButton(magnetButton, nil, L["Magnetically Align"])
   magnetButton:SetTooltip(L["Magnetically Align"])
   magnetButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\magnetic")
   magnetButton:SetCallback("OnClick", function(self)
@@ -957,15 +1086,19 @@ function OptionsPrivate.CreateFrame()
   end
   magnetButton.frame:SetParent(toolbarContainer)
   magnetButton.frame:Show()
-  magnetButton:SetPoint("LEFT", lockButton.frame, "RIGHT", 4, 0)
+  magnetButton:SetPoint("LEFT", lockButton.frame, "RIGHT", toolbarGap, 0)
 
   local gridButton = AceGUI:Create("WeakAurasToolbarButton")
-  SizeToolbarButton(gridButton)
+  SizeToolbarButton(gridButton, nil, L["Grid"])
   -- A 13 pixel grid of 4 pixel cells, drawn with flat bars: the bordered square texture was too faint.
-  gridButton:SetGlyph({
-    { 13, 1, 0, 6 }, { 13, 1, 0, 2 }, { 13, 1, 0, -2 }, { 13, 1, 0, -6 },
-    { 1, 13, -6, 0 }, { 1, 13, -2, 0 }, { 1, 13, 2, 0 }, { 1, 13, 6, 0 },
-  })
+  if Style.classic then
+    gridButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\square_border_1px")
+  else
+    gridButton:SetGlyph({
+      { 13, 1, 0, 6 }, { 13, 1, 0, 2 }, { 13, 1, 0, -2 }, { 13, 1, 0, -6 },
+      { 1, 13, -6, 0 }, { 1, 13, -2, 0 }, { 1, 13, 2, 0 }, { 1, 13, 6, 0 },
+    })
+  end
   gridButton:SetTooltip(L["Grid"] .. "\n" .. L["Shows a grid while the options are open. With Magnetically Align, the auras snap to its lines.\nRight-click: grid spacing."])
 
   -- Pitch of the grid, opened by a right click on the Grid button.
@@ -1009,30 +1142,40 @@ function OptionsPrivate.CreateFrame()
   end
   gridButton.frame:SetParent(toolbarContainer)
   gridButton.frame:Show()
-  gridButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", 4, 0)
+  gridButton:SetPoint("LEFT", magnetButton.frame, "RIGHT", toolbarGap, 0)
   local toggleSeparator = NewToolbarSeparator(gridButton.frame)
   gridSpacingSlider:SetPoint("TOP", gridButton.frame, "BOTTOM", 0, -10)
 
   local unusedButton = AceGUI:Create("WeakAurasToolbarButton")
   SizeToolbarButton(unusedButton)
   -- A cross of two flat bars, red under the mouse: the button deletes.
-  unusedButton:SetGlyph({ { 1.5, 12, 0, 0, 45 }, { 1.5, 12, 0, 0, -45 } })
-  unusedButton:SetDanger(true)
+  if Style.classic then
+    unusedButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\delete")
+  else
+    unusedButton:SetGlyph({ { 1.5, 12, 0, 0, 45 }, { 1.5, 12, 0, 0, -45 } })
+    unusedButton:SetDanger(true)
+  end
   unusedButton:SetCallback("OnClick", OptionsPrivate.ConfirmDeleteUnused)
   unusedButton:SetTooltip(L["Unused Auras"] .. "\n" .. L["Deletes the auras no character of the account loaded for 30 days, and the empty groups.\nThe list is shown in the chat before the confirmation."])
   unusedButton.frame:SetParent(toolbarContainer)
   unusedButton.frame:Show()
-  unusedButton:SetPoint("LEFT", toggleSeparator, "RIGHT", 0, 0)
+  if Style.classic then
+    unusedButton:SetPoint("LEFT", unlockButton, "RIGHT", toolbarGap, 0)
+  else
+    unusedButton:SetPoint("LEFT", toggleSeparator, "RIGHT", 0, 0)
+  end
 
   local replaceButton = AceGUI:Create("WeakAurasToolbarButton")
   SizeToolbarButton(replaceButton)
   replaceButton:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\edit")
-  replaceButton:SetIconCoords(7/32, 28/32, 5/32, 26/32, 14, 14)
+  if not Style.classic then
+    replaceButton:SetIconCoords(7/32, 28/32, 5/32, 26/32, 14, 14)
+  end
   replaceButton:SetCallback("OnClick", OptionsPrivate.AskReplace)
   replaceButton:SetTooltip(L["Replace"] .. "\n" .. L["Replaces a spell, a texture, a font or a sound in the selected auras, or in all auras when none is selected.\nThe changes are shown in the chat before the confirmation, and Undo reverts them."])
   replaceButton.frame:SetParent(toolbarContainer)
   replaceButton.frame:Show()
-  replaceButton:SetPoint("LEFT", unusedButton.frame, "RIGHT", 4, 0)
+  replaceButton:SetPoint("LEFT", unusedButton.frame, "RIGHT", toolbarGap, 0)
 
   local auraSetButton = AceGUI:Create("WeakAurasToolbarButton")
   SizeToolbarButton(auraSetButton)
@@ -1041,7 +1184,7 @@ function OptionsPrivate.CreateFrame()
   auraSetButton:SetTooltip(L["Aura Set"] .. "\n" .. L["Chooses a tag for this character: it then loads only the auras with this tag, or whose group has it.\nThe other characters keep their own choice."])
   auraSetButton.frame:SetParent(toolbarContainer)
   auraSetButton.frame:Show()
-  auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", 4, 0)
+  auraSetButton:SetPoint("LEFT", replaceButton.frame, "RIGHT", toolbarGap, 0)
 
   -- /wa mute from the toolbar. The state is read again at each show: the slash command changes it too.
   local muteToggle
@@ -1053,7 +1196,7 @@ function OptionsPrivate.CreateFrame()
   end)
   -- Every toggle, /wa mute typed while the window is open included, sets the box.
   hooksecurefunc(WeakAuras, "ToggleSoundsMuted", ReadMute)
-  muteToggle:SetPoint("LEFT", auraSetButton.frame, "RIGHT", 4, 0)
+  muteToggle:SetPoint("LEFT", Style.classic and toggleSeparator or auraSetButton.frame, "RIGHT", toolbarGap, 0)
   ReadMute()
   muteToggle:HookScript("OnShow", function(check)
     ReadMute()
@@ -1069,6 +1212,7 @@ function OptionsPrivate.CreateFrame()
     GameTooltip:Hide()
   end)
 
+  local lastToggle = muteToggle
   if C_CooldownViewer then
     local hideCDMLabel = L["Hide Blizzard's CDM"]
     -- The toolbar has no room for the whole name: the acronym, the name in the tooltip.
@@ -1096,7 +1240,32 @@ function OptionsPrivate.CreateFrame()
     hideCDMToggle:HookScript("OnLeave", function()
       GameTooltip:Hide()
     end)
+    lastToggle = hideCDMToggle
   end
+
+  -- /wa design from the toolbar: the look chosen for the account, applied at the next /reload.
+  local classicToggle = Style.NewCheck(toolbarContainer, L["Classic design"], function()
+    OptionsPrivate.Private.ToggleClassicDesign()
+  end)
+  local function ReadClassic()
+    classicToggle:SetChecked(OptionsPrivate.Private.db.classicDesign == true)
+  end
+  hooksecurefunc(OptionsPrivate.Private, "ToggleClassicDesign", ReadClassic)
+  classicToggle:SetPoint("LEFT", lastToggle.label, "RIGHT", 12, 0)
+  ReadClassic()
+  classicToggle:HookScript("OnShow", function(check)
+    ReadClassic()
+    Style.FitCheck(check)
+  end)
+  classicToggle:HookScript("OnEnter", function(check)
+    GameTooltip:SetOwner(check, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L["Classic design"])
+    GameTooltip:AddLine(L["Shows the options with the classic WeakAuras design. The auras do not change. Takes effect after /reload."], 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  classicToggle:HookScript("OnLeave", function()
+    GameTooltip:Hide()
+  end)
 
   local loadProgress = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   loadProgress:SetPoint("TOP", buttonsContainer.frame, "TOP", 0, -4)
@@ -1378,7 +1547,11 @@ function OptionsPrivate.CreateFrame()
   sidegroup:SetLayout("flow")
 
   local dynamicTextCodesFrame = CreateFrame("Frame", "WeakAurasTextReplacements", sidegroup.frame, "PortraitFrameTemplate")
-  dynamicTextCodesFrame.Bg:SetColorTexture(Style.Color("background"))
+  if Style.classic then
+    dynamicTextCodesFrame.Bg:SetColorTexture(unpack(frame.Bg.colorTexture))
+  else
+    dynamicTextCodesFrame.Bg:SetColorTexture(Style.Color("background"))
+  end
   ButtonFrameTemplate_HidePortrait(dynamicTextCodesFrame)
   dynamicTextCodesFrame:SetPoint("TOPLEFT", sidegroup.frame, "TOPRIGHT", 20, 0)
   dynamicTextCodesFrame:SetPoint("BOTTOMLEFT", sidegroup.frame, "BOTTOMRIGHT", 20, 0)
@@ -1614,10 +1787,11 @@ function OptionsPrivate.CreateFrame()
     local tabsWidget
 
     -- 8 pixels between the toolbar and the tabs.
-    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -18)
+    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, Style.classic and -10 - classicToolbarShift or -18)
     container:ReleaseChildren()
     container:SetLayout("Fill")
-    tabsWidget = AceGUI:Create("WeakAurasTabGroup")
+    -- The classic design keeps the tabs of the game.
+    tabsWidget = AceGUI:Create(Style.classic and "TabGroup" or "WeakAurasTabGroup")
 
     local tabs = {
       { value = "region", text = L["Display"]},
@@ -1736,7 +1910,7 @@ function OptionsPrivate.CreateFrame()
     self.dynamicTextCodesFrame:Hide()
     self.pickedOption = "Packs"
 
-    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
+    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -classicToolbarShift)
     container:SetLayout("fill")
     local border = AceGUI:Create("InlineGroup")
     PaintInlineGroup(border, "raised")
@@ -1748,9 +1922,9 @@ function OptionsPrivate.CreateFrame()
     containerScroll:SetLayout("flow")
     border:AddChild(containerScroll)
 
-    local function AddTitle(text)
+    local function AddTitle(text, size)
       local label = AceGUI:Create("Label")
-      PaintSectionTitle(label, text)
+      PaintSectionTitle(label, text, size)
       containerScroll:AddChild(label)
     end
 
@@ -1771,7 +1945,7 @@ function OptionsPrivate.CreateFrame()
     local classPack = OptionsPrivate.classPacks[playerClass]
     if classPack then
       local classIcon = "Interface\\Icons\\ClassIcon_" .. playerClass
-      AddTitle(L["Class HUD"])
+      AddTitle(L["Class HUD"], 24)
       local intro = AceGUI:Create("Label")
       intro:SetText(L["Whole HUD updates every block to the pack settings. A single block leaves the other installed blocks as they are."])
       intro:SetFullWidth(true)
@@ -1796,12 +1970,12 @@ function OptionsPrivate.CreateFrame()
       end
     end
 
-    AddTitle(L["Utility Packs"])
+    AddTitle(L["Utility Packs"], 24)
     local category
     for _, utilityPack in ipairs(OptionsPrivate.utilityPacks) do
       if utilityPack.category ~= category then
         category = utilityPack.category
-        AddTitle(L[category])
+        AddTitle(L[category], 18)
       end
       AddPackButton(L[utilityPack.name], L[utilityPack.description], utilityPack.icon, function()
         WeakAuras.Import(utilityPack.data)
@@ -1839,7 +2013,7 @@ function OptionsPrivate.CreateFrame()
     self.pickedOption = "New"
 
     container:ReleaseChildren()
-    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, 0)
+    container.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", -63 - WeakAuras.normalWidth * 340, -classicToolbarShift)
     container:SetLayout("fill")
     local border = AceGUI:Create("InlineGroup")
     PaintInlineGroup(border, "raised")

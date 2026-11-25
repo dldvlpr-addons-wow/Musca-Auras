@@ -1461,12 +1461,24 @@ end
 
 local ActiveBossModText
 if Private.ExecEnv.BossMods.BigWigs.isInstalled then
-  ActiveBossModText = Private.Style.Markup(L["Active boss mod addon: |cFFffcc00BigWigs|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."])
+  ActiveBossModText = L["Active boss mod addon: |cFFffcc00BigWigs|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
 elseif Private.ExecEnv.BossMods.DBM.isInstalled then
-  ActiveBossModText = Private.Style.Markup(L["Active boss mod addon: |cFFffcc00DBM|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."])
+  ActiveBossModText = L["Active boss mod addon: |cFFffcc00DBM|r\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
 else
   ActiveBossModText = L["No active boss mod addon detected.\n\nNote: This trigger will use BigWigs or DBM, in that order if both are installed."]
 end
+-- The classic design shows the text as written, with the colors of WeakAuras.
+local classicBossModText = ActiveBossModText
+ActiveBossModText = Private.Style.Markup(ActiveBossModText)
+tinsert(Private.classicDesignFixes, function()
+  for _, prototype in pairs(Private.event_prototypes) do
+    for _, arg in ipairs(prototype.args or {}) do
+      if arg.text == ActiveBossModText then
+        arg.text = classicBossModText
+      end
+    end
+  end
+end)
 
 Private.event_prototypes["Boss Mod Stage"] = {
   type = "addons",

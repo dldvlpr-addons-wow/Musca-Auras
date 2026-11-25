@@ -616,6 +616,14 @@ return function(test)
   for _, id in ipairs({ "Leaf", "Sub", "Outer" }) do
     private.GetPlacementBox(id).SetBackdropBorderColor = nil
   end
+  -- A picked color for the groups: 2 px border and a mark before the name; right-click (nil) restores 1 px.
+  private.PlacementBoxes.SetRoleColor("group", { 1, 0, 0, 0.3 })
+  local outerBox = private.GetPlacementBox("Outer")
+  assert(outerBox.edgeSize == 2 and outerBox.roleMark:IsShown(), "picked color: thick border and mark on a group")
+  assert(private.GetPlacementBox("Leaf").edgeSize == 1 and not private.GetPlacementBox("Leaf").roleMark:IsShown(),
+    "picked color for groups only: no mark on a child")
+  private.PlacementBoxes.SetRoleColor("group", nil)
+  assert(outerBox.edgeSize == 1 and not outerBox.roleMark:IsShown(), "default color: thin border, no mark")
   local packBefore = WeakAuras.GetData("Pack").xOffset or 0
   DragInGroup("Pack", 3)
   assert(WeakAuras.GetData("Pack").xOffset == packBefore + 3, "group not stuck to its child")

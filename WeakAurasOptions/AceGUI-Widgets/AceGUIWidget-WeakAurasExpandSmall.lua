@@ -203,7 +203,11 @@ local function Constructor()
   local highlight = frame:CreateTexture(nil, "HIGHLIGHT")
   highlight:SetAllPoints(frame)
   highlight:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  highlight:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.2))
+  if OptionsPrivate.Private.Style.classic then
+    highlight:SetVertexColor(0.2, 0.4, 0.8, 0.2)
+  else
+    highlight:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.2))
+  end
   highlight:SetBlendMode("ADD")
 
   local expandedHighlight = frame:CreateTexture(nil, "BACKGROUND")

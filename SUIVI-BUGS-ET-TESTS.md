@@ -744,6 +744,29 @@ Libellés : la fiche cite l'anglais. Client français : « Mode sans échec », 
 ### 17.4 Non-régression
 12. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
 
+## Étape 18 : tests de la 1.22, édition d'auras et design classique (2026-11-25, 35 min)
+
+Entrée du 2026-11-25 de `CHANGES.md`. Banc headless du 2026-11-25 : 138 scénarios, 0 échec. Rien n'est testé en
+jeu. Fiche détaillée : `TESTS-1.22.md`. Un seul 🔴 en échec bloque la mise en production.
+
+### 18.1 Édition d'auras
+1. [ ] 🔴 « Trigger Name » rempli sur le trigger 2 : le titre du trigger et les conditions montrent le nom ; champ
+   vidé, « Trigger 2 » revient.
+2. [ ] 🔴 Option custom avec « Visible If » sur un Toggle : en mode utilisateur, elle n'apparaît que si la case est
+   cochée. Option cible supprimée : l'option reste visible, aucune erreur.
+
+### 18.2 Ancrage par Alt
+3. [ ] 🔴 `/wa` : aura lâchée contre le bord d'une autre, Alt tenu : elle est ancrée et suit l'autre. Sans Alt :
+   alignement seul.
+4. [ ] `/wa unlock` : même chose, Alt pressé pendant le glissement.
+
+### 18.3 Design classique
+5. [ ] 🔴 `/wa design`, `/reload` : options en or et noir, polices du jeu, logo WeakAuras, case « Classic design » cochée ;
+   les auras ne changent pas. `/wa design` puis `/reload` : retour au design Musca.
+
+### 18.4 Non-régression
+6. [ ] 🔴 Étape 2 (combat de base) rejouée sur un mob : aucune erreur.
+
 ---
 
 # 4. Résultats reçus et prompt de fin

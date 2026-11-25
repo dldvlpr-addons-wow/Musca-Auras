@@ -35,7 +35,11 @@ local function Constructor()
   local background = frame:CreateTexture(nil, "ARTWORK")
   foreground:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
   background:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_White")
-  background:SetVertexColor(OptionsPrivate.Private.Style.Color("border"))
+  if OptionsPrivate.Private.Style.classic then
+    background:SetVertexColor(0.5, 0.5, 0.5)
+  else
+    background:SetVertexColor(OptionsPrivate.Private.Style.Color("border"))
+  end
   foreground:SetDrawLayer("ARTWORK", 0);
   background:SetDrawLayer("ARTWORK", -1);
 

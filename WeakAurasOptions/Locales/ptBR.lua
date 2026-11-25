@@ -512,6 +512,7 @@ UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:S
 	L["Dynamic information from first active trigger"] = "Dynamic information from first active trigger"
 	--[[Translation missing --]]
 	L["Dynamic information from Trigger %i"] = "Dynamic information from Trigger %i"
+	L["Dynamic information from %s"] = "Informação dinâmica de %s"
 	--[[Translation missing --]]
 	L["Dynamic Text Replacements"] = "Dynamic Text Replacements"
 	--[[Translation missing --]]
@@ -1637,6 +1638,12 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Spell Set"] = "Conjunto de feitiços"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "Nome de uma lista de feitiços definida por código personalizado com WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Os IDs de feitiço dela são adicionados aos de cima. Enquanto nenhuma lista com este nome estiver definida, o gatilho usa apenas os IDs de feitiço de cima."
 	L["Mute"] = "Silenciar"
+	L["Trigger Name"] = "Nome do gatilho"
+	L["Shown in place of \"Trigger N\" in the trigger title and in the conditions. Leave empty to keep the number."] = "Mostrado no lugar de \"Gatilho N\" no título do gatilho e nas condições. Deixe vazio para manter o número."
+	L["Visible If"] = "Visível se"
+	L["Shows this option in user mode only when the chosen option of the same level has the value below."] = "Mostra esta opção no modo de usuário só quando a opção escolhida do mesmo nível tem o valor abaixo."
+	L["Classic design"] = "Design clássico"
+	L["Shows the options with the classic WeakAuras design. The auras do not change. Takes effect after /reload."] = "Mostra as opções com o design clássico do WeakAuras. As auras não mudam. Vale após /reload."
 	L["Media missing from your addons, replaced by the default one:"] = "Mídias ausentes dos seus addons, substituídas pela padrão:"
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Nenhuma aura toca um som nem fala enquanto isto estiver marcado. As auras não são alteradas."
 	L["%s (1 aura)"] = "%s (1 aura)"

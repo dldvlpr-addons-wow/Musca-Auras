@@ -66,7 +66,11 @@ local function Constructor()
   button.background = background;
   background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
   background:SetBlendMode("ADD");
-  background:SetVertexColor(OptionsPrivate.Private.Style.Color("textDisabled", 0.25));
+  if OptionsPrivate.Private.Style.classic then
+    background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
+  else
+    background:SetVertexColor(OptionsPrivate.Private.Style.Color("textDisabled", 0.25));
+  end
   background:SetAllPoints(button);
 
   button:SetScript("OnEnter", function() Show_Tooltip(button, button:GetText():sub(2), button.description or L["Add a new display"]) end);

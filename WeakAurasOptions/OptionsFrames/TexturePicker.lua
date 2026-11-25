@@ -228,7 +228,11 @@ local function ConstructTexturePicker(frame)
           break;
         end
       end
-      dropdown.list[categoryName] = (match and OptionsPrivate.Private.Style.Hex("accent") or "")..categoryName;
+      if OptionsPrivate.Private.Style.classic then
+        dropdown.list[categoryName] = (match and "|cFF80A0FF" or "")..categoryName;
+      else
+        dropdown.list[categoryName] = (match and OptionsPrivate.Private.Style.Hex("accent") or "")..categoryName;
+      end
     end
     dropdown:SetGroupList(dropdown.list);
   end

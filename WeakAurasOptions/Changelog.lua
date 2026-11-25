@@ -4,14 +4,26 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.21.0',
-  dateString = '2026-11-24',
+  versionString = '1.22.0',
+  dateString = '2026-11-25',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
-- New: /wa safemode pauses every aura and runs no custom code, to find an aura that breaks your UI
-- New: /wa report shows a diagnostic report to paste into a bug report, /wa packcheck lists the pack spells you do not know
-- New load option "AddOn Loaded", and the import lists the fonts and textures you do not have
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.21.0 (2026-11-24):
+- New: name your triggers, the name shows in the conditions in place of "Trigger 3"
+- New: custom options can show only when another option has a chosen value ("Visible If")
+- New: hold Alt when you drop an aura on the edge of another one to anchor it there
+- New: /wa design switches the options to the classic WeakAuras design (/reload to apply)
+- New: pick the border color of the placement boxes by kind (group, in group, anchored, alone)
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.22.0 (2026-11-25):
+
+New:
+
+- Triggers have a "Trigger Name" field. The name replaces "Trigger 3" in the trigger title, in the conditions and in the icon source list. Leave it empty to keep the number
+- Custom options (author mode) have a "Visible If" setting: the option shows in user mode only when another option of the same level has the chosen value. Older versions ignore it and show the option
+- Hold Alt when you drop an aura on the edge of another one, in /wa or in /wa unlock: the aura gets anchored to it and follows it when it moves
+- /wa design switches the options between the Musca design and the classic WeakAuras design (gold, game fonts, WeakAuras logo). The "Classic design" box of the /wa window does the same. Type /reload to apply it. The auras do not change
+- /wa unlock bar: pick the border color of the boxes of groups, of auras in a group, of anchored auras and of the other auras. Right-click a color to restore the default. The Edit Mode boxes use the same colors
+
+1.21.0 (2026-11-24):
 
 New:
 

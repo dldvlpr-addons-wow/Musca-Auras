@@ -419,6 +419,7 @@ UNIT_POWER_UPDATE:player, UNIT_AURA:nameplate:group PLAYER_TARGET_CHANGED CLEU:S
 	L["Dynamic information from first active trigger"] = "Dynamic information from first active trigger"
 	--[[Translation missing --]]
 	L["Dynamic information from Trigger %i"] = "Dynamic information from Trigger %i"
+	L["Dynamic information from %s"] = "Informazioni dinamiche da %s"
 	--[[Translation missing --]]
 	L["Dynamic Text Replacements"] = "Dynamic Text Replacements"
 	--[[Translation missing --]]
@@ -1642,6 +1643,12 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Spell Set"] = "Insieme di incantesimi"
 	L["Name of a spell set given by custom code with WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). Its spell IDs are added to the ones above. While no set with this name is given, the trigger uses only the spell IDs above."] = "Nome di un elenco di incantesimi impostato dal codice personalizzato con WeakAuras.SetAuraSpellSet(name, { spellIDs = { ... } }). I suoi ID incantesimo si aggiungono a quelli sopra. Finché non è impostato alcun elenco con questo nome, il trigger usa solo gli ID incantesimo sopra."
 	L["Mute"] = "Muto"
+	L["Trigger Name"] = "Nome dell'attivatore"
+	L["Shown in place of \"Trigger N\" in the trigger title and in the conditions. Leave empty to keep the number."] = "Mostrato al posto di «Attivatore N» nel titolo dell'attivatore e nelle condizioni. Lascia vuoto per mantenere il numero."
+	L["Visible If"] = "Visibile se"
+	L["Shows this option in user mode only when the chosen option of the same level has the value below."] = "Mostra questa opzione in modalità utente solo quando l'opzione scelta dello stesso livello ha il valore sotto."
+	L["Classic design"] = "Design classico"
+	L["Shows the options with the classic WeakAuras design. The auras do not change. Takes effect after /reload."] = "Mostra le opzioni con il design classico di WeakAuras. Le aure non cambiano. Ha effetto dopo /reload."
 	L["Media missing from your addons, replaced by the default one:"] = "Risorse mancanti nei tuoi addon, sostituite da quella predefinita:"
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Nessuna aura riproduce un suono o parla finché questa casella è selezionata. Le aure non vengono modificate."
 	L["%s (1 aura)"] = "%s (1 aura)"

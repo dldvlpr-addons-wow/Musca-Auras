@@ -453,6 +453,7 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED]=]
 	L["Dynamic Information"] = "Dynamische Information"
 	L["Dynamic information from first active trigger"] = "Dynamische Information vom ersten aktiven Auslöser"
 	L["Dynamic information from Trigger %i"] = "Dynamische Information des %i. Auslösers"
+	L["Dynamic information from %s"] = "Dynamische Information von %s"
 	--[[Translation missing --]]
 	L["Dynamic Text Replacements"] = "Dynamic Text Replacements"
 	--[[Translation missing --]]
@@ -1497,4 +1498,10 @@ Musca Auras will always run custom grow code if you include 'changed' in this li
 	L["Guide"] = "Leitfaden"
 
 
+	L["Trigger Name"] = "Auslösername"
+	L["Shown in place of \"Trigger N\" in the trigger title and in the conditions. Leave empty to keep the number."] = "Wird statt „Auslöser N“ im Titel des Auslösers und in den Bedingungen angezeigt. Leer lassen, um die Nummer zu behalten."
+	L["Visible If"] = "Sichtbar wenn"
+	L["Shows this option in user mode only when the chosen option of the same level has the value below."] = "Zeigt diese Option im Benutzermodus nur, wenn die gewählte Option derselben Ebene den Wert unten hat."
+	L["Classic design"] = "Klassisches Design"
+	L["Shows the options with the classic WeakAuras design. The auras do not change. Takes effect after /reload."] = "Zeigt die Optionen im klassischen WeakAuras-Design. Die Auren ändern sich nicht. Wirkt nach /reload."
 L["Media missing from your addons, replaced by the default one:"] = "Medien, die in deinen Addons fehlen, durch die Standardmedien ersetzt:"

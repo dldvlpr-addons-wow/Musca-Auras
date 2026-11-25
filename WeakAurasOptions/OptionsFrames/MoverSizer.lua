@@ -138,7 +138,11 @@ local function ConstructMover(frame)
   arrowTexture:SetTexture("Interface\\Addons\\WeakAuras\\Media\\Textures\\offscreen.tga")
   arrowTexture:SetSize(128, 128)
   arrowTexture:SetPoint("CENTER", arrow, "CENTER")
-  arrowTexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+  if OptionsPrivate.Private.Style.classic then
+    arrowTexture:SetVertexColor(0.8, 0.8, 0.2)
+  else
+    arrowTexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primary"))
+  end
   arrowTexture:Hide()
   local offscreenText = arrow:CreateFontString(nil, "OVERLAY")
   offscreenText:SetFont(STANDARD_TEXT_FONT, 14, "THICKOUTLINE");
@@ -839,12 +843,13 @@ end
 ---       The size of the aura, this is used to highlight additional lines that exactly
 ---       auraSize away
 ---@return number? -- The delta
+---@return AlignmentLine? -- The line the aura sticks to
 local function SelectLines(lines, positions, auraSize)
   if #lines == 0 then
     -- Nothing to do
   elseif #lines == 1 then
     lines[1]:SetHighlighted(true)
-    return lines[1].delta
+    return lines[1].delta, lines[1]
   else
     local bestLine = OptionsPrivate.Private.PlacementSnap.Best(lines, positions, SnapDistance())
     for _, line in ipairs(lines) do
@@ -862,7 +867,7 @@ local function SelectLines(lines, positions, auraSize)
         line:SetHighlighted(false)
       end
     end
-    return bestLine and bestLine.delta
+    return bestLine and bestLine.delta, bestLine
   end
 end
 
@@ -870,6 +875,7 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
   local align = (WeakAurasOptionsSaved.magnetAlign and not IsShiftKeyDown())
                     or (not WeakAurasOptionsSaved.magnetAlign and IsShiftKeyDown())
   if not align then
+    mover.verticalLine, mover.horizontalLine, mover.snapPositions = nil, nil, nil
     return
   end
 
@@ -879,6 +885,7 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
   -- No rect yet, as on the frame a move starts: the lines wait for the next update, the snap of a previous move dropped.
   if not centerX then
     mover.verticalDelta, mover.horizontalDelta = nil, nil
+    mover.verticalLine, mover.horizontalLine, mover.snapPositions = nil, nil, nil
     return
   end
   centerX, centerY = centerX * scale, centerY * scale
@@ -935,10 +942,11 @@ AlignmentLines.ShowLinesFor = function(self, ctrlKey, region, sizePoint)
     end
     return potentials
   end
-  mover.verticalDelta = SelectLines(Potentials(self.verticalLines, verticalEdges, screenCenterX), positions,
-    auraWidth)
-  mover.horizontalDelta = SelectLines(Potentials(self.horizontalLines, horizontalEdges, screenCenterY), positions,
-    auraHeight)
+  mover.verticalDelta, mover.verticalLine = SelectLines(Potentials(self.verticalLines, verticalEdges, screenCenterX),
+    positions, auraWidth)
+  mover.horizontalDelta, mover.horizontalLine = SelectLines(Potentials(self.horizontalLines, horizontalEdges,
+    screenCenterY), positions, auraHeight)
+  mover.snapPositions = positions
 end
 
 local function ConstructMoverSizer(parent)
@@ -1204,6 +1212,15 @@ local function ConstructMoverSizer(parent)
         xDelta = mover.verticalDelta or 0
         yDelta = mover.horizontalDelta or 0
       end
+      -- With Alt, a move (not a resize) stuck against the edge of another aura links the aura to it.
+      local linkTargetId, linkSide
+      local positions = mover.snapPositions
+      if align and IsAltKeyDown() and not mover.sizePoint and positions then
+        local AnchorLinks = OptionsPrivate.Private.AnchorLinks
+        linkTargetId, linkSide = AnchorLinks.SnapLink(mover.verticalLine, mover.horizontalLine, {
+          LEFT = positions.LEFT + xDelta, RIGHT = positions.RIGHT + xDelta,
+          BOTTOM = positions.BOTTOM + yDelta, TOP = positions.TOP + yDelta }, data.id)
+      end
 
       if data.xOffset and data.yOffset then
         local selfX, selfY = mover.selfPointIcon:GetCenter()
@@ -1223,6 +1240,14 @@ local function ConstructMoverSizer(parent)
       region:ResetPosition()
       WeakAuras.Add(data)
       OptionsPrivate.Private.AddParents(data)
+      local linkTarget = linkTargetId and WeakAuras.GetRegion(linkTargetId)
+      if linkTarget and OptionsPrivate.Private.AnchorLinks.LinkInPlace(data, region, linkTarget,
+        "WeakAuras:" .. linkTargetId, linkSide) then
+        WeakAuras.Add(data)
+        OptionsPrivate.Private.AddParents(data)
+      elseif linkTargetId then
+        WeakAuras.prettyPrint(L["The aura was not linked: the other aura has no position on screen."])
+      end
       WeakAuras.UpdateThumbnail(data)
 
       local xOff, yOff

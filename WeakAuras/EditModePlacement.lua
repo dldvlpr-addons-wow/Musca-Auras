@@ -293,6 +293,43 @@ end
 -- drop would stick to, references[id] true, get a frost border. While a link is picked, the auras that cannot be its
 -- target, as they follow the aura linked, get a red border. The box under the mouse is lighter.
 local selectedId
+-- The classic design draws the boxes as WeakAuras did: blue, without a border, brighter when selected. The borders
+-- of the drag, the link and the mouse keep the colors of the Style.
+local classicBoxColors = {
+  boxBackground = { 0.1, 0.5, 0.9, 0.35 },
+  boxBackgroundSelected = { 0.1, 0.5, 0.9, 0.38 },
+  boxBorder = { 0, 0, 0, 0 },
+}
+local function BoxColor(name, alpha)
+  local color = Style.classic and classicBoxColors[name]
+  if not color then
+    return Style.Color(name, alpha)
+  end
+  -- The blue keeps the transparency of WeakAuras, whatever the host or the mouse ask.
+  return color[1], color[2], color[3], color[4]
+end
+-- The kind of a box, whose border color the player may pick (WeakAurasSaved.placementColors): the box of a group, an
+-- aura linked to another aura, an aura inside a group, any other aura. A linked aura inside a group is "anchored".
+local boxRoles = { "group", "child", "anchored", "other" }
+local function BoxRole(id)
+  local data = WeakAuras.GetData(id)
+  if data and data.controlledChildren then
+    return "group"
+  elseif data and AnchorLinks.TargetAura(data) then
+    return "anchored"
+  elseif data and data.parent then
+    return "child"
+  end
+  return "other"
+end
+-- The border picked for this kind of box, the default border otherwise; the picked table second.
+local function RoleColor(role)
+  local picked = Private.db and Private.db.placementColors and Private.db.placementColors[role]
+  if picked then
+    return picked[1], picked[2], picked[3], picked[4], picked
+  end
+  return BoxColor("boxBorder")
+end
 -- The aura of the Anchor link clicked, until its target is clicked.
 local linkSource
 local hoveredBox
@@ -301,6 +338,10 @@ local selectionOutline = CreateFrame("Frame", nil, holder, "BackdropTemplate")
 selectionOutline:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 2 })
 selectionOutline:SetBackdropBorderColor(Style.Color("primary"))
 selectionOutline:EnableMouse(false)
+-- Set at load, before the classic design swaps its colors.
+tinsert(Private.classicDesignFixes, function()
+  selectionOutline:SetBackdropBorderColor(Style.Color("primary"))
+end)
 selectionOutline:Hide()
 local function ColorBoxes(references)
   local selectedBox = selectedId and boxes[selectedId]
@@ -331,8 +372,23 @@ local function ColorBoxes(references)
     elseif box == litBox then
       border = "boxBorderHover"
     end
-    box:SetBackdropBorderColor(Style.Color(border))
-    box:SetBackdropColor(Style.Color("boxBackground",
+    local r, g, b, a, picked = RoleColor(BoxRole(id))
+    -- A picked color: a thicker border and a mark before the name, seen when the boxes overlap.
+    local edgeSize = picked and 2 or 1
+    if box.edgeSize ~= edgeSize then
+      box.edgeSize = edgeSize
+      box:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = edgeSize })
+    end
+    box.roleMark:SetShown(picked and true or false)
+    if picked then
+      box.roleMark:SetColorTexture(r, g, b, 1)
+    end
+    if border == "boxBorder" then
+      box:SetBackdropBorderColor(r, g, b, a)
+    else
+      box:SetBackdropBorderColor(BoxColor(border))
+    end
+    box:SetBackdropColor(BoxColor("boxBackground",
       math.min(host.backgroundAlpha + (box == litBox and 0.15 or 0), 1)))
     box.highlight:SetShown(id == selectedId)
     box.sizer:SetShown(id == selectedId and box.resizable or false)
@@ -571,6 +627,9 @@ linkHint:SetShadowOffset(1, -1)
 linkHint:SetShadowColor(0, 0, 0, 0.9)
 linkHint:SetPoint("TOP", guides, "TOP", 0, -120)
 linkHint:Hide()
+tinsert(Private.classicDesignFixes, function()
+  Style.SetFont(linkHint, "title", "l")
+end)
 
 local function CancelLink()
   linkSource = nil
@@ -601,6 +660,9 @@ local function LinkTo(sourceId, targetId, side)
     done = AnchorLinks.UnlinkInPlace(data, region)
   end
   if not done then
+    if side then
+      WeakAuras.prettyPrint(L["The aura was not linked: the other aura has no position on screen."])
+    end
     return
   end
   WeakAuras.Add(data)
@@ -687,6 +749,8 @@ local function OnDragStart(box)
   box = target
   box.startLeft, box.startBottom = box:GetLeft(), box:GetBottom()
   box.otherLines = nil
+  -- Alt held when the drag starts picks a group: only an Alt pressed during the drag links at the drop.
+  box.altAtStart = IsAltKeyDown()
   dragging = true
   box:StartMoving()
   box:SetScript("OnUpdate", PreviewSnap)
@@ -705,10 +769,22 @@ local function OnDragStop(box)
   StopPreview(box)
   ColorBoxes()
   dragging = false
-  local xOffset, yOffset, data = DropOffsets(box, ShiftOfSnap(box))
+  local shiftX, shiftY, lineX, lineY = ShiftOfSnap(box)
+  local xOffset, yOffset, data = DropOffsets(box, shiftX, shiftY)
   box.startLeft, box.startBottom = nil, nil
+  -- With Alt, a drop stuck against the edge of another aura links the aura to it.
+  local targetId, side
+  if xOffset and IsAltKeyDown() and not box.altAtStart then
+    local left, bottom, right, top = SnapRect(box)
+    shiftX, shiftY = shiftX or 0, shiftY or 0
+    targetId, side = AnchorLinks.SnapLink(lineX, lineY, { LEFT = left + shiftX, RIGHT = right + shiftX,
+      BOTTOM = bottom + shiftY, TOP = top + shiftY }, box.auraId)
+  end
   if xOffset then
     SaveOffsets(data, xOffset, yOffset)
+    if targetId then
+      LinkTo(data.id, targetId, side)
+    end
   else
     -- The aura was deleted while dragged: the rebuild skipped meanwhile is done now.
     RebuildBoxes()
@@ -861,9 +937,10 @@ local function NewBox()
   box:SetScript("OnEnter", OnBoxEnter)
   box:SetScript("OnLeave", OnBoxLeave)
   box:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+  box.edgeSize = 1
   box.highlight = box:CreateTexture(nil, "ARTWORK")
   box.highlight:SetAllPoints()
-  box.highlight:SetColorTexture(Style.Color("boxBackgroundSelected"))
+  box.highlight:SetColorTexture(BoxColor("boxBackgroundSelected"))
   box.highlight:Hide()
   -- Selected: the fill beats twice, then stays.
   box.pulse = box.highlight:CreateAnimationGroup()
@@ -874,15 +951,29 @@ local function NewBox()
   box.pulse:SetToFinalAlpha(true)
   box.snapPreview = box:CreateTexture(nil, "BORDER")
   -- Frost at a quarter: the deep snapTarget alone vanishes under the veil and the box fill.
-  box.snapPreview:SetColorTexture(Style.Color("snapGuide", 0.25))
+  if Style.classic then
+    box.snapPreview:SetColorTexture(1, 0.82, 0, 0.35)
+  else
+    box.snapPreview:SetColorTexture(Style.Color("snapGuide", 0.25))
+  end
   box.snapPreview:Hide()
   -- The name on a plate over the top left corner, outside the box: the aura stays visible under it.
-  box.label = Style.NewText(box, "text", "xs", "textSecondary")
+  if Style.classic then
+    box.label = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+  else
+    box.label = Style.NewText(box, "text", "xs", "textSecondary")
+  end
   box.label:SetPoint("BOTTOMLEFT", box, "TOPLEFT", 4, 3)
   local plate = box:CreateTexture(nil, "ARTWORK")
   plate:SetColorTexture(Style.Color("labelBackground"))
   plate:SetPoint("TOPLEFT", box.label, "TOPLEFT", -4, 2)
   plate:SetPoint("BOTTOMRIGHT", box.label, "BOTTOMRIGHT", 4, -2)
+  -- The color picked for the kind of the box, on the left edge of the name plate; shown by ColorBoxes.
+  box.roleMark = box:CreateTexture(nil, "OVERLAY")
+  box.roleMark:SetWidth(3)
+  box.roleMark:SetPoint("TOPRIGHT", plate, "TOPLEFT")
+  box.roleMark:SetPoint("BOTTOMRIGHT", plate, "BOTTOMLEFT")
+  box.roleMark:Hide()
   -- Over the top right corner, outside the box: a small box keeps its name readable.
   box.anchorButton = CreateFrame("Button", nil, box, "BackdropTemplate")
   box.anchorButton:SetSize(52, 16)
@@ -968,7 +1059,7 @@ local function PlaceBoxes()
       end
       box:SetFrameStrata(host.strata)
       box:SetFrameLevel(host.level + depth)
-      box:SetBackdropColor(Style.Color("boxBackground", host.backgroundAlpha))
+      box:SetBackdropColor(BoxColor("boxBackground", host.backgroundAlpha))
       box.auraId = id
       box.label:SetText(id)
       -- Disabled (load "Never"): dimmed.
@@ -1113,6 +1204,20 @@ Private.PlacementBoxes = {
   Ids = editModeHost.Ids,
   Selected = function() return selectedId end,
   Select = Select,
+  --- The kinds of boxes whose border color may be picked, in the order of the bar.
+  roles = boxRoles,
+  --- r, g, b, a of the border of this kind of box, and the picked table, nil for the default border.
+  RoleColor = RoleColor,
+  --- Saves the border of this kind of box for the account, { r, g, b, a } or nil for the default, then repaints.
+  SetRoleColor = function(role, color)
+    if not Private.db then
+      return
+    end
+    local colors = Private.db.placementColors or {}
+    colors[role] = color
+    Private.db.placementColors = next(colors) and colors or nil
+    ColorBoxes()
+  end,
   StartLink = StartLink,
   Unlink = function(id)
     local data = WeakAuras.GetData(id)

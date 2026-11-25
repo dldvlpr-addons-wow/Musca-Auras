@@ -62,6 +62,79 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-25
+
+Tests `Tests/run.lua` (138 scenarios, 0 failed). Not tested in game yet.
+
+### Added
+- `WeakAurasOptions/CommonOptions.lua`, `WeakAuras/WeakAuras.lua`, `WeakAurasOptions/TriggerOptions.lua`: "Trigger
+  Name" field at the top of each trigger, saved in `data.triggers[n].name`. `Private.TriggerName` returns it when it
+  holds a non-blank text; `Private.TriggerLabel` returns it or "Trigger N". The trigger title, the conditions (through
+  `OptionsPrivate.GetTriggerTitle`), the condition property list and the icon source list use them.
+- `WeakAuras/Types.lua`, `WeakAurasOptions/AuthorOptions.lua`: "Visible If" rule on custom options, saved as
+  `visibleIf = { key, value }`. In user mode the option, and every sub option of a group, is hidden unless the option
+  of the same level with that key has that value. The target may be a toggle, select, input, number or range option.
+  A rule on a deleted or renamed option shows the option; a version without the field ignores it. Deleting an
+  option clears the rules that target it (undone with it). The list leaves out the option itself and any option whose
+  rules lead back to it. A number or range value is compared with a 1e-9 tolerance (slider steps).
+  `addUserModeOption` wraps the new `addUserModeOptionControls`, which holds the former body.
+- `WeakAuras/AnchorLinks.lua`: `AnchorLinks.SnapLink(lineX, lineY, positions, sourceId)` turns the snap lines of a
+  drop into an anchor link: the dropped aura must touch the other aura on one side (left, right, top or bottom
+  edge against the opposite edge) with overlapping ranges. Aligned edges on the same side, disjoint ranges, a
+  spacing line, a group (its frame is a 2x2 point) and a link that would loop give none. Tests in
+  `Tests/Scenarios/98_AnchorLinks.lua`.
+- `WeakAurasOptions/OptionsFrames/MoverSizer.lua`: holding Alt when an aura is dropped in `/wa` on a snap line of
+  another aura anchors it there through `AnchorLinks.LinkInPlace`; the aura does not move. Not when resizing.
+  A link refused because the other aura has no position on screen is told in the chat.
+- `WeakAuras/EditModePlacement.lua`: the same in `/wa unlock` and Edit Mode, when Alt is pressed during the drag.
+  Alt held from the start of the drag keeps its former behavior.
+- `WeakAuras/Style.lua`, `WeakAuras/WeakAuras.lua`: `/wa design` sets `WeakAurasSaved.classicDesign` (account wide)
+  and asks for a `/reload`. At `ADDON_LOADED`, `Style.UseClassic` swaps the palette (black, game gold, blue
+  selection, game success, warning and error colors) and the fonts (`FRIZQT__`, `ARIALN`). In classic design,
+  `Style.Markup` returns the text unchanged, `Style.NewButton` makes a `UIPanelButtonTemplate`, `Style.NewCheck` a
+  `UICheckButtonArtTemplate` with its label, and `Style.SkinScrollBar` leaves the game scroll bar.
+- Classic design takes back the look of 1.16 (before the 1.18 reskin), each visual block under
+  `if Style.classic then <1.16 look> else <Musca look> end`; every feature added since stays in both designs:
+  - `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: `PortraitFrameTemplate` frame with the logo in the portrait,
+    `MaximizeMinimizeButtonFrameTemplate`, `SearchBoxTemplate`, AceGUI `TabGroup`, toolbar with names and icons of
+    1.16, size grabber textures, footer and Packs page of 1.16. The Mute, Hide CDM and Classic design boxes stay;
+    the classic toolbar takes two rows (Lock Positions, Magnetically Align, Grid and the three boxes on the second)
+    and moves the content down by `classicToolbarShift` (28 px) so that it fits in 750 px.
+  - `WeakAurasOptions/AceGUI-Widgets/` (`DisplayButton`, `ToolbarButton`, `LoadedHeaderButton`, `NewButton`,
+    `NewHeaderButton`, `PendingUpdateButton`, `PendingInstallButton`, `ImportButton`, `IconButton`, `TextureButton`,
+    `SnippetButton`, `AnchorButtons`, `MiniTalent`, `SpinBox`, `TreeGroup`, `MultiLineEditBox`,
+    `MultiLineEditBoxWithEnter`, `InputWithIndentation`, `Expand`, `ExpandSmall`, `ProgressBar`,
+    `DropDownItemCurrency`): textures, fonts and colors of 1.16. `DisplayButton.UpdateStatusIcon` takes an optional
+    last `icon` argument.
+  - `WeakAurasOptions/OptionsFrames/` (`TextEditor`, `TexturePicker`, `FrameChooser`, `MoverSizer`, `Update`,
+    `IconPicker`), `WeakAurasOptions/WeakAurasOptions.lua` (drop indicator), `RegionOptions/Text.lua` (thumbnail).
+  - `WeakAuras/`: `EditModePlacement.lua` (boxes and anchor preview), `ForeverTutorial.lua` (dialog frame),
+    `Profiling.lua`, `WeakAuras.lua` (minimap tooltip, debug lines), `Transmission.lua`.
+  - `WeakAuras/Init.lua`: `Private.classicDesignFixes`, run after `UseClassic` at `ADDON_LOADED`, recolors the texts
+    built when a file loads (`Types.lua`, `Prototypes.lua`, `BossMods.lua`, `Features.lua`, popups, link tooltips,
+    secret aura status colors of `SecretAuraSingle.lua` and `SecretAuraSingleStatus.lua`).
+- `WeakAurasOptions/TriggerOptions.lua`: the "Dynamic information from" list shows the trigger name when it has one.
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`: "Classic design" box in the toolbar, after Mute and Hide CDM, which
+  calls `Private.ToggleClassicDesign`; the title band shows the WeakAuras logo (`logo_256.tga`) in classic design.
+- `WeakAuras/EditModePlacement.lua`, `WeakAurasOptions/OptionsFrames/PlacementMode.lua`: border color of the
+  placement boxes by kind: group, aura in a group, aura anchored to another aura (`AnchorLinks.TargetAura`, wins
+  over "in a group"), other aura. Four swatches in the `/wa unlock` bar: click opens the color picker (with opacity,
+  Cancel restores), right-click restores the default border. Saved for the account in
+  `WeakAurasSaved.placementColors[kind]` as `{ r, g, b, a }`, absent = default border. The Edit Mode boxes use the
+  same colors. Selection, link, snap and hover borders keep priority. A kind with a picked color gets a 2 px border
+  and a 3 px mark of the opaque color left of the box name, readable when boxes overlap. The picker changes nothing
+  while it opens, only once shown. The selection outline takes the classic color in classic design.
+- `WeakAuras/Locales/*.lua`, `WeakAurasOptions/Locales/*.lua`: the new texts in the 11 languages.
+- `Tests/Scenarios/109_TriggerNameAndClassicDesign.lua`: trigger names and labels, `Style.UseClassic`, and each
+  `Private.classicDesignFixes` entry runs without error.
+
+### Changed (documents)
+- `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: 1.22.0 dated 2026-11-25.
+- `*/*.toc`: version 1.22.0. `CLASS_PACK_VERSION` stays 1.21.0: no pack changed.
+- `GUIDE.md`: anchor by dropping with Alt, Trigger Name in the conditions, `/wa design` in the command table.
+- `DESCRIPTION.md`: the project page presents 1.22.
+- `TESTS-1.22.md`, `SUIVI-BUGS-ET-TESTS.md` (step 18), `TICKETS-PAR-VERSION.md`: in-game tests and state of 1.22.
+
 ## 2026-11-24
 
 Tests `Tests/run.lua` (137 scenarios, 0 failed). Not tested in game yet.
@@ -90,6 +163,7 @@ Tests `Tests/run.lua` (137 scenarios, 0 failed). Not tested in game yet.
 - `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: 1.21.0 dated 2026-11-24, with the packs and the
   `/wa unlock` fix.
 - `.pkgmeta`: `TESTS-*` left out of the zip.
+- `DESCRIPTION.md`: the project page presents 1.21, with a list of the `/wa` commands.
 
 ## 2026-11-23
 

@@ -35,6 +35,10 @@ local bit_band, bit_lshift, bit_rshift = bit.band, bit.lshift, bit.rshift
 local WeakAuras = WeakAuras;
 local L = WeakAuras.L;
 local brandRed, brandGreen, brandBlue = Private.Style.Color("primary")
+-- The classic design keeps the purple of WeakAuras in the tooltips.
+tinsert(Private.classicDesignFixes, function()
+  brandRed, brandGreen, brandBlue = 0.5333, 0, 1
+end)
 
 local versionString = WeakAuras.versionString;
 
@@ -770,7 +774,7 @@ local function HandleProgressComm(prefix, message, distribution, sender)
         ShowTooltip({
           {2, "Musca Auras", displayName, brandRed, brandGreen, brandBlue, 1, 1, 1},
           {1, L["Receiving display information"]:format(sender), 1, 0.82, 0},
-          {2, " ", ("|cFF%2x%2x00"):format(red, green)..done..Private.Style.Hex("success") .. "/"..total}
+          {2, " ", ("|cFF%2x%2x00"):format(red, green)..done..(Private.Style.classic and "|cFF00FF00" or Private.Style.Hex("success")) .. "/"..total}
         })
       end
     end

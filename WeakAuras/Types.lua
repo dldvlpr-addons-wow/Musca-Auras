@@ -1258,7 +1258,8 @@ Private.actual_unit_types_cast = Mixin({
 }, target_unit_types)
 
 ---@type string
-Private.actual_unit_types_cast_tooltip = Private.Style.Markup(L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n\n|cffffff00*|r Yellow Unit settings will create clones for each matching unit while this trigger is providing Dynamic Info to the Aura."])
+local castTooltip = L["• |cff00ff00Player|r, |cff00ff00Target|r, |cff00ff00Focus|r, and |cff00ff00Pet|r correspond directly to those individual unitIDs.\n• |cff00ff00Specific Unit|r lets you provide a specific valid unitID to watch.\n|cffff0000Note|r: The game will not fire events for all valid unitIDs, making some untrackable by this trigger.\n• |cffffff00Party|r, |cffffff00Raid|r, |cffffff00Boss|r, |cffffff00Arena|r, and |cffffff00Nameplate|r can match multiple corresponding unitIDs.\n• |cffffff00Smart Group|r adjusts to your current group type, matching just the \"player\" when solo, \"party\" units (including \"player\") in a party or \"raid\" units in a raid.\n\n|cffffff00*|r Yellow Unit settings will create clones for each matching unit while this trigger is providing Dynamic Info to the Aura."]
+Private.actual_unit_types_cast_tooltip = Private.Style.Markup(castTooltip)
 
 ---@type table<string, string>
 Private.threat_unit_types = Mixin({
@@ -1947,6 +1948,24 @@ Private.talent_extra_option_types = {
     [2] = Private.Style.Markup(L["Talent |cFFFF0000Not|r Known"]),
     [3] = Private.Style.Markup(L["Talent |cFFFF0000Not|r Selected"]),
 }
+
+-- The classic design shows these texts as written, with the colors of WeakAuras.
+tinsert(Private.classicDesignFixes, function()
+  Private.format_types.Unit.display = L["Formats |cFFFFCC00%unit|r"]
+  Private.format_types.guid.display = L["Formats Player's |cFFFFCC00%guid|r"]
+  Private.format_types_display.Unit = Private.format_types.Unit.display
+  Private.format_types_display.guid = Private.format_types.guid.display
+  Private.actual_unit_types_cast_tooltip = castTooltip
+  Private.unit_threat_situation_types[0] = "|cFFB0B0B0"..L["Lower Than Tank"].."|r"
+  Private.unit_threat_situation_types[1] = "|cFFFFFF77"..L["Higher Than Tank"].."|r"
+  Private.unit_threat_situation_types[2] = "|cFFFF9900"..L["Tanking But Not Highest"].."|r"
+  Private.unit_threat_situation_types[3] = "|cFFFF0000"..L["Tanking And Highest"].."|r"
+  -- Classic Era removes the text of index 2.
+  if Private.talent_extra_option_types[2] then
+    Private.talent_extra_option_types[2] = L["Talent |cFFFF0000Not|r Known"]
+  end
+  Private.talent_extra_option_types[3] = L["Talent |cFFFF0000Not|r Selected"]
+end)
 
 -- GetTotemInfo() only works for the first 5 totems
 ---@type table<number, string>
@@ -3750,6 +3769,8 @@ Private.author_option_fields = {
     desc = true,
     key = true,
     width = true,
+    -- { key = sibling option key, value = value that shows the option }: hidden in user mode otherwise
+    visibleIf = true,
   },
   number = {
     min = 0,

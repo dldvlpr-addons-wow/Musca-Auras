@@ -19,6 +19,22 @@ local PlaySound, CreateFrame, UIParent = PlaySound, CreateFrame, UIParent
 -- the mouse, a brass icon and a 2 pixel brass line under it while a toggle is on, 45 % alpha when disabled.
 local function Paint(self)
 	local Style = OptionsPrivate.Private.Style
+	-- The classic design keeps the look of the game: the highlight of the frame, its font colors, grey when disabled.
+	if Style.classic then
+		local iconColor = self.disabled and "textDisabled" or "text"
+		if self.tinted then
+			self.icon:SetVertexColor(Style.Color(iconColor))
+		end
+		for _, part in ipairs(self.glyph) do
+			part:SetVertexColor(Style.Color(iconColor))
+		end
+		if self.disabled then
+			self.text:SetTextColor(0.5, 0.5, 0.5)
+		else
+			self.text:SetTextColor((self.smallFont and GameFontNormalSmall or GameFontNormal):GetTextColor())
+		end
+		return
+	end
 	local over = self.over and not self.disabled
 	-- The links of the footer only change color under the mouse.
 	self.background:SetShown(over and not self.smallFont)
@@ -93,6 +109,9 @@ local methods = {
 		end
 		self.glyph = {}
 		self.danger = nil
+		if self.hTex then
+			self.hTex:SetVertexColor(1, 1, 1, 0.1)
+		end
 		self:SetHeight(16)
 		self:SetWidth(16)
 		self:SetSmallFont(false)
@@ -131,10 +150,12 @@ local methods = {
 		Paint(self)
 	end,
 
-	-- The icons of the addon are tinted with the text colors; another texture keeps its own colors.
+	-- The icons of the addon are tinted with the text colors; another texture keeps its own colors, as every icon
+	-- does in the classic design.
 	["SetTexture"] = function(self, path)
 		self.icon:SetTexture(path)
-		self.tinted = type(path) == "string" and path:find("^Interface[\\/]AddOns[\\/]WeakAuras[\\/]") ~= nil
+		self.tinted = not OptionsPrivate.Private.Style.classic and type(path) == "string"
+			and path:find("^Interface[\\/]AddOns[\\/]WeakAuras[\\/]") ~= nil
 		self.icon:SetDesaturated(self.tinted)
 		if not self.tinted then
 			self.icon:SetVertexColor(1, 1, 1)
@@ -176,18 +197,31 @@ local methods = {
 	end,
 	["LockHighlight"] = function(self)
 		self.active = true
+		if self.hTex then
+			self.frame:LockHighlight()
+		end
 		Paint(self)
 	end,
 	["UnlockHighlight"] = function(self)
 		self.active = nil
+		if self.hTex then
+			self.frame:UnlockHighlight()
+		end
 		Paint(self)
 	end,
-	-- Kept for the callers: an active toggle is drawn by LockHighlight.
+	-- Kept for the callers: an active toggle is drawn by LockHighlight, a stronger highlight in the classic design.
 	["SetStrongHighlight"] = function(self, enable)
+		if self.hTex then
+			self.hTex:SetVertexColor(1, 1, 1, enable and 0.3 or 0.1)
+		end
 	end,
 	["SetSmallFont"] = function(self, small)
 		self.smallFont = small
-		OptionsPrivate.Private.Style.SetFont(self.text, "text", small and "xs" or "s")
+		if OptionsPrivate.Private.Style.classic then
+			self.text:SetFontObject(small and "GameFontNormalSmall" or "GameFontNormal")
+		else
+			OptionsPrivate.Private.Style.SetFont(self.text, "text", small and "xs" or "s")
+		end
 		Paint(self)
 	end
 
@@ -230,15 +264,30 @@ local function Constructor()
 	icon:SetSize(16, 16)
 
 	local text = frame:CreateFontString()
-	Style.SetFont(text, "text", "s")
+	if Style.classic then
+		text:SetFontObject("GameFontNormal")
+	else
+		Style.SetFont(text, "text", "s")
+	end
 	text:ClearAllPoints()
 	text:SetPoint("TOPLEFT", 20, -1)
 	text:SetPoint("BOTTOMRIGHT", -4, 1)
 	text:SetJustifyH("LEFT")
 	text:SetJustifyV("MIDDLE")
 
+	local hTex
 	local pTex = frame:CreateTexture()
-	pTex:SetColorTexture(Style.Color("text", 0.08))
+	if Style.classic then
+		hTex = frame:CreateTexture()
+		hTex:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
+		hTex:SetVertexColor(1, 1, 1, 0.1)
+		hTex:SetAllPoints()
+		frame:SetHighlightTexture(hTex)
+		pTex:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\Square_FullWhite")
+		pTex:SetVertexColor(1, 1, 1, 0.2)
+	else
+		pTex:SetColorTexture(Style.Color("text", 0.08))
+	end
 	pTex:SetAllPoints()
 	frame:SetPushedTexture(pTex)
 
@@ -251,6 +300,7 @@ local function Constructor()
 		type  = Type,
 		background = background,
 		underline = underline,
+		hTex = hTex,
 		glyph = {},
 		spareGlyph = {},
 		pad = 0,

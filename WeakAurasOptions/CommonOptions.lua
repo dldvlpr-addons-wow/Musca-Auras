@@ -2199,6 +2199,24 @@ local function AddCommonTriggerOptions(options, data, triggernum, doubleWidth)
     trigger_types[type] = triggerSystem.GetName(type);
   end
 
+  -- Free name, kept beside trigger and untrigger: shown in place of "Trigger N" in titles and condition lists.
+  options.triggerName = {
+    type = "input",
+    width = WeakAuras.doubleWidth,
+    name = L["Trigger Name"],
+    desc = L["Shown in place of \"Trigger N\" in the trigger title and in the conditions. Leave empty to keep the number."],
+    order = 1.05,
+    get = function()
+      return OptionsPrivate.Private.TriggerName(data, triggernum) or ""
+    end,
+    set = function(info, v)
+      v = v and v:match("^%s*(.-)%s*$") or ""
+      data.triggers[triggernum].name = v ~= "" and v or nil
+      WeakAuras.Add(data)
+      WeakAuras.ClearAndUpdateOptions(data.id)
+    end,
+  }
+
   options.type = {
     type = "select",
     width = doubleWidth and WeakAuras.doubleWidth or WeakAuras.normalWidth,

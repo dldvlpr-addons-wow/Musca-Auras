@@ -25,18 +25,38 @@ One click imports a complete set of auras for your class: buffs to keep up, proc
 
 ***
 
-## 🆕 New in 1.19
+## 🆕 New in 1.22
 
-- **Click Action:** a new element makes an Icon, Progress Bar, Text, Texture, Progress Texture or Empty aura clickable. Left, right and middle click each cast a spell, use an item, run a macro, target a unit (player, target, mouseover, focus) or remove a buff.
-- **Key:** a key per aura does the action of the left click. The options warn when the game or another aura already uses that key.
-- **Clickable in Combat:** choose when the aura stays clickable: while it shows at the combat start, the whole combat, always while the aura is loaded, or on a macro condition. In combat the clickable area stays where it was when the combat started.
-- **Shield overlay:** with **Show Absorb** on the Health trigger, a Progress Bar draws the shield after the health, in combat too.
+- **Trigger names:** name a trigger, and the conditions show that name in place of "Trigger 2".
+- **Visible If:** a custom option can show only when another option has a chosen value.
+- **Anchor by dropping:** hold Alt when you drop an aura on the edge of another one, and it follows that aura.
+- **Classic design:** `/wa design` shows the options with the classic WeakAuras look. Type `/reload` to apply it. Your auras do not change.
 
-**Also since 1.17:** Placement mode (`/wa unlock`) with a grid and a box to drag for every aura, magnetism on screen edges, grid lines and other auras, Align Selection, arrow keys to move an aura, and a new look for the `/wa` window.
+## Since 1.21
 
-**After the update:** nothing to do.
+- **Safe mode:** `/wa safemode` reloads your UI with every aura paused and no custom code run, to find the aura that breaks your UI. Type it again, or `/reload`, to leave.
+- **Diagnostic report:** `/wa report` shows a report to copy into a bug report. It holds no character, realm or guild name.
+- **Pack check:** `/wa packcheck` lists the spells of your class pack auras that your character does not know.
+- **AddOn Loaded:** a new load option. The aura loads only when the addons you name are loaded.
+- **Missing media at import:** an aura that uses a font, border, background or bar texture you do not have lists it, and shows the default one instead.
+- **Gnome racials in the class packs:** Eureka! for every class, Confounding Flash and Contingency Plan for the priest. They show only when your character knows the spell.
+- **Fixed:** `/wa unlock` no longer shows the auras of your other characters.
+
+**After the update:** click **Update &lt;your class&gt; HUD** in the message shown at login to get the new racials.
+
+**Also since 1.19:** a welcome window, `/wa toggle` to pause every aura, `/wa mute` to turn their sounds off, the number of auras of each pack on the Packs page, and the Click Action element to make an aura cast a spell, use an item or run a macro on click.
 
 Full list in the **Files** tab.
+
+***
+
+## ⌨ Commands
+
+- **/wa**: open the options. **/wa unlock**: place your auras. **/wa welcome**: show the welcome window again.
+- **/wa toggle**: pause or resume every aura. **/wa mute**: turn the sounds of every aura off or on.
+- **/wa design**: switch between the Musca design and the classic WeakAuras design.
+- **/wa safemode**, **/wa report**, **/wa packcheck**: find a broken aura, report a bug, check your class pack spells.
+- **/wa help**: every command.
 
 ***
 
@@ -95,7 +115,7 @@ Install the latest version, then click **Update &lt;your class&gt; HUD** in the 
 
 - **Your own auras are kept.** 1.12 converts stance and form auras: an older version no longer reads them correctly.
 - **Skipped a version?** Read the [changelog](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/WeakAuras/CHANGELOG.md) of each version you skipped, its After the update steps first.
-- **Lua errors, or an aura no longer behaves as before?** Install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again), and report it on Discord, GitHub or CurseForge with the text of the error.
+- **Lua errors, or an aura no longer behaves as before?** Type **/wa safemode** to find the aura that breaks, then report it on Discord, GitHub or CurseForge with the text of the error and the **/wa report** text. You can also install the previous version again from the **Files** tab (before 1.12, your stance and form auras then need to be set again).
 
 ***
 

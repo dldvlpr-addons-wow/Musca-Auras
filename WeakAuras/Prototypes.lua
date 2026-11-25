@@ -9922,3 +9922,31 @@ Private.InternalEventByIDList = {
   SPELL_CHARGES_CHANGED = true,
   WA_UPDATE_OVERLAY_GLOW = true,
 }
+
+-- The classic design shows these texts as written, with the colors of WeakAuras: each text marked up while the file
+-- loaded, by the text as written.
+local classicTexts = {}
+for _, text in ipairs({
+  WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Spell Known"],
+  L["|cFFFF0000Not|r Player Name/Realm"],
+  WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Item Equipped"],
+  WeakAuras.newFeatureString .. L["|cFFFF0000Not|r Item Bonus Id Equipped"],
+  L["Instance Size Type"] .. " " .. L["|cffff0000deprecated|r"],
+}) do
+  classicTexts[Private.Style.Markup(text)] = text
+end
+local markedCastTooltip = Private.actual_unit_types_cast_tooltip
+tinsert(Private.classicDesignFixes, function()
+  -- Types.lua set the tooltip back to its text as written before this runs.
+  classicTexts[markedCastTooltip] = Private.actual_unit_types_cast_tooltip
+  local function SetClassicTexts(args)
+    for _, arg in ipairs(args or {}) do
+      arg.display = classicTexts[arg.display] or arg.display
+      arg.desc = classicTexts[arg.desc] or arg.desc
+    end
+  end
+  SetClassicTexts(Private.load_prototype.args)
+  for _, prototype in pairs(Private.event_prototypes) do
+    SetClassicTexts(prototype.args)
+  end
+end)

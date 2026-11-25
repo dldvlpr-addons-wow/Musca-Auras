@@ -176,7 +176,7 @@ function Private.LoadOptions(msg)
     else
       local loaded, reason = C_AddOns.LoadAddOn("WeakAurasOptions");
       if not(loaded) then
-        reason = string.lower(Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
+        reason = string.lower((Private.Style.classic and "|cffff2020" or Private.Style.Hex("error")) .. _G["ADDON_" .. reason] .. "|r.")
         WeakAuras.prettyPrint(string.format(L["Options could not be loaded, the addon is %s"], reason));
         return false;
       end
@@ -356,6 +356,7 @@ function Private.PrintHelp()
   print(L["/wa minimap - Toggle the minimap icon"])
   print(L["/wa toggle - Pause or resume every aura"])
   print(L["/wa mute - Turn the sounds of every aura off or on"])
+  print(L["/wa design - Switch the options between the Musca design and the classic WeakAuras design"])
   print(L["/wa welcome - Show the welcome window again"])
   print(L["/wa safemode - Reload the UI with every aura paused and no custom code run. Type it again to leave"])
   print(L["/wa tutorial - Guide: learn everything about Musca Auras on WoW Forever, with auras to import"])
@@ -422,6 +423,8 @@ function SlashCmdList.WEAKAURAS(input)
     end
   elseif msg == "mute" then
     WeakAuras.ToggleSoundsMuted()
+  elseif msg == "design" then
+    Private.ToggleClassicDesign()
   elseif msg == "safemode" then
     -- The flag lasts one login: typed again in safe mode, the reload starts normally.
     Private.db.safeMode = not Private.safeMode or nil
@@ -583,6 +586,13 @@ function Private.ToggleCooldownManager()
   prettyPrint(shown and L["Blizzard Cooldown Manager hidden."] or L["Blizzard Cooldown Manager shown."])
 end
 
+-- /wa design and the switch of the options: the look of the options, for the account. Style reads it at load only.
+function Private.ToggleClassicDesign()
+  Private.db.classicDesign = not Private.db.classicDesign or nil
+  prettyPrint((Private.db.classicDesign and L["Classic WeakAuras design chosen."] or L["Musca design chosen."])
+    .. " " .. L["Type /reload to apply it."])
+end
+
 -- /wa mute: no aura plays a sound or speaks until the mute ends. The auras themselves are not changed.
 function WeakAuras.ToggleSoundsMuted()
   Private.db.soundsMuted = not Private.db.soundsMuted or nil
@@ -622,8 +632,11 @@ BINDING_NAME_WEAKAURASPRINTPROFILING = L["Print Profiling Results"]
 -- Noteable properties:
 --  debug: If set to true, WeakAura.debug() outputs messages to the chat frame
 --  displays: All aura settings, keyed on their id
+--  classicDesign: true when the account chose the classic WeakAuras design, nil otherwise
 
 ---@class WeakAurasSaved
+---@field classicDesign true?
+---@field placementColors table<string, number[]>? border { r, g, b, a } of the placement boxes by kind, see EditModePlacement.lua
 local db;
 
 local CLASS_PACK_VERSION = "1.21.0"
@@ -1534,7 +1547,10 @@ function Private.CountWagoUpdates()
 end
 
 local function tooltip_draw(isAddonCompartment, blizzardTooltip)
-  local red, green, blue = Private.Style.Color("textSecondary")
+  local red, green, blue = 0.2, 1, 0.2
+  if not Private.Style.classic then
+    red, green, blue = Private.Style.Color("textSecondary")
+  end
   local tooltip
   if isAddonCompartment then
     tooltip = blizzardTooltip
@@ -1554,7 +1570,7 @@ local function tooltip_draw(isAddonCompartment, blizzardTooltip)
   tooltip:AddLine(Private.Style.Markup(L["|cffeda55fLeft-Click|r to toggle showing the main window."]), red, green, blue);
   if not WeakAuras.IsOptionsOpen() then
     if paused then
-      tooltip:AddLine(Private.Style.Hex("error")..L["Paused"].." - "..L["Shift-Click to resume addon execution."], red, green, blue);
+      tooltip:AddLine((Private.Style.classic and "|cFFFF0000" or Private.Style.Hex("error"))..L["Paused"].." - "..L["Shift-Click to resume addon execution."], red, green, blue);
     else
       tooltip:AddLine(Private.Style.Markup(L["|cffeda55fShift-Click|r to pause addon execution."]), red, green, blue);
     end
@@ -1677,7 +1693,7 @@ do -- Archive stuff
       if not C_AddOns.IsAddOnLoaded("WeakAurasArchive") then
         local ok, reason = C_AddOns.LoadAddOn("WeakAurasArchive")
         if not ok then
-          reason = string.lower(Private.Style.Hex("error") .. _G["ADDON_" .. reason] .. "|r.")
+          reason = string.lower((Private.Style.classic and "|cffff2020" or Private.Style.Hex("error")) .. _G["ADDON_" .. reason] .. "|r.")
           error(string.format(L["Could not load Musca Auras Archive, the addon is %s"], reason))
         end
       end
@@ -1825,6 +1841,12 @@ loadedFrame:SetScript("OnEvent", function(self, event, ...)
       WeakAurasSaved = WeakAurasSaved or {};
       db = WeakAurasSaved;
       Private.db = db
+      if db.classicDesign then
+        Private.Style.UseClassic()
+        for _, fix in ipairs(Private.classicDesignFixes) do
+          fix()
+        end
+      end
       -- Defines the action squelch period after login
       -- Stored in SavedVariables so it can be changed by the user if they find it necessary
       db.login_squelch_time = db.login_squelch_time or 10;
@@ -3028,11 +3050,11 @@ StaticPopupDialogs["WEAKAURAS_CLASS_PACK_UPDATE"] = {
 }
 
 StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
-  text = Private.Style.Markup("|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
+  text = "|cff00ccffMusca Auras " .. WHATS_NEW_VERSION .. "|r\n\n"
     .. L["New name, new look: the addon now shows its own name, Musca Auras."] .. "\n\n"
     .. L["- New colors and a new icon, in the |cffffd100/wa|r window, the Guide, the chat and the minimap."] .. "\n"
     .. L["- Two more ways to open it: the addon menu of the minimap, and a page in Options > AddOns."] .. "\n\n"
-    .. L["Nothing else changes: |cffffd100/wa|r, your auras, their positions and the Wago imports work as before."]),
+    .. L["Nothing else changes: |cffffd100/wa|r, your auras, their positions and the Wago imports work as before."],
   button1 = OKAY,
   -- The class pack notice or offer waits for this popup to close, whichever way it closes.
   OnAccept = ShowDueClassPackNotice,
@@ -3048,10 +3070,10 @@ StaticPopupDialogs["WEAKAURAS_WHATS_NEW"] = {
 -- The welcome window: %s is the name of the class. Its callbacks are picked by button index, so that the four
 -- buttons each have their own. Escape is no answer: the window comes back at the next login.
 StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
-  text = Private.Style.Markup("|cff00ccffMusca Auras|r\n\n"
+  text = "|cff00ccffMusca Auras|r\n\n"
     .. L["Musca Auras shows your buffs, cooldowns and resources as icons, bars and texts that you build or import."] .. "\n\n"
     .. L["A ready-made HUD exists for your class (%s). Install it whole, or choose only the blocks you want."] .. "\n\n"
-    .. L["The |cffffd100Guide|r says what works differently on WoW Forever. Type |cffffd100/wa welcome|r to see this window again."]),
+    .. L["The |cffffd100Guide|r says what works differently on WoW Forever. Type |cffffd100/wa welcome|r to see this window again."],
   button1 = L["Install the full HUD"],
   button2 = L["Choose blocks"],
   button3 = L["Guide"],
@@ -3075,6 +3097,16 @@ StaticPopupDialogs["WEAKAURAS_FOREVER_DISCLAIMER"] = {
   whileDead = true,
   hideOnEscape = true,
 }
+-- The texts of these windows take the colors of the design; the classic design shows them as written.
+for _, name in ipairs({ "WEAKAURAS_WHATS_NEW", "WEAKAURAS_FOREVER_DISCLAIMER" }) do
+  local dialog = StaticPopupDialogs[name]
+  dialog.classicText, dialog.text = dialog.text, Private.Style.Markup(dialog.text)
+end
+tinsert(Private.classicDesignFixes, function()
+  for _, name in ipairs({ "WEAKAURAS_WHATS_NEW", "WEAKAURAS_FOREVER_DISCLAIMER" }) do
+    StaticPopupDialogs[name].text = StaticPopupDialogs[name].classicText
+  end
+end)
 
 -- The offer of the HUD to a class that never had it: %s is the name of the class.
 StaticPopupDialogs["WEAKAURAS_CLASS_PACK_OFFER"] = {
@@ -4915,7 +4947,7 @@ function Private.GetProgressSourcesForUi(data, subelement)
   local triggerValues = Private.GetProgressSources(data)
   for _, e in ipairs(triggerValues) do
     if e.trigger and e.property then
-      values[{e.trigger, e.property}] = {L["Trigger %s"]:format(e.trigger), e.display}
+      values[{e.trigger, e.property}] = {Private.TriggerLabel(data, e.trigger), e.display}
     end
   end
 
@@ -7730,6 +7762,20 @@ function Private.ExecEnv.CreateSpellChecker()
   return matcher
 end
 
+-- Name the player gave to the trigger (triggers[n].name), or nil when it has none.
+function Private.TriggerName(data, triggernum)
+  local entry = data.triggers and data.triggers[triggernum]
+  local name = entry and entry.name
+  if type(name) == "string" and name:find("%S") then
+    return name
+  end
+end
+
+-- Label of a trigger in the option lists: its name, or "Trigger N".
+function Private.TriggerLabel(data, triggernum)
+  return Private.TriggerName(data, triggernum) or L["Trigger %i"]:format(triggernum)
+end
+
 function Private.IconSources(data)
   local values = {
     [-1] = L["Automatic"],
@@ -7737,7 +7783,7 @@ function Private.IconSources(data)
   }
 
   for i = 1, #data.triggers do
-    values[i] = string.format(L["Trigger %i"], i)
+    values[i] = Private.TriggerLabel(data, i)
   end
   return values
 end

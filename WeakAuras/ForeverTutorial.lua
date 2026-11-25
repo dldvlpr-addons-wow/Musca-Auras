@@ -61,50 +61,69 @@ local function CreateTutorialFrame()
   frame:SetScript("OnDragStart", frame.StartMoving)
   frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
   frame:SetClampedToScreen(true)
-  Style.Fill(frame, "background", "border")
+  if Style.classic then
+    frame:SetBackdrop({
+      bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background-Dark",
+      edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+      tile = true, tileSize = 32, edgeSize = 32,
+      insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    })
+  else
+    Style.Fill(frame, "background", "border")
+  end
   tinsert(UISpecialFrames, "WeakAurasForeverTutorial")
 
-  -- Title bar, like the one of the options window: a band, the title, a cross of two bars turned by 45 degrees.
-  local band = frame:CreateTexture(nil, "BORDER")
-  band:SetTexture(Style.white)
-  band:SetVertexColor(Style.Color("band"))
-  band:SetPoint("TOPLEFT", 1, -1)
-  band:SetPoint("TOPRIGHT", -1, -1)
-  band:SetHeight(28)
+  -- The classic design keeps the title and the close button of the game.
+  if Style.classic then
+    local header = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    header:SetPoint("TOP", 0, -20)
+    header:SetText(L["|cff00ccffMusca Auras|r - Guide"])
 
-  local logo = frame:CreateTexture(nil, "ARTWORK")
-  logo:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
-  logo:SetSize(18, 18)
-  logo:SetPoint("LEFT", band, "LEFT", 8, 0)
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -6, -6)
+  else
+    -- Title bar, like the one of the options window: a band, the title, a cross of two bars turned by 45 degrees.
+    local band = frame:CreateTexture(nil, "BORDER")
+    band:SetTexture(Style.white)
+    band:SetVertexColor(Style.Color("band"))
+    band:SetPoint("TOPLEFT", 1, -1)
+    band:SetPoint("TOPRIGHT", -1, -1)
+    band:SetHeight(28)
 
-  local header = Style.NewText(frame, "title", "m")
-  header:SetPoint("LEFT", logo, "RIGHT", 6, 0)
-  header:SetText(Style.Markup(L["|cff00ccffMusca Auras|r - Guide"]))
+    local logo = frame:CreateTexture(nil, "ARTWORK")
+    logo:SetTexture([[Interface\AddOns\WeakAuras\Media\Textures\logo_musca_round.tga]])
+    logo:SetSize(18, 18)
+    logo:SetPoint("LEFT", band, "LEFT", 8, 0)
 
-  local close = CreateFrame("Button", nil, frame)
-  close:SetSize(28, 28)
-  close:SetPoint("TOPRIGHT", -1, -1)
-  local crossBars = {}
-  for _, angle in ipairs({ 45, -45 }) do
-    local bar = close:CreateTexture(nil, "ARTWORK")
-    bar:SetTexture(Style.white)
-    bar:SetSize(1.5, 12)
-    bar:SetPoint("CENTER")
-    bar:SetRotation(math.rad(angle))
-    tinsert(crossBars, bar)
-  end
-  local function PaintCross(over)
-    for _, bar in ipairs(crossBars) do
-      bar:SetVertexColor(Style.Color(over and "error" or "textSecondary"))
+    local header = Style.NewText(frame, "title", "m")
+    header:SetPoint("LEFT", logo, "RIGHT", 6, 0)
+    header:SetText(Style.Markup(L["|cff00ccffMusca Auras|r - Guide"]))
+
+    local close = CreateFrame("Button", nil, frame)
+    close:SetSize(28, 28)
+    close:SetPoint("TOPRIGHT", -1, -1)
+    local crossBars = {}
+    for _, angle in ipairs({ 45, -45 }) do
+      local bar = close:CreateTexture(nil, "ARTWORK")
+      bar:SetTexture(Style.white)
+      bar:SetSize(1.5, 12)
+      bar:SetPoint("CENTER")
+      bar:SetRotation(math.rad(angle))
+      tinsert(crossBars, bar)
     end
+    local function PaintCross(over)
+      for _, bar in ipairs(crossBars) do
+        bar:SetVertexColor(Style.Color(over and "error" or "textSecondary"))
+      end
+    end
+    close:SetScript("OnEnter", function() PaintCross(true) end)
+    close:SetScript("OnLeave", function() PaintCross(false) end)
+    close:SetScript("OnClick", function() frame:Hide() end)
+    PaintCross(false)
   end
-  close:SetScript("OnEnter", function() PaintCross(true) end)
-  close:SetScript("OnLeave", function() PaintCross(false) end)
-  close:SetScript("OnClick", function() frame:Hide() end)
-  PaintCross(false)
 
   local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", 20, -44)
+  scroll:SetPoint("TOPLEFT", 20, Style.classic and -50 or -44)
   scroll:SetPoint("BOTTOMRIGHT", -40, 20)
   Style.SkinScrollBar(scroll.ScrollBar)
 
@@ -127,17 +146,23 @@ local function CreateTutorialFrame()
   for _, block in ipairs(blocks) do
     if block.title or block.subtitle then
       local spacing = block.title and 20 or 12
-      local title = Style.NewText(content, "title", block.title and "l" or "m", "primary")
+      local title
+      if Style.classic then
+        title = content:CreateFontString(nil, "OVERLAY", block.title and "GameFontNormalLarge" or "GameFontNormal")
+      else
+        title = Style.NewText(content, "title", block.title and "l" or "m", "primary")
+      end
       title:SetWidth(width)
       title:SetJustifyH("LEFT")
       title:SetText(block.title or block.subtitle)
       place(title, spacing)
       height = height + spacing + title:GetStringHeight()
     elseif block.text then
-      local text = Style.NewText(content, "text", "s")
+      local text = Style.classic and content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        or Style.NewText(content, "text", "s")
       text:SetWidth(width)
       text:SetJustifyH("LEFT")
-      text:SetSpacing(3)
+      text:SetSpacing(Style.classic and 2 or 3)
       text:SetText(Style.Markup(block.text))
       place(text, 6)
       height = height + 6 + text:GetStringHeight()

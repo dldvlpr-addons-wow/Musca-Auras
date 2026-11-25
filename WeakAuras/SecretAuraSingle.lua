@@ -324,3 +324,9 @@ Shared.WHITE_TEXTURE = WHITE_TEXTURE
 Shared.WINDOW_RANGES = WINDOW_RANGES
 Shared.WantsMissing = WantsMissing
 Shared.WindowEdge = WindowEdge
+
+-- The status colors above are read before the design is known; the classic design restores the 1.16 literals.
+tinsert(Private.classicDesignFixes, function()
+  GOOD, CAUTION, BAD = "|cff33ff99", "|cffff9933", "|cffff2020"
+  Shared.GOOD, Shared.CAUTION, Shared.BAD = GOOD, CAUTION, BAD
+end)

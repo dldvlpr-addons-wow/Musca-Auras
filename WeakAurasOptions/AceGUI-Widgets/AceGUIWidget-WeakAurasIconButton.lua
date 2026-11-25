@@ -71,7 +71,11 @@ local function Constructor()
   --highlighttexture:SetTexture("Interface\\BUTTONS\\ButtonHilight-SquareQuickslot.blp");
   --highlighttexture:SetTexCoord(0.175, 0.875, 0.125, 0.825);
   highlighttexture:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight.blp");
-  highlighttexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover"));
+  if OptionsPrivate.Private.Style.classic then
+    highlighttexture:SetVertexColor(0.25, 0.5, 1);
+  else
+    highlighttexture:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover"));
+  end
   highlighttexture:SetPoint("BOTTOMLEFT", button, 4, 4);
   highlighttexture:SetPoint("TOPRIGHT", button, -4, -4);
   button:SetHighlightTexture(highlighttexture);

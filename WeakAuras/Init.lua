@@ -6,6 +6,9 @@ WeakAuras = {}
 ---@type table<string, string>
 WeakAuras.L = {}
 Private.frames = {}
+-- Colors and texts set while the files load, before the design is known: each function sets them again for the
+-- classic design, run at ADDON_LOADED after Style.UseClassic.
+Private.classicDesignFixes = {}
 
 --- @alias uid string
 --- @alias auraId string

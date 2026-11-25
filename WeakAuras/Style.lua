@@ -87,6 +87,9 @@ end
 
 --- text with the colors written in it replaced by the colors of the table; the other colors are kept.
 function Style.Markup(text)
+  if Style.classic then
+    return text
+  end
   return (text:gsub("|c[fF][fF](%x%x%x%x%x%x)", function(hex)
     local name = writtenColors[hex:lower()]
     return name and Style.Hex(name)
@@ -100,6 +103,45 @@ Style.fonts = {
   number = fonts .. "FiraMono-Medium.ttf",
 }
 Style.sizes = { xs = 10, s = 12, m = 14, l = 17 }
+
+-- Classic design, the look of WeakAuras: black panels, gold of the game, blue selection, the fonts of the game. Chosen
+-- per account (WeakAurasSaved.classicDesign) and read once at ADDON_LOADED, before the options are built: a change
+-- takes effect at the next /reload. The colors and fonts change, the texts keep the colors written in them, and the
+-- controls made here take the look of the game; each screen of WeakAuras also builds its classic frame itself.
+local classicColors = {
+  background = { 0.039, 0.039, 0.039, 0.95 },
+  band = { 0.078, 0.078, 0.078, 1 },
+  surface = { 0.110, 0.110, 0.110, 1 },
+  raised = { 0.173, 0.173, 0.173, 1 },
+  selection = { 0.125, 0.212, 0.392, 1 },
+  well = { 0, 0, 0, 1 },
+  border = { 0.251, 0.251, 0.251, 1 },
+  borderHover = { 0.376, 0.376, 0.376, 1 },
+  borderField = { 0.439, 0.439, 0.439, 1 },
+  text = { 1, 1, 1, 1 },
+  textSecondary = { 0.851, 0.851, 0.851, 1 },
+  textQuiet = { 0.659, 0.659, 0.659, 1 },
+  textDisabled = { 0.502, 0.502, 0.502, 1 },
+  primary = { 1, 0.820, 0, 1 },
+  primaryHover = { 1, 0.910, 0.443, 1 },
+  primaryLow = { 0.800, 0.580, 0, 1 },
+  primaryFill = { 0.600, 0.439, 0, 1 },
+  onPrimary = { 0, 0, 0, 1 },
+  success = { 0.251, 1, 0.251, 1 },
+  warning = { 1, 0.502, 0.251, 1 },
+  error = { 1, 0.251, 0.251, 1 },
+  focus = { 1, 0.910, 0.443, 1 },
+  rule = { 1, 0.820, 0, 0.55 },
+}
+
+--- Switches to the classic design; called at ADDON_LOADED when the account chose it.
+function Style.UseClassic()
+  Style.classic = true
+  for name, color in pairs(classicColors) do
+    Style.colors[name] = color
+  end
+  Style.fonts = { text = "Fonts\\FRIZQT__.TTF", title = "Fonts\\FRIZQT__.TTF", number = "Fonts\\ARIALN.TTF" }
+end
 -- Fira has no glyph for these languages: the font of the game, one size up.
 local glyphsMissing = ({ zhCN = true, zhTW = true, koKR = true })[GetLocale()]
 
@@ -148,6 +190,16 @@ end
 
 --- A button of kind primary, secondary, quiet or danger, 22 pixels high, at least minWidth wide; button.text is its label.
 function Style.NewButton(parent, text, kind, onClick, minWidth)
+  if Style.classic then
+    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    button.kind = kind
+    button:SetText(text)
+    button.text = button:GetFontString()
+    button.minWidth = minWidth or 0
+    Style.FitButton(button)
+    button:SetScript("OnClick", onClick)
+    return button
+  end
   local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
   button.kind = kind
   button.text = Style.NewText(button, "text", "s")
@@ -185,6 +237,18 @@ end
 
 --- A check box: a 14 pixel well, a brass square of 8 when checked, its label on the right and clickable.
 function Style.NewCheck(parent, text, onClick)
+  if Style.classic then
+    -- the art of the game without its label, whose FontString would take a global name on an unnamed frame.
+    local check = CreateFrame("CheckButton", nil, parent, "UICheckButtonArtTemplate")
+    check:SetSize(22, 22)
+    check.label = check:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    check.label:SetPoint("LEFT", check, "RIGHT", 2, 0)
+    check.label:SetText(text)
+    Style.FitCheck(check)
+    check:SetScript("OnClick", onClick)
+    check:SetChecked(true)
+    return check
+  end
   local check = CreateFrame("CheckButton", nil, parent, "BackdropTemplate")
   check:SetSize(14, 14)
   Style.Fill(check, "well", "borderField")
@@ -218,6 +282,10 @@ end
 --- Look of a Slider made with UIPanelScrollBarTemplate and anchored 4 pixels right of its scroll frame: no arrows, no
 --- track, a flat thumb 6 pixels wide that brightens under the mouse. The Slider keeps its 16 pixel width to be grabbed.
 function Style.SkinScrollBar(bar)
+  if Style.classic then
+    Style.UnskinScrollBar(bar)
+    return
+  end
   bar.skinned = true
   bar.ScrollUpButton:Hide()
   bar.ScrollDownButton:Hide()

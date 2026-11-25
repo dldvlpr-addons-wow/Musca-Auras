@@ -355,7 +355,7 @@ Cadre 360 px, `surface-relevee`, bord `bordure-survol`, haut 2 px `primaire` (ou
 
 1. Ne rien reprendre d'EllesmereUI : ni textures, ni logo cadenas, ni palette, ni code. Seul le principe de phases chevauchées est commun.
 2. Aucun nouveau fichier image. Tout est aplat `WHITE8X8`, `SetColorTexture`, `SetGradient`, bordure 1 px, police, ou média déjà livré (logo rond, `Circle_White_Border.tga`, `Border_DropShadow.blp`, icônes de `Media/Textures`).
-3. Aucune texture Blizzard de décor dans le chrome reskinné : pas de parchemin, de cadre or, de `UI-Panel-*`, de `UI-OptionsFrame-*Tab`, de `UIPanelButtonTemplate`, de `PortraitFrameTemplate`. Un écran mi-Blizzard mi-Musca est un défaut.
+3. Aucune texture Blizzard de décor dans le chrome reskinné : pas de parchemin, de cadre or, de `UI-Panel-*`, de `UI-OptionsFrame-*Tab`, de `UIPanelButtonTemplate`, de `PortraitFrameTemplate`. Un écran mi-Blizzard mi-Musca est un défaut. Exception : en design classique (`Style.classic`, `/wa design`), chaque écran reprend le rendu de la 1.16, templates et textures du jeu compris ; les interdits 2 et 5 ne s'appliquent pas à la branche classique.
 4. Aucun `OnUpdate` permanent ; aucune animation en boucle ; aucune animation pendant un glisser ou en combat.
 5. Aucune couleur en dur hors de la table de tokens : pas de `1, 0.82, 0`, pas de `0.1, 0.5, 0.9`, pas de gris pur `0.5, 0.5, 0.5`.
 6. L'or n'est ni décoratif ni réparti partout : actif, sélection, principal, axes, filet. Le givre ne sert qu'aux relations et à l'info.

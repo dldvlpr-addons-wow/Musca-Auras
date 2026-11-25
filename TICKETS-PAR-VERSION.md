@@ -1,12 +1,12 @@
 # Tickets par version
 
-Établi le 2026-10-27, reclassé le 2026-11-21. 85 tickets : 66 livrés (1.15 à 1.21), 1 clos sans développement (Dette 5), 1 écarté (Rebranding 9), 17 à faire (1.22 à 1.29). L'avancement est dans la section « Déjà fait » de chaque version sortie.
+Établi le 2026-10-27, reclassé le 2026-11-21. 85 tickets : 66 livrés (1.15 à 1.21), 1 clos sans développement (Dette 5), 18 à faire (1.22 à 1.29). L'avancement est dans la section « Déjà fait » de chaque version sortie.
 
 Séries :
 - « Packs » : compléments des packs de classe (8, livrés) ;
 - « Dette » : dette technique et bugs (23 ; reste Dette 3) ;
 - « Placement » : grille et magnétisme (15, dont 8 ajoutés le 2026-11-10 ; reste Placement 7) ;
-- « Rebranding » : interface de la 1.18 (9, livrés sauf Rebranding 9, écarté) ;
+- « Rebranding » : interface de la 1.18 (9, livrés sauf Rebranding 9, reporté en 1.22) ;
 - « Accueil » : accueil du nouveau joueur (4, à faire) ;
 - « Populaire » : demandes populaires de WeakAuras (11, dont les auras cliquables ajoutées le 2026-11-13 ; Populaire 11 livré) ;
 - « API » : API publique pour les modules d'addons tiers (8, ajoutés le 2026-11-21, à faire) ;
@@ -31,12 +31,12 @@ Vérification de référence : `lua5.1 Tests/run.lua` depuis la racine, avec `WO
 | 1.16 | 2026-11-07 | Stabilisation | Dette 2, 9, 10 à 23, Packs 5, 7, Dette 6, 8 |
 | 1.16.1 | 2026-11-09 | Correctifs | Hors ticket |
 | 1.17 | 2026-11-12 | Placement | Dette 7, Dette 1, Placement 2, 1, 3, 5, 4, 6, puis 9, 8, 10 à 15 |
-| 1.18 | 2026-11-13 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 8, 4 (Rebranding 9 écarté) |
+| 1.18 | 2026-11-13 | Rebranding | Rebranding 1, 2, 3, 5, 6, 7, 8, 4 (Rebranding 9 reporté en 1.22) |
 | 1.18.1, 1.18.2 | 2026-11-15, 2026-11-16 | Correctifs du trigger Cooldown | Hors ticket |
 | 1.19 | 2026-11-18 | Auras cliquables | Dette 4, Populaire 11 |
 | 1.20 | 2026-11-22 | Accueil et commandes | Outils 1, 3, Accueil 2, 1, 3, 4, Populaire 1, 10 |
 | 1.21 | 2026-11-23 | Fiabilité et diagnostic | Dette 3, Populaire 5, 3, 2, Outils 2, 4 |
-| 1.22 | à faire | Édition d'auras | Populaire 4, 6, Placement 7 |
+| 1.22 | 2026-11-25 | Édition d'auras et design classique | Populaire 4, 6, Placement 7, Rebranding 9 |
 | 1.23 | à faire | Sauvegardes | Outils 5, 6 |
 | 1.24 | à faire | Groupes dynamiques et annonce de version | Populaire 7, Outils 7 |
 | 1.25 | à faire | API : fondations | API 1, 3, 2, 4 |
@@ -1254,7 +1254,7 @@ Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert à la sortie (128 scé
 - Rebranding 4 : popup 1.18, `WHATS_NEW_VERSION`, changelogs et version des toc. Écart au ticket : le popup s'ouvre
   à la connexion, comme celui de la 1.17, et non au premier `/wa`. Il se relit par le bouton « Changelog » de la
   fenêtre d'options.
-- Rebranding 9 : écarté le 2026-11-13, voir « Écartés ».
+- Rebranding 9 : écarté le 2026-11-13, repris en 1.22 le 2026-11-24 à la demande de l'auteur.
 - 1.18.1, hors ticket : en combat, un sort hors du temps de recharge global (Judgement, Bloodrage) ne s'affiche plus
   prêt pendant son temps de recharge.
 - 1.18.2, hors ticket : « Hide GCD Text » cache aussi un texte `%p` ou `%t` et marche en combat ; la condition
@@ -1268,7 +1268,7 @@ Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert à la sortie (128 scé
 4. Rebranding 5 : Nouveaux points d'entrée
 5. Rebranding 6 : Fenêtre Guide alignée sur la fenêtre d'options
 6. Rebranding 7 : Module de thème central
-7. Rebranding 9 : Bascule « apparence classique » (écarté)
+7. Rebranding 9 : Bascule « apparence classique » (reporté en 1.22)
 8. Rebranding 8 : Icônes de marque
 9. Rebranding 4 : Écran « Quoi de neuf 1.18 » au premier lancement
 
@@ -1442,6 +1442,8 @@ Entrée du 2026-11-13 de `CHANGES.md`. Banc headless vert à la sortie (128 scé
 ---
 
 ### Rebranding 9 : Bascule « apparence classique »
+
+Reporté en 1.22 le 2026-11-24 : le ticket à jour est dans la section 1.22. Texte d'origine ci-dessous.
 
 **Pourquoi.** C'est un filet de sécurité pour les habitués de WeakAuras. Une fois le thème central en place (Rebranding 7), revenir à l'ancien look revient à choisir une autre table de couleurs et de textures.
 
@@ -2046,15 +2048,54 @@ Deux tests de secret qui divergent produisent une erreur Lua en jeu, sur un chem
 
 ---
 
-## 1.22 : édition d'auras
+## 1.22 : édition d'auras et design classique
 
-Deux M (Populaire 4, Populaire 6) et Placement 7, réduit à S à M depuis les liens d'ancrage de la 1.17.0. Populaire 7 passe en 1.24 : trois M dans une version dépassent la règle 4.
+Sortie le 2026-11-25 (1.22.0).
+
+Deux M (Populaire 4, Populaire 6), Placement 7, réduit à S à M depuis les liens d'ancrage de la 1.17.0, et Rebranding 9 (M à L), ajouté le 2026-11-24 à la demande de l'auteur. La version dépasse la règle 4 : décision de l'auteur. Populaire 7 passe en 1.24.
 
 ### Ordre
 
 1. Populaire 4 : Nom de trigger éditable
 2. Populaire 6 : Options custom conditionnelles
 3. Placement 7 : Ancrer une aura à une autre en la calant dessus
+4. Rebranding 9 : Mode « design classique » de WeakAuras. En dernier : les écrans des trois tickets précédents se vérifient dans les deux designs.
+
+### Déjà fait
+
+Entrée du 2026-11-25 de `CHANGES.md`. Les quatre tickets sont codés, banc headless à 138 scénarios, 0 échec. Non
+testé en jeu : `SUIVI-BUGS-ET-TESTS.md`, étape 18, et `TESTS-1.22.md`.
+
+- Populaire 4 : champ « Trigger Name » (`triggers[n].name`), `Private.TriggerName` et `Private.TriggerLabel`. Le nom
+  remplace « Trigger N » dans le titre du trigger, les conditions, la liste des propriétés de condition et la source
+  d'icône. Champ vide ou blanc : le numéro reste.
+- Populaire 6 : règle « Visible If » (`visibleIf = { key, value }`) sur toute option custom, cible de même niveau
+  (toggle, select, input, number, range). Appliquée en mode utilisateur, groupe et sous-options compris. Une cible
+  supprimée laisse l'option visible ; une version sans le champ l'ignore.
+- Placement 7 : modificateur Alt au lâcher. `AnchorLinks.SnapLink` lit les lignes de calage et crée le lien par
+  `AnchorLinks.LinkInPlace` / `LinkTo`, sans second chemin d'écriture. Dans le mode édition, Alt déjà tenu au clic
+  garde son rôle (groupe) : seul un Alt pressé pendant le glissement ancre.
+- Rebranding 9 : `/wa design` et case « Classic design » de la barre d'outils, réglage `WeakAurasSaved.classicDesign` au
+  niveau du compte, Musca par défaut, `/reload` demandé. `Style.UseClassic` remplace la palette et les polices ;
+  logo WeakAuras dans la bande de titre.
+
+### Reste ouvert
+
+- Tout est à voir en jeu, dans les deux designs.
+- Écart avec Rebranding 9 : le mode classique change les couleurs, les polices et le logo, pas le dessin des cadres,
+  boutons, barres de défilement et champs. Les interdits 3 et 5 de `DESIGN.md` refusent `UIPanelButtonTemplate`,
+  les textures Blizzard et un écran mi-Blizzard mi-Musca : à trancher par l'auteur. Logo carré `logo_256.tga`,
+  `logo_256_round.tga` n'existant plus.
+- Écart avec Populaire 6 : la règle ne s'applique pas en mode auteur (l'auteur voit toutes ses options), et rien
+  n'est grisé : l'option est masquée.
+- Placement 7 : pas de lien sur un coin, seulement bord contre bord.
+- Couleurs écrites hors de `Style` (relevé du 2026-11-25) : `|cff` dans `CommonOptions.lua`,
+  `WeakAurasOptions.lua`, `TriggerOptions.lua`, `BuffTrigger2.lua`, `InformationOptions.lua`, `Update.lua`. Elles
+  gardent leur couleur en mode classique.
+- Couleurs figées au chargement d'un fichier, avant `Style.UseClassic` (relecture du 2026-11-25) : `Profiling.lua:12`,
+  `SecretAuraSingle.lua:23`, `Types.lua` (688, 850, 1261, 1280-1283, 1947-1948), `Prototypes.lua` (1511, 1555,
+  1771, 1798, 9143), popups de `WeakAuras.lua` (3044, 3064), `BossMods.lua:1464-1466`, `EditModePlacement.lua`
+  (302, 569). Elles restent Musca en mode classique : à construire à l'affichage si l'écart gêne.
 
 ---
 
@@ -2117,6 +2158,32 @@ Deux M (Populaire 4, Populaire 6) et Placement 7, réduit à S à M depuis les l
 - `WeakAurasOptions/OptionsFrames/MoverSizer.lua`
 - `WeakAuras/EditModePlacement.lua`
 - `WeakAuras/AnchorLinks.lua`
+
+---
+
+### Rebranding 9 : Mode « design classique » de WeakAuras
+
+**Pourquoi.** Demandé par l'auteur le 2026-11-24. Depuis la 1.17 et la 1.18, la fenêtre `/wa`, le mode édition, le Guide et les popups ont le look Musca : fonds plats, or et anthracite. Un habitué de WeakAuras peut vouloir retrouver le look d'origine. Le module de thème existe depuis la 1.18 : `WeakAuras/Style.lua` (`Style.colors`, `Style.Fill`, `Style.NewButton`, `Style.SkinScrollBar`, `Style.SkinEditBox`, `Style.SetFont`…), utilisé par 73 fichiers.
+
+**Valeur.** Un joueur revient au look WeakAuras d'origine en un clic, sans quitter Musca Auras.
+
+**À faire.**
+- Relever le look d'origine dans le source WeakAuras 5.22.0 : couleurs, cadre de la fenêtre d'options, boutons, barres de défilement, champs, police, logo.
+- Ajouter à `Style.lua` un second jeu « classique » : `Style.colors` et ce que dessinent `Style.Fill`, `Style.NewButton`, `Style.SkinScrollBar`, `Style.SkinEditBox` et `Style.SetFont`. Les appelants ne changent pas.
+- Ajouter le réglage au compte, avec le design Musca par défaut, et l'interrupteur dans la fenêtre d'options et en commande `/wa`. Le changement demande un `/reload` : le dire au joueur.
+- Remettre le logo WeakAuras (`logo_256_round.tga`) dans la bande de titre en mode classique (`OptionsFrame.lua:116`).
+- Ne pas toucher aux auras du joueur ni au nom « Musca Auras ».
+
+**Coût.** M à L. Plus large que l'estimation M de la 1.18 : le thème porte aussi les cadres, les boutons et les barres, pas seulement les couleurs.
+
+**Risque.** Deux habillages à maintenir : chaque nouvel écran se vérifie dans les deux, en jeu. Un widget qui écrit sa couleur hors de `Style` garde le look Musca : vérifier par grep `SetColorTexture`, `SetVertexColor`, `SetTextColor`, `SetBackdropColor` et `|cff` hors de `Style.lua`. Régression visuelle non couverte par le banc.
+
+**Fichiers.**
+- `WeakAuras/Style.lua`
+- `WeakAurasOptions/OptionsFrames/OptionsFrame.lua`
+- `WeakAurasOptions/WeakAurasOptions.lua` (valeurs par défaut)
+- `WeakAuras/WeakAuras.lua` (commande)
+- Locales
 
 ---
 
@@ -2603,8 +2670,6 @@ Un seul ticket, L, à risque élevé : il sort seul, comme Populaire 11 en 1.19.
 - Renommer les identifiants listés plus haut : casserait les imports Wago, les auras installées et les addons tiers.
 - Renommer le layout du mode édition `"WeakAuras"` : casserait les layouts déjà sauvegardés par les joueurs.
 - Refondre la disposition de la fenêtre d'options : c'est contraire à « ne pas perdre l'utilisateur ».
-- Rebranding 9, bascule « apparence classique » (écarté le 2026-11-13) : deux habillages complets à maintenir, sans
-  besoin joueur constaté.
 
 ### Accueil
 

@@ -827,7 +827,11 @@ local function ConstructTextEditor(frame)
   editorError:SetFont(STANDARD_TEXT_FONT, 12, "")
   editorError:SetJustifyH("LEFT")
   editorError:SetJustifyV("TOP")
-  editorError:SetTextColor(OptionsPrivate.Private.Style.Color("error"))
+  if OptionsPrivate.Private.Style.classic then
+    editorError:SetTextColor(1, 0, 0)
+  else
+    editorError:SetTextColor(OptionsPrivate.Private.Style.Color("error"))
+  end
   editorError:SetPoint("LEFT", helpButton, "RIGHT", 0, 4)
   editorError:SetPoint("RIGHT", settings_frame, "LEFT")
   group.editorError = editorError

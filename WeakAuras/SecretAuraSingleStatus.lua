@@ -129,3 +129,8 @@ function AuraDisplay.TriggerStatus(auraData, auraTrigger)
   for _, note in ipairs(notes) do caption = caption .. " " .. Paint(CAUTION, note) end
   return caption
 end
+
+-- Re-read the status colors after SecretAuraSingle.lua has switched them to the classic design.
+tinsert(Private.classicDesignFixes, function()
+  GOOD, CAUTION, BAD = Shared.GOOD, Shared.CAUTION, Shared.BAD
+end)

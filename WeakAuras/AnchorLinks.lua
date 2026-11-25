@@ -83,6 +83,46 @@ function AnchorLinks.DependsOn(targetId, sourceId)
   return Depends(targetId)
 end
 
+-- The side of the target an aura sits on when its edge (first key) lies on that edge of the target (second key).
+local sideOfSnappedEdges = {
+  LEFT = { RIGHT = "Anchor to Right" }, RIGHT = { LEFT = "Anchor to Left" },
+  BOTTOM = { TOP = "Anchor to Top" }, TOP = { BOTTOM = "Anchor to Bottom" },
+}
+
+local function IsGroup(id)
+  local data = WeakAuras.GetData(id)
+  return data and (data.regionType == "group" or data.regionType == "dynamicgroup")
+end
+
+--- The aura a drop stuck against, and the side of it, from the lines the drop snapped to (lineX vertical, lineY
+--- horizontal, either nil) and positions, the edges of the dropped aura once snapped (LEFT, RIGHT, BOTTOM, TOP), in
+--- the units of the lines. The edge must touch the edge of the other aura from outside, their spans overlapping
+--- across. Skips sourceId, the auras that follow it and the groups (their frame is a 2x2 point, not their box), as
+--- /wa does. nil when the drop touches no aura edge.
+function AnchorLinks.SnapLink(lineX, lineY, positions, sourceId)
+  local spans = { LEFT = { "BOTTOM", "TOP" }, RIGHT = { "BOTTOM", "TOP" }, TOP = { "LEFT", "RIGHT" },
+    BOTTOM = { "LEFT", "RIGHT" } }
+  for _, line in ipairs({ lineX or false, lineY or false }) do
+    if line and not line.gridLine and not line.spacing then
+      for _, ref in ipairs(line.references) do
+        for ownEdge, sides in pairs(sideOfSnappedEdges) do
+          local label = sides[ref.side]
+          local span = spans[ownEdge]
+          if label and positions[ownEdge] and math.abs(positions[ownEdge] - line.position) < 1
+          and positions[span[1]] < ref.pos2 and ref.pos1 < positions[span[2]]
+          and ref.id ~= sourceId and not AnchorLinks.DependsOn(ref.id, sourceId) and not IsGroup(ref.id) then
+            for _, side in ipairs(AnchorLinks.sides) do
+              if side.label == label then
+                return ref.id, side
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end
+
 --- Anchors the aura by selfPoint to the anchorPoint of the frame named frameName, by position only: the aura keeps
 --- its own visibility and scale.
 function AnchorLinks.Link(data, frameName, selfPoint, anchorPoint, xOffset, yOffset)

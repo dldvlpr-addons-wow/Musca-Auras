@@ -50,7 +50,11 @@ local function Frame_OnShow(self)
 
   if isHeader then
     self:SetScript("OnClick", nil)
-    self.obj.text:SetTextColor(OptionsPrivate.Private.Style.Color("primary"))
+    if OptionsPrivate.Private.Style.classic then
+      self.obj.text:SetTextColor(1, 1, 0)
+    else
+      self.obj.text:SetTextColor(OptionsPrivate.Private.Style.Color("primary"))
+    end
     self.obj.useHighlight = false
 
     self.obj.text:ClearAllPoints()

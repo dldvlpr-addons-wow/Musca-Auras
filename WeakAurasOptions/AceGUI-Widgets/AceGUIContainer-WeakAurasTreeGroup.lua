@@ -94,7 +94,11 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 
 	if disabled then
 		button:EnableMouse(false)
-		button.text:SetText(OptionsPrivate.Private.Style.Hex("textQuiet") .. text..FONT_COLOR_CODE_CLOSE)
+		if OptionsPrivate.Private.Style.classic then
+			button.text:SetText("|cff808080"..text..FONT_COLOR_CODE_CLOSE)
+		else
+			button.text:SetText(OptionsPrivate.Private.Style.Hex("textQuiet") .. text..FONT_COLOR_CODE_CLOSE)
+		end
 	else
 		button.text:SetText(text)
 		button:EnableMouse(true)
@@ -261,7 +265,11 @@ local function Dragger_OnLeave(frame)
 end
 
 local function Dragger_OnEnter(frame)
-	frame:SetBackdropColor(OptionsPrivate.Private.Style.Color("primary", 0.8))
+	if OptionsPrivate.Private.Style.classic then
+		frame:SetBackdropColor(1, 1, 1, 0.8)
+	else
+		frame:SetBackdropColor(OptionsPrivate.Private.Style.Color("primary", 0.8))
+	end
 end
 
 local function Dragger_OnMouseDown(frame)
@@ -651,8 +659,13 @@ local function Constructor()
 
 	local treeframeBG = CreateFrame("Frame", nil, treeframe, "BackdropTemplate")
 	treeframeBG:SetBackdrop(PaneBackdrop)
-	treeframeBG:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
-	treeframeBG:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
+	if OptionsPrivate.Private.Style.classic then
+		treeframeBG:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
+		treeframeBG:SetBackdropBorderColor(0.4, 0.4, 0.4)
+	else
+		treeframeBG:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+		treeframeBG:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
+	end
 	treeframeBG:SetAllPoints(treeframe)
 
 	local dragger = CreateFrame("Frame", nil, treeframe, "BackdropTemplate")
@@ -684,8 +697,13 @@ local function Constructor()
 	border:SetPoint("TOPLEFT", treeframe, "TOPRIGHT")
 	border:SetPoint("BOTTOMRIGHT")
 	border:SetBackdrop(PaneBackdrop)
-	border:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
-	border:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
+	if OptionsPrivate.Private.Style.classic then
+		border:SetBackdropColor(0.1, 0.1, 0.1, 0.5)
+		border:SetBackdropBorderColor(0.4, 0.4, 0.4)
+	else
+		border:SetBackdropColor(OptionsPrivate.Private.Style.Color("surface", 0.5))
+		border:SetBackdropBorderColor(OptionsPrivate.Private.Style.Color("border"))
+	end
 
 	--Container Support
 	local content = CreateFrame("Frame", nil, border)

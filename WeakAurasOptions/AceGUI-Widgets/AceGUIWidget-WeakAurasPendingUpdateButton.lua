@@ -285,7 +285,11 @@ local function Constructor()
   button.background = background
   background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
   background:SetBlendMode("ADD")
-  background:SetVertexColor(OptionsPrivate.Private.Style.Color("primary", 0.3))
+  if OptionsPrivate.Private.Style.classic then
+    background:SetVertexColor(0.88, 0.88, 0, 0.3)
+  else
+    background:SetVertexColor(OptionsPrivate.Private.Style.Color("primary", 0.3))
+  end
   background:SetPoint("TOP", button, "TOP")
   background:SetPoint("BOTTOM", button, "BOTTOM")
   background:SetPoint("LEFT", button, "LEFT")
@@ -368,7 +372,11 @@ local function Constructor()
   title:SetPoint("TOPLEFT", icon, "TOPRIGHT", 2, 0)
   title:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 2, 0)
   title:SetPoint("RIGHT", updateLogo, "LEFT", -2, 0)
-  title:SetVertexColor(OptionsPrivate.Private.Style.Color("textQuiet"))
+  if OptionsPrivate.Private.Style.classic then
+    title:SetVertexColor(0.6, 0.6, 0.6)
+  else
+    title:SetVertexColor(OptionsPrivate.Private.Style.Color("textQuiet"))
+  end
 
   button.description = {}
   --- @type table<string, any>

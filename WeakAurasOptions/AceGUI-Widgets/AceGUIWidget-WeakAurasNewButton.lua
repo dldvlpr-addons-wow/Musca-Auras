@@ -101,38 +101,56 @@ local function Constructor()
 
   -- Row of DESIGN.md: no fill, a light veil under the mouse (the HIGHLIGHT layer is drawn over the text), a 32 pixel icon in a 1 pixel dark frame, the title
   -- in the text color and the description quiet under it.
+  -- The classic design keeps the row of the game: a faint fill, a 40 pixel icon and the fonts of the game.
   local Style = OptionsPrivate.Private.Style
-  local background = button:CreateTexture(nil, "HIGHLIGHT");
+  local classic = Style.classic
+  local background
+  if classic then
+    background = button:CreateTexture(nil, "BACKGROUND");
+    background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
+    background:SetBlendMode("ADD");
+    background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
+    background:SetAllPoints(button);
+  else
+    background = button:CreateTexture(nil, "HIGHLIGHT");
+    background:SetColorTexture(Style.Color("text", 0.06));
+    background:SetAllPoints(button);
+    button:SetHighlightTexture(background);
+  end
   button.background = background;
-  background:SetColorTexture(Style.Color("text", 0.06));
-  background:SetAllPoints(button);
-  button:SetHighlightTexture(background);
 
   local iconFrame = button:CreateTexture(nil, "BORDER");
-  iconFrame:SetColorTexture(Style.Color("background"));
-  iconFrame:SetSize(34, 34);
-  iconFrame:SetPoint("LEFT", button, "LEFT", 3, 0);
+  if classic then
+    iconFrame:SetSize(40, 40);
+    iconFrame:SetPoint("LEFT", button, "LEFT");
+  else
+    iconFrame:SetColorTexture(Style.Color("background"));
+    iconFrame:SetSize(34, 34);
+    iconFrame:SetPoint("LEFT", button, "LEFT", 3, 0);
+  end
 
   local icon = button:CreateTexture(nil, "OVERLAY");
   button.icon = icon;
-  icon:SetWidth(32);
-  icon:SetHeight(32);
+  icon:SetWidth(classic and 40 or 32);
+  icon:SetHeight(classic and 40 or 32);
   icon:SetPoint("CENTER", iconFrame, "CENTER");
 
-  local title = Style.NewText(button, "text", "s", "text");
+  local title = classic and button:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    or Style.NewText(button, "text", "s", "text");
   button.title = title;
   title:SetHeight(14);
   title:SetJustifyH("LEFT");
   title:SetPoint("TOP", button, "TOP", 0, -5);
-  title:SetPoint("LEFT", iconFrame, "RIGHT", 8, 0);
+  title:SetPoint("LEFT", iconFrame, "RIGHT", classic and 2 or 8, 0);
   title:SetPoint("RIGHT", button, "RIGHT");
 
-  local description = Style.NewText(button, "text", "xs", "textQuiet");
+  local description = classic and button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    or Style.NewText(button, "text", "xs", "textQuiet");
   button.description = description;
   description:SetHeight(14);
   description:SetJustifyH("LEFT");
-  description:SetPoint("BOTTOM", button, "BOTTOM", 0, 4);
-  description:SetPoint("LEFT", iconFrame, "RIGHT", 8, 0);
+  description:SetPoint("BOTTOM", button, "BOTTOM", 0, classic and 2 or 4);
+  description:SetPoint("LEFT", iconFrame, "RIGHT", classic and 2 or 8, 0);
   description:SetPoint("RIGHT", button, "RIGHT");
 
 

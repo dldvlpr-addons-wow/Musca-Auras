@@ -90,6 +90,10 @@ none, nor auras disabled before you open it: enable those again from `/wa`. Plac
 other auras. Hold Ctrl to align centers only, hold Shift to turn the snap off. A yellow ghost box shows where the aura
 will land. The same snap works in `/wa` and in Edit Mode.
 
+**Anchor by dropping.** Drag an aura against the edge of another one until the snap line shows, then hold Alt
+when you drop it: the aura gets anchored to the other one and follows it when it moves. In `/wa unlock`, press Alt
+during the drag, not before the click.
+
 **In `/wa`.** The **Grid** button of the toolbar draws a grid over the screen: right click it to set the spacing. The
 arrow keys move the selected aura by 1 unit, 10 with Shift. With several auras selected, **Align Selection** aligns
 their edges or centers, or spreads them with equal gaps.
@@ -305,6 +309,9 @@ A condition changes a property while something is true. In the **Conditions** ta
 
 1. **Add Condition**, pick a value of a trigger (Remaining Time, Stacks, On Cooldown, Health (%), Dispel Type...).
 2. Pick the property to change: color, alpha, glow, desaturate, text, sound, **Hide Timer Text**, zoom, size.
+
+With several triggers, fill **Trigger Name** at the top of a trigger: the conditions show that name in place of
+"Trigger 2".
 
 Examples:
 
@@ -629,6 +636,7 @@ Not converted: TimelineParser triggers, `ForeverAuras.AuraOverlay` calls (rewrit
 | `/wa minimap` | Shows or hides the minimap button. |
 | `/wa toggle` | Pauses or resumes every aura. |
 | `/wa mute` | Turns the sounds of every aura off or on. The auras are not changed. |
+| `/wa design` | Switches the options between the Musca design and the classic WeakAuras design, for the whole account. Takes effect after `/reload`. The auras are not changed. |
 | `/wa welcome` | Shows the welcome window again. |
 | `/wa pstart`, `/wa pstop`, `/wa pprint` | Profiling: find which aura costs the most. `/wa pstart combat` profiles the next combat. |
 | `/wa paura <aura>` | The cost of one aura in the last profiling. |

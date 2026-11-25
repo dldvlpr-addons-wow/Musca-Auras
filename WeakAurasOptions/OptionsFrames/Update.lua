@@ -422,7 +422,11 @@ end
 local function RecurseSerial(lines, depth, chunk)
   for k, v in pairs(chunk) do
     if v == deleted then
-      tinsert(lines, string.rep("  ", depth) .. OptionsPrivate.Private.Style.Hex("error") .. k .. " -> deleted|r")
+      if OptionsPrivate.Private.Style.classic then
+        tinsert(lines, string.rep("  ", depth) .. "|cFFFF0000" .. k .. " -> deleted|r")
+      else
+        tinsert(lines, string.rep("  ", depth) .. OptionsPrivate.Private.Style.Hex("error") .. k .. " -> deleted|r")
+      end
     elseif type(v) == "table" then
       tinsert(lines, string.rep("  ", depth) .. k .. " -> {")
       RecurseSerial(lines, depth + 1, v)
@@ -1744,7 +1748,11 @@ local methods = {
       self.userChoices.mode = "import"
       local matchInfoText = ""
       if (errorMessage) then
-        matchInfoText = matchInfoText .. OptionsPrivate.Private.Style.Hex("error") .. errorMessage .. "|r\n"
+        if OptionsPrivate.Private.Style.classic then
+          matchInfoText = matchInfoText .. "|cFFFF0000" .. errorMessage .. "|r\n"
+        else
+          matchInfoText = matchInfoText .. OptionsPrivate.Private.Style.Hex("error") .. errorMessage .. "|r\n"
+        end
       end
 
       -- No match, so plain import

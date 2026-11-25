@@ -28,6 +28,110 @@ local function Boxes()
   return Private.PlacementBoxes
 end
 
+local roleLabels = {
+  group = L["Group"],
+  child = L["In group"],
+  anchored = L["Anchored"],
+  other = L["Alone"],
+}
+
+local function ReadPicker()
+  local r, g, b = ColorPickerFrame:GetColorRGB()
+  return { r, g, b, ColorPickerFrame:GetColorAlpha() }
+end
+
+-- The request of the color picker opened by a swatch, while it may still be open.
+local pickerRequest
+-- Cancels and hides the color picker when a swatch opened it: true when it was open.
+local function ClosePicker()
+  local request = pickerRequest
+  pickerRequest = nil
+  if request and ColorPickerFrame:IsShown() and ColorPickerFrame.swatchFunc == request.swatchFunc then
+    request.cancelFunc()
+    ColorPickerFrame:Hide()
+    return true
+  end
+  return false
+end
+
+-- A square of the border color of one kind of box: click opens the color picker, right-click restores the default.
+local function NewRoleSwatch(parent, role)
+  local swatch = CreateFrame("Button", nil, parent, "BackdropTemplate")
+  swatch:SetSize(22, 14)
+  Style.Fill(swatch, "well", "borderField")
+  -- A checkerboard that shows through a translucent color, as in the color option of the aura panels.
+  local checkers = swatch:CreateTexture(nil, "BORDER")
+  checkers:SetTexture(188523)
+  checkers:SetTexCoord(0.25, 0, 0.5, 0.25)
+  checkers:SetDesaturated(true)
+  checkers:SetVertexColor(1, 1, 1, 0.75)
+  checkers:SetPoint("TOPLEFT", 2, -2)
+  checkers:SetPoint("BOTTOMRIGHT", -2, 2)
+  swatch.color = swatch:CreateTexture(nil, "ARTWORK")
+  swatch.color:SetAllPoints(checkers)
+  swatch.label = Style.NewText(swatch, "text", "s", "text")
+  swatch.label:SetPoint("LEFT", swatch, "RIGHT", 6, 0)
+  swatch.label:SetText(roleLabels[role])
+  function swatch.Paint()
+    local r, g, b, a = Boxes().RoleColor(role)
+    swatch.color:SetColorTexture(r, g, b, a)
+  end
+  swatch:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+  swatch:SetScript("OnClick", function(_, button)
+    ClosePicker()
+    ColorPickerFrame:Hide()
+    if button == "RightButton" then
+      Boxes().SetRoleColor(role, nil)
+      swatch.Paint()
+      return
+    end
+    -- before: the picked table restored by Cancel, nil for the default border.
+    local r, g, b, a, before = Boxes().RoleColor(role)
+    -- The default border of the classic design is transparent: a color picked from there would stay unseen.
+    if not before and a == 0 then
+      a = 1
+    end
+    -- The picker calls swatchFunc while it opens, before it sets the opacity: ignored until it is shown.
+    local ready = false
+    local function Apply(color)
+      Boxes().SetRoleColor(role, color)
+      swatch.Paint()
+    end
+    local function ApplyPicked()
+      if ready then
+        Apply(ReadPicker())
+      end
+    end
+    local request = {
+      r = r, g = g, b = b,
+      opacity = a,
+      hasOpacity = true,
+      swatchFunc = ApplyPicked,
+      opacityFunc = ApplyPicked,
+      cancelFunc = function() Apply(before) end,
+    }
+    ColorPickerFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+    ColorPickerFrame:SetClampedToScreen(true)
+    OptionsPrivate.PrepareColorPalette(request)
+    ColorPickerFrame:SetupColorPickerAndShow(request)
+    OptionsPrivate.ShowColorPalette()
+    ready = true
+    pickerRequest = request
+  end)
+  swatch:SetScript("OnEnter", function(self)
+    self:SetBackdropBorderColor(Style.Color("primary"))
+    GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+    GameTooltip:SetText(roleLabels[role])
+    GameTooltip:AddLine(L["Border of these boxes. Click: pick a color. Right-click: default color."], 1, 1, 1, true)
+    GameTooltip:Show()
+  end)
+  swatch:SetScript("OnLeave", function(self)
+    self:SetBackdropBorderColor(Style.Color("borderField"))
+    GameTooltip:Hide()
+  end)
+  return swatch
+end
+
 -- The Edit Mode stays active, hidden, while the settings of the game or the quick keybind mode are open.
 local function EditModeOpen()
   local manager = EditModeManagerFrame
@@ -100,6 +204,7 @@ local function ShowInterface(animated)
 end
 
 local function HideInterface()
+  ClosePicker()
   StopEntrance()
   overlay:Hide()
   bar:Hide()
@@ -152,7 +257,9 @@ StaticPopupDialogs["WEAKAURAS_PLACEMENT_LEAVE"] = {
 }
 
 local function OnEscape()
-  if StaticPopup_Visible("WEAKAURAS_PLACEMENT_LEAVE") then
+  if ClosePicker() then
+    return
+  elseif StaticPopup_Visible("WEAKAURAS_PLACEMENT_LEAVE") then
     StaticPopup_Hide("WEAKAURAS_PLACEMENT_LEAVE")
   elseif not Boxes().Escape() then
     Quit()
@@ -282,10 +389,18 @@ local function CreateInterface()
   bar.grid:SetPoint("LEFT", subtitle, "RIGHT", 24, 0)
   bar.snap = Style.NewCheck(bar, L["Snap"], function() end)
   bar.snap:SetPoint("LEFT", bar.grid.label, "RIGHT", 16, 0)
+  bar.swatches = {}
+  local previous = bar.snap.label
+  for _, role in ipairs(Boxes().roles) do
+    local swatch = NewRoleSwatch(bar, role)
+    swatch:SetPoint("LEFT", previous, "RIGHT", #bar.swatches == 0 and 24 or 12, 0)
+    tinsert(bar.swatches, swatch)
+    previous = swatch.label
+  end
   local revert = Style.NewButton(bar, L["Revert"], "quiet", function()
     Boxes().Revert()
   end)
-  revert:SetPoint("LEFT", bar.snap.label, "RIGHT", 24, 0)
+  revert:SetPoint("LEFT", previous, "RIGHT", 24, 0)
   local quit = Style.NewButton(bar, L["Quit"], "secondary", Quit, 72)
   quit:SetPoint("LEFT", revert, "RIGHT", 8, 0)
   local save = Style.NewButton(bar, L["Save and quit"], "primary", SaveAndQuit, 72)
@@ -297,7 +412,12 @@ local function CreateInterface()
     end
     Style.FitCheck(bar.grid)
     Style.FitCheck(bar.snap)
-    bar:SetWidth(12 + 20 + 8 + title:GetStringWidth() + 8 + subtitle:GetStringWidth() + 24 + 14 + 6
+    local swatchesWidth = 0
+    for index, swatch in ipairs(bar.swatches) do
+      swatch.Paint()
+      swatchesWidth = swatchesWidth + (index == 1 and 24 or 12) + 22 + 6 + swatch.label:GetStringWidth()
+    end
+    bar:SetWidth(swatchesWidth + 12 + 20 + 8 + title:GetStringWidth() + 8 + subtitle:GetStringWidth() + 24 + 14 + 6
       + bar.grid.label:GetStringWidth() + 16 + 14 + 6 + bar.snap.label:GetStringWidth() + 24 + revert:GetWidth() + 8
       + quit:GetWidth() + 8 + save:GetWidth() + 12)
   end

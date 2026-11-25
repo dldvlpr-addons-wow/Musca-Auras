@@ -9,7 +9,10 @@ local Private = select(2, ...)
 ---@class WeakAuras
 local WeakAuras = WeakAuras
 local L = WeakAuras.L
-local heading = Private.Style.Hex("primary")
+-- Escape sequence of a color of the Style; in the classic design, the color WeakAuras wrote, given as classicHex.
+local function Hex(name, classicHex)
+  return Private.Style.classic and classicHex or Private.Style.Hex(name)
+end
 local prettyPrint = WeakAuras.prettyPrint
 local LGF = LibStub("LibGetFrame-1.0")
 
@@ -39,7 +42,7 @@ table_to_string = function(tbl, depth)
         k = '"' .. k .. '"'
       end
 
-      str = (str and str .. Private.Style.Hex("textQuiet") .. ",|r " or Private.Style.Hex("textQuiet") .. "{|r ") .. Private.Style.Hex("primary") .. "[" .. tostring(k) .. "]|r " .. Private.Style.Hex("textQuiet") .. "=|r " .. Private.Style.Hex("text") .. tostring(v) .. "|r"
+      str = (str and str .. Hex("textQuiet", "|cff999999") .. ",|r " or Hex("textQuiet", "|cff999999") .. "{|r ") .. Hex("primary", "|cffffff99") .. "[" .. tostring(k) .. "]|r " .. Hex("textQuiet", "|cff999999") .. "=|r " .. Hex("text", "|cffffffff") .. tostring(v) .. "|r"
     end
   end
   return (str or "{ ") .. " }"
@@ -409,7 +412,7 @@ local function PrintOneProfile(popup, name, map, total)
     spikeInfo = ColoredSpike(map.spike)
   end
 
-  popup:AddText(("%s " .. Private.Style.Hex("textQuiet") .. "%.2fms%s (%s)|r"):format(name, map.elapsed, percent, spikeInfo))
+  popup:AddText(("%s " .. Hex("textQuiet", "|cff999999") .. "%.2fms%s (%s)|r"):format(name, map.elapsed, percent, spikeInfo))
 end
 
 local function SortProfileMap(map, sortField)
@@ -500,16 +503,16 @@ function WeakAuras.PrintProfile()
 
   popup:ClearText()
 
-  PrintOneProfile(popup, heading .. "Total time:|r", profileData.systems.time)
-  PrintOneProfile(popup, heading .. "Time inside WA:|r", profileData.systems.wa)
-  popup:AddText(string.format(heading .. "Time spent inside WA:|r %.2f%%", 100 * profileData.systems.wa.elapsed / profileData.systems.time.elapsed))
+  PrintOneProfile(popup, Hex("primary", "|cff9900ff") .. "Total time:|r", profileData.systems.time)
+  PrintOneProfile(popup, Hex("primary", "|cff9900ff") .. "Time inside WA:|r", profileData.systems.wa)
+  popup:AddText(string.format(Hex("primary", "|cff9900ff") .. "Time spent inside WA:|r %.2f%%", 100 * profileData.systems.wa.elapsed / profileData.systems.time.elapsed))
 
   popup:AddText("")
   popup:AddText("Note: Not every aspect of each aura can be tracked.")
   popup:AddText("You can ask on our discord https://discord.gg/weakauras for help interpreting this output.")
 
   popup:AddText("")
-  popup:AddText(heading .. "Auras:|r")
+  popup:AddText(Hex("primary", "|cff9900ff") .. "Auras:|r")
   local total = TotalProfileTime(profileData.auras)
   popup:AddText("Total time attributed to auras: " .. floor(total) .. "ms")
   for _, k in ipairs(SortProfileMap(profileData.auras, "spike")) do
@@ -517,7 +520,7 @@ function WeakAuras.PrintProfile()
   end
 
   popup:AddText("")
-  popup:AddText(heading .. "Systems:|r")
+  popup:AddText(Hex("primary", "|cff9900ff") .. "Systems:|r")
 
   -- make a new table for system data with multiUnits grouped
   local systemRegrouped = {}
@@ -542,7 +545,7 @@ function WeakAuras.PrintProfile()
   end
 
   popup:AddText("")
-  popup:AddText(heading .. "LibGetFrame:|r")
+  popup:AddText(Hex("primary", "|cff9900ff") .. "LibGetFrame:|r")
   for id, map in pairs(LGF.GetProfileData()) do
     PrintOneProfile(popup, id, map)
   end
@@ -586,9 +589,17 @@ local COLUMN_INFO = {
 
 local function ApplyAlternateState(frame, alternate)
   if alternate then
-    frame.progressBar:SetStatusBarColor(Private.Style.Color("borderHover", 0.7))
+    if Private.Style.classic then
+      frame.progressBar:SetStatusBarColor(0.7, 0.7, 0.7, 0.7)
+    else
+      frame.progressBar:SetStatusBarColor(Private.Style.Color("borderHover", 0.7))
+    end
   else
-    frame.progressBar:SetStatusBarColor(Private.Style.Color("border", 0.7))
+    if Private.Style.classic then
+      frame.progressBar:SetStatusBarColor(0.5, 0.5, 0.5, 0.7)
+    else
+      frame.progressBar:SetStatusBarColor(Private.Style.Color("border", 0.7))
+    end
   end
 end
 

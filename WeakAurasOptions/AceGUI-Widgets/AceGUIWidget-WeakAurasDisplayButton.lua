@@ -1190,12 +1190,12 @@ local methods = {
       tinsert(namestable, self.loadTooltip);
     end
     tinsert(namestable, " ");
-    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Right-click for more options"]});
-    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Drag to move"]});
+    tinsert(namestable, {" ", (OptionsPrivate.Private.Style.classic and "|cFF00FFFF" or OptionsPrivate.Private.Style.Hex("accent")) .. L["Right-click for more options"]});
+    tinsert(namestable, {" ", (OptionsPrivate.Private.Style.classic and "|cFF00FFFF" or OptionsPrivate.Private.Style.Hex("accent")) .. L["Drag to move"]});
     if not(data.controlledChildren) then
-      tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Control-click to select multiple displays"]});
+      tinsert(namestable, {" ", (OptionsPrivate.Private.Style.classic and "|cFF00FFFF" or OptionsPrivate.Private.Style.Hex("accent")) .. L["Control-click to select multiple displays"]});
     end
-    tinsert(namestable, {" ", OptionsPrivate.Private.Style.Hex("accent") .. L["Shift-click to create chat link"]});
+    tinsert(namestable, {" ", (OptionsPrivate.Private.Style.classic and "|cFF00FFFF" or OptionsPrivate.Private.Style.Hex("accent")) .. L["Shift-click to create chat link"]});
     local regionData = OptionsPrivate.Private.regionOptions[data.regionType or ""]
     local displayName = regionData and regionData.displayName or "";
     if data.regionType == "group" and data.blizzardFlow then displayName = L["Modern Aura Group"] end
@@ -1432,11 +1432,11 @@ local methods = {
         depth = depth + 1
         group = WeakAuras.GetData(group).parent
       end
-      self.offset:SetWidth(depth * 12 + 1)
+      self.offset:SetWidth(depth * (OptionsPrivate.Private.Style.classic and 8 or 12) + 1)
     else
       self.offset:SetWidth(1)
     end
-    self.offset.line:SetShown(self.frame.dgroup ~= nil)
+    self.offset.line:SetShown(not OptionsPrivate.Private.Style.classic and self.frame.dgroup ~= nil)
   end,
   ["GetOffset"] = function(self)
     return self.offset:GetWidth()
@@ -1493,7 +1493,12 @@ local methods = {
   ["Expand"] = function(self, reloadTooltip)
     self.expand:Enable();
     OptionsPrivate.SetCollapsed(self.data.id, "displayButton", "", false)
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-MinusButton-Up.blp");
+      self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-MinusButton-Down.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\collapse")
+    end
     self.expand.title = L["Collapse"];
     self.expand.desc = L["Hide this group's children"];
     self.expand:SetScript("OnClick", function() self:Collapse(true) end);
@@ -1506,7 +1511,12 @@ local methods = {
   ["Collapse"] = function(self, reloadTooltip)
     self.expand:Enable();
     OptionsPrivate.SetCollapsed(self.data.id, "displayButton", "", true)
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Up.blp");
+      self.expand:SetPushedTexture("Interface\\BUTTONS\\UI-PlusButton-Down.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    end
     self.expand.title = L["Expand"];
     self.expand.desc = L["Show this group's children"];
     self.expand:SetScript("OnClick", function() self:Expand(true) end);
@@ -1529,7 +1539,11 @@ local methods = {
     self.expand:Disable();
     self.expand.disabled = true;
     self.expand.expanded = false;
-    self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    if OptionsPrivate.Private.Style.classic then
+      self.expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
+    else
+      self.expand.texture:SetTexture("Interface\\AddOns\\WeakAuras\\Media\\Textures\\expand")
+    end
   end,
   ["EnableExpand"] = function(self)
     if not self.expand.disabled then
@@ -1542,7 +1556,8 @@ local methods = {
       self:Collapse();
     end
   end,
-  ["UpdateStatusIcon"] = function(self, key, prio, color, title, tooltip, onClick)
+  -- icon: the texture or atlas shown in the classic design instead of the colored square.
+  ["UpdateStatusIcon"] = function(self, key, prio, color, title, tooltip, onClick, icon)
     local iconButton
     for _, button in ipairs(self.statusIcons.buttons) do
       if button.key == key then
@@ -1556,15 +1571,24 @@ local methods = {
       tinsert(self.statusIcons.buttons, iconButton)
       iconButton:SetParent(self.statusIcons)
       iconButton.key = key
-      iconButton:SetSize(10, 16)
-      if not iconButton.square then
+      iconButton:SetSize(OptionsPrivate.Private.Style.classic and 16 or 10, 16)
+      if not iconButton.square and not OptionsPrivate.Private.Style.classic then
         iconButton.square = iconButton:CreateTexture(nil, "ARTWORK")
         iconButton.square:SetSize(6, 6)
         iconButton.square:SetPoint("CENTER")
       end
     end
     iconButton.prio = prio
-    iconButton.square:SetColorTexture(OptionsPrivate.Private.Style.Color(color))
+    if OptionsPrivate.Private.Style.classic then
+      if C_Texture.GetAtlasInfo(icon) then
+        iconButton:SetNormalAtlas(icon)
+      else
+        iconButton:SetNormalTexture(icon)
+      end
+      iconButton:GetNormalTexture():SetVertexColor(1, 1, 1)
+    else
+      iconButton.square:SetColorTexture(OptionsPrivate.Private.Style.Color(color))
+    end
     if title then
       iconButton:SetScript("OnEnter", function()
         Show_Tooltip(
@@ -1602,7 +1626,7 @@ local methods = {
     end
     for _, button in ipairs(self.statusIcons.buttons) do
       button:ClearAllPoints()
-      button:SetPoint("BOTTOMLEFT", lastAnchor, "BOTTOMRIGHT", 0, 0)
+      button:SetPoint("BOTTOMLEFT", lastAnchor, "BOTTOMRIGHT", OptionsPrivate.Private.Style.classic and 4 or 0, 0)
       lastAnchor = button
     end
   end,
@@ -1639,7 +1663,7 @@ local methods = {
         end
 
         self:UpdateStatusIcon(severity, warning.prio, statusColors[severity] or "textSecondary", warning.title,
-          warning.message, onClick)
+          warning.message, onClick, warning.icon)
       end
     end
     self:UpdateProfileCost()
@@ -1653,14 +1677,17 @@ local methods = {
       return
     end
     local color = cost >= 1 and "error" or cost >= 0.1 and "warning" or "success"
-    self:UpdateStatusIcon("cpu_cost", 20, color,
+    local iconButton = self:UpdateStatusIcon("cpu_cost", 20, color,
       L["CPU Cost"], L["%.2f ms per second, longest run %.2f ms, during the last profiling. /wa pstart starts a new one."]:format(cost, spike),
       function()
         -- The window only fills its list while a profiling runs
         WeakAurasProfilingFrame:Show()
         WeakAurasProfilingFrame:ResetBars()
         WeakAurasProfilingFrame:RefreshBars(nil, true)
-      end)
+      end, "Interface\\AddOns\\WeakAuras\\Media\\Textures\\Circle_White")
+    if OptionsPrivate.Private.Style.classic then
+      iconButton:GetNormalTexture():SetVertexColor(OptionsPrivate.Private.Style.Color(color))
+    end
   end,
   ["UpdateParentWarning"] = function(self)
     self:UpdateWarning()
@@ -1689,6 +1716,12 @@ local methods = {
     else
       self.downgroup:Enable();
     end
+    if OptionsPrivate.Private.Style.classic then
+      local up = self.upgroup:IsEnabled() and 1 or 0.3
+      self.upgroup.texture:SetVertexColor(up, up, up)
+      local down = self.downgroup:IsEnabled() and 1 or 0.3
+      self.downgroup.texture:SetVertexColor(down, down, down)
+    end
   end,
   ["GetGroupOrder"] = function(self)
     return self.frame.dgrouporder;
@@ -1701,6 +1734,12 @@ local methods = {
     self:SortStatusIcons()
   end,
   ["SetLoaded"] = function(self, prio, file, title, description)
+    if OptionsPrivate.Private.Style.classic then
+      self:UpdateStatusIcon("load", prio, nil, title, description, nil,
+        "Interface\\AddOns\\WeakAuras\\Media\\Textures\\" .. file)
+      self:SortStatusIcons()
+      return
+    end
     -- An aura not loaded has its name in the quiet text color and no square; loaded is green, on standby grey.
     self.titleColor = prio == 3 and "textQuiet" or nil
     self.loadTooltip = prio == 3 and { title, description } or nil
@@ -1714,6 +1753,9 @@ local methods = {
   end,
   -- Name in the disabled color while the row is disabled, else in the color of its load state.
   ["PaintTitle"] = function(self)
+    if OptionsPrivate.Private.Style.classic then
+      return
+    end
     local color = not self:IsEnabled() and "textDisabled" or self.titleColor or "text"
     self.title:SetTextColor(OptionsPrivate.Private.Style.Color(color))
   end,
@@ -1727,12 +1769,18 @@ local methods = {
     return OptionsPrivate.Private.loaded[self.data.id] == nil
   end,
   ["Pick"] = function(self)
+    if OptionsPrivate.Private.Style.classic then
+      self.frame:LockHighlight()
+    end
     self.selected:Show()
     self.selectedBar:Show()
     self:PriorityShow(1);
     self:RecheckParentVisibility()
   end,
   ["ClearPick"] = function(self, noHide)
+    if OptionsPrivate.Private.Style.classic then
+      self.frame:UnlockHighlight()
+    end
     self.selected:Hide()
     self.selectedBar:Hide()
     if not noHide then
@@ -1828,6 +1876,17 @@ local methods = {
     end
   end,
   ["UpdateViewTexture"] = function(self)
+    if OptionsPrivate.Private.Style.classic then
+      local visibility = self.view.visibility
+      if(visibility == 2) then
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking0.blp");
+      elseif(visibility == 1) then
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking2.blp");
+      else
+        self.view.texture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
+      end
+      return
+    end
     OptionsPrivate.Private.Style.PaintIcon(self.view)
   end,
   ["GetVisibility"] = function(self)
@@ -1835,6 +1894,9 @@ local methods = {
   end,
   ["Disable"] = function(self)
     self.hover:Hide()
+    if OptionsPrivate.Private.Style.classic then
+      self.background:Hide();
+    end
     self.frame:Disable();
     self.view:Disable();
     self.group:Disable();
@@ -1847,6 +1909,9 @@ local methods = {
     self:PaintTitle()
   end,
   ["Enable"] = function(self)
+    if OptionsPrivate.Private.Style.classic then
+      self.background:Show();
+    end
     self.frame:Enable();
     self:PaintTitle()
     self.view:Enable();
@@ -2002,23 +2067,34 @@ local function Constructor()
   -- Rows of DESIGN.md: no fill at rest (background only anchors the fills below).
   local background = button:CreateTexture(nil, "BACKGROUND");
   button.background = background;
+  if Style.classic then
+    background:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp");
+    background:SetBlendMode("ADD");
+    background:SetVertexColor(0.5, 0.5, 0.5, 0.25);
+  end
   background:SetPoint("TOP", button, "TOP");
   background:SetPoint("BOTTOM", button, "BOTTOM");
   background:SetPoint("LEFT", button, "LEFT")
   background:SetPoint("RIGHT", button, "RIGHT");
 
   -- The raised fill under the mouse, shown by OnEnter on an enabled row; the selection fill and a 2 pixel brass bar on
-  -- the left while picked.
+  -- the left while picked. The classic design draws none of them: the highlight of the template does.
   local hover = button:CreateTexture(nil, "BACKGROUND")
-  hover:SetColorTexture(Style.Color("raised"))
+  if not Style.classic then
+    hover:SetColorTexture(Style.Color("raised"))
+  end
   hover:SetAllPoints(background)
   hover:Hide()
   local selected = button:CreateTexture(nil, "BACKGROUND", nil, 1)
-  selected:SetColorTexture(Style.Color("selection"))
+  if not Style.classic then
+    selected:SetColorTexture(Style.Color("selection"))
+  end
   selected:SetAllPoints(background)
   selected:Hide()
   local selectedBar = button:CreateTexture(nil, "OVERLAY")
-  selectedBar:SetColorTexture(Style.Color("primary"))
+  if not Style.classic then
+    selectedBar:SetColorTexture(Style.Color("primary"))
+  end
   selectedBar:SetWidth(2)
   selectedBar:SetPoint("TOPLEFT", background, "TOPLEFT")
   selectedBar:SetPoint("BOTTOMLEFT", background, "BOTTOMLEFT")
@@ -2026,13 +2102,15 @@ local function Constructor()
 
   local icon = button:CreateTexture(nil, "OVERLAY");
   button.icon = icon;
-  icon:SetWidth(26);
-  icon:SetHeight(26);
+  icon:SetWidth(Style.classic and 32 or 26);
+  icon:SetHeight(Style.classic and 32 or 26);
   icon:SetPoint("LEFT", offset, "RIGHT");
 
-  local title = button:CreateFontString(nil, "OVERLAY");
-  Style.SetFont(title, "text", "s")
-  title:SetTextColor(Style.Color("text"))
+  local title = button:CreateFontString(nil, "OVERLAY", Style.classic and "GameFontNormal" or nil);
+  if not Style.classic then
+    Style.SetFont(title, "text", "s")
+    title:SetTextColor(Style.Color("text"))
+  end
   button.title = title;
   title:SetHeight(14);
   title:SetJustifyH("LEFT");
@@ -2052,7 +2130,17 @@ local function Constructor()
   view:SetScript("OnLeave", Hide_Tooltip);
 
   view.visibility = 0;
-  Style.NewEye(view)
+  if Style.classic then
+    local viewTexture = view:CreateTexture()
+    view.texture = viewTexture;
+    viewTexture:SetTexture("Interface\\LFGFrame\\BattlenetWorking4.blp");
+    viewTexture:SetTexCoord(0.1, 0.9, 0.1, 0.9);
+    viewTexture:SetAllPoints(view);
+    view:SetNormalTexture(viewTexture);
+    view:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewEye(view)
+  end
 
   local renamebox = CreateFrame("EditBox", nil, button, "InputBoxTemplate");
   renamebox:SetHeight(14);
@@ -2088,7 +2176,17 @@ local function Constructor()
   group:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -18, 0);
   group:SetScript("OnEnter", function() Show_Tooltip(button, L["Group (verb)"], L["Put this display in a group"]) end);
   group:SetScript("OnLeave", Hide_Tooltip);
-  Style.NewIcon(group, "downright", 14)
+  if Style.classic then
+    local grouptexture = group:CreateTexture(nil, "OVERLAY");
+    group.texture = grouptexture;
+    grouptexture:SetTexture("Interface\\GLUES\\CharacterCreate\\UI-RotationRight-Big-Up.blp");
+    grouptexture:SetTexCoord(0.15, 0.85, 0.15, 0.85);
+    grouptexture:SetAllPoints(group);
+    group:SetNormalTexture(grouptexture);
+    group:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(group, "downright", 14)
+  end
 
   local ungroup = CreateFrame("Button", nil, button);
   button.ungroup = ungroup;
@@ -2100,7 +2198,16 @@ local function Constructor()
   -- The three arrows of the group order are stacked 11 pixels apart and the aura icon is on their right:
   -- wider to the left only, into the indent.
   ungroup:SetHitRectInsets(-5, 0, 0, 0)
-  Style.NewIcon(ungroup, "upleft", 10)
+  if Style.classic then
+    local ungrouptexture = ungroup:CreateTexture(nil, "OVERLAY");
+    ungrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
+    ungrouptexture:SetTexCoord(0.5, 0, 0.5, 1, 1, 0, 1, 1);
+    ungrouptexture:SetAllPoints(ungroup);
+    ungroup:SetNormalTexture(ungrouptexture);
+    ungroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(ungroup, "upleft", 10)
+  end
   ungroup:Hide();
 
   local upgroup = CreateFrame("Button", nil, button);
@@ -2111,7 +2218,17 @@ local function Constructor()
   upgroup:SetScript("OnEnter", function() Show_Tooltip(button, L["Move Up"], L["Move this display up in its group's order"]) end);
   upgroup:SetScript("OnLeave", Hide_Tooltip);
   upgroup:SetHitRectInsets(-5, 0, 0, 0)
-  Style.NewIcon(upgroup, "moveup", 8)
+  if Style.classic then
+    local upgrouptexture = upgroup:CreateTexture(nil, "OVERLAY");
+    upgroup.texture = upgrouptexture;
+    upgrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
+    upgrouptexture:SetTexCoord(0.5, 1, 1, 1, 0.5, 0, 1, 0);
+    upgrouptexture:SetAllPoints(upgroup);
+    upgroup:SetNormalTexture(upgrouptexture);
+    upgroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(upgroup, "moveup", 8)
+  end
   upgroup:Hide();
 
   local downgroup = CreateFrame("Button", nil, button);
@@ -2124,7 +2241,17 @@ local function Constructor()
   end)
   downgroup:SetScript("OnLeave", Hide_Tooltip);
   downgroup:SetHitRectInsets(-5, 0, 0, 0)
-  Style.NewIcon(downgroup, "movedown", 8)
+  if Style.classic then
+    local downgrouptexture = downgroup:CreateTexture(nil, "OVERLAY");
+    downgroup.texture = downgrouptexture;
+    downgrouptexture:SetTexture("Interface\\MoneyFrame\\Arrow-Left-Down.blp");
+    downgrouptexture:SetTexCoord(1, 0, 0.5, 0, 1, 1, 0.5, 1);
+    downgrouptexture:SetAllPoints(downgroup);
+    downgroup:SetNormalTexture(downgrouptexture);
+    downgroup:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(downgroup, "movedown", 8)
+  end
   downgroup:Hide();
 
   ---@class Button
@@ -2143,7 +2270,12 @@ local function Constructor()
   expand:SetScript("OnEnter", function() Show_Tooltip(button, expand.title, expand.desc) end);
   expand:SetScript("OnLeave", Hide_Tooltip);
   -- Chevron of DESIGN.md: 10 pixels, pointing down while open.
-  Style.NewIcon(expand, "expand", 10)
+  if Style.classic then
+    expand:SetNormalTexture("Interface\\BUTTONS\\UI-PlusButton-Disabled.blp");
+    expand:SetHighlightTexture("Interface\\BUTTONS\\UI-Panel-MinimizeButton-Highlight.blp");
+  else
+    Style.NewIcon(expand, "expand", 10)
+  end
 
   local statusIcons = CreateFrame("Frame", nil, button);
   button.statusIcons = statusIcons

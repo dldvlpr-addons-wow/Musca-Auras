@@ -111,6 +111,12 @@ local L = WeakAuras.L
 	L["Guide"] = "Guide"
 	L["Left Edges"] = "Bords gauches"
 	L["Mute"] = "Muet"
+	L["Trigger Name"] = "Nom du déclencheur"
+	L["Shown in place of \"Trigger N\" in the trigger title and in the conditions. Leave empty to keep the number."] = "Affiché à la place de « Déclencheur N » dans le titre du déclencheur et dans les conditions. Laisser vide pour garder le numéro."
+	L["Visible If"] = "Visible si"
+	L["Shows this option in user mode only when the chosen option of the same level has the value below."] = "N'affiche cette option en mode utilisateur que si l'option choisie du même niveau a la valeur ci-dessous."
+	L["Classic design"] = "Design classique"
+	L["Shows the options with the classic WeakAuras design. The auras do not change. Takes effect after /reload."] = "Affiche les options avec le design classique de WeakAuras. Les auras ne changent pas. Prend effet après /reload."
 	L["Media missing from your addons, replaced by the default one:"] = "Médias absents de vos addons, remplacés par celui par défaut :"
 	L["Needs at least two auras with the same anchor point on the screen, a frame or the mouse, not groups nor in a group that places its children."] = "Demande au moins deux auras de même point d'ancrage sur l'écran, un cadre ou la souris, ni groupes ni dans un groupe qui place ses enfants."
 	L["No aura plays a sound or speaks while this is checked. The auras are not changed."] = "Aucune aura ne joue de son ni ne parle tant que cette case est cochée. Les auras ne sont pas modifiées."
@@ -606,6 +612,7 @@ UNIT_POWER, UNIT_AURA PLAYER_TARGET_CHANGED
 	L["Dynamic Information"] = "Information Dynamique"
 	L["Dynamic information from first active trigger"] = "Information dynamique depuis le premier déclencheur"
 	L["Dynamic information from Trigger %i"] = "Information dynamique du Déclencheur %i"
+	L["Dynamic information from %s"] = "Information dynamique de %s"
 	--[[Translation missing --]]
 	L["Dynamic Text Replacements"] = "Dynamic Text Replacements"
 	--[[Translation missing --]]

@@ -1286,6 +1286,20 @@ local function addDeleteControl(args, prefix, order, data, option)
         OptionsPrivate.RemoveCollapsed(id, "author", optionData.path)
         local path = CopyTable(optionData.path)
         path[#path] = nil
+        -- The rules on the deleted option go, else a new option given the same key would take them over.
+        local deletedKey = childOptions[optionIndex].key
+        for siblingIndex, sibling in ipairs(childOptions) do
+          if siblingIndex ~= optionIndex and deletedKey and sibling.visibleIf and sibling.visibleIf.key == deletedKey then
+            local siblingPath = CopyTable(path)
+            tinsert(siblingPath, siblingIndex)
+            OptionsPrivate.Private.TimeMachine:Append({
+              uid = childData.uid,
+              actionType = "set",
+              path = expandPath(siblingPath, "visibleIf"),
+              payload = nil
+            })
+          end
+        end
         OptionsPrivate.Private.TimeMachine:Append({
           uid = childData.uid,
           actionType = "remove",
@@ -1461,6 +1475,171 @@ local function addNameKeyAndTooltipControls(args, prefix, order, data, option, o
   end
 end
 
+-- Option types whose value can show or hide another option ("Visible If").
+local visibleIfTargetTypes = { toggle = true, select = true, input = true, number = true, range = true }
+
+-- True when the rule lets the option show. A rule on a missing or deleted option shows it.
+-- rule.value: boolean for a toggle, index of the value for a select, text for the others (a number for number
+-- and range options is compared as a number).
+local function visibleIfAllows(siblings, config, rule, option)
+  if type(rule) ~= "table" or rule.key == nil or type(config) ~= "table" then
+    return true
+  end
+  for _, target in ipairs(siblings) do
+    -- A rule on the option itself (key renamed to the one of its deleted target) would hide it for good.
+    if target ~= option and target.key == rule.key and visibleIfTargetTypes[target.type] then
+      local value = config[rule.key]
+      -- A rule left without a value, or kept from another type of the target, shows the option.
+      if rule.value == nil or rule.value == ""
+        or (type(rule.value) == "boolean") ~= (target.type == "toggle")
+        or (target.type == "select" and type(rule.value) ~= "number") then
+        return true
+      end
+      if target.type == "toggle" then
+        return value == rule.value or (not value and not rule.value)
+      end
+      if (target.type == "number" or target.type == "range") and tonumber(rule.value) then
+        -- The slider rounds by steps: 0.15 is saved as 0.15000000000000002.
+        local number = tonumber(value)
+        return number ~= nil and math.abs(number - tonumber(rule.value)) < 1e-9
+      end
+      return tostring(value) == tostring(rule.value)
+    end
+  end
+  return true
+end
+
+-- Hidden in user mode when no selected aura lets the option show.
+local function hiddenByVisibleIf(option)
+  return function()
+    local any = false
+    for _, optionData in pairs(option.references) do
+      any = true
+      local childOption = optionData.options[optionData.index]
+      if visibleIfAllows(optionData.options, optionData.config, childOption.visibleIf, childOption) then
+        return false
+      end
+    end
+    return any
+  end
+end
+
+local function addVisibleIfControls(args, prefix, order, data, options, option)
+  -- An option whose rules lead back to this one is left out: rules in a loop would hide them all for good.
+  local function leadsBack(sibling)
+    local seen = {}
+    while sibling and sibling.visibleIf and not seen[sibling] do
+      seen[sibling] = true
+      if sibling.visibleIf.key == option.key then
+        return true
+      end
+      local nextSibling
+      for _, other in ipairs(options) do
+        if other.key == sibling.visibleIf.key then
+          nextSibling = other
+          break
+        end
+      end
+      sibling = nextSibling
+    end
+    return false
+  end
+  local function canTarget(sibling)
+    return sibling ~= option and sibling.key and visibleIfTargetTypes[sibling.type] and not leadsBack(sibling)
+  end
+  local function targetOf(key)
+    for _, sibling in ipairs(options) do
+      if canTarget(sibling) and sibling.key == key then
+        return sibling
+      end
+    end
+  end
+  local function currentTarget()
+    return option.visibleIf and targetOf(option.visibleIf.key)
+  end
+
+  args[prefix .. "visibleIfKey"] = {
+    type = "select",
+    width = WeakAuras.normalWidth,
+    name = name(option, "visibleIf", L["Visible If"]),
+    desc = L["Shows this option in user mode only when the chosen option of the same level has the value below."],
+    order = order(),
+    values = function()
+      local values = { [""] = L["Always"] }
+      for _, sibling in ipairs(options) do
+        if canTarget(sibling) then
+          values[sibling.key] = sibling.name or sibling.key
+        end
+      end
+      return values
+    end,
+    get = function()
+      return option.visibleIf and option.visibleIf.key or ""
+    end,
+    set = function(info, key)
+      local target = key ~= "" and targetOf(key)
+      local rule
+      if target then
+        local firstValue = { toggle = true, select = 1 }
+        rule = { key = key, value = firstValue[target.type] or "" }
+      end
+      set(data, option, "visibleIf")(info, rule)
+    end,
+  }
+  args[prefix .. "visibleIfValue"] = {
+    type = "select",
+    width = WeakAuras.normalWidth,
+    name = L["Value"],
+    order = order(),
+    hidden = function()
+      local target = currentTarget()
+      return not target or (target.type ~= "toggle" and target.type ~= "select")
+    end,
+    values = function()
+      local target = currentTarget()
+      if target and target.type == "select" then
+        local values = {}
+        for index, text in ipairs(target.values or {}) do
+          values[index] = text
+        end
+        return values
+      end
+      return { checked = L["True"], unchecked = L["False"] }
+    end,
+    get = function()
+      local target = currentTarget()
+      if not target then return end
+      if target.type == "toggle" then
+        return option.visibleIf.value and "checked" or "unchecked"
+      end
+      return option.visibleIf.value
+    end,
+    set = function(info, value)
+      local target = currentTarget()
+      if target.type == "toggle" then
+        value = value == "checked"
+      end
+      set(data, option, "visibleIf")(info, { key = option.visibleIf.key, value = value })
+    end,
+  }
+  args[prefix .. "visibleIfText"] = {
+    type = "input",
+    width = WeakAuras.normalWidth,
+    name = L["Value"],
+    order = order(),
+    hidden = function()
+      local target = currentTarget()
+      return not target or target.type == "toggle" or target.type == "select"
+    end,
+    get = function()
+      return option.visibleIf and tostring(option.visibleIf.value or "") or ""
+    end,
+    set = function(info, value)
+      set(data, option, "visibleIf")(info, { key = option.visibleIf.key, value = value })
+    end,
+  }
+end
+
 ---@type fun(options: Option[], args: table, data: auraData, order: function, prefix: string, i: number)
 local function addAuthorModeOption(options, args, data, order, prefix, i)
   -- add header controls
@@ -1520,6 +1699,8 @@ local function addAuthorModeOption(options, args, data, order, prefix, i)
     get = get(option, "width"),
     set = set(data, option, "width")
   }
+
+  addVisibleIfControls(args, prefix, order, data, options, option)
 
   local addControlsForType = typeControlAdders[option.type]
   if addControlsForType then
@@ -2912,8 +3093,31 @@ end
 
 
 
----@type fun(id: string, path: table<string|number>, default: boolean)
+---@type fun(options: Option[], args: table, data: auraData, order: function, prefix: string, i: number)
+local addUserModeOptionControls
+
+-- Adds the user mode controls of an option. A "Visible If" rule hides all of them, sub options of a group included.
+---@type fun(options: Option[], args: table, data: auraData, order: function, prefix: string, i: number)
 local function addUserModeOption(options, args, data, order, prefix, i)
+  local before = {}
+  for key in pairs(args) do
+    before[key] = true
+  end
+  addUserModeOptionControls(options, args, data, order, prefix, i)
+  local hidden = hiddenByVisibleIf(options[i])
+  for key, arg in pairs(args) do
+    if not before[key] then
+      local ownHidden = arg.hidden
+      if type(ownHidden) == "function" then
+        arg.hidden = function(...) return hidden() or ownHidden(...) end
+      elseif not ownHidden then
+        arg.hidden = hidden
+      end
+    end
+  end
+end
+
+addUserModeOptionControls = function(options, args, data, order, prefix, i)
   local option = options[i]
   local optionType = option.type
   local optionClass = OptionsPrivate.Private.author_option_classes[optionType]

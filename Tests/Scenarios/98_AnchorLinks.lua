@@ -92,4 +92,30 @@ return function(test)
   Same(data.anchorFrameType, "SCREEN", "nothing changed when refused")
   private.TimeMachine.Watch = Watch
   private.regions.P = nil
+
+  -- Drop with Alt stuck against an aura edge (SnapLink): the side of the target the aura sits on.
+  -- The dropped aura spans 100..164 x 100..164; B spans 164..264 x 90..140.
+  local function Line(position, id, side, pos1, pos2)
+    return { position = position, references = { { id = id, side = side, pos1 = pos1, pos2 = pos2 } } }
+  end
+  local dropped = { LEFT = 100, RIGHT = 164, BOTTOM = 100, TOP = 164 }
+  displays = { S = { id = "S" }, B = { id = "B" } }
+  WeakAuras.GetData = function(id) return displays[id] end
+  local id, side = AnchorLinks.SnapLink(Line(164, "B", "LEFT", 90, 140), nil, dropped, "S")
+  Same(id, "B", "linked to the aura it touches")
+  Same(side and side.label, "Anchor to Left", "left of B: its right edge on the left edge of B")
+  id, side = AnchorLinks.SnapLink(nil, Line(164, "B", "BOTTOM", 120, 200), dropped, "S")
+  Same(side and side.label, "Anchor to Bottom", "under B")
+  Same(AnchorLinks.SnapLink(Line(164, "B", "RIGHT", 90, 140), nil, dropped, "S"), nil,
+    "flush right edges: an alignment, no link")
+  Same(AnchorLinks.SnapLink(Line(164, "B", "LEFT", 300, 400), nil, dropped, "S"), nil, "spans apart: no link")
+  local spacing = Line(164, "B", "LEFT", 90, 140)
+  spacing.spacing = true
+  Same(AnchorLinks.SnapLink(spacing, nil, dropped, "S"), nil, "a spacing line is no edge")
+  displays.B.anchorFrameType, displays.B.anchorFrameFrame = "SELECTFRAME", "WeakAuras:S"
+  Same(AnchorLinks.SnapLink(Line(164, "B", "LEFT", 90, 140), nil, dropped, "S"), nil, "B follows S: no loop")
+  displays.G = { id = "G", regionType = "group" }
+  Same(AnchorLinks.SnapLink(Line(164, "G", "LEFT", 90, 140), nil, dropped, "S"), nil,
+    "a group is no target: its frame is a 2x2 point, not its box")
+  WeakAuras.GetData = GetData
 end

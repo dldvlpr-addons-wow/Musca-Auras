@@ -73,10 +73,22 @@ local methods = {
     self:SetEditable(false)
 
     self.ntex:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
-    self.ntex:SetVertexColor(OptionsPrivate.Private.Style.Color("textSecondary", 0.25))
+    if OptionsPrivate.Private.Style.classic then
+      self.ntex:SetVertexColor(0.8, 0.8, 0.8, 0.25)
+    else
+      self.ntex:SetVertexColor(OptionsPrivate.Private.Style.Color("textSecondary", 0.25))
+    end
     self.htex:SetTexture("Interface\\BUTTONS\\UI-Listbox-Highlight2.blp")
-    self.htex:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.5))
-    self.ptex:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
+    if OptionsPrivate.Private.Style.classic then
+      self.htex:SetVertexColor(0.3, 0.5, 1, 0.5)
+    else
+      self.htex:SetVertexColor(OptionsPrivate.Private.Style.Color("primaryHover", 0.5))
+    end
+    if OptionsPrivate.Private.Style.classic then
+      self.ptex:SetColorTexture(1, 1, 1, 0.2)
+    else
+      self.ptex:SetColorTexture(OptionsPrivate.Private.Style.Color("text", 0.2))
+    end
   end,
   -- ["OnRelease"] = nil,
 
@@ -162,7 +174,11 @@ local function Constructor()
   title:SetJustifyH("LEFT")
   title:SetPoint("LEFT", button, "LEFT", 3, 0)
   title:SetPoint("RIGHT", deleteButton, "LEFT")
-  title:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+  if OptionsPrivate.Private.Style.classic then
+    title:SetTextColor(1, 1, 1, 1)
+  else
+    title:SetTextColor(OptionsPrivate.Private.Style.Color("text"))
+  end
   button.title = title
 
   local ntex = button:CreateTexture()

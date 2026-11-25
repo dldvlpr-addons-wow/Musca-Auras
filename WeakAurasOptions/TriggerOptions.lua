@@ -107,7 +107,9 @@ local function GetGlobalOptions(data)
         local vals = {};
         vals[OptionsPrivate.Private.trigger_modes.first_active] = L["Dynamic information from first active trigger"];
         for i = 1, #data.triggers do
-          vals[i] = L["Dynamic information from Trigger %i"]:format(i);
+          local name = OptionsPrivate.Private.TriggerName(data, i)
+          vals[i] = name and L["Dynamic information from %s"]:format(name)
+            or L["Dynamic information from Trigger %i"]:format(i);
         end
         return vals;
       end,
@@ -137,7 +139,7 @@ local function GetGlobalOptions(data)
         local choices = { next = L["Next Active Trigger"], none = L["None"] }
         for index, entry in ipairs(data.triggers) do
           if entry.trigger.type ~= "secretAura" then
-            choices[index] = L["Trigger %i"]:format(index)
+            choices[index] = OptionsPrivate.Private.TriggerLabel(data, index)
           end
         end
         return choices
@@ -394,6 +396,10 @@ function OptionsPrivate.ClearTriggerExpandState()
 end
 
 function OptionsPrivate.GetTriggerTitle(data, triggernum)
+  local label = OptionsPrivate.Private.TriggerName(data, triggernum)
+  if label then
+    return label
+  end
   if data.triggers[triggernum] then
     local trigger = data.triggers[triggernum].trigger
     if trigger then
