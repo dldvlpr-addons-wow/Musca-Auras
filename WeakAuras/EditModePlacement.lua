@@ -202,8 +202,8 @@ local function ShiftOfSnap(box, sizing)
     local auraVertical, auraHorizontal, rects = {}, {}, {}
     local spacingVertical, spacingHorizontal = {}, {}
     for id, other in pairs(boxes) do
-      -- Nor those of the auras that follow it through a link.
-      if other ~= box and not IsInside(box.auraId, id) and not IsInside(id, box.auraId)
+      -- Nor those of the auras that follow it through a link, nor a box without a rect (its region has no point).
+      if other ~= box and other:GetLeft() and not IsInside(box.auraId, id) and not IsInside(id, box.auraId)
       and not AnchorLinks.DependsOn(id, box.auraId) then
         local left, bottom, right, top = SnapRect(other)
         Snap.AddAuraLines(auraVertical, auraHorizontal, id, { left, bottom, right, top, (left + right) / 2,

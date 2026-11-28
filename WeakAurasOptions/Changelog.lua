@@ -4,16 +4,23 @@ local AddonName = ...
 ---@class OptionsPrivate
 local OptionsPrivate = select(2, ...)
 OptionsPrivate.changelog = {
-  versionString = '1.22.0',
-  dateString = '2026-11-25',
+  versionString = '1.22.1',
+  dateString = '2026-11-28',
   fullChangeLogUrl = 'https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md',
   highlightText = [==[
+- Fixed: Edit Mode error when moving an aura while another aura has no place on the screen
 - New: name your triggers, the name shows in the conditions in place of "Trigger 3"
 - New: custom options can show only when another option has a chosen value ("Visible If")
 - New: hold Alt when you drop an aura on the edge of another one to anchor it there
 - New: /wa design switches the options to the classic WeakAuras design (/reload to apply)
 - New: pick the border color of the placement boxes by kind (group, in group, anchored, alone)
-- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.22.0 (2026-11-25):
+- Discord: https://discord.gg/EyYpyMq2km]==],  commitText = [==[1.22.1 (2026-11-28):
+
+Fixed:
+
+- Moving or resizing an aura in the Edit Mode with Snap on no longer raises an error when another aura has no place on the screen, such as an aura anchored to an aura that is not loaded
+
+1.22.0 (2026-11-25):
 
 New:
 

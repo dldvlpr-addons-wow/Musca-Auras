@@ -62,6 +62,21 @@ too, see `WeakAuras/SpellRankData-LICENSE.txt`.
 
 This file lists every file changed from the upstream 5.22.0 release, as required by GPL-2.0 section 2a.
 
+## 2026-11-28
+
+Tests `Tests/run.lua` (138 scenarios, 0 failed). Not tested in game yet.
+
+### Fixed
+- `WeakAuras/EditModePlacement.lua`: in the Edit Mode with Snap on, moving or resizing an aura raised "attempt to
+  perform arithmetic on a nil value" at each frame when the box of another aura had no rect (its region has no
+  point, as an aura anchored to an aura that is not loaded, anchored to `WeakAurasHiddenFrames`). `ShiftOfSnap`
+  now skips such a box: it gives no snap line.
+- `Tests/Scenarios/68_EditModePlacement.lua`: drag with Snap on beside a box without a rect.
+
+### Changed (documents)
+- `WeakAuras/CHANGELOG.md`, `WeakAurasOptions/Changelog.lua`: 1.22.1 dated 2026-11-28.
+- `*/*.toc`: version 1.22.1. `CLASS_PACK_VERSION` stays 1.21.0: no pack changed.
+
 ## 2026-11-25
 
 Tests `Tests/run.lua` (138 scenarios, 0 failed). Not tested in game yet.

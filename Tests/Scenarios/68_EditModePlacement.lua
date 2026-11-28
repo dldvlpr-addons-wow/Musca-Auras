@@ -120,6 +120,20 @@ return function(test)
   rawset(box, "StartMoving", nil)
   assert(moves == 0 and WeakAuras.GetData("Free").xOffset == 10, "no drag without a rect")
 
+  -- Another box without a rect (its region has no point) gives no snap line: the drag does not raise.
+  EditModeManagerFrame.IsSnapEnabled = function() return true end
+  local unplaced = private.GetPlacementBox("Pack")
+  unplaced.GetLeft, unplaced.GetRight = function() return nil end, function() return nil end
+  unplaced.GetBottom, unplaced.GetTop = function() return nil end, function() return nil end
+  box:GetScript("OnDragStart")(box)
+  box:GetScript("OnUpdate")(box)
+  box:GetScript("OnDragStop")(box)
+  unplaced.GetLeft, unplaced.GetRight, unplaced.GetBottom, unplaced.GetTop = nil, nil, nil, nil
+  EditModeManagerFrame.IsSnapEnabled = nil
+  assert(WeakAuras.GetData("Free").xOffset == 10, "drag beside a box without a rect")
+  -- The drop rebuilt the boxes from the pool.
+  box = private.GetPlacementBox("Free")
+
   box:GetScript("OnDragStart")(box)
   local left, bottom = box:GetLeft(), box:GetBottom()
   box.GetLeft = function() return left + 30 end

@@ -1,3 +1,12 @@
+# Musca Auras 1.22.1 (2026-11-28)
+
+Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
+
+## Fixed
+
+- Moving or resizing an aura in the Edit Mode with Snap on no longer raises an error when another aura has no
+  place on the screen, such as an aura anchored to an aura that is not loaded.
+
 # Musca Auras 1.22.0 (2026-11-25)
 
 Based on WeakAuras 5.22.0. Every changed file is listed in [CHANGES.md](https://github.com/dldvlpr-addons-wow/Musca-Auras/blob/main/CHANGES.md).
